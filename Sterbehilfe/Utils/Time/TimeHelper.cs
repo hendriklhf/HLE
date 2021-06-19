@@ -341,11 +341,11 @@ namespace Sterbehilfe.Utils.Time
                     result = result[0..^1];
                 }
 
-                return $"{result} {addition}";
+                return $"{result} {addition}".Trim();
             }
             else
             {
-                return $"{Now() - time}ms {addition}";
+                return $"{Now() - time}ms {addition}".Trim();
             }
         }
 
