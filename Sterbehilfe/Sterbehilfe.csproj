@@ -25,4 +25,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy $(TargetPath) C:\Users\Hendrik\Documents\Git\SterbehilfeClassLibrary\Build /E /Y /I" />
+  </Target>
+
 </Project>
