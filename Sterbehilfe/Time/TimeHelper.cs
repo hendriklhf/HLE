@@ -1,10 +1,10 @@
-﻿using Sterbehilfe.Utils.Numbers;
-using Sterbehilfe.Utils.Strings;
-using Sterbehilfe.Utils.Time.Enums;
+﻿using Sterbehilfe.Numbers;
+using Sterbehilfe.Strings;
+using Sterbehilfe.Time.Enums;
 using System;
 using System.Collections.Generic;
 
-namespace Sterbehilfe.Utils.Time
+namespace Sterbehilfe.Time
 {
     public static class TimeHelper
     {

@@ -1,14 +1,7 @@
-﻿using System;
-
-namespace Sterbehilfe.Utils.Numbers
+﻿namespace Sterbehilfe.Numbers
 {
     public static class NumberHelper
     {
-        public static int Random(int min, int max)
-        {
-            return new Random().Next(min, max + 1);
-        }
-
         public static double ToDouble(this int i)
         {
             return i;

@@ -1,4 +1,4 @@
-namespace Sterbehilfe.Utils.Emojis
+namespace Sterbehilfe.Emojis
 {
     public static class Emoji
     {

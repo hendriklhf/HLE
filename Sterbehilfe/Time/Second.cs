@@ -1,4 +1,6 @@
-﻿namespace Sterbehilfe.Utils.Time
+﻿using Sterbehilfe.Time.Interfaces;
+
+namespace Sterbehilfe.Time
 {
     public class Second : ITimeUnit
     {

@@ -1,4 +1,4 @@
-﻿namespace Sterbehilfe.Utils.Time.Enums
+﻿namespace Sterbehilfe.Time.Enums
 {
     public enum ConversionType
     {

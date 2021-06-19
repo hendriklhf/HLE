@@ -1,4 +1,4 @@
-﻿namespace Sterbehilfe.Utils.Time
+﻿namespace Sterbehilfe.Time.Interfaces
 {
     public interface ITimeUnit
     {

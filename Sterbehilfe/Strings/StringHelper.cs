@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Sterbehilfe.Utils.Strings
+namespace Sterbehilfe.Strings
 {
     public static class StringHelper
     {

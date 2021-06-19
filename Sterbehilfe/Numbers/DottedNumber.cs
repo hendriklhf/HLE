@@ -1,4 +1,4 @@
-﻿namespace Sterbehilfe.Utils.Numbers
+﻿namespace Sterbehilfe.Numbers
 {
     /// <summary>
     /// Creates a number in which every three digits are devided by a dot.<br />
