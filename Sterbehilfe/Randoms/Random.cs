@@ -9,12 +9,15 @@ namespace Sterbehilfe.Randoms
     /// </summary>
     public static class Random
     {
+        /// <summary>
+        /// A <see cref="List{Char}"/> of type <see cref="char"/> that contains every basic Latin character.
+        /// </summary>
         private static readonly List<char> _basicLatinChars = new() { '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~' };
 
         /// <summary>
         /// Returns a random <see cref="char"/> out of all basic latin characters.
         /// </summary>
-        /// <returns>A basic latin character.</returns>
+        /// <returns>A basic Latin character.</returns>
         public static char Char()
         {
             return _basicLatinChars[Int(0, _basicLatinChars.Count - 1)];
@@ -42,7 +45,7 @@ namespace Sterbehilfe.Randoms
             return new System.Random().Next(min, max);
         }
         /// <summary>
-        /// Returns a <see cref="string"/> of the given <paramref name="length"/> filled with basic latin characters.<br />
+        /// Returns a <see cref="string"/> of the given <paramref name="length"/> filled with basic Latin characters.<br />
         /// Calls <see cref="Char()"/> to fill the result string.
         /// </summary>
         /// <param name="length">The <paramref name="length"/> of the <see cref="string"/>.</param>

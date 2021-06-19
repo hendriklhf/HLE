@@ -7,8 +7,16 @@ using System.Text.RegularExpressions;
 
 namespace Sterbehilfe.Strings
 {
+    /// <summary>
+    /// A class to help with any kind of <see cref="string"/>.
+    /// </summary>
     public static class StringHelper
     {
+        /// <summary>
+        /// Converts the <paramref name="input"/> to string by appending all elements beginning at index 0.
+        /// </summary>
+        /// <param name="input">The <see cref="string"/> array that will be converted to a <see cref="string"/>.</param>
+        /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
         public static string ArrayToString(this string[] input)
         {
             string result = string.Empty;
@@ -21,11 +29,13 @@ namespace Sterbehilfe.Strings
 
         public static string Decode(this byte[] bytes)
         {
+#warning add encoding enum
             return Encoding.UTF8.GetString(bytes);
         }
 
         public static byte[] Encode(this string str)
         {
+#warning add encoding enum
             return Encoding.UTF8.GetBytes(str);
         }
 

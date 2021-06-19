@@ -8,7 +8,7 @@
     public struct DottedNumber
     {
         /// <summary>
-        /// The number with the dots inserted.
+        /// The number with the dots inserted displayed as a <see cref="string"/>.
         /// </summary>
         public string Number { get; }
 
@@ -20,7 +20,7 @@
         /// <summary>
         /// The basic constructor of DottedNumber.
         /// </summary>
-        /// <param name="number">A number of type long in which the dots will be inserted</param>
+        /// <param name="number">A number of type <see cref="long"/> in which the dots will be inserted</param>
         public DottedNumber(long number)
         {
             OrigninalNumber = number;
