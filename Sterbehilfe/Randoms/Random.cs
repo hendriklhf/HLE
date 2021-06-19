@@ -32,7 +32,11 @@ namespace Sterbehilfe.Randoms
                 min = max;
                 max = tmp;
             }
-            return new System.Random().Next(min, max + 1);
+            if (max < int.MaxValue)
+            {
+                max++;
+            }
+            return new System.Random().Next(min, max);
         }
         /// <summary>
         /// Returns a <see cref="string"/> of the given <paramref name="length"/> filled with basic latin characters.<br />
