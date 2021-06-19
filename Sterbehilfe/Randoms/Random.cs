@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Sterbehilfe.Randoms
 {
+    /// <summary>
+    /// A static class that contains all sorts of random methods.
+    /// </summary>
     public static class Random
     {
         private static readonly List<char> _basicLatinChars = new() { '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~' };
@@ -63,7 +66,7 @@ namespace Sterbehilfe.Randoms
         /// The parameter will be fitted to be working with the amount of words in the two list.
         /// </summary>
         /// <param name="amount">The amount of words</param>
-        /// <returns>A <see cref="List{}"/> containing the given <paramref name="amount"/> of random words</returns>
+        /// <returns>A <see cref="List{String}"/> containing the given <paramref name="amount"/> of random words</returns>
         public static List<string> Word(int amount = 1)
         {
             List<string> words = new();

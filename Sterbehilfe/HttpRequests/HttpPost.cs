@@ -5,20 +5,43 @@ using System.Threading.Tasks;
 
 namespace Sterbehilfe.HttpRequests
 {
+    /// <summary>
+    /// A class that performs a Http POST request on creation of the object.
+    /// </summary>
     public class HttpPost
     {
+        /// <summary>
+        /// The URL of the request.
+        /// </summary>
         public string URL { get; }
 
+        /// <summary>
+        /// The complete answer as a string.
+        /// </summary>
         public string Result { get; }
 
+        /// <summary>
+        /// The header content that will be sent to the URL.
+        /// </summary>
         public HttpContent HeaderContent { get; }
 
+        /// <summary>
+        /// The answer stored in a <see cref="JsonElement"/>, if the answer was a json compatible string.
+        /// </summary>
         public JsonElement Data { get; }
 
+        /// <summary>
+        /// True, if the answer was a json compatible string, otherwise false.
+        /// </summary>
         public bool ValidJsonData { get; } = true;
 
         private readonly HttpClient _httpClient = new();
 
+        /// <summary>
+        /// The main constructor of <see cref="HttpPost"/>.
+        /// </summary>
+        /// <param name="url">The URL to which the request will be send to.</param>
+        /// <param name="headers">The header content that will be sent to the URL.</param>
         public HttpPost(string url, List<KeyValuePair<string, string>> headers)
         {
             URL = url;

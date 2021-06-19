@@ -1,5 +1,8 @@
 namespace Sterbehilfe.Emojis
 {
+    /// <summary>
+    /// A class that contains every existing emoji.
+    /// </summary>
     public static class Emoji
     {
         public const string Grinning = "😀";
