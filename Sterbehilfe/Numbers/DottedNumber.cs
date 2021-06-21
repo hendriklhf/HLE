@@ -1,4 +1,6 @@
-﻿namespace Sterbehilfe.Numbers
+﻿using Sterbehilfe.Strings;
+
+namespace Sterbehilfe.Numbers
 {
     /// <summary>
     /// Creates a number in which every three digits are devided by a dot.<br />
@@ -36,6 +38,16 @@
             }
 
             Number = negative ? $"-{num}" : num;
+        }
+
+        /// <summary>
+        /// A constructor that takes in a DottedNumber <see cref="string"/>.
+        /// </summary>
+        /// <param name="number">The DottedNumber <see cref="string"/>.</param>
+        public DottedNumber(string number)
+        {
+            OrigninalNumber = number.Remove(".").ToLong();
+            Number = number;
         }
 
         public static bool operator >(DottedNumber left, DottedNumber right)
@@ -86,6 +98,31 @@
         public static DottedNumber operator --(DottedNumber dottedNumber)
         {
             return new(dottedNumber.OrigninalNumber - 1);
+        }
+
+        public static DottedNumber operator !(DottedNumber dottedNumber)
+        {
+            return new DottedNumber(-dottedNumber.OrigninalNumber);
+        }
+
+        public static DottedNumber operator ~(DottedNumber dottedNumber)
+        {
+            return new DottedNumber(-dottedNumber.OrigninalNumber);
+        }
+
+        public static implicit operator long(DottedNumber dottedNumber)
+        {
+            return dottedNumber.OrigninalNumber;
+        }
+
+        public static implicit operator string(DottedNumber dottedNumber)
+        {
+            return dottedNumber.Number;
+        }
+
+        public static implicit operator DottedNumber(long l)
+        {
+            return new DottedNumber(l);
         }
 
         public override string ToString()

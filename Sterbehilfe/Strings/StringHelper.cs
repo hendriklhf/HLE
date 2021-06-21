@@ -159,7 +159,7 @@ namespace Sterbehilfe.Strings
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
         /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="int"/></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="int"/>.</returns>
         public static int ToInt(this string str)
         {
             return Convert.ToInt32(str);
@@ -170,7 +170,7 @@ namespace Sterbehilfe.Strings
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
         /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to a <see cref="long"/></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to a <see cref="long"/>.</returns>
         public static long ToLong(this string str)
         {
             return Convert.ToInt64(str);
@@ -181,7 +181,7 @@ namespace Sterbehilfe.Strings
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
         /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="short"/></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="short"/>.</returns>
         public static short ToShort(this string str)
         {
             return Convert.ToInt16(str);
@@ -192,7 +192,7 @@ namespace Sterbehilfe.Strings
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
         /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="uint"/></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="uint"/>.</returns>
         public static uint ToUInt(this string str)
         {
             return Convert.ToUInt32(str);
@@ -203,7 +203,7 @@ namespace Sterbehilfe.Strings
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
         /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="ulong"/></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="ulong"/>.</returns>
         public static ulong ToULong(this string str)
         {
             return Convert.ToUInt64(str);
@@ -214,7 +214,7 @@ namespace Sterbehilfe.Strings
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
         /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="ushort"/></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="ushort"/>.</returns>
         public static ushort ToUShort(this string str)
         {
             return Convert.ToUInt16(str);
