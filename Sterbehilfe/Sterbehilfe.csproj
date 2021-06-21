@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy $(TargetPath) $(SolutionDir)\Build /E /Y /I" />
+    <Exec Command="if not exist $(SolutionDir)\Build mkdir $(SolutionDir)\Build&#xD;&#xA;xcopy $(TargetPath) $(SolutionDir)\Build /E /Y /I" />
   </Target>
 
 </Project>
