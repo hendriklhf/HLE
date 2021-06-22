@@ -12,12 +12,12 @@ namespace Sterbehilfe.Numbers
         /// <summary>
         /// The number with the dots inserted displayed as a <see cref="string"/>.
         /// </summary>
-        public string Number { get; }
+        public string Number { get; private set; }
 
         /// <summary>
         /// The original number passed to the constructor.
         /// </summary>
-        public long OrigninalNumber { get; }
+        public long OrigninalNumber { get; private set; }
 
         /// <summary>
         /// The basic constructor of DottedNumber.
@@ -105,19 +105,9 @@ namespace Sterbehilfe.Numbers
             return new DottedNumber(-dottedNumber.OrigninalNumber);
         }
 
-        public static DottedNumber operator ~(DottedNumber dottedNumber)
-        {
-            return new DottedNumber(-dottedNumber.OrigninalNumber);
-        }
-
         public static implicit operator long(DottedNumber dottedNumber)
         {
             return dottedNumber.OrigninalNumber;
-        }
-
-        public static implicit operator string(DottedNumber dottedNumber)
-        {
-            return dottedNumber.Number;
         }
 
         public static implicit operator DottedNumber(long l)
