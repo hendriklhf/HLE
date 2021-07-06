@@ -6,6 +6,10 @@ namespace Sterbehilfe.Time
     {
         public int Count { get; set; }
 
+        public long Milliseconds => Count * _inMilliseconds;
+
+        public long Seconds => Milliseconds / 1000;
+
         public const string Pattern = @"\d+h(our)?s?";
 
         private const long _inMilliseconds = 3600000;
@@ -13,16 +17,6 @@ namespace Sterbehilfe.Time
         public Hour(int count = 1)
         {
             Count = count;
-        }
-
-        public long ToMilliseconds()
-        {
-            return Count * _inMilliseconds;
-        }
-
-        public long ToSeconds()
-        {
-            return ToMilliseconds() / 1000;
         }
     }
 }

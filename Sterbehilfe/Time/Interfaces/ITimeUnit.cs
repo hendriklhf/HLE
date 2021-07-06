@@ -11,15 +11,13 @@
         public int Count { get; set; }
 
         /// <summary>
-        /// Converts the given amount of the specific time unit into milliseconds.
+        /// The amount of the specific time unit in milliseconds.
         /// </summary>
-        /// <returns>Returns the amount of the time unit in milliseconds.</returns>
-        public long ToMilliseconds();
+        public long Milliseconds { get; }
 
         /// <summary>
-        /// Converts the given amount of the specific time unit into seconds.
+        /// The amount of the specific time unit in seconds.
         /// </summary>
-        /// <returns>Returns the amount of the time unit in seconds.</returns>
-        public long ToSeconds();
+        public long Seconds { get; }
     }
 }

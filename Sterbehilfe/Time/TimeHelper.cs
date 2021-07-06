@@ -19,320 +19,320 @@ namespace Sterbehilfe.Time
             {
                 string result = "";
                 time = Now() - time;
-                if (Math.Truncate((time / new Year().ToMilliseconds()).ToDouble()) > 0)
+                if (Math.Truncate((time / new Year().Milliseconds).ToDouble()) > 0)
                 {
-                    result += Math.Truncate((time / new Year().ToMilliseconds()).ToDouble()).ToString() + "y, ";
-                    time -= (Math.Truncate((time / new Year().ToMilliseconds()).ToDouble()) * new Year().ToMilliseconds()).ToLong();
-                    if (Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()) > 0)
+                    result += Math.Truncate((time / new Year().Milliseconds).ToDouble()).ToString() + "y, ";
+                    time -= (Math.Truncate((time / new Year().Milliseconds).ToDouble()) * new Year().Milliseconds).ToLong();
+                    if (Math.Truncate((time / new Day().Milliseconds).ToDouble()) > 0)
                     {
-                        result += Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()).ToString() + "d, ";
-                        time -= (Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()) * new Day().ToMilliseconds()).ToLong();
-                        if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                        result += Math.Truncate((time / new Day().Milliseconds).ToDouble()).ToString() + "d, ";
+                        time -= (Math.Truncate((time / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
+                        if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                         {
-                            result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
+                            result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                             {
-                                time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                                if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                                time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                                if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                                 {
-                                    result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                    result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                        if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                        time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                        if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                         {
-                                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                         }
                                     }
                                 }
-                                else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                 {
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
                         }
-                        else if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                        else if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                         {
-                            result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
+                            result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                             {
-                                time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                                if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                                time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                                if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                                 {
-                                    result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                    result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                        if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                        time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                        if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                         {
-                                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                         }
                                     }
                                 }
-                                else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                 {
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
                         }
-                        else if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                        else if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                         {
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                             {
-                                result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                 {
-                                    time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                    if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                    time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                    if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
                         }
-                        else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                        else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                         {
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                             {
-                                result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Day().Milliseconds).ToDouble()) > 0)
                     {
-                        result += Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()).ToString() + "d, ";
-                        time -= (Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()) * new Day().ToMilliseconds()).ToLong();
-                        if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                        result += Math.Truncate((time / new Day().Milliseconds).ToDouble()).ToString() + "d, ";
+                        time -= (Math.Truncate((time / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
+                        if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                         {
-                            result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
-                            time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                            if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                            result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
+                            time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                            if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                             {
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                                 {
-                                    result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                    result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                        if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                        time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                        if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                         {
-                                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                         }
                                     }
                                 }
                             }
-                            else if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                            else if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                             {
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                                 {
-                                    result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                    result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                        if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                        time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                        if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                         {
-                                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                         }
                                     }
                                 }
                             }
-                            else if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                            else if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                             {
-                                result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
-                                time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                                if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                                result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
+                                time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                                if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                                 {
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                                     {
-                                        result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                        result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                         if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                         {
-                                            time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                            if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                            time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                            if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                             {
-                                                result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                                result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                             }
                                         }
                                     }
                                 }
-                                else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                 {
                                     if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
                         }
-                        else if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                        else if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                         {
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                             {
-                                result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                 {
-                                    time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                    if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                    time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                    if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
                         }
-                        else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                        else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                         {
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                             {
-                                result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                     {
-                        result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
-                        time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                        if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                        result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
+                        time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                        if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                         {
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                             {
-                                result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                 {
-                                    time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                    if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                    time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                    if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
                         }
-                        else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                        else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                         {
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                             {
-                                result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                     {
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                         {
-                            result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                            result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                             {
-                                time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                 {
-                                    result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                    result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                 }
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                     {
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                         {
-                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                         }
                     }
                 }
-                else if (Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()) > 0)
+                else if (Math.Truncate((time / new Day().Milliseconds).ToDouble()) > 0)
                 {
-                    result += Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()).ToString() + "d, ";
-                    time -= (Math.Truncate((time / new Day().ToMilliseconds()).ToDouble()) * new Day().ToMilliseconds()).ToLong();
-                    if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                    result += Math.Truncate((time / new Day().Milliseconds).ToDouble()).ToString() + "d, ";
+                    time -= (Math.Truncate((time / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
+                    if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                     {
-                        result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
+                        result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                         {
-                            time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                            if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                            time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                            if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                             {
-                                result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                                result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                 {
-                                    time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                    if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                    time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                    if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                     {
-                                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                     }
                                 }
                             }
-                            else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                            else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                             {
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                 {
-                                    result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                    result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                 }
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                     {
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                         {
-                            result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                            result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                             if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                             {
-                                time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                                if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                                time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                                 {
-                                    result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                    result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                                 }
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                     {
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                         {
-                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                         }
                     }
                 }
-                else if (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) > 0)
+                else if (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) > 0)
                 {
-                    result += Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()).ToString() + "h, ";
-                    time -= (Math.Truncate((time / new Hour().ToMilliseconds()).ToDouble()) * new Hour().ToMilliseconds()).ToLong();
-                    if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                    result += Math.Truncate((time / new Hour().Milliseconds).ToDouble()).ToString() + "h, ";
+                    time -= (Math.Truncate((time / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                    if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                     {
-                        result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
+                        result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                         {
-                            time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                            if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                            time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                            if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                             {
-                                result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                                result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                             }
                         }
                     }
-                    else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                    else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                     {
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                         {
-                            result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                            result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                         }
                     }
                 }
-                else if (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) > 0)
+                else if (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) > 0)
                 {
-                    result += Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()).ToString() + "min, ";
-                    time -= (Math.Truncate((time / new Minute().ToMilliseconds()).ToDouble()) * new Minute().ToMilliseconds()).ToLong();
-                    if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                    result += Math.Truncate((time / new Minute().Milliseconds).ToDouble()).ToString() + "min, ";
+                    time -= (Math.Truncate((time / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                    if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                     {
-                        result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                        result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                     }
                 }
-                else if (Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()) > 0)
+                else if (Math.Truncate((time / new Second().Milliseconds).ToDouble()) > 0)
                 {
-                    result += Math.Truncate((time / new Second().ToMilliseconds()).ToDouble()).ToString() + "s";
+                    result += Math.Truncate((time / new Second().Milliseconds).ToDouble()).ToString() + "s";
                 }
 
                 result = result.Trim();
@@ -356,23 +356,23 @@ namespace Sterbehilfe.Time
             {
                 if (str.IsMatch(Year.Pattern))
                 {
-                    result += new Year(Convert.ToInt32(str.Match(@"\d+"))).ToMilliseconds();
+                    result += new Year(Convert.ToInt32(str.Match(@"\d+"))).Milliseconds;
                 }
                 else if (str.IsMatch(Day.Pattern))
                 {
-                    result += new Day(Convert.ToInt32(str.Match(@"\d+"))).ToMilliseconds();
+                    result += new Day(Convert.ToInt32(str.Match(@"\d+"))).Milliseconds;
                 }
                 else if (str.IsMatch(Hour.Pattern))
                 {
-                    result += new Hour(Convert.ToInt32(str.Match(@"\d+"))).ToMilliseconds();
+                    result += new Hour(Convert.ToInt32(str.Match(@"\d+"))).Milliseconds;
                 }
                 else if (str.IsMatch(Minute.Pattern))
                 {
-                    result += new Minute(Convert.ToInt32(str.Match(@"\d+"))).ToMilliseconds();
+                    result += new Minute(Convert.ToInt32(str.Match(@"\d+"))).Milliseconds;
                 }
                 else if (str.IsMatch(Second.Pattern))
                 {
-                    result += new Second(Convert.ToInt32(str.Match(@"\d+"))).ToMilliseconds();
+                    result += new Second(Convert.ToInt32(str.Match(@"\d+"))).Milliseconds;
                 }
             });
             return result;

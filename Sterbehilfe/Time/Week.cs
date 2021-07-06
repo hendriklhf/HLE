@@ -6,21 +6,15 @@ namespace Sterbehilfe.Time
     {
         public int Count { get; set; }
 
+        public long Milliseconds => new Day(7 * Count).Milliseconds;
+
+        public long Seconds => Milliseconds / 1000;
+
         public const string Pattern = @"\d+w(eek)?s?";
 
         public Week(int count = 1)
         {
             Count = count;
-        }
-
-        public long ToMilliseconds()
-        {
-            return new Day(7 * Count).ToMilliseconds();
-        }
-
-        public long ToSeconds()
-        {
-            return ToMilliseconds() / 1000;
         }
     }
 }

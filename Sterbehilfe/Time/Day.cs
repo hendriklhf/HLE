@@ -12,6 +12,10 @@ namespace Sterbehilfe.Time
         /// </summary>
         public int Count { get; set; }
 
+        public long Milliseconds => Count * _inMilliseconds;
+
+        public long Seconds => Milliseconds / 1000;
+
         /// <summary>
         /// A pattern that will match an expression of days in a <see cref="string"/>.
         /// </summary>
@@ -25,16 +29,6 @@ namespace Sterbehilfe.Time
         public Day(int count = 1)
         {
             Count = count;
-        }
-
-        public long ToMilliseconds()
-        {
-            return Count * _inMilliseconds;
-        }
-
-        public long ToSeconds()
-        {
-            return ToMilliseconds() / 1000;
         }
     }
 }
