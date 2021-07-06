@@ -32,7 +32,8 @@ namespace Sterbehilfe.HttpRequests
         private readonly HttpClient _httpClient = new();
 
         /// <summary>
-        /// The main constructor of <see cref="HttpGet"/>.
+        /// The main constructor of <see cref="HttpGet"/>.<br />
+        /// The request will be executed in the constructor.
         /// </summary>
         /// <param name="url">The URL to which the request will be sent to.</param>
         public HttpGet(string url)

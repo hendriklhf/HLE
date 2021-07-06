@@ -38,7 +38,8 @@ namespace Sterbehilfe.HttpRequests
         private readonly HttpClient _httpClient = new();
 
         /// <summary>
-        /// The main constructor of <see cref="HttpPost"/>.
+        /// The main constructor of <see cref="HttpPost"/>.<br />
+        /// The request will be executed in the constructor.
         /// </summary>
         /// <param name="url">The URL to which the request will be send to.</param>
         /// <param name="headers">The header content that will be sent to the URL.</param>

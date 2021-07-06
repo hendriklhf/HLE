@@ -1,4 +1,6 @@
-﻿namespace Sterbehilfe.Time.Enums
+﻿#pragma warning disable CA1069
+
+namespace Sterbehilfe.Time.Enums
 {
     /// <summary>
     /// An enum to use different conversion types in <see cref="TimeHelper.ConvertMillisecondsToPassedTime(long, string, ConversionType)"/>.<br />
