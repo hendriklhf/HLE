@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Sterbehilfe.Collections
 {
+    /// <summary>
+    /// A class containing multiple collections of usefull elements.
+    /// </summary>
     public static class Collection
     {
         /// <summary>
