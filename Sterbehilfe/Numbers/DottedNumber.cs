@@ -50,6 +50,16 @@ namespace Sterbehilfe.Numbers
             Number = number;
         }
 
+        public static bool operator ==(DottedNumber left, DottedNumber right)
+        {
+            return left.OrigninalNumber == right.OrigninalNumber;
+        }
+
+        public static bool operator !=(DottedNumber left, DottedNumber right)
+        {
+            return !(left == right);
+        }
+
         public static bool operator >(DottedNumber left, DottedNumber right)
         {
             return left.OrigninalNumber > right.OrigninalNumber;
@@ -113,6 +123,21 @@ namespace Sterbehilfe.Numbers
         public static implicit operator DottedNumber(long l)
         {
             return new DottedNumber(l);
+        }
+
+        public bool Equals(DottedNumber dottedNumber)
+        {
+            return this == dottedNumber;
+        }
+
+        public bool Equals(long number)
+        {
+            return this == new DottedNumber(number);
+        }
+
+        public bool Equals(string number)
+        {
+            return this == new DottedNumber(number);
         }
 
         public override string ToString()
