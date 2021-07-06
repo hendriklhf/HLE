@@ -1,4 +1,5 @@
-﻿using Sterbehilfe.HttpRequests;
+﻿using Sterbehilfe.Collections;
+using Sterbehilfe.HttpRequests;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,17 +11,12 @@ namespace Sterbehilfe.Randoms
     public static class Random
     {
         /// <summary>
-        /// A <see cref="List{Char}"/> of type <see cref="char"/> that contains every basic Latin character.
-        /// </summary>
-        private static readonly List<char> _basicLatinChars = new() { '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~' };
-
-        /// <summary>
         /// Returns a random <see cref="char"/> out of all basic latin characters.
         /// </summary>
         /// <returns>A basic Latin character.</returns>
         public static char Char()
         {
-            return _basicLatinChars[Int(0, _basicLatinChars.Count - 1)];
+            return Collection.BasicLatinChars[Int(0, Collection.BasicLatinChars.Count - 1)];
         }
 
         /// <summary>

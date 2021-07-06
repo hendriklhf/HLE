@@ -16,8 +16,18 @@ namespace Sterbehilfe.Numbers
             UnitPrefix = unitPrefix;
         }
 
-        public PrefixNumber(double number) : this(number, UnitPrefix.Null)
+        public PrefixNumber(double number, bool setPrefixAutomatically = true)
         {
+            Number = number;
+            if (setPrefixAutomatically)
+            {
+                UnitPrefix = null;
+#warning detect automatically
+            }
+            else
+            {
+                UnitPrefix = UnitPrefix.Null;
+            }
         }
 
         public static bool operator >(PrefixNumber left, PrefixNumber right)
@@ -60,15 +70,15 @@ namespace Sterbehilfe.Numbers
 
         //}
 
-        public static PrefixNumber operator ++(PrefixNumber prefixNumber)
-        {
-            return new(prefixNumber.Number + 1, prefixNumber.UnitPrefix);
-        }
+        //public static PrefixNumber operator ++(PrefixNumber prefixNumber)
+        //{
 
-        public static PrefixNumber operator --(PrefixNumber prefixNumber)
-        {
-            return new(prefixNumber.Number - 1, prefixNumber.UnitPrefix);
-        }
+        //}
+
+        //public static PrefixNumber operator --(PrefixNumber prefixNumber)
+        //{
+
+        //}
 
         public static PrefixNumber operator !(PrefixNumber prefixNumber)
         {
@@ -98,6 +108,16 @@ namespace Sterbehilfe.Numbers
         public bool Equals(PrefixNumber prefixNumber)
         {
             return Value == prefixNumber.Value;
+        }
+
+        public bool Equals(long number)
+        {
+            return Value == number;
+        }
+
+        public bool Equals(double number)
+        {
+            return Value == number;
         }
 
         public override string ToString()
