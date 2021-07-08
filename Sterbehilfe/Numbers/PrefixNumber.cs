@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Linq;
 
 namespace Sterbehilfe.Numbers
 {
     public struct PrefixNumber
     {
-        public double Number { get; }
+        public double Number { get; private set; }
 
-        public UnitPrefix UnitPrefix { get; }
+        public UnitPrefix UnitPrefix { get; private set; }
 
         public double Value => Number * UnitPrefix.Value;
 
@@ -18,16 +19,33 @@ namespace Sterbehilfe.Numbers
 
         public PrefixNumber(double number, bool setPrefixAutomatically = true)
         {
-            Number = number;
             if (setPrefixAutomatically)
             {
-                UnitPrefix = null;
-#warning detect automatically
+                UnitPrefix = UnitPrefix.UnitPrefixCollection.OrderBy(up => Math.Abs(1 - (number / up.Value))).FirstOrDefault();
+                Number = number / UnitPrefix.Value;
             }
             else
             {
+                Number = number;
                 UnitPrefix = UnitPrefix.Null;
             }
+        }
+
+        public void SetUnitPrefix()
+        {
+            double n = Number;
+            UnitPrefix = UnitPrefix.UnitPrefixCollection.OrderBy(up => Math.Abs(1 - (n / up.Value))).FirstOrDefault();
+            Number /= UnitPrefix.Value;
+        }
+
+        public static bool operator ==(PrefixNumber left, PrefixNumber right)
+        {
+            return left.Value == right.Value;
+        }
+
+        public static bool operator !=(PrefixNumber left, PrefixNumber right)
+        {
+            return !(left == right);
         }
 
         public static bool operator >(PrefixNumber left, PrefixNumber right)
@@ -50,35 +68,35 @@ namespace Sterbehilfe.Numbers
             return left.Value <= right.Value;
         }
 
-        //public static PrefixNumber operator +(PrefixNumber left, PrefixNumber right)
-        //{
+        public static PrefixNumber operator +(PrefixNumber left, PrefixNumber right)
+        {
+            return new(left.Value + right.Value);
+        }
 
-        //}
+        public static PrefixNumber operator -(PrefixNumber left, PrefixNumber right)
+        {
+            return new(left.Value - right.Value);
+        }
 
-        //public static PrefixNumber operator -(PrefixNumber left, PrefixNumber right)
-        //{
+        public static PrefixNumber operator *(PrefixNumber left, PrefixNumber right)
+        {
+            return new(left.Value * right.Value);
+        }
 
-        //}
+        public static PrefixNumber operator /(PrefixNumber left, PrefixNumber right)
+        {
+            return new(left.Value / right.Value);
+        }
 
-        //public static PrefixNumber operator *(PrefixNumber left, PrefixNumber right)
-        //{
+        public static PrefixNumber operator ++(PrefixNumber prefixNumber)
+        {
+            return new(prefixNumber.Value + 1);
+        }
 
-        //}
-
-        //public static PrefixNumber operator /(PrefixNumber left, PrefixNumber right)
-        //{
-
-        //}
-
-        //public static PrefixNumber operator ++(PrefixNumber prefixNumber)
-        //{
-
-        //}
-
-        //public static PrefixNumber operator --(PrefixNumber prefixNumber)
-        //{
-
-        //}
+        public static PrefixNumber operator --(PrefixNumber prefixNumber)
+        {
+            return new(prefixNumber.Value - 1);
+        }
 
         public static PrefixNumber operator !(PrefixNumber prefixNumber)
         {
@@ -122,7 +140,7 @@ namespace Sterbehilfe.Numbers
 
         public override string ToString()
         {
-            return $"{Number} {UnitPrefix.Symbol}";
+            return $"{Number}{UnitPrefix.Symbol}";
         }
     }
 }

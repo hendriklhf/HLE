@@ -12,7 +12,6 @@ namespace Sterbehilfe.Numbers
 
         public double Value { get; }
 
-        public static readonly ReadOnlyCollection<UnitPrefix> UnitPrefixCollection = new(_unitPrefixes);
 
         private UnitPrefix(string name, string symbol, double value)
         {
@@ -67,5 +66,7 @@ namespace Sterbehilfe.Numbers
             Zepto,
             Yocto
         };
+
+        public static readonly ReadOnlyCollection<UnitPrefix> UnitPrefixCollection = new(_unitPrefixes);
     }
 }
