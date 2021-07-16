@@ -1,6 +1,6 @@
 ﻿namespace HLE.Formulas
 {
-    public static class Constants
+    public static class Constant
     {
     }
 }
