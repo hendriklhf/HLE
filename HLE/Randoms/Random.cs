@@ -1,4 +1,5 @@
-﻿using HLE.HttpRequests;
+﻿using HLE.Collections;
+using HLE.HttpRequests;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace HLE.Randoms
         /// <returns>A basic Latin character.</returns>
         public static char Char()
         {
-            return Collections.Collections.BasicLatinChars[Int(0, Collections.Collections.BasicLatinChars.Count - 1)];
+            return Collection.BasicLatinChars[Int(0, Collection.BasicLatinChars.Count - 1)];
         }
 
         /// <summary>
