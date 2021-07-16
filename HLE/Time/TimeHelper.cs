@@ -407,11 +407,27 @@ namespace HLE.Time
             }
         }
 
+        /// <summary>
+        /// Return the hours that remain until the given day time.
+        /// </summary>
+        /// <param name="hour">The hour in 24h format.</param>
+        /// <param name="minute">The minute.</param>
+        /// <param name="second">The second.</param>
+        /// <param name="millisecond">The millisecond.</param>
+        /// <returns>The hours that remain until the given day time.</returns>
         public static double HoursUntil(int hour = 0, int minute = 0, int second = 0, int millisecond = 0)
         {
             return MinutesUntil(hour, minute, second, millisecond) / 60;
         }
 
+        /// <summary>
+        /// Return the milliseconds that remain until the given day time.
+        /// </summary>
+        /// <param name="hour">The hour in 24h format.</param>
+        /// <param name="minute">The minute.</param>
+        /// <param name="second">The second.</param>
+        /// <param name="millisecond">The millisecond.</param>
+        /// <returns>The milliseconds that remain until the given day time.</returns>
         public static long MillisecondsUntil(int hour = 0, int minute = 0, int second = 0, int millisecond = 0)
         {
             long result = 0;
@@ -454,6 +470,14 @@ namespace HLE.Time
             return result;
         }
 
+        /// <summary>
+        /// Return the minutes that remain until the given day time.
+        /// </summary>
+        /// <param name="hour">The hour in 24h format.</param>
+        /// <param name="minute">The minute.</param>
+        /// <param name="second">The second.</param>
+        /// <param name="millisecond">The millisecond.</param>
+        /// <returns>The minutes that remain until the given day time.</returns>
         public static double MinutesUntil(int hour = 0, int minute = 0, int second = 0, int millisecond = 0)
         {
             return SecondsUntil(hour, minute, second, millisecond) / 60;
@@ -467,6 +491,15 @@ namespace HLE.Time
         {
             return DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
+
+        /// <summary>
+        /// Return the seconds that remain until the given day time.
+        /// </summary>
+        /// <param name="hour">The hour in 24h format.</param>
+        /// <param name="minute">The minute.</param>
+        /// <param name="second">The second.</param>
+        /// <param name="millisecond">The millisecond.</param>
+        /// <returns>The seconds that remain until the given day time.</returns>
         public static double SecondsUntil(int hour = 0, int minute = 0, int second = 0, int millisecond = 0)
         {
             return MillisecondsUntil(hour, minute, second, millisecond) / 1000;
