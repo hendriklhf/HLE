@@ -28,6 +28,17 @@ namespace HLE.Time
         public string Pattern => @"\d+w(eek)?s?";
 
         /// <summary>
+        /// The given amount of weeks in minutes.
+        /// </summary>
+        public double Minutes => Seconds / 60;
+
+        public double Hours => Minutes / 60;
+
+        public double Days => Hours / 24;
+
+        public double Years => Days / 365;
+
+        /// <summary>
         /// The basic constructor for <see cref="Week"/>.
         /// </summary>
         /// <param name="count">The amount of weeks.</param>

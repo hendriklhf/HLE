@@ -27,6 +27,27 @@ namespace HLE.Time
         /// </summary>
         public string Pattern => @"\d+y(ear)?s?";
 
+        /// <summary>
+        /// The given amount of years in minutes.
+        /// </summary>
+        public double Minutes => Seconds / 60;
+
+
+        /// <summary>
+        /// The given amount of years in hours.
+        /// </summary>
+        public double Hours => Minutes / 60;
+
+        /// <summary>
+        /// The given amount of years in days.
+        /// </summary>
+        public double Days => Hours / 24;
+
+        /// <summary>
+        /// The given amount of years in years.
+        /// </summary>
+        public double Years => Days / 365;
+
         private const long _inMilliseconds = 31556952000;
 
         /// <summary>
