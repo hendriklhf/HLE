@@ -13,7 +13,7 @@ namespace HLE.Time
         public int Count { get; set; }
 
         /// <summary>
-        /// The given amount of years in milloseconds.
+        /// The given amount of years in milliseconds.
         /// </summary>
         public long Milliseconds => Count * _inMilliseconds;
 
@@ -22,16 +22,11 @@ namespace HLE.Time
         /// </summary>
         public long Seconds => Milliseconds / 1000;
 
-        /// <summary>
-        /// A Regex pattern that matches an amount of years in a <see cref="string"/>.
-        /// </summary>
-        public string Pattern => @"\d+y(ear)?s?";
 
         /// <summary>
         /// The given amount of years in minutes.
         /// </summary>
         public double Minutes => Seconds / 60;
-
 
         /// <summary>
         /// The given amount of years in hours.
@@ -48,6 +43,14 @@ namespace HLE.Time
         /// </summary>
         public double Years => Days / 365;
 
+        /// <summary>
+        /// A Regex pattern that matches an amount of years in a <see cref="string"/>.
+        /// </summary>
+        public string Pattern => @"\d+y(ear)?s?";
+
+        /// <summary>
+        /// A year in milliseconds.
+        /// </summary>
         private const long _inMilliseconds = 31556952000;
 
         /// <summary>

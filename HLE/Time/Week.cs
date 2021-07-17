@@ -13,7 +13,7 @@ namespace HLE.Time
         public int Count { get; set; }
 
         /// <summary>
-        /// The given amount of weeks in milloseconds.
+        /// The given amount of weeks in milliseconds.
         /// </summary>
         public long Milliseconds => new Day(7 * Count).Milliseconds;
 
@@ -23,20 +23,29 @@ namespace HLE.Time
         public long Seconds => Milliseconds / 1000;
 
         /// <summary>
-        /// A Regex pattern that matches an amount of weeks in a <see cref="string"/>.
-        /// </summary>
-        public string Pattern => @"\d+w(eek)?s?";
-
-        /// <summary>
         /// The given amount of weeks in minutes.
         /// </summary>
         public double Minutes => Seconds / 60;
 
+        /// <summary>
+        /// The given amount of weeks in hours.
+        /// </summary>
         public double Hours => Minutes / 60;
 
+        /// <summary>
+        /// The given amount of weeks in days.
+        /// </summary>
         public double Days => Hours / 24;
 
+        /// <summary>
+        /// The given amount of weeks in years.
+        /// </summary>
         public double Years => Days / 365;
+
+        /// <summary>
+        /// A Regex pattern that matches an amount of weeks in a <see cref="string"/>.
+        /// </summary>
+        public string Pattern => @"\d+w(eek)?s?";
 
         /// <summary>
         /// The basic constructor for <see cref="Week"/>.

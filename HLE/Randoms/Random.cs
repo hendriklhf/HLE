@@ -16,7 +16,7 @@ namespace HLE.Randoms
         /// <returns>A basic Latin character.</returns>
         public static char Char()
         {
-            return Collection.BasicLatinChars[Int(0, Collection.BasicLatinChars.Count - 1)];
+            return CharCollection.BasicLatinChars[Int(0, CharCollection.BasicLatinChars.Count - 1)];
         }
 
         /// <summary>

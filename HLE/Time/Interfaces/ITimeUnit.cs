@@ -1,7 +1,7 @@
 ﻿namespace HLE.Time.Interfaces
 {
     /// <summary>
-    /// An Interface to declare the structure of time units.
+    /// An interface to declare the structure of time units.
     /// </summary>
     public interface ITimeUnit
     {

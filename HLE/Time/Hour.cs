@@ -13,28 +13,43 @@ namespace HLE.Time
         public int Count { get; set; }
 
         /// <summary>
-        /// The amount of hours converted to milliseconds.
+        /// The given amount of hours in milliseconds.
         /// </summary>
         public long Milliseconds => Count * _inMilliseconds;
 
         /// <summary>
-        /// The amount of days converted to seconds.
+        /// The given amount of hours in seconds.
         /// </summary>
         public long Seconds => Milliseconds / 1000;
+
+        /// <summary>
+        /// The given amount of hours in minutes.
+        /// </summary>
+        public double Minutes => Seconds / 60;
+
+        /// <summary>
+        /// The given amount of hours in hours.
+        /// </summary>
+        public double Hours => Minutes / 60;
+
+        /// <summary>
+        /// The given amount of hours in days.
+        /// </summary>
+        public double Days => Hours / 24;
+
+        /// <summary>
+        /// The given amount of hours in years.
+        /// </summary>
+        public double Years => Days / 365;
 
         /// <summary>
         /// A pattern that will match an expression of hours in a <see cref="string"/>.
         /// </summary>
         public string Pattern => @"\d+h(our)?s?";
 
-        public double Minutes => Seconds / 60;
-
-        public double Hours => Minutes / 60;
-
-        public double Days => Hours / 24;
-
-        public double Years => Days / 365;
-
+        /// <summary>
+        /// An hour in milliseconds.
+        /// </summary>
         private const long _inMilliseconds = 3600000;
 
         /// <summary>

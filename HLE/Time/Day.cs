@@ -13,30 +13,42 @@ namespace HLE.Time
         public int Count { get; set; }
 
         /// <summary>
-        /// The amount of days converted to milliseconds.
+        /// The given amount of days in milliseconds.
         /// </summary>
         public long Milliseconds => Count * _inMilliseconds;
 
         /// <summary>
-        /// The amount of days converted to seconds.
+        /// The given amount of days in seconds.
         /// </summary>
         public long Seconds => Milliseconds / 1000;
+
+        /// <summary>
+        /// The given amount of days in minutes.
+        /// </summary>
+        public double Minutes => Seconds / 60;
+
+        /// <summary>
+        /// The given amount of days in hours.
+        /// </summary>
+        public double Hours => Minutes / 60;
+
+        /// <summary>
+        /// The given amount of days in days.
+        /// </summary>
+        public double Days => Hours / 24;
+
+        /// <summary>
+        /// The given amount of days in years.
+        /// </summary>
+        public double Years => Days / 365;
 
         /// <summary>
         /// A pattern that will match an expression of days in a <see cref="string"/>.
         /// </summary>
         public string Pattern => @"\d+d(ay)?s?";
 
-        public double Minutes => Seconds / 60;
-
-        public double Hours => Minutes / 60;
-
-        public double Days => Hours / 24;
-
-        public double Years => Days / 365;
-
         /// <summary>
-        /// One day in milliseconds.
+        /// A day in milliseconds.
         /// </summary>
         private const long _inMilliseconds = 86400000;
 

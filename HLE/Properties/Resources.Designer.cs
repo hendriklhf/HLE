@@ -70,7 +70,7 @@ namespace HLE.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die C:\Users\Hendrik\Documents\Git\SterbehilfeClassLibrary\README.md ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die C:\Users\Hendrik\Documents\Git\HLEClassLibrary\README.md ähnelt.
         /// </summary>
         internal static string ReadMePath {
             get {
