@@ -1,4 +1,5 @@
-﻿using HLE.Strings;
+﻿#pragma warning disable CS0661, CS0659, CS1591
+
 
 namespace HLE.Numbers
 {
@@ -38,16 +39,6 @@ namespace HLE.Numbers
             }
 
             Number = negative ? $"-{num}" : num;
-        }
-
-        /// <summary>
-        /// A constructor that takes in a <see cref="DottedNumber"/> <see cref="string"/>.
-        /// </summary>
-        /// <param name="number">The <see cref="DottedNumber"/> <see cref="string"/>.</param>
-        public DottedNumber(string number)
-        {
-            OrigninalNumber = number.Remove(".").ToLong();
-            Number = number;
         }
 
         public static bool operator ==(DottedNumber left, DottedNumber right)
@@ -135,9 +126,9 @@ namespace HLE.Numbers
             return this == new DottedNumber(number);
         }
 
-        public bool Equals(string number)
+        public override bool Equals(object obj)
         {
-            return this == new DottedNumber(number);
+            return obj is DottedNumber d && this == d;
         }
 
         public override string ToString()

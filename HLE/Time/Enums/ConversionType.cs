@@ -3,7 +3,7 @@
 namespace HLE.Time.Enums
 {
     /// <summary>
-    /// An enum to use different conversion types in <see cref="TimeHelper.ConvertMillisecondsToPassedTime(long, string, ConversionType)"/>.<br />
+    /// An enum to use different conversion types in <see cref="TimeHelper.ConvertUnixTimeToTimeStamp(long, string, ConversionType)"/>.<br />
     /// To, for example, dispose the minutes and seconds, in order to shorten the result <see cref="string"/> of the method.
     /// </summary>
     public enum ConversionType
