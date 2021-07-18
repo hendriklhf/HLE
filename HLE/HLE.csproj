@@ -57,8 +57,4 @@
     </None>
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="if not exist $(SolutionDir)\Build mkdir $(SolutionDir)\Build&#xD;&#xA;xcopy $(TargetPath) $(SolutionDir)\Build /E /Y /I" />
-  </Target>
-
 </Project>
