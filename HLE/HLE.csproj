@@ -15,8 +15,8 @@
     <PackageLicenseFile>GNU-GPL3.txt</PackageLicenseFile>
     <Authors>Hendrik</Authors>
     <PackageTags>library c# csharp</PackageTags>
-    <Version>1.1.0</Version>
-    <PackageIcon>Okayge.png</PackageIcon>
+    <Version>1.1.0.1</Version>
+    <PackageIcon></PackageIcon>
     <PackageIconUrl />
   </PropertyGroup>
 
@@ -48,10 +48,6 @@
 
   <ItemGroup>
     <None Include="..\GNU-GPL3.txt" Link="Resources\GNU-GPL3.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Include="Resources\Okayge.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

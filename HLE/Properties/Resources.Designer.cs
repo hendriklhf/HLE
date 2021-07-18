@@ -70,16 +70,6 @@ namespace HLE.Properties {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
-        /// </summary>
-        internal static byte[] Okayge {
-            get {
-                object obj = ResourceManager.GetObject("Okayge", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die C:\Users\Hendrik\Documents\Git\HLEClassLibrary\README.md ähnelt.
         /// </summary>
         internal static string ReadMePath {
