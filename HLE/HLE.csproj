@@ -7,15 +7,17 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NeutralLanguage>en</NeutralLanguage>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>AssemblyKey.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>Resources\AssemblyKey.pfx</AssemblyOriginatorKeyFile>
     <Product>HLEClassLibrary</Product>
     <Description>A class library containing usefull methods and data lists.</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>GNU-GPL3.txt</PackageLicenseFile>
     <Authors>Hendrik</Authors>
-    <PackageTags>library</PackageTags>
+    <PackageTags>library c# csharp</PackageTags>
     <Version>1.1.0</Version>
+    <PackageIcon>Okayge.png</PackageIcon>
+    <PackageIconUrl />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -45,7 +47,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\GNU-GPL3.txt">
+    <None Include="..\GNU-GPL3.txt" Link="Resources\GNU-GPL3.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="Resources\Okayge.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

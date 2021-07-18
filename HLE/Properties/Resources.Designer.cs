@@ -70,11 +70,37 @@ namespace HLE.Properties {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
+        /// </summary>
+        internal static byte[] Okayge {
+            get {
+                object obj = ResourceManager.GetObject("Okayge", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die C:\Users\Hendrik\Documents\Git\HLEClassLibrary\README.md ähnelt.
         /// </summary>
         internal static string ReadMePath {
             get {
                 return ResourceManager.GetString("ReadMePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die - unit conversion, i.e. km/h to m/s, °C to °F
+        ///- nature constants
+        ///- mathematical formulas
+        ///- fix auto detection of unitprefix, i.e. never picks &quot;k&quot; as prefix
+        ///- operators for shapes
+        ///- +=, -=... for DottedNumber and PrefixNumber
+        ///- bin to dec and hex to dec and so on
+        /// ähnelt.
+        /// </summary>
+        internal static string todo {
+            get {
+                return ResourceManager.GetString("todo", resourceCulture);
             }
         }
     }

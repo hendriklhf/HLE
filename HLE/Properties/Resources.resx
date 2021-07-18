@@ -120,7 +120,14 @@
   <data name="ChatterinoChar" xml:space="preserve">
     <value>󠀀</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="Okayge" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Okayge.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="ReadMePath" xml:space="preserve">
     <value>C:\Users\Hendrik\Documents\Git\HLEClassLibrary\README.md</value>
+  </data>
+  <data name="todo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\todo.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
 </root>
