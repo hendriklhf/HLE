@@ -16,7 +16,7 @@ namespace HLE.Randoms
         /// <returns>A basic Latin character.</returns>
         public static char Char()
         {
-            return CharCollection.BasicLatinChars[Int(0, CharCollection.BasicLatinChars.Count - 1)];
+            return CharCollection.BasicLatinChars.Random();
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace HLE.Randoms
             List<string> result = new();
             for (int i = 0; i <= amount; i++)
             {
-                result.Add(words[Int(0, words.Count - 1)]);
+                result.Add(words.Random());
             }
             return result;
         }
