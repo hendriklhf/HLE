@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Rand = HLE.Randoms.Random;
@@ -19,13 +20,13 @@ namespace HLE.Collections
         {
             return collection.ElementAt(Rand.Int(0, collection.Count() - 1));
         }
-    }
-    
-    public static void ForEach<T>(this T[] arr, Action<T> action)
-    {
-        foreach (T item in arr)
+
+        public static void ForEach<T>(this T[] arr, Action<T> action)
         {
-            action(item);
+            foreach (T item in arr)
+            {
+                action(item);
+            }
         }
     }
 }
