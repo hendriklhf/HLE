@@ -48,11 +48,11 @@ namespace HLE.Randoms
         /// <returns>A string of the given <paramref name="length"/>.</returns>
         public static string String(int length = 10)
         {
+            string result = string.Empty;
             if (length < 0)
             {
                 length = 0;
             }
-            string result = string.Empty;
             for (int i = 0; i <= length; i++)
             {
                 result += Char();
@@ -71,12 +71,12 @@ namespace HLE.Randoms
             List<string> words = new();
             HttpGet request1 = new("https://thewordcounter.com/wp-content/themes/sage/resources/inc/base_dictionary2.txt");
             HttpGet request2 = new("https://capitalizemytitle.com/wp-content/tools/random-word/en/words%20alpha.txt");
+            List<string> result = new();
             words = words
                 .Concat(request1.Result.Split("\n"))
                 .Concat(request2.Result.Split(","))
                 .Distinct()
                 .ToList();
-
             if (amount < 1)
             {
                 amount = 1;
@@ -85,8 +85,6 @@ namespace HLE.Randoms
             {
                 amount = words.Count - 1;
             }
-
-            List<string> result = new();
             for (int i = 0; i <= amount; i++)
             {
                 result.Add(words.Random());

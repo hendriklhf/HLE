@@ -69,13 +69,13 @@ namespace HLE.Time
         /// <returns>The time stamp result as a <see cref="string"/>.</returns>
         public static string ConvertUnixTimeToTimeStamp(long unixTime, string addition = "", ConversionType conversionType = ConversionType.All)
         {
+            string result = string.Empty;
             if (unixTime > Now())
             {
                 unixTime -= (unixTime - Now()) * 2;
             }
             if (Now() - unixTime >= 1000)
             {
-                string result = "";
                 unixTime = Now() - unixTime;
                 if (Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()) > 0)
                 {

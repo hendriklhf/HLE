@@ -19,8 +19,9 @@ namespace HLE.Emojis
         public static void Generate(string path, string nspace)
         {
             int indentSize = 4;
-            HttpGet request = new("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
             string result = string.Empty;
+            List<string> charList = new();
+            HttpGet request = new("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
             result += $"namespace {nspace}\n{{\n{Whitespace(indentSize)}public static class Emoji\n{Whitespace(indentSize)}{{\n";
             for (int i = 0; i <= request.Data.GetArrayLength() - 1; i++)
             {
@@ -30,7 +31,6 @@ namespace HLE.Emojis
                 result += $"{Whitespace(indentSize * 2)}public const string {name} = \"{emoji}\";\n";
             }
             result += $"{Whitespace(indentSize)}}}\n}}";
-            List<string> charList = new();
             result.ToCharArray().ToList().ForEach(c =>
             {
                 charList.Add(c.ToString());
