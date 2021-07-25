@@ -6,8 +6,15 @@ using System.Text.Json;
 
 namespace HLE.Twitch.Chatterino
 {
+    /// <summary>
+    /// A class to help with the application <a href="https://www.chatterino.com">Chatterino</a>.
+    /// </summary>
     public static class ChatterinoHelper
     {
+        /// <summary>
+        /// Gets all channels of all your tabs from the Chatterino settings.
+        /// </summary>
+        /// <returns>A <see cref="List{String}"/> of all channels.</returns>
         public static List<string> GetChannelsFromChatterinoSettings()
         {
             List<string> result = new();

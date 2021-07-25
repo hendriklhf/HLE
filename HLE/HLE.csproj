@@ -12,16 +12,16 @@
     <Description>A class library containing usefull methods and data lists.</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageLicenseFile>GNU-GPL3.txt</PackageLicenseFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
     <PackageTags>library c# csharp</PackageTags>
-    <Version>1.1.0.2</Version>
+    <Version>1.1.2</Version>
     <PackageIcon></PackageIcon>
     <PackageIconUrl />
     <ApplicationIcon />
     <OutputType>Library</OutputType>
     <StartupObject />
-    <AssemblyVersion>1.1.0.2</AssemblyVersion>
+    <AssemblyVersion>1.1.2.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -51,7 +51,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\GNU-GPL3.txt" Link="Resources\GNU-GPL3.txt">
+    <None Include="..\LICENSE" Link="Resources\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
