@@ -28,6 +28,25 @@ namespace HLE.Strings
         }
 
         /// <summary>
+        /// Counts the given <see cref="char"/> <paramref name="c"/> in the <see cref="string"/> <paramref name="str"/>.
+        /// </summary>
+        /// <param name="str">The <see cref="string"/> in which the <see cref="char"/> will be counted in.</param>
+        /// <param name="c">The counted <see cref="char"/>.</param>
+        /// <returns>The amount of the given <see cref="char"/> in the <see cref="string"/> <paramref name="str"/>.</returns>
+        public static long CountChar(this string str, char c)
+        {
+            long result = 0;
+            foreach (char cc in str)
+            {
+                if (cc == c)
+                {
+                    result++;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Decodes a <see cref="byte"/> <see cref="Array"/> to a <see cref="string"/>.
         /// </summary>
         /// <param name="bytes">The <see cref="byte"/> array that will be decoded.</param>
@@ -121,7 +140,7 @@ namespace HLE.Strings
         /// <param name="str">The <see cref="string"/> in which the match will be replaced.</param>
         /// <param name="pattern">The Regex pattern for the match.</param>
         /// <param name="replacement">The <paramref name="replacement"/> that will be put into the input <see cref="string"/> <paramref name="str"/>.</param>
-        /// <returns></returns>
+        /// <returns>The input <see cref="string"/> <paramref name="str"/> with the matching part replaced by the <paramref name="replacement"/>.</returns>
         public static string ReplacePattern(this string str, string pattern, string replacement)
         {
             return Regex.Replace(str, pattern, replacement, RegexOptions.IgnoreCase);
