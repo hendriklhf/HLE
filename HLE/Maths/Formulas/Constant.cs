@@ -1,4 +1,4 @@
-﻿namespace HLE.Formulas
+﻿namespace HLE.Maths.Formulas
 {
     /// <summary>
     /// A class in which all sorts of constants are declared.<br />
