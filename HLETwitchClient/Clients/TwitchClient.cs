@@ -1,7 +1,8 @@
-﻿using System;
+﻿using HLETwitchClient.Extensions;
+using System;
 using System.Collections.ObjectModel;
 
-namespace HLETwitchClient.ChatClient
+namespace HLETwitchClient.Clients
 {
     public class TwitchClient
     {
@@ -11,14 +12,15 @@ namespace HLETwitchClient.ChatClient
 
         public ReadOnlyCollection<string> Channels { get; }
 
-
         public IrcClient IrcClient { get; }
 
-        public bool IsConnected => IrcClient.IsConnected;
+        public bool IsConnected => IrcClient.WebSocketIsOpen;
 
         public event EventHandler OnConnected;
         public event EventHandler OnDisconnected;
         public event EventHandler OnReconnected;
+        public event EventHandler OnChatMessageReceived;
+        public event EventHandler OnChatMessageSent;
 
         private readonly ClientOptions _options;
 
@@ -36,7 +38,7 @@ namespace HLETwitchClient.ChatClient
             if (!IsConnected)
             {
                 IrcClient.Connect();
-                OnConnected.Invoke(this, new());
+                OnConnected?.Invoke(this, new());
             }
         }
 
@@ -44,7 +46,8 @@ namespace HLETwitchClient.ChatClient
         {
             if (IsConnected)
             {
-                OnDisconnected.Invoke(this, new());
+                IrcClient.Disconnect();
+                OnDisconnected?.Invoke(this, new());
             }
         }
 
@@ -52,7 +55,25 @@ namespace HLETwitchClient.ChatClient
         {
             if (IsConnected)
             {
-                OnReconnected.Invoke(this, new());
+                IrcClient.Reconnect();
+                OnReconnected?.Invoke(this, new());
+            }
+        }
+
+        public void SendMessage(string channel, string message)
+        {
+            if (IsConnected)
+            {
+                IrcClient.SendChatMessage(channel, message);
+                OnChatMessageSent?.Invoke(this, new());
+            }
+        }
+
+        public void JoinChannel(string channel)
+        {
+            if (IsConnected)
+            {
+
             }
         }
     }

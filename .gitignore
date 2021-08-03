@@ -3,7 +3,10 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=aspnetcore,dotnetcore,csharp,windows,visualstudio,visualstudiocode
 
 # Todo-File #
-todo.txt
+HLE/Resources/todo.txt
+
+# Debug project #
+HLEDebug/
 
 ### ASPNETCore ###
 ## Ignore Visual Studio temporary files, build results, and
