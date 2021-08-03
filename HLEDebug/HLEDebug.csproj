@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HLETwitchClient\HLETwitchClient.csproj" />
     <ProjectReference Include="..\HLE\HLE.csproj" />
   </ItemGroup>
 
