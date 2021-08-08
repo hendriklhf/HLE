@@ -1,4 +1,5 @@
-﻿using HLE.Properties;
+﻿using HLE.Collections;
+using HLE.Properties;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,15 +36,7 @@ namespace HLE.Strings
         /// <returns>The amount of the given <see cref="char"/> in the <see cref="string"/> <paramref name="str"/>.</returns>
         public static long CountChar(this string str, char c)
         {
-            long result = 0;
-            foreach (char cc in str)
-            {
-                if (cc == c)
-                {
-                    result++;
-                }
-            }
-            return result;
+            return str.ToCharArray().Where(cc => cc == c).LongCount();
         }
 
         /// <summary>
