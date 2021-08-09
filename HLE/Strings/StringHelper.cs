@@ -1,4 +1,4 @@
-﻿using HLE.Collections;
+using HLE.Collections;
 using HLE.Properties;
 using System;
 using System.Collections.Generic;
@@ -13,12 +13,13 @@ namespace HLE.Strings
     /// </summary>
     public static class StringHelper
     {
+        #error needs sorting and new doc
         /// <summary>
         /// Converts the <paramref name="input"/> to string by appending all elements.
         /// </summary>
         /// <param name="input">The <see cref="string"/> array that will be converted to a <see cref="string"/>.</param>
         /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
-        public static string ArrayToString(this string[] input)
+        public static string ToSequence(this IEnumbrable<string> input)
         {
             string result = string.Empty;
             input.ToList().ForEach(str =>
