@@ -17,7 +17,7 @@ namespace HLE.HttpRequests
         /// <summary>
         /// The complete answer as a string.
         /// </summary>
-        public string Result { get; }
+        public string Result { get; private set; }
 
         /// <summary>
         /// The answer stored in a <see cref="JsonElement"/>, if the answer was a json compatible string.
@@ -25,7 +25,8 @@ namespace HLE.HttpRequests
         public JsonElement Data { get; }
 
         /// <summary>
-        /// True, if the answer was a json compatible string, otherwise false.
+        /// True, if the answer was a json compatible string, otherwise false.<br />
+        /// If true, the JSON result has been stored in the property <see cref="Data"/>.
         /// </summary>
         public bool ValidJsonData { get; } = true;
 
@@ -39,7 +40,7 @@ namespace HLE.HttpRequests
         public HttpGet(string url)
         {
             URL = url;
-            Result = GetRequest().Result;
+            Task.Run(async () => Result = await GetRequest());
             try
             {
                 Data = JsonSerializer.Deserialize<JsonElement>(Result);
