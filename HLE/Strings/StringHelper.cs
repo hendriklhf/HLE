@@ -1,4 +1,3 @@
-using HLE.Collections;
 using HLE.Properties;
 using System;
 using System.Collections.Generic;
@@ -13,27 +12,6 @@ namespace HLE.Strings
     /// </summary>
     public static class StringHelper
     {
-        #error needs sorting and new doc
-        /// <summary>
-        /// Converts the <paramref name="input"/> to string by appending all elements.
-        /// </summary>
-        /// <param name="input">The <see cref="string"/> array that will be converted to a <see cref="string"/>.</param>
-        /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
-        public static string ToSequence(this IEnumbrable<string> input)
-        {
-            string result = string.Empty;
-            input.ToList().ForEach(str =>
-            {
-                result += $"{str} ";
-            });
-            return result.Trim();
-        }
-
-        public static string TrimAll(this string str)
-        {
-            return str.Trim().ReplaceSpace();   
-        }
-        
         /// <summary>
         /// Counts the given <see cref="char"/> <paramref name="c"/> in the <see cref="string"/> <paramref name="str"/>.
         /// </summary>
@@ -207,6 +185,21 @@ namespace HLE.Strings
         }
 
         /// <summary>
+        /// Converts the <paramref name="input"/> to string by appending all elements.
+        /// </summary>
+        /// <param name="input">The <see cref="string"/> enumerable that will be converted to a <see cref="string"/>.</param>
+        /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
+        public static string ToSequence(this IEnumerable<string> input)
+        {
+            string result = string.Empty;
+            input.ToList().ForEach(str =>
+            {
+                result += $"{str} ";
+            });
+            return result.Trim();
+        }
+
+        /// <summary>
         /// Converts a <see cref="string"/> to a <see cref="short"/>.<br />
         /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
         /// </summary>
@@ -248,6 +241,16 @@ namespace HLE.Strings
         public static ushort ToUShort(this string str)
         {
             return Convert.ToUInt16(str);
+        }
+
+        /// <summary>
+        /// Trims all spaces in the beginning, end and middle of the <see cref="string"/> <paramref name="str"/>.
+        /// </summary>
+        /// <param name="str">The <see cref="string"/> that will be trimmed.</param>
+        /// <returns>A trimmed <see cref="string"/>.</returns>
+        public static string TrimAll(this string str)
+        {
+            return str.Trim().ReplaceSpaces();
         }
     }
 }
