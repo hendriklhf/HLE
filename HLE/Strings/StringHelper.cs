@@ -29,6 +29,11 @@ namespace HLE.Strings
             return result.Trim();
         }
 
+        public static string TrimAll(this string str)
+        {
+            return str.Trim().ReplaceSpace();   
+        }
+        
         /// <summary>
         /// Counts the given <see cref="char"/> <paramref name="c"/> in the <see cref="string"/> <paramref name="str"/>.
         /// </summary>
