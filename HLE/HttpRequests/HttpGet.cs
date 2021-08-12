@@ -40,7 +40,7 @@ namespace HLE.HttpRequests
         public HttpGet(string url)
         {
             URL = url;
-            Task.Run(async () => Result = await GetRequest());
+            Task.Run(() => Result = GetRequest().Result).Wait();
             try
             {
                 Data = JsonSerializer.Deserialize<JsonElement>(Result);

@@ -48,7 +48,7 @@ namespace HLE.HttpRequests
         {
             URL = url;
             HeaderContent = new FormUrlEncodedContent(headers);
-            Task.Run(async () => Result = await PostRequest());
+            Task.Run(() => Result = PostRequest().Result).Wait();
             try
             {
                 Data = JsonSerializer.Deserialize<JsonElement>(Result);
