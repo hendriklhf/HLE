@@ -22,14 +22,14 @@ namespace HLE.Collections
         }
 
         /// <summary>
-        /// Will loop through an array and performs the given <paramref name="action"/> on each element.
+        /// Will loop through an <see cref="IEnumerable{T}"/> and performs the given <paramref name="action"/> on each element.
         /// </summary>
-        /// <typeparam name="T">The type of the array.</typeparam>
-        /// <param name="arr">The array that will be loop through.</param>
+        /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
+        /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be loop through.</param>
         /// <param name="action">The action that will be performed.</param>
-        public static void ForEach<T>(this T[] arr, Action<T> action)
+        public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
         {
-            foreach (T item in arr)
+            foreach (T item in collection)
             {
                 action(item);
             }
