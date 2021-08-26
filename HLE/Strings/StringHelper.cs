@@ -196,7 +196,7 @@ namespace HLE.Strings
             {
                 result += $"{str} ";
             });
-            return result.Trim();
+            return result.TrimAll();
         }
 
         /// <summary>
