@@ -53,7 +53,7 @@ namespace HLE.Randoms
             {
                 length = 0;
             }
-            for (int i = 0; i <= length; i++)
+            for (int i = 0; i < length; i++)
             {
                 result += Char();
             }

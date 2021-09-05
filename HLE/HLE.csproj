@@ -14,14 +14,14 @@
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
-    <PackageTags>library c# csharp</PackageTags>
-    <Version>1.2.1</Version>
+    <PackageTags>library c# csharp .net5</PackageTags>
+    <Version>1.2.2</Version>
     <PackageIcon></PackageIcon>
     <PackageIconUrl />
     <ApplicationIcon />
     <OutputType>Library</OutputType>
     <StartupObject />
-    <AssemblyVersion>1.2.1.0</AssemblyVersion>
+    <AssemblyVersion>1.2.2.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

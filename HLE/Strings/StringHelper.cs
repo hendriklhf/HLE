@@ -104,10 +104,7 @@ namespace HLE.Strings
         /// <returns>Returns the <paramref name="str"/> without conflict causing characters.</returns>
         public static string RemoveSQLChars(this string str)
         {
-            new List<string>() { "'", "\"", "\\", }.ForEach(c =>
-            {
-                str = str.Replace(c, "");
-            });
+            new List<string>() { "'", "\"", "\\", }.ForEach(c => str = str.Replace(c, ""));
             return str;
         }
 
@@ -192,10 +189,7 @@ namespace HLE.Strings
         public static string ToSequence(this IEnumerable<string> input)
         {
             string result = string.Empty;
-            input.ToList().ForEach(str =>
-            {
-                result += $"{str} ";
-            });
+            input.ToList().ForEach(str => result += $"{str} ");
             return result.TrimAll();
         }
 
@@ -251,6 +245,16 @@ namespace HLE.Strings
         public static string TrimAll(this string str)
         {
             return str.Trim().ReplaceSpaces();
+        }
+
+        /// <summary>
+        /// Returns a <see cref="string"/> that contains the given amount <paramref name="count"/> of spaces.
+        /// </summary>
+        /// <param name="count">The amount of spaces the <see cref="string"/> will contain.</param>
+        /// <returns>The <see cref="string"/> filled with whitespaces.</returns>
+        public static string Whitespace(int count)
+        {
+            return new string((char)32, count);
         }
     }
 }
