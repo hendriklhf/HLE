@@ -1,7 +1,10 @@
-﻿using HLE.HttpRequests;
+﻿using HLE.Collections;
+using HLE.HttpRequests;
+using HLE.Strings;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace HLE.Emojis
 {
@@ -22,16 +25,21 @@ namespace HLE.Emojis
             string result = string.Empty;
             List<string> charList = new();
             HttpGet request = new("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
-            result += $"namespace {nspace}\n{{\n{Whitespace(indentSize)}public static class Emoji\n{Whitespace(indentSize)}{{\n";
+            result += $"#pragma warning disable 1591{Environment.NewLine}{Environment.NewLine}" +
+                $"namespace {nspace}{Environment.NewLine}{{{Environment.NewLine}" +
+                $"{Whitespace(indentSize)}/// <summary>{Environment.NewLine}" +
+                $"{Whitespace(indentSize)}/// A class that contains every existing emoji. ({DateTime.Now:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}" +
+                $"{Whitespace(indentSize)}/// </summary>{Environment.NewLine}" +
+                $"{Whitespace(indentSize)}public static class Emoji{Environment.NewLine}{Whitespace(indentSize)}{{{Environment.NewLine}";
             for (int i = 0; i <= request.Data.GetArrayLength() - 1; i++)
             {
                 string name = request.Data[i].GetProperty("aliases")[0].GetString();
                 name = $"{name[0]}".ToUpper() + name[1..];
                 string emoji = request.Data[i].GetProperty("emoji").GetString();
-                result += $"{Whitespace(indentSize * 2)}public const string {name} = \"{emoji}\";\n";
+                result += $"{Whitespace(indentSize << 1)}public const string {name} = \"{emoji}\";{Environment.NewLine}";
             }
-            result += $"{Whitespace(indentSize)}}}\n}}";
-            result.ToCharArray().ToList().ForEach(c =>
+            result += $"{Whitespace(indentSize)}}}{Environment.NewLine}}}";
+            result.ToCharArray().ForEach(c =>
             {
                 charList.Add(c.ToString());
             });
@@ -48,17 +56,34 @@ namespace HLE.Emojis
             {
                 result += str;
             });
-            File.WriteAllText(path, result);
+            GetIllegalWords().ForEach(w =>
+            {
+                result = result.ReplacePattern($" {Regex.Escape(w.Key)} ", $" {w.Value} ");
+            });
+            File.WriteAllText(path, $"{result}{Environment.NewLine}");
+            GC.Collect();
         }
 
         private static string Whitespace(int count)
         {
-            string res = string.Empty;
-            for (int i = 0; i < count; i++)
+            return new string(" ".ToCharArray()[0], count);
+        }
+
+        private static KeyValuePair<string, string>[] GetIllegalWords()
+        {
+            return new KeyValuePair<string, string>[]
             {
-                res += " ";
-            }
-            return res;
+                new("100", "OneHundred"),
+                new("+1", "ThumbUp"),
+                new("-1", "ThumbDown"),
+                new("T-rex", "TRex"),
+                new("1stPlaceMedal", "FirstPlaceMedal"),
+                new("2ndPlaceMedal", "SecondPlaceMedal"),
+                new("3rdPlaceMedal", "ThirdPlaceMedal"),
+                new("8ball", "EightBall"),
+                new("Non-potableWater", "NonPotableWater"),
+                new("1234", "OneTwoThreeFour")
+            };
         }
     }
 }

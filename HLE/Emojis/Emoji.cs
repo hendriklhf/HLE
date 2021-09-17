@@ -3,7 +3,7 @@
 namespace HLE.Emojis
 {
     /// <summary>
-    /// A class that contains every existing emoji.
+    /// A class that contains every existing emoji. (17.09.2021 16:12:04)
     /// </summary>
     public static class Emoji
     {
@@ -44,10 +44,12 @@ namespace HLE.Emojis
         public const string NeutralFace = "😐";
         public const string Expressionless = "😑";
         public const string NoMouth = "😶";
+        public const string FaceInClouds = "😶‍🌫️";
         public const string Smirk = "😏";
         public const string Unamused = "😒";
         public const string RollEyes = "🙄";
         public const string Grimacing = "😬";
+        public const string FaceExhaling = "😮‍💨";
         public const string LyingFace = "🤥";
         public const string Relieved = "😌";
         public const string Pensive = "😔";
@@ -64,6 +66,7 @@ namespace HLE.Emojis
         public const string ColdFace = "🥶";
         public const string WoozyFace = "🥴";
         public const string DizzyFace = "😵";
+        public const string FaceWithSpiralEyes = "😵‍💫";
         public const string ExplodingHead = "🤯";
         public const string CowboyHatFace = "🤠";
         public const string PartyingFace = "🥳";
@@ -135,6 +138,8 @@ namespace HLE.Emojis
         public const string HeartDecoration = "💟";
         public const string HeavyHeartExclamation = "❣️";
         public const string BrokenHeart = "💔";
+        public const string HeartOnFire = "❤️‍🔥";
+        public const string MendingHeart = "❤️‍🩹";
         public const string Heart = "❤️";
         public const string OrangeHeart = "🧡";
         public const string YellowHeart = "💛";
@@ -217,6 +222,8 @@ namespace HLE.Emojis
         public const string BlondHairedPerson = "👱";
         public const string Man = "👨";
         public const string BeardedPerson = "🧔";
+        public const string ManBeard = "🧔‍♂️";
+        public const string WomanBeard = "🧔‍♀️";
         public const string RedHairedMan = "👨‍🦰";
         public const string CurlyHairedMan = "👨‍🦱";
         public const string WhiteHairedMan = "👨‍🦳";
@@ -1014,7 +1021,7 @@ namespace HLE.Emojis
         public const string Trophy = "🏆";
         public const string MedalSports = "🏅";
         public const string FirstPlaceMedal = "🥇";
-        public const string SecondndPlaceMedal = "🥈";
+        public const string SecondPlaceMedal = "🥈";
         public const string ThirdPlaceMedal = "🥉";
         public const string Soccer = "⚽";
         public const string Baseball = "⚾";
@@ -1046,7 +1053,7 @@ namespace HLE.Emojis
         public const string Dart = "🎯";
         public const string YoYo = "🪀";
         public const string Kite = "🪁";
-        public const string Eightball = "🎱";
+        public const string EightBall = "🎱";
         public const string CrystalBall = "🔮";
         public const string MagicWand = "🪄";
         public const string NazarAmulet = "🧿";
