@@ -13,7 +13,7 @@ namespace HLE.Collections
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Int32}"/> of type <see cref="int"/> that contains every number from 0 to 9.
         /// </summary>
-        public static readonly ReadOnlyCollection<int> Numbers = new(_everyNumber);
+        public static ReadOnlyCollection<int> Numbers => new(_everyNumber);
 
         /// <summary>
         /// Creates a <see cref="List{Int64}"/> of type <see cref="long"/> that contains every number from <paramref name="min"/> to <paramref name="max"/>.

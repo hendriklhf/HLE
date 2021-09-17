@@ -17,23 +17,23 @@ namespace HLE.Collections
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in upper and lower case.
         /// </summary>
-        public static readonly ReadOnlyCollection<char> Alphabet = new(_alphabetLowerCase.Concat(_alphabetUpperCase).ToList());
+        public static ReadOnlyCollection<char> Alphabet => new(_alphabetLowerCase.Concat(_alphabetUpperCase).ToList());
 
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in lower case.
         /// </summary>
-        public static readonly ReadOnlyCollection<char> AlphabetLowerCase = new(_alphabetLowerCase);
+        public static ReadOnlyCollection<char> AlphabetLowerCase => new(_alphabetLowerCase);
 
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in upper case.
         /// </summary>
-        public static readonly ReadOnlyCollection<char> AlphabetUpperCase = new(_alphabetUpperCase);
+        public static ReadOnlyCollection<char> AlphabetUpperCase => new(_alphabetUpperCase);
 
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every basic Latin character.<br />
         /// Basically a combination of <see cref="Alphabet"/>, <see cref="CharNumbers"/> and <see cref="SpecialChars"/>.
         /// </summary>
-        public static readonly ReadOnlyCollection<char> BasicLatinChars =
+        public static ReadOnlyCollection<char> BasicLatinChars =>
             new(_alphabetLowerCase
                 .Concat(_alphabetUpperCase)
                 .Concat(_specialChars)
@@ -43,12 +43,12 @@ namespace HLE.Collections
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every number from 0 to 9.
         /// </summary>
-        public static readonly ReadOnlyCollection<char> CharNumbers = new(_everyCharNumber);
+        public static ReadOnlyCollection<char> CharNumbers => new(_everyCharNumber);
 
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains all basic Latin special characters.
         /// </summary>
-        public static readonly ReadOnlyCollection<char> SpecialChars = new(_specialChars);
+        public static ReadOnlyCollection<char> SpecialChars => new(_specialChars);
 
     }
 }

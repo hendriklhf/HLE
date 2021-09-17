@@ -43,7 +43,7 @@ namespace HLE.Collections
         /// <returns>True, if null or empty, false otherwise.</returns>
         public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection)
         {
-            return !collection.Any() || collection == null;
+            return collection is null || !collection.Any();
         }
     }
 }
