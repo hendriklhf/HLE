@@ -6,7 +6,7 @@
     <RepositoryUrl>github.com/Sterbehilfe/HLEClassLibrary</RepositoryUrl>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NeutralLanguage>en</NeutralLanguage>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>Resources\AssemblyKey.pfx</AssemblyOriginatorKeyFile>
     <Product>HLEClassLibrary</Product>
     <Description>A class library containing usefull methods and data lists.</Description>
