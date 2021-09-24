@@ -1,5 +1,5 @@
-﻿using HLE.Emojis;
-using System.IO;
+﻿using System.IO;
+using HLE.Emojis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLETests.EmojisTests

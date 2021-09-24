@@ -1,5 +1,5 @@
-﻿using HLE.Strings;
-using System.IO;
+﻿using System.IO;
+using HLE.Strings;
 
 namespace HLE.Files.Encryption
 {

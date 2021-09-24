@@ -1,6 +1,6 @@
-﻿using HLE.Collections;
+﻿using System.Collections.Generic;
+using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
 
 namespace HLETests.CollectionsTests
 {

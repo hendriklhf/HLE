@@ -1,9 +1,9 @@
-﻿using HLE.Files.Encryption.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using HLE.Files.Encryption.Exceptions;
 
 namespace HLE.Files.Encryption
 {
