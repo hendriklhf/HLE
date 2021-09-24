@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE", "HLE\HLE.csproj", "{B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLEDebug", "HLEDebug\HLEDebug.csproj", "{11B9B476-AD36-459B-B1AF-4474E0FED677}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLETests", "HLETests\HLETests.csproj", "{6D5301A1-B1CA-4152-8D68-841D9E74165A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{11B9B476-AD36-459B-B1AF-4474E0FED677}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11B9B476-AD36-459B-B1AF-4474E0FED677}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11B9B476-AD36-459B-B1AF-4474E0FED677}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D5301A1-B1CA-4152-8D68-841D9E74165A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D5301A1-B1CA-4152-8D68-841D9E74165A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D5301A1-B1CA-4152-8D68-841D9E74165A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D5301A1-B1CA-4152-8D68-841D9E74165A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
