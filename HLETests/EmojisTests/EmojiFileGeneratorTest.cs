@@ -11,7 +11,7 @@ namespace HLETests.EmojisTests
         public void GenerateTest()
         {
             EmojiFileGenerator.Generate(@".\Emoji.cs", "Emojis");
-            Assert.IsTrue(string.IsNullOrEmpty(File.ReadAllText(@".\Emojis.cs")));
+            Assert.IsFalse(string.IsNullOrEmpty(File.ReadAllText(@".\Emoji.cs")));
         }
     }
 }
