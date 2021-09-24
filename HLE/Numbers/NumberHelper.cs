@@ -41,9 +41,9 @@
         /// </summary>
         /// <param name="number">The <see cref="long"/> that wil be converted.</param>
         /// <returns>Returns <paramref name="number"/> converted to a <see cref="DottedNumber"/>.</returns>
-        public static string ToDottedNumber(this long number)
+        public static DottedNumber ToDottedNumber(this long number)
         {
-            return new DottedNumber(number).Number;
+            return new DottedNumber(number);
         }
     }
 }
