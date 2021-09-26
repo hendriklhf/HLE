@@ -46,16 +46,16 @@ namespace HLE.Randoms
         /// </summary>
         /// <param name="length">The <paramref name="length"/> of the <see cref="string"/>.</param>
         /// <returns>A string of the given <paramref name="length"/>.</returns>
-        public static string String(int length = 10)
+        public static string String(ulong length = 10)
         {
             string result = string.Empty;
             if (length < 0)
             {
                 length = 0;
             }
-            for (int i = 0; i < length; i++)
+            for (ulong i = 0; i < length; i++)
             {
-                result += Char();
+                result = string.Concat(Char());
             }
             return result;
         }
