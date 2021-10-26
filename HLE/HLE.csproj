@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>github.com/Sterbehilfe/HLEClassLibrary</RepositoryUrl>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -14,14 +14,15 @@
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
-    <PackageTags>library c# csharp .net5</PackageTags>
-    <Version>1.2.3</Version>
+    <PackageTags>library c# csharp .net6</PackageTags>
+    <Version>1.2.4</Version>
     <PackageIcon></PackageIcon>
     <PackageIconUrl />
     <ApplicationIcon />
     <OutputType>Library</OutputType>
     <StartupObject />
     <AssemblyVersion>1.2.3.0</AssemblyVersion>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

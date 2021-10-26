@@ -53,7 +53,7 @@ namespace HLE.Collections
         /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
         public static string ToSequence(this IEnumerable<string> input)
         {
-            return string.Join(" ".ToCharArray()[0], input);
+            return string.Join(' ', input);
         }
 
         /// <summary>
