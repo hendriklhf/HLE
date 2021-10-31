@@ -21,7 +21,7 @@ namespace HLE.Collections
         /// <param name="min">The lower boundary.</param>
         /// <param name="max">The upper boundary</param>
         /// <returns>A <see cref="List{Int64}"/> containing the numbers.</returns>
-        public static List<long> Create(long min, long max)
+        public static IEnumerable<long> Create(long min, long max)
         {
             List<long> result = new();
             if (min > max)

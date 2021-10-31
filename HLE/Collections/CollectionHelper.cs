@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Rand = HLE.Randoms.Random;
+using Rand = HLE.Random.Random;
 
 namespace HLE.Collections
 {
@@ -65,6 +65,35 @@ namespace HLE.Collections
         public static string ToSequence(this IEnumerable<string> input, char seperator)
         {
             return string.Join(seperator, input);
+        }
+
+        public static IEnumerable<T> ExceptWhere<T>(this IEnumerable<T> collection, Func<T, bool> condition)
+        {
+            return collection.Except(collection.Where(i => condition(i)));
+        }
+
+        public static IEnumerable<T> Swap<T>(this IEnumerable<T> collection, int idx, int idx2)
+        {
+            List<T> items = collection.ToList();
+            T tmp = items[idx];
+            items[idx] = items[idx2];
+            items[idx2] = tmp;
+            return items;
+        }
+
+        public static IEnumerable<T> Randomize<T>(this IEnumerable<T> collection)
+        {
+            List<long> indeces = NumberCollection.Create(0, collection.Count()).ToList();
+            List<T> items = collection.ToList();
+            List<T> result = new();
+            int count = indeces.Count;
+            for (int i = 0; i < count - 1; i++)
+            {
+                T item = items.Random();
+                result.Add(item);
+                items.Remove(item);
+            }
+            return result;
         }
     }
 }
