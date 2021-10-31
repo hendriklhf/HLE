@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using HLE.Collections;
 using HLE.HttpRequests;
 
-namespace HLE.Randoms
+namespace HLE.Random
 {
     /// <summary>
     /// A static class that contains all sorts of random methods.
@@ -48,16 +49,16 @@ namespace HLE.Randoms
         /// <returns>A string of the given <paramref name="length"/>.</returns>
         public static string String(ulong length = 10)
         {
-            string result = string.Empty;
-            if (length < 0)
+            StringBuilder builder = new();
+            if (length <= 0)
             {
-                length = 0;
+                return string.Empty;
             }
             for (ulong i = 0; i < length; i++)
             {
-                result = string.Concat(Char());
+                builder.Append(Char());
             }
-            return result;
+            return builder.ToString();
         }
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace HLE.Randoms
         /// </summary>
         /// <param name="amount">The amount of words</param>
         /// <returns>A <see cref="List{String}"/> containing the given <paramref name="amount"/> of random words</returns>
-        public static List<string> Word(int amount = 1)
+        public static IEnumerable<string> Word(int amount = 1)
         {
             List<string> words = new();
             HttpGet request1 = new("https://thewordcounter.com/wp-content/themes/sage/resources/inc/base_dictionary2.txt");
