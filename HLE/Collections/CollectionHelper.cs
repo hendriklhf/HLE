@@ -67,6 +67,16 @@ namespace HLE.Collections
             return string.Join(seperator, input);
         }
 
+        public static string ToSequence(this IEnumerable<char> input)
+        {
+            return string.Join(' ', input);
+        }
+
+        public static string ToSequence(this IEnumerable<char> input, char seperator)
+        {
+            return string.Join(seperator, input);
+        }
+
         public static IEnumerable<T> ExceptWhere<T>(this IEnumerable<T> collection, Func<T, bool> condition)
         {
             return collection.Except(collection.Where(i => condition(i)));
