@@ -49,11 +49,11 @@ namespace HLE.Random
         /// <returns>A string of the given <paramref name="length"/>.</returns>
         public static string String(ulong length = 10)
         {
-            StringBuilder builder = new();
             if (length <= 0)
             {
                 return string.Empty;
             }
+            StringBuilder builder = new();
             for (ulong i = 0; i < length; i++)
             {
                 builder.Append(Char());
@@ -91,6 +91,16 @@ namespace HLE.Random
                 result.Add(words.Random());
             }
             return result;
+        }
+
+        public static bool Bool()
+        {
+            return Int(0, 1) switch
+            {
+                0 => true,
+                1 => false,
+                _ => true
+            };
         }
     }
 }
