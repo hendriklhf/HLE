@@ -78,15 +78,15 @@ namespace HLE.Random
                 .Concat(request2.Result.Split(","))
                 .Distinct()
                 .ToList();
-            if (amount < 1)
+            if (amount <= 0)
             {
-                amount = 1;
+                return new List<string>();
             }
-            if (amount > words.Count - 1)
+            if (amount > words.Count)
             {
-                amount = words.Count - 1;
+                amount = words.Count;
             }
-            for (int i = 0; i <= amount; i++)
+            for (int i = 0; i < amount; i++)
             {
                 result.Add(words.Random());
             }
