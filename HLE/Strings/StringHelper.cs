@@ -244,5 +244,14 @@ namespace HLE.Strings
         {
             return new string((char)32, count);
         }
+
+        public static StringBuilder Append(this StringBuilder builder, params string[] strings)
+        {
+            foreach (string s in strings)
+            {
+                builder.Append(s);
+            }
+            return builder;
+        }
     }
 }
