@@ -225,6 +225,16 @@ namespace HLE.Strings
             return Convert.ToUInt16(str);
         }
 
+        public static byte ToByte(this string str)
+        {
+            return Convert.ToByte(str);
+        }
+
+        public static sbyte ToSByte(this string str)
+        {
+            return Convert.ToSByte(str);
+        }
+
         /// <summary>
         /// Trims all spaces in the beginning, end and middle of the <see cref="string"/> <paramref name="str"/>.
         /// </summary>
@@ -242,7 +252,7 @@ namespace HLE.Strings
         /// <returns>The <see cref="string"/> filled with whitespaces.</returns>
         public static string Whitespace(int count)
         {
-            return new string((char)32, count);
+            return new string(' ', count);
         }
 
         public static StringBuilder Append(this StringBuilder builder, params string[] strings)

@@ -31,9 +31,7 @@ namespace HLE.Random
         {
             if (min > max)
             {
-                int tmp = min;
-                min = max;
-                max = tmp;
+                (max, min) = (min, max);
             }
             if (max < int.MaxValue)
             {

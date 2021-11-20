@@ -47,34 +47,24 @@ namespace HLE.Collections
         }
 
         /// <summary>
-        /// Converts the <paramref name="input"/> to a <see cref="string"/> by appending all elements with a space between them.
-        /// </summary>
-        /// <param name="input">The <see cref="string"/> enumerable that will be converted to a <see cref="string"/>.</param>
-        /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
-        public static string ToSequence(this IEnumerable<string> input)
-        {
-            return string.Join(' ', input);
-        }
-
-        /// <summary>
         /// Converts the <paramref name="input"/> to a <see cref="string"/> by appending all elements with a <see cref="char"/> seperating them them.
         /// </summary>
         /// <param name="input">The <see cref="string"/> enumerable that will be converted to a <see cref="string"/>.</param>
         /// <param name="seperator">The seperator <see cref="char"/>.</param>
         /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
-        public static string ToSequence(this IEnumerable<string> input, char seperator)
+        public static string JoinToString(this IEnumerable<string> input, char seperator)
         {
             return string.Join(seperator, input);
         }
 
-        public static string ToSequence(this IEnumerable<char> input)
-        {
-            return string.Join(' ', input);
-        }
-
-        public static string ToSequence(this IEnumerable<char> input, char seperator)
+        public static string JoinToString(this IEnumerable<char> input, string seperator)
         {
             return string.Join(seperator, input);
+        }
+
+        public static string ConcatToString(this IEnumerable<char> input)
+        {
+            return string.Concat(input);
         }
 
         public static IEnumerable<T> ExceptWhere<T>(this IEnumerable<T> collection, Func<T, bool> condition)
@@ -85,9 +75,7 @@ namespace HLE.Collections
         public static IEnumerable<T> Swap<T>(this IEnumerable<T> collection, int idx, int idx2)
         {
             List<T> items = collection.ToList();
-            T tmp = items[idx];
-            items[idx] = items[idx2];
-            items[idx2] = tmp;
+            (items[idx2], items[idx]) = (items[idx], items[idx2]);
             return items;
         }
 

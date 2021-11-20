@@ -50,7 +50,7 @@ namespace HLETests.CollectionsTests
         public void ToSequenceTest()
         {
             string[] arr = { "a", "b", "c" };
-            Assert.AreEqual(arr.ToSequence(), "a b c");
+            Assert.AreEqual(arr.JoinToString(' '), "a b c");
         }
 
         [DataRow('-')]
@@ -58,7 +58,7 @@ namespace HLETests.CollectionsTests
         public void ToSequenceTest(char c)
         {
             string[] arr = { "a", "b", "c" };
-            Assert.AreEqual(arr.ToSequence(), "a-b-c");
+            Assert.AreEqual(arr.JoinToString('-'), "a-b-c");
         }
     }
 }

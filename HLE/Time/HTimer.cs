@@ -45,6 +45,12 @@ public class HTimer
         };
     }
 
+    public HTimer(double interval, Action<object, EventArgs> onElapsed)
+        : this(interval)
+    {
+        Elapsed += (sender, e) => onElapsed(sender, e);
+    }
+
     public void Start()
     {
         _end = TimeHelper.Now() + Interval;

@@ -63,13 +63,13 @@ namespace HLE.Emojis
                     charList[i + 1] = char.ToUpper(charList[i + 1]);
                 }
             }
-            builder = new(charList.ExceptWhere(c => c == '_').ToSequence());
+            builder = new(charList.ExceptWhere(c => c == '_').ConcatToString());
             string result = builder.ToString();
             _illegalWords.ForEach(w =>
             {
                 result = result.ReplacePattern($" {Regex.Escape(w.Key)} ", $" {w.Value} ");
             });
-            File.WriteAllText(path, $"{result}{Environment.NewLine}");
+            File.WriteAllText(path, $"{result}{Environment.NewLine}", Encoding.UTF32);
         }
 
         private static string Whitespace(int count)

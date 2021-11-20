@@ -2,10 +2,10 @@
 # Created by https://www.toptal.com/developers/gitignore/api/aspnetcore,dotnetcore,csharp,windows,visualstudio,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=aspnetcore,dotnetcore,csharp,windows,visualstudio,visualstudiocode
 
-# Todo-File #
+# Optional Files
 HLE/Resources/todo.txt
 
-# Debug project #
+# Debug project
 HLEDebug/
 
 ### ASPNETCore ###
@@ -507,7 +507,7 @@ obj/
 /wwwroot/node_modules
 
 ### VisualStudioCode ###
-.vscode/*
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
