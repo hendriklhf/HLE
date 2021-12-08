@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using System.Text;
 using HLE.Strings;
 
 namespace HLE.Files.Encryption
@@ -20,18 +20,17 @@ namespace HLE.Files.Encryption
         }
 
         /// <summary>
-        /// Decrypts the file at the given path.
+        /// Decrypts the given file content.
         /// </summary>
-        /// <param name="path">The path of the file that will be decrypted.</param>
-        public void Decrypt(string path)
+        /// <param name="path">The file content that will be decrypted.</param>
+        public string Decrypt(string fileContent)
         {
-            string fileContent = File.ReadAllText(path);
-            string result = string.Empty;
+            StringBuilder builder = new();
             fileContent.Split(10).ForEach(str =>
             {
-                result += _encryptionKey[str];
+                builder.Append(_encryptionKey[str]);
             });
-            File.WriteAllText(path, result);
+            return builder.ToString();
         }
     }
 }

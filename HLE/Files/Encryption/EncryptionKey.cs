@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
 using HLE.Files.Encryption.Exceptions;
@@ -13,18 +12,16 @@ namespace HLE.Files.Encryption
     public class EncryptionKey
     {
         private readonly List<CharKey> _charKeys;
-        private readonly string _path;
 
         /// <summary>
         /// The basic constructor of <see cref="EncryptionKey"/>.
         /// </summary>
-        /// <param name="path">The path of the key.</param>
-        public EncryptionKey(string path)
+        /// <param name="path">The content of the key file.</param>
+        public EncryptionKey(string keyContent)
         {
-            _path = path;
             try
             {
-                _charKeys = JsonSerializer.Deserialize<List<CharKey>>(File.ReadAllText(_path));
+                _charKeys = JsonSerializer.Deserialize<List<CharKey>>(keyContent);
             }
             catch (Exception ex)
             {

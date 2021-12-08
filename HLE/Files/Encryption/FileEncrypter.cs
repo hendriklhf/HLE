@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using System.Text;
 
 namespace HLE.Files.Encryption
 {
@@ -22,15 +22,14 @@ namespace HLE.Files.Encryption
         /// Encrypts the file at the given path.
         /// </summary>
         /// <param name="path">The path of the file that will be encrypted.</param>
-        public void Encrypt(string path)
+        public string Encrypt(string fileContent)
         {
-            string fileContent = File.ReadAllText(path);
-            string result = string.Empty;
+            StringBuilder builder = new();
             foreach (char c in fileContent)
             {
-                result += _encryptionKey[c];
+                builder.Append(_encryptionKey[c]);
             }
-            File.WriteAllText(path, result);
+            return builder.ToString();
         }
     }
 }
