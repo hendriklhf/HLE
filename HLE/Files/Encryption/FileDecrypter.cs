@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using HLE.Collections;
 using HLE.Strings;
 
 namespace HLE.Files.Encryption

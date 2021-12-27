@@ -14,13 +14,21 @@ namespace HLE.Collections
         /// Will loop through an <see cref="IEnumerable{T}"/> and performs the given <paramref name="action"/> on each element.
         /// </summary>
         /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
-        /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be loop through.</param>
+        /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
         /// <param name="action">The action that will be performed.</param>
         public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
         {
             foreach (T item in collection)
             {
                 action(item);
+            }
+        }
+
+        public static void ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
+        {
+            for (int i = 0; i < collection.Count(); i++)
+            {
+                action(collection.ElementAt(i), i);
             }
         }
 
@@ -79,19 +87,17 @@ namespace HLE.Collections
             return items;
         }
 
-        public static IEnumerable<T> Randomize<T>(this IEnumerable<T> collection)
+        public static IEnumerable<T> Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
         {
-            List<long> indeces = NumberCollection.Create(0, collection.Count()).ToList();
             List<T> items = collection.ToList();
-            List<T> result = new();
-            int count = indeces.Count;
-            for (int i = 0; i < count - 1; i++)
+            for (int i = 0; i < items.Count; i++)
             {
-                T item = items.Random();
-                result.Add(item);
-                items.Remove(item);
+                if (condition(items[i]))
+                {
+                    items[i] = replacement;
+                }
             }
-            return result;
+            return items;
         }
     }
 }

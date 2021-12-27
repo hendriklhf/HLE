@@ -20,6 +20,12 @@ namespace HLE.Random
             return CharCollection.BasicLatinChars.Random();
         }
 
+        public static char Char(ushort min, ushort max)
+        {
+            List<long> numbers = NumberCollection.Create(min, max).ToList();
+            return (char)numbers.Random();
+        }
+
         /// <summary>
         /// Returns a random <see cref="int"/> between the given borders.<br />
         /// Default values are <see cref="int.MinValue"/> and <see cref="int.MaxValue"/>.<br />
@@ -65,7 +71,7 @@ namespace HLE.Random
         /// </summary>
         /// <param name="amount">The amount of words</param>
         /// <returns>A <see cref="List{String}"/> containing the given <paramref name="amount"/> of random words</returns>
-        public static IEnumerable<string> Word(int amount = 1)
+        public static IEnumerable<string> Word(ulong amount = 1)
         {
             List<string> words = new();
             HttpGet request1 = new("https://thewordcounter.com/wp-content/themes/sage/resources/inc/base_dictionary2.txt");
@@ -76,15 +82,15 @@ namespace HLE.Random
                 .Concat(request2.Result.Split(","))
                 .Distinct()
                 .ToList();
-            if (amount <= 0)
+            if (amount == 0)
             {
                 return new List<string>();
             }
-            if (amount > words.Count)
+            if (amount > (ulong)words.Count)
             {
-                amount = words.Count;
+                amount = (ulong)words.Count;
             }
-            for (int i = 0; i < amount; i++)
+            for (ulong i = 0; i < amount; i++)
             {
                 result.Add(words.Random());
             }

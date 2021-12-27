@@ -10,7 +10,8 @@ namespace HLETests.EmojisTests
         [TestMethod]
         public void GenerateTest()
         {
-            EmojiFileGenerator.Generate(@".\Emoji.cs", "Emojis");
+            EmojiFileGenerator generator = new(@".\Emoji.cs", "Emojis", ' ', 4);
+            generator.Generate();
             Assert.IsFalse(string.IsNullOrEmpty(File.ReadAllText(@".\Emoji.cs")));
         }
     }

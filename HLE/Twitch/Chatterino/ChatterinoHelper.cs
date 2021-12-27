@@ -15,12 +15,12 @@ namespace HLE.Twitch.Chatterino
         /// Gets all channels of all your tabs from the Chatterino settings.
         /// </summary>
         /// <returns>A <see cref="List{String}"/> of all channels.</returns>
-        public static List<string> GetChannelsFromChatterinoSettings()
+        public static IEnumerable<string> GetChannelsFromChatterinoSettings()
         {
             List<string> result = new();
             try
             {
-                string chatterinoSettingsDirectory = $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Chatterino2\\Settings\\window-layout.json";
+                string chatterinoSettingsDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Chatterino2\Settings\window-layout.json";
                 JsonElement chatterinoTabs = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(chatterinoSettingsDirectory)).GetProperty("windows")[0].GetProperty("tabs");
                 for (int i = 0; i < chatterinoTabs.GetArrayLength(); i++)
                 {
@@ -54,7 +54,7 @@ namespace HLE.Twitch.Chatterino
             catch (Exception)
             {
             }
-            return result.Distinct().ToList();
+            return result.Distinct();
         }
     }
 }

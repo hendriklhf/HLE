@@ -1,7 +1,7 @@
 ﻿namespace HLE.Maths
 {
     /// <summary>
-    /// A class in which all sorts of constants are declared.<br />
+    /// A class in which contains all sorts of constants.<br />
     /// Source: <a href="https://en.wikipedia.org/wiki/List_of_physical_constants">List of physical constants</a>
     /// </summary>
     public static class Constant

@@ -7,11 +7,14 @@ using HLE.Properties;
 
 namespace HLE.Strings
 {
+
     /// <summary>
     /// A class to help with any kind of <see cref="string"/>.
     /// </summary>
     public static class StringHelper
     {
+        private static readonly Regex _spacePattern = new(@"\s", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+
         /// <summary>
         /// Counts the given <see cref="char"/> <paramref name="c"/> in the <see cref="string"/> <paramref name="str"/>.
         /// </summary>
@@ -71,9 +74,9 @@ namespace HLE.Strings
         /// <param name="str">The <see cref="string"/> that will be matches with the <paramref name="pattern"/>.</param>
         /// <param name="pattern">The Regex <paramref name="pattern"/> for the match.</param>
         /// <returns>Returns a <see cref="List{String}"/> that contains every match of the input <see cref="string"/> <paramref name="str"/>.</returns>
-        public static List<string> Matches(this string str, string pattern)
+        public static IEnumerable<string> Matches(this string str, string pattern)
         {
-            return new Regex(pattern, RegexOptions.IgnoreCase).Matches(str).Select(m => m.Value).ToList();
+            return new Regex(pattern, RegexOptions.IgnoreCase).Matches(str).Select(m => m.Value);
         }
 
         /// <summary>
@@ -130,33 +133,25 @@ namespace HLE.Strings
             return str.ReplacePattern(@"\s+", " ");
         }
 
-        /// <summary>
-        /// Splits the input <see cref="string"/> <paramref name="str"/> after the given amount of chars <paramref name="charCount"/>.<br />
-        /// The last part of the input <see cref="string"/> <paramref name="str"/> will be added to the <see cref="List{String}"/> even if it doesn't reach the given amount <paramref name="charCount"/>.<br />
-        /// Returns the input <see cref="string"/> <paramref name="str"/>, if it is shorter than <paramref name="charCount"/>.
-        /// </summary>
-        /// <param name="str">The input <see cref="string"/> that will be split.</param>
-        /// <param name="charCount">The amount of chars after which the input <see cref="string"/> <paramref name="str"/> will be split.</param>
-        /// <returns>Returns a <see cref="List{String}"/> of the split input <see cref="string"/> <paramref name="str"/>.</returns>
-        public static List<string> Split(this string str, int charCount)
+        public static IEnumerable<string> Split(this string str, int charCount)
         {
-            if (str.Length > charCount)
+            if (str.Length <= charCount)
             {
-                List<string> result = new();
+                return new string[] { str };
+            }
+            List<string> result = new();
+            while (str.Length > charCount)
+            {
                 result.Add(str[..charCount]);
                 str = str[charCount..];
-                while (str.Length > charCount)
-                {
-                    result.Add(str[..charCount]);
-                    str = str[charCount..];
-                }
-                result.Add(str);
-                return result;
             }
-            else
-            {
-                return new() { str };
-            }
+            result.Add(str);
+            return result;
+        }
+
+        public static bool HasSpaces(this string str)
+        {
+            return _spacePattern.IsMatch(str);
         }
 
         /// <summary>

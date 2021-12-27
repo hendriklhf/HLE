@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using HLE.Numbers;
 using HLE.Strings;
@@ -13,7 +14,7 @@ namespace HLE.Time
     public static class TimeHelper
     {
         /// <summary>
-        /// Converts <see cref="string"/>s that match the <see cref="Time.Interfaces.ITimeUnit.Pattern"/> in a <see cref="List{String}"/> to seconds.
+        /// Converts <see cref="string"/>s that match the <see cref="Interfaces.ITimeUnit.Pattern"/> in a <see cref="List{String}"/> to seconds.
         /// </summary>
         /// <param name="input">The <see cref="List{String}"/> in which the <see cref="string"/>s will be converted.</param>
         /// <returns>The amount of seconds of all time <see cref="string"/>s.</returns>
@@ -504,5 +505,15 @@ namespace HLE.Time
         {
             return MillisecondsUntil(hour, minute, second, millisecond) / 1000;
         }
+
+        //public static long MillisecondsUntilDateTime(DateTime dateTime)
+        //{
+        //    DateTime now = DateTime.Now;
+        //    long result = 0;
+        //    int milliseconds = Math.Abs(dateTime.Millisecond - now.Millisecond);
+        //    dateTime = dateTime.AddMilliseconds(milliseconds);
+        //    result += milliseconds;
+        //    return result;
+        //}
     }
 }
