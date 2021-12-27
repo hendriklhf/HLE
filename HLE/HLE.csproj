@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RepositoryUrl>github.com/Sterbehilfe/HLEClassLibrary</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Sterbehilfe/HLEClassLibrary</RepositoryUrl>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NeutralLanguage>en</NeutralLanguage>
     <SignAssembly>false</SignAssembly>
@@ -15,7 +15,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
     <PackageTags>library c# csharp .net6</PackageTags>
-    <Version>1.2.7</Version>
+    <Version>1.2.8</Version>
     <PackageIcon></PackageIcon>
     <PackageIconUrl />
     <ApplicationIcon />
