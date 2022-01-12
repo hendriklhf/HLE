@@ -126,7 +126,7 @@ namespace HLE.Numbers
             return this == new DottedNumber(number);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is DottedNumber d && this == d;
         }

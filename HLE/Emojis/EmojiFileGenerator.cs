@@ -57,11 +57,19 @@ namespace HLE.Emojis
             builder.Append($"{new string(IndentationChar, IndentationSize)}/// A class that contains every existing emoji. ({DateTime.Now:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
             builder.Append($"{new string(IndentationChar, IndentationSize)}/// </summary>{Environment.NewLine}");
             builder.Append($"{new string(IndentationChar, IndentationSize)}public static class Emoji{Environment.NewLine}{new string(IndentationChar, IndentationSize)}{{{Environment.NewLine}");
-            for (int i = 0; i <= request.Data.GetArrayLength() - 1; i++)
+            for (int i = 0; i <= request.Data?.GetArrayLength() - 1; i++)
             {
-                string name = request.Data[i].GetProperty("aliases")[0].GetString();
+                string? name = request.Data?[i].GetProperty("aliases")[0].GetString();
+                if (name is null)
+                {
+                    continue;
+                }
                 name = $"{name[0]}".ToUpper() + name[1..];
-                string emoji = request.Data[i].GetProperty("emoji").GetString();
+                string? emoji = request.Data?[i].GetProperty("emoji").GetString();
+                if (emoji is null)
+                {
+                    continue;
+                }
                 builder.Append($"{new string(IndentationChar, IndentationSize << 1)}public const string {name} = \"{emoji}\";{Environment.NewLine}");
             }
             builder.Append($"{new string(IndentationChar, IndentationSize)}}}{Environment.NewLine}}}");

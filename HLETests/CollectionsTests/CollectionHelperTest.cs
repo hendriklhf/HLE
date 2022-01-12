@@ -58,7 +58,7 @@ namespace HLETests.CollectionsTests
         public void ToSequenceTest(char c)
         {
             string[] arr = { "a", "b", "c" };
-            Assert.AreEqual(arr.JoinToString('-'), "a-b-c");
+            Assert.AreEqual(arr.JoinToString(c), "a-b-c");
         }
     }
 }

@@ -29,7 +29,11 @@ namespace HLE.Twitch.Chatterino
                     {
                         if (tabSettings.GetProperty("data").GetProperty("type").GetString() == "twitch")
                         {
-                            result.Add(tabSettings.GetProperty("data").GetProperty("name").GetString());
+                            string? name = tabSettings.GetProperty("data").GetProperty("name").GetString();
+                            if (name is not null)
+                            {
+                                result.Add(name);
+                            }
                         }
                     }
                     catch (Exception)
@@ -41,7 +45,11 @@ namespace HLE.Twitch.Chatterino
                             {
                                 if (tabItems[j].GetProperty("data").GetProperty("type").GetString() == "twitch")
                                 {
-                                    result.Add(tabItems[j].GetProperty("data").GetProperty("name").GetString());
+                                    string? name = tabItems[j].GetProperty("data").GetProperty("name").GetString();
+                                    if (name is not null)
+                                    {
+                                        result.Add(name);
+                                    }
                                 }
                             }
                         }

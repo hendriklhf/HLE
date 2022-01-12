@@ -26,7 +26,7 @@ public class HTimer
 
     public double? RemainingTime => GetRemainingTime();
 
-    public event EventHandler Elapsed;
+    public event EventHandler? Elapsed;
 
     private readonly Timer _timer;
 
@@ -45,7 +45,7 @@ public class HTimer
         };
     }
 
-    public HTimer(double interval, Action<object, EventArgs> onElapsed)
+    public HTimer(double interval, Action<object?, EventArgs> onElapsed)
         : this(interval)
     {
         Elapsed += (sender, e) => onElapsed(sender, e);

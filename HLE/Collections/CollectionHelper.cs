@@ -38,9 +38,9 @@ namespace HLE.Collections
         /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
         /// <param name="collection">The checked collection.</param>
         /// <returns>True, if null or empty, false otherwise.</returns>
-        public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection)
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T>? collection)
         {
-            return collection is null || !collection.Any();
+            return collection is null || !collection?.Any() == true;
         }
 
         /// <summary>
@@ -49,9 +49,14 @@ namespace HLE.Collections
         /// <typeparam name="T">The type of the <paramref name="collection"/>.</typeparam>
         /// <param name="collection">The collection the random element will be take from.</param>
         /// <returns>A random element.</returns>
-        public static T Random<T>(this IEnumerable<T> collection)
+        public static T? Random<T>(this IEnumerable<T> collection)
         {
-            return collection.ElementAt(Rand.Int(0, collection.Count() - 1));
+            int count = collection.Count();
+            if (count == 0)
+            {
+                return default;
+            }
+            return collection.ElementAt(Rand.Int(0, count - 1));
         }
 
         /// <summary>
@@ -71,6 +76,11 @@ namespace HLE.Collections
         }
 
         public static string ConcatToString(this IEnumerable<char> input)
+        {
+            return string.Concat(input);
+        }
+
+        public static string ConcatToString(this IEnumerable<string> input)
         {
             return string.Concat(input);
         }

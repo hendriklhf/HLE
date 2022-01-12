@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Text;
 using HLE.Collections;
-using HLE.HttpRequests;
 
 namespace HLE.Random
 {
@@ -63,38 +62,6 @@ namespace HLE.Random
                 builder.Append(Char());
             }
             return builder.ToString();
-        }
-
-        /// <summary>
-        /// Returns the given <paramref name="amount"/> of random words retrieved from two online word lists of over 100k words.<br />
-        /// The parameter will be fitted to be working with the amount of words in the two list.
-        /// </summary>
-        /// <param name="amount">The amount of words</param>
-        /// <returns>A <see cref="List{String}"/> containing the given <paramref name="amount"/> of random words</returns>
-        public static IEnumerable<string> Word(ulong amount = 1)
-        {
-            List<string> words = new();
-            HttpGet request1 = new("https://thewordcounter.com/wp-content/themes/sage/resources/inc/base_dictionary2.txt");
-            HttpGet request2 = new("https://capitalizemytitle.com/wp-content/tools/random-word/en/words%20alpha.txt");
-            List<string> result = new();
-            words = words
-                .Concat(request1.Result.Split("\n"))
-                .Concat(request2.Result.Split(","))
-                .Distinct()
-                .ToList();
-            if (amount == 0)
-            {
-                return new List<string>();
-            }
-            if (amount > (ulong)words.Count)
-            {
-                amount = (ulong)words.Count;
-            }
-            for (ulong i = 0; i < amount; i++)
-            {
-                result.Add(words.Random());
-            }
-            return result;
         }
 
         public static bool Bool()

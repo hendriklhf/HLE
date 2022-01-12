@@ -13,12 +13,12 @@ namespace HLE.HttpRequests
         /// <summary>
         /// The URL of the request.
         /// </summary>
-        public string URL { get; }
+        public string Url { get; }
 
         /// <summary>
         /// The complete answer as a string.
         /// </summary>
-        public string Result { get; private set; }
+        public string? Result { get; private set; }
 
         /// <summary>
         /// The header content that will be sent to the URL.
@@ -28,13 +28,13 @@ namespace HLE.HttpRequests
         /// <summary>
         /// The answer stored in a <see cref="JsonElement"/>, if the answer was a json compatible string.
         /// </summary>
-        public JsonElement Data { get; }
+        public JsonElement? Data { get; }
 
         /// <summary>
         /// True, if the answer was a json compatible string, otherwise false.<br />
         /// If true, the JSON result has been stored in the property <see cref="Data"/>.
         /// </summary>
-        public bool ValidJsonData { get; } = true;
+        public bool IsValidJsonData { get; } = true;
 
         private readonly HttpClient _httpClient = new();
 
@@ -46,22 +46,26 @@ namespace HLE.HttpRequests
         /// <param name="headers">The header content that will be sent to the URL.</param>
         public HttpPost(string url, List<KeyValuePair<string, string>> headers)
         {
-            URL = url;
+            Url = url;
             HeaderContent = new FormUrlEncodedContent(headers);
             Task.Run(() => Result = PostRequest().Result).Wait();
             try
             {
+                if (string.IsNullOrEmpty(Result))
+                {
+                    throw new JsonException("HttpPost.Result is null or empty");
+                }
                 Data = JsonSerializer.Deserialize<JsonElement>(Result);
             }
             catch (JsonException)
             {
-                ValidJsonData = false;
+                IsValidJsonData = false;
             }
         }
 
         private async Task<string> PostRequest()
         {
-            HttpResponseMessage response = await _httpClient.PostAsync(URL, HeaderContent);
+            HttpResponseMessage response = await _httpClient.PostAsync(Url, HeaderContent);
             return await response.Content.ReadAsStringAsync();
         }
     }

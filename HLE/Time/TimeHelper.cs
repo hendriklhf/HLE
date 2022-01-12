@@ -63,177 +63,41 @@ namespace HLE.Time
 
         /// <summary>
         /// Converts the a Unix time stamp into a time stamp with time units. The Unix time stamp can be in the future or past.<br />
-        /// For example: "1h, 24min, 56s ago"
+        /// For example: "1h, 24min, 56s"
         /// </summary>
         /// <param name="unixTime">The point of time as a Unix time stamp.</param>
-        /// <param name="addition">A <see cref="string"/> that will be placed behind the return <see cref="string"/>, like: "ago".</param>
         /// <param name="conversionType">A <see cref="ConversionType"/> to shorten the <see cref="string"/> of time to, for example, only show the hours and minutes.</param>
         /// <returns>The time stamp result as a <see cref="string"/>.</returns>
-        public static string ConvertUnixTimeToTimeStamp(long unixTime, string addition = "", ConversionType conversionType = ConversionType.All)
+        public static string ConvertUnixTimeToTimeStamp(long unixTime, ConversionType conversionType = ConversionType.All)
         {
             StringBuilder builder = new();
             if (unixTime > Now())
             {
                 unixTime -= (unixTime - Now()) * 2;
             }
-            if (Now() - unixTime >= 1000)
+
+            if (!(Now() - unixTime >= 1000))
             {
-                unixTime = Now() - unixTime;
-                if (Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()) > 0)
+                return $"{Now() - unixTime}ms";
+            }
+
+            unixTime = Now() - unixTime;
+            if (Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()) > 0)
+            {
+                builder.Append(Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()).ToString(), "y, ");
+                unixTime -= (Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()) * new Year().Milliseconds).ToLong();
+                if (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) > 0)
                 {
-                    builder.Append(Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()).ToString(), "y, ");
-                    unixTime -= (Math.Truncate((unixTime / new Year().Milliseconds).ToDouble()) * new Year().Milliseconds).ToLong();
-                    if (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) > 0)
+                    builder.Append(Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()).ToString(), "d, ");
+                    unixTime -= (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
+                    if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
                     {
-                        builder.Append(Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()).ToString(), "d, ");
-                        unixTime -= (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
-                        if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
+                        builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
+                        if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                         {
-                            builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                            {
-                                unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
-                                if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                                {
-                                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                        if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                        {
-                                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                        }
-                                    }
-                                }
-                                else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                {
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                    }
-                                }
-                            }
-                        }
-                        else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
-                        {
-                            builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                            {
-                                unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
-                                if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                                {
-                                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                        if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                        {
-                                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                        }
-                                    }
-                                }
-                                else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                {
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                    }
-                                }
-                            }
-                        }
-                        else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                        {
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                            {
-                                builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                                if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                {
-                                    unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                    if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                    {
-                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                    }
-                                }
-                            }
-                        }
-                        else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                        {
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                            {
-                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                            }
-                        }
-                    }
-                    else if (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) > 0)
-                    {
-                        builder.Append(Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()).ToString(), "d, ");
-                        unixTime -= (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
-                        if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
-                        {
-                            builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
                             unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
                             if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
                             {
-                                if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                                {
-                                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                        if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                        {
-                                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                        }
-                                    }
-                                }
-                            }
-                            else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                            {
-                                if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                                {
-                                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                        if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                        {
-                                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                        }
-                                    }
-                                }
-                            }
-                            else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
-                            {
-                                builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
-                                unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
-                                if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                                {
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                                    {
-                                        builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                                        if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                        {
-                                            unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                            if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                            {
-                                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                {
-                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                    {
-                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                    }
-                                }
-                            }
-                        }
-                        else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                        {
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                            {
                                 builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                                 {
@@ -244,70 +108,16 @@ namespace HLE.Time
                                     }
                                 }
                             }
-                        }
-                        else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                        {
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                            else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
                             {
-                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                            }
-                        }
-                    }
-                    else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
-                    {
-                        builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
-                        unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
-                        if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                        {
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                            {
-                                builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
                                 if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                                {
-                                    unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                    if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                                    {
-                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                                    }
-                                }
-                            }
-                        }
-                        else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                        {
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                            {
-                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                            }
-                        }
-                    }
-                    else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
-                    {
-                        if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
-                        {
-                            builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                            {
-                                unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                                if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
                                 {
                                     builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
                                 }
                             }
                         }
                     }
-                    else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
-                    {
-                        if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
-                        {
-                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
-                        }
-                    }
-                }
-                else if (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) > 0)
-                {
-                    builder.Append(Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()).ToString(), "d, ");
-                    unixTime -= (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
-                    if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
+                    else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
                     {
                         builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
                         if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
@@ -357,19 +167,111 @@ namespace HLE.Time
                         }
                     }
                 }
+                else if (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) > 0)
+                {
+                    builder.Append(Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()).ToString(), "d, ");
+                    unixTime -= (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
+                    if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
+                    {
+                        builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
+                        unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                        if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                        {
+                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
+                            {
+                                builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                                if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                                {
+                                    unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                    if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                                    {
+                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                    }
+                                }
+                            }
+                        }
+                        else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                        {
+                            if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
+                            {
+                                builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                                if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                                {
+                                    unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                    if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                                    {
+                                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                    }
+                                }
+                            }
+                        }
+                        else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
+                        {
+                            builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
+                            unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                            if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                            {
+                                if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
+                                {
+                                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                                    {
+                                        unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                        if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                                        {
+                                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                            {
+                                if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                                {
+                                    builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                }
+                            }
+                        }
+                    }
+                    else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                    {
+                        if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
+                        {
+                            builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                            {
+                                unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                                {
+                                    builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                }
+                            }
+                        }
+                    }
+                    else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                    {
+                        if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                        {
+                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                        }
+                    }
+                }
                 else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
                 {
                     builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
                     unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
                     if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
                     {
-                        builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                        if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                        if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                         {
-                            unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                            if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                            builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
                             {
-                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                                {
+                                    builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                }
                             }
                         }
                     }
@@ -383,29 +285,125 @@ namespace HLE.Time
                 }
                 else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
                 {
-                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
-                    unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
-                    if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
                     {
-                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                        builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                        if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                        {
+                            unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                            if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                            {
+                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                            }
+                        }
                     }
                 }
                 else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
                 {
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                    {
+                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                    }
+                }
+            }
+            else if (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) > 0)
+            {
+                builder.Append(Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()).ToString(), "d, ");
+                unixTime -= (Math.Truncate((unixTime / new Day().Milliseconds).ToDouble()) * new Day().Milliseconds).ToLong();
+                if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
+                {
+                    builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
+                    {
+                        unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                        if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                        {
+                            builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                            {
+                                unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                                if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                                {
+                                    builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                                }
+                            }
+                        }
+                        else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                        {
+                            if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                            {
+                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                            }
+                        }
+                    }
+                }
+                else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                {
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMin)
+                    {
+                        builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                        if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                        {
+                            unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                            if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                            {
+                                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                            }
+                        }
+                    }
+                }
+                else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                {
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                    {
+                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                    }
+                }
+            }
+            else if (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) > 0)
+            {
+                builder.Append(Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()).ToString(), "h, ");
+                unixTime -= (Math.Truncate((unixTime / new Hour().Milliseconds).ToDouble()) * new Hour().Milliseconds).ToLong();
+                if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+                {
+                    builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                    {
+                        unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                        if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                        {
+                            builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                        }
+                    }
+                }
+                else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                {
+                    if ((int)conversionType >= (int)ConversionType.YearDayHourMinSec)
+                    {
+                        builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
+                    }
+                }
+            }
+            else if (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) > 0)
+            {
+                builder.Append(Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()).ToString(), "min, ");
+                unixTime -= (Math.Truncate((unixTime / new Minute().Milliseconds).ToDouble()) * new Minute().Milliseconds).ToLong();
+                if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
+                {
                     builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
                 }
-
-                string result = builder.ToString().TrimAll();
-                if (result[^1] == ',')
-                {
-                    result = result[..^1];
-                }
-                return $"{result} {addition}".Trim();
             }
-            else
+            else if (Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()) > 0)
             {
-                return $"{Now() - unixTime}ms {addition}".Trim();
+                builder.Append(Math.Truncate((unixTime / new Second().Milliseconds).ToDouble()).ToString(), "s");
             }
+
+            string result = builder.ToString().TrimAll();
+            if (result[^1] == ',')
+            {
+                result = result[..^1];
+            }
+            return result;
         }
 
         /// <summary>
@@ -505,15 +503,5 @@ namespace HLE.Time
         {
             return MillisecondsUntil(hour, minute, second, millisecond) / 1000;
         }
-
-        //public static long MillisecondsUntilDateTime(DateTime dateTime)
-        //{
-        //    DateTime now = DateTime.Now;
-        //    long result = 0;
-        //    int milliseconds = Math.Abs(dateTime.Millisecond - now.Millisecond);
-        //    dateTime = dateTime.AddMilliseconds(milliseconds);
-        //    result += milliseconds;
-        //    return result;
-        //}
     }
 }

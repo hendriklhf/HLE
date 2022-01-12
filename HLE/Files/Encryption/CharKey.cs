@@ -13,6 +13,6 @@
         /// <summary>
         /// The key of the encrypted <see cref="char"/>.
         /// </summary>
-        public string Key { get; set; }
+        public string? Key { get; set; }
     }
 }
