@@ -17,12 +17,12 @@ namespace HLE.Strings
         /// <summary>
         /// Represents a zero width char.
         /// </summary>
-        public const char ZeroWidthChar = "�";
+        public const char ZeroWidthChar = '�';
         
         /// <summary>
         /// Represents an invisible char.
         /// </summary>
-        public const char InvisibleChar = "⠀";
+        public const char InvisibleChar = '⠀';
 
         /// <summary>
         /// Counts the given <see cref="char"/> <paramref name="c"/> in the <see cref="string"/> <paramref name="str"/>.
