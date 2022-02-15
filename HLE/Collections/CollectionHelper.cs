@@ -24,6 +24,13 @@ namespace HLE.Collections
             }
         }
 
+        /// <summary>
+        /// Will loop through an <see cref="IEnumerable{T}"/> and performs the given <paramref name="action"/> on each element.<br/>
+        /// The <see cref="int"/> parameter of <paramref name="action"/> is the index of the current item in the loop.
+        /// </summary>
+        /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
+        /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
+        /// <param name="action">The action that will be performed.</param>
         public static void ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
         {
             for (int i = 0; i < collection.Count(); i++)
@@ -47,42 +54,57 @@ namespace HLE.Collections
         /// Return a random element from the <paramref name="collection"/>.
         /// </summary>
         /// <typeparam name="T">The type of the <paramref name="collection"/>.</typeparam>
-        /// <param name="collection">The collection the random element will be take from.</param>
-        /// <returns>A random element.</returns>
+        /// <param name="collection">The collection the random element will be taken from.</param>
+        /// <returns>A random element or <see langword="null"/> if the <paramref name="collection"/> doesn't contain any elements.</returns>
         public static T? Random<T>(this IEnumerable<T> collection)
         {
-            int count = collection.Count();
-            if (count == 0)
+            if (!collection.Any())
             {
                 return default;
             }
-            return collection.ElementAt(Rand.Int(0, count - 1));
+            return collection.ElementAt(Rand.Int(0, collection.Count() - 1));
         }
 
         /// <summary>
-        /// Converts the <paramref name="input"/> to a <see cref="string"/> by appending all elements with a <see cref="char"/> seperating them them.
+        /// Concatenates every element of the <paramref name="collection"/> seperated by the <paramref name="seperator"/>.
         /// </summary>
-        /// <param name="input">The <see cref="string"/> enumerable that will be converted to a <see cref="string"/>.</param>
+        /// <param name="collection">The <see cref="string"/> enumerable that will be converted to a <see cref="string"/>.</param>
         /// <param name="seperator">The seperator <see cref="char"/>.</param>
-        /// <returns>Returns the <paramref name="input"/> as a <see cref="string"/>.</returns>
-        public static string JoinToString(this IEnumerable<string> input, char seperator)
+        /// <returns>Returns the <paramref name="collection"/> as a <see cref="string"/>.</returns>
+        public static string JoinToString(this IEnumerable<string> collection, char seperator)
         {
-            return string.Join(seperator, input);
+            return string.Join(seperator, collection);
         }
 
-        public static string JoinToString(this IEnumerable<char> input, string seperator)
+        /// <summary>
+        /// Concatenates every element of the <paramref name="collection"/> seperated by the <paramref name="seperator"/>.
+        /// </summary>
+        /// <param name="collection">The <see cref="IEnumerable{Char}"/> that will be converted to a <see cref="string"/>.</param>
+        /// <param name="seperator"></param>
+        /// <returns></returns>
+        public static string JoinToString(this IEnumerable<char> collection, string seperator)
         {
-            return string.Join(seperator, input);
+            return string.Join(seperator, collection);
         }
 
-        public static string ConcatToString(this IEnumerable<char> input)
+        /// <summary>
+        /// Concatenates every element of the <paramref name="collection"/>.
+        /// </summary>
+        /// <param name="collection"></param>
+        /// <returns></returns>
+        public static string ConcatToString(this IEnumerable<char> collection)
         {
-            return string.Concat(input);
+            return string.Concat(collection);
         }
 
-        public static string ConcatToString(this IEnumerable<string> input)
+        /// <summary>
+        /// Concatenates every element of the <paramref name="collection"/>
+        /// </summary>
+        /// <param name="collection"></param>
+        /// <returns></returns>
+        public static string ConcatToString(this IEnumerable<string> collection)
         {
-            return string.Concat(input);
+            return string.Concat(collection);
         }
 
         public static IEnumerable<T> ExceptWhere<T>(this IEnumerable<T> collection, Func<T, bool> condition)
@@ -99,8 +121,8 @@ namespace HLE.Collections
 
         public static IEnumerable<T> Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
         {
-            List<T> items = collection.ToList();
-            for (int i = 0; i < items.Count; i++)
+            T[] items = collection.ToArray();
+            for (int i = 0; i < items.Length; i++)
             {
                 if (condition(items[i]))
                 {

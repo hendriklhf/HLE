@@ -1,3 +1,4 @@
+#pragma warning disable IDE0079
 #pragma warning disable CS1591
 
 namespace HLE.Emojis

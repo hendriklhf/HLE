@@ -13,32 +13,32 @@ namespace HLE.Time
         public int Count { get; set; }
 
         /// <summary>
-        /// The given amount of days in milliseconds.
+        /// The given amount of minutes in milliseconds.
         /// </summary>
         public long Milliseconds => Count * _inMilliseconds;
 
         /// <summary>
-        /// The given amount of days in seconds.
+        /// The given amount of minutes in seconds.
         /// </summary>
         public long Seconds => Milliseconds / 1000;
 
         /// <summary>
-        /// The given amount of days in minutes.
+        /// The given amount of minutes in minutes.
         /// </summary>
         public double Minutes => Seconds / 60;
 
         /// <summary>
-        /// The given amount of days in hours.
+        /// The given amount of minutes in hours.
         /// </summary>
         public double Hours => Minutes / 60;
 
         /// <summary>
-        /// The given amount of days in days.
+        /// The given amount of minutes in days.
         /// </summary>
         public double Days => Hours / 24;
 
         /// <summary>
-        /// The given amount of days in years.
+        /// The given amount of minutes in years.
         /// </summary>
         public double Years => Days / 365;
 
