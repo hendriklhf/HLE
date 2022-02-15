@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using HLE.Collections;
+using HLE.Time;
 
 namespace HLEDebug
 {
@@ -9,17 +7,9 @@ namespace HLEDebug
     {
         private static void Main()
         {
-            string[] i = GetRank(new string[] { "a", "b", "c" });
-            i.ForEach(x => Console.WriteLine(x));
+            var t = TimeHelper.GetUnixDifference(TimeHelper.Now() + new Second(45).Milliseconds);
+            Console.WriteLine(t.ToString());
             Console.ReadLine();
-        }
-
-        private static readonly List<string> _strings = new() { "a", "a", "c" };
-
-        public static string[] GetRank(string[] name)
-        {
-            List<string> intersectRanks = _strings.Intersect(name).ToList();
-            return intersectRanks.ToArray();
         }
     }
 }
