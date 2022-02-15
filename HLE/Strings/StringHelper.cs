@@ -7,13 +7,21 @@ using HLE.Properties;
 
 namespace HLE.Strings
 {
-
     /// <summary>
     /// A class to help with any kind of <see cref="string"/>.
     /// </summary>
     public static class StringHelper
     {
         private static readonly Regex _spacePattern = new(@"\s", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+        /// <summary>
+        /// Represents a zero width char.
+        /// </summary>
+        public const char ZeroWidthChar = '?';
+
+        /// <summary>
+        /// Represents an invisible char.
+        /// </summary>
+        public const char InvisibleChar = '?';
 
         /// <summary>
         /// Counts the given <see cref="char"/> <paramref name="c"/> in the <see cref="string"/> <paramref name="str"/>.
@@ -133,20 +141,61 @@ namespace HLE.Strings
             return str.ReplacePattern(@"\s+", " ");
         }
 
-        public static IEnumerable<string> Split(this string str, int charCount)
+        public static IEnumerable<string> Split(this string str, int charCount, bool onlySplitOnWhitespace = false)
         {
+            str = str.TrimAll();
             if (str.Length <= charCount)
             {
                 return new string[] { str };
             }
-            List<string> result = new();
-            while (str.Length > charCount)
+
+            if (!onlySplitOnWhitespace)
             {
-                result.Add(str[..charCount]);
-                str = str[charCount..];
+                List<string> result = new();
+                while (str.Length > charCount)
+                {
+                    result.Add(str[..charCount]);
+                    str = str[charCount..];
+                }
+                result.Add(str);
+                return result;
             }
-            result.Add(str);
-            return result;
+            else
+            {
+                string[] split = str.Split();
+                List<List<string>?> list = new();
+                int listIdx = 0;
+                for (int i = 0; i < split.Length; i++)
+                {
+                    if (list.Count < listIdx + 1)
+                    {
+                        list.Add(new());
+                    }
+
+                    list[listIdx] ??= new();
+
+                    bool doesntExceedMaxCharCount = list[listIdx]!.Select(st => st.Length).Sum() + list[listIdx]!.Count + split[i].Length <= charCount;
+                    if (doesntExceedMaxCharCount)
+                    {
+                        list[listIdx]!.Add(split[i]);
+                    }
+                    else
+                    {
+                        listIdx++;
+                        i--;
+                    }
+                }
+
+                List<string> result = new();
+                foreach (List<string>? l in list)
+                {
+                    if (l is not null)
+                    {
+                        result.Add(string.Join(' ', l));
+                    }
+                }
+                return result;
+            }
         }
 
         public static bool HasSpaces(this string str)
