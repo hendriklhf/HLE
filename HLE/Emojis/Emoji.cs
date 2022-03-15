@@ -1512,11 +1512,11 @@ namespace HLE.Emojis
         public const string Accept = "🉑";
         public const string U7533 = "🈸";
         public const string U5408 = "🈴";
-        public const string U7a7a = "🈳";
+        public const string U7A7A = "🈳";
         public const string Congratulations = "㊗️";
         public const string Secret = "㊙️";
-        public const string U55b6 = "🈺";
-        public const string U6e80 = "🈵";
+        public const string U55B6 = "🈺";
+        public const string U6E80 = "🈵";
         public const string RedCircle = "🔴";
         public const string OrangeCircle = "🟠";
         public const string YellowCircle = "🟡";
