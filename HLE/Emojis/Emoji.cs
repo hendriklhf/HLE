@@ -1,10 +1,9 @@
-#pragma warning disable IDE0079
-#pragma warning disable CS1591
+#pragma warning disable 1591
 
 namespace HLE.Emojis
 {
     /// <summary>
-    /// A class that contains every existing emoji. (17.09.2021 16:12:04)
+    /// A class that contains every existing emoji. (16.03.2022 01:59:57)
     /// </summary>
     public static class Emoji
     {
