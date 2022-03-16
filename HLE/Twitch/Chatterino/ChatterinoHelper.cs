@@ -62,6 +62,7 @@ namespace HLE.Twitch.Chatterino
             catch (Exception)
             {
             }
+
             return result.Distinct();
         }
     }

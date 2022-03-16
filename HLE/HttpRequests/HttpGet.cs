@@ -47,6 +47,7 @@ namespace HLE.HttpRequests
                 {
                     throw new JsonException("HttpGet.Result is null or empty");
                 }
+
                 Data = JsonSerializer.Deserialize<JsonElement>(Result);
             }
             catch (JsonException)

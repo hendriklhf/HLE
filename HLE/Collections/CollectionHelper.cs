@@ -33,9 +33,10 @@ namespace HLE.Collections
         /// <param name="action">The action that will be performed.</param>
         public static void ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
         {
-            for (int i = 0; i < collection.Count(); i++)
+            T[] arr = collection.ToArray();
+            for (int i = 0; i < arr.Length; i++)
             {
-                action(collection.ElementAt(i), i);
+                action(arr[i], i);
             }
         }
 
@@ -47,7 +48,7 @@ namespace HLE.Collections
         /// <returns>True, if null or empty, false otherwise.</returns>
         public static bool IsNullOrEmpty<T>(this IEnumerable<T>? collection)
         {
-            return collection is null || !collection?.Any() == true;
+            return collection is null || !collection.Any();
         }
 
         /// <summary>
@@ -58,11 +59,8 @@ namespace HLE.Collections
         /// <returns>A random element or <see langword="null"/> if the <paramref name="collection"/> doesn't contain any elements.</returns>
         public static T? Random<T>(this IEnumerable<T> collection)
         {
-            if (!collection.Any())
-            {
-                return default;
-            }
-            return collection.ElementAt(Rand.Int(0, collection.Count() - 1));
+            T[] arr = collection.ToArray();
+            return !arr.Any() ? default : arr[Rand.Int(0, arr.Length - 1)];
         }
 
         /// <summary>
@@ -107,11 +105,6 @@ namespace HLE.Collections
             return string.Concat(collection);
         }
 
-        public static IEnumerable<T> ExceptWhere<T>(this IEnumerable<T> collection, Func<T, bool> condition)
-        {
-            return collection.Except(collection.Where(i => condition(i)));
-        }
-
         public static IEnumerable<T> Swap<T>(this IEnumerable<T> collection, int idx, int idx2)
         {
             List<T> items = collection.ToList();
@@ -121,15 +114,16 @@ namespace HLE.Collections
 
         public static IEnumerable<T> Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
         {
-            T[] items = collection.ToArray();
-            for (int i = 0; i < items.Length; i++)
+            T[] arr = collection.ToArray();
+            for (int i = 0; i < arr.Length; i++)
             {
-                if (condition(items[i]))
+                if (condition(arr[i]))
                 {
-                    items[i] = replacement;
+                    arr[i] = replacement;
                 }
             }
-            return items;
+
+            return arr;
         }
     }
 }

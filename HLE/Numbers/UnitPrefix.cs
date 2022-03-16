@@ -34,87 +34,107 @@ namespace HLE.Numbers
         /// <summary>
         /// The representation of the unit prefix Yotta.
         /// </summary>
-        public static readonly UnitPrefix Yotta = new("Yotta", "Y", Math.Pow(10, 24));
+        public static UnitPrefix Yotta { get; } = new("Yotta", "Y", Math.Pow(10, 24));
+
         /// <summary>
         /// The representation of the unit prefix Zetta.
         /// </summary>
-        public static readonly UnitPrefix Zetta = new("Zetta", "Z", Math.Pow(10, 21));
+        public static UnitPrefix Zetta { get; } = new("Zetta", "Z", Math.Pow(10, 21));
+
         /// <summary>
         /// The representation of the unit prefix Exa.
         /// </summary>
-        public static readonly UnitPrefix Exa = new("Exa", "E", Math.Pow(10, 18));
+        public static UnitPrefix Exa { get; } = new("Exa", "E", Math.Pow(10, 18));
+
         /// <summary>
         /// The representation of the unit prefix Peta.
         /// </summary>
-        public static readonly UnitPrefix Peta = new("Peta", "P", Math.Pow(10, 15));
+        public static UnitPrefix Peta { get; } = new("Peta", "P", Math.Pow(10, 15));
+
         /// <summary>
         /// The representation of the unit prefix Tera.
         /// </summary>
-        public static readonly UnitPrefix Tera = new("Tera", "T", Math.Pow(10, 12));
+        public static UnitPrefix Tera { get; } = new("Tera", "T", Math.Pow(10, 12));
+
         /// <summary>
         /// The representation of the unit prefix Giga.
         /// </summary>
-        public static readonly UnitPrefix Giga = new("Giga", "G", Math.Pow(10, 9));
+        public static UnitPrefix Giga { get; } = new("Giga", "G", Math.Pow(10, 9));
+
         /// <summary>
         /// The representation of the unit prefix Mega.
         /// </summary>
-        public static readonly UnitPrefix Mega = new("Mega", "M", Math.Pow(10, 6));
+        public static UnitPrefix Mega { get; } = new("Mega", "M", Math.Pow(10, 6));
+
         /// <summary>
         /// The representation of the unit prefix Kilo.
         /// </summary>
-        public static readonly UnitPrefix Kilo = new("Kilo", "k", Math.Pow(10, 3));
+        public static UnitPrefix Kilo { get; } = new("Kilo", "k", Math.Pow(10, 3));
+
         /// <summary>
         /// The representation of the unit prefix Hecto.
         /// </summary>
-        public static readonly UnitPrefix Hecto = new("Hecto", "h", Math.Pow(10, 2));
+        public static UnitPrefix Hecto { get; } = new("Hecto", "h", Math.Pow(10, 2));
+
         /// <summary>
         /// The representation of the unit prefix Deca.
         /// </summary>
-        public static readonly UnitPrefix Deca = new("Deca", "da", Math.Pow(10, 1));
+        public static UnitPrefix Deca { get; } = new("Deca", "da", Math.Pow(10, 1));
+
         /// <summary>
         /// The representation of no unit prefix. 
         /// </summary>
-        public static readonly UnitPrefix Null = new("", "", Math.Pow(10, 0));
+        public static UnitPrefix Null { get; } = new("", "", Math.Pow(10, 0));
+
         /// <summary>
         /// The representation of the unit prefix Deci.
         /// </summary>
-        public static readonly UnitPrefix Deci = new("Deci", "d", Math.Pow(10, -1));
+        public static UnitPrefix Deci { get; } = new("Deci", "d", Math.Pow(10, -1));
+
         /// <summary>
         /// The representation of the unit prefix Centi.
         /// </summary>
-        public static readonly UnitPrefix Centi = new("Centi", "c", Math.Pow(10, -2));
+        public static UnitPrefix Centi { get; } = new("Centi", "c", Math.Pow(10, -2));
+
         /// <summary>
         /// The representation of the unit prefix Milli.
         /// </summary>
-        public static readonly UnitPrefix Milli = new("Milli", "m", Math.Pow(10, -3));
+        public static UnitPrefix Milli { get; } = new("Milli", "m", Math.Pow(10, -3));
+
         /// <summary>
         /// The representation of the unit prefix Micro.
         /// </summary>
-        public static readonly UnitPrefix Micro = new("Micro", "µ", Math.Pow(10, -6));
+        public static UnitPrefix Micro { get; } = new("Micro", "µ", Math.Pow(10, -6));
+
         /// <summary>
         /// The representation of the unit prefix Nano.
         /// </summary>
-        public static readonly UnitPrefix Nano = new("Nano", "n", Math.Pow(10, -9));
+        public static UnitPrefix Nano { get; } = new("Nano", "n", Math.Pow(10, -9));
+
         /// <summary>
         /// The representation of the unit prefix Pico.
         /// </summary>
-        public static readonly UnitPrefix Pico = new("Pico", "p", Math.Pow(10, -12));
+        public static UnitPrefix Pico { get; } = new("Pico", "p", Math.Pow(10, -12));
+
         /// <summary>
         /// The representation of the unit prefix Femto.
         /// </summary>
-        public static readonly UnitPrefix Femto = new("Femto", "f", Math.Pow(10, -15));
+        public static UnitPrefix Femto { get; } = new("Femto", "f", Math.Pow(10, -15));
+
         /// <summary>
         /// The representation of the unit prefix Atto.
         /// </summary>
-        public static readonly UnitPrefix Atto = new("Atto", "a", Math.Pow(10, -18));
+        public static UnitPrefix Atto { get; } = new("Atto", "a", Math.Pow(10, -18));
+
         /// <summary>
         /// The representation of the unit prefix Zepto.
         /// </summary>
-        public static readonly UnitPrefix Zepto = new("Zepto", "z", Math.Pow(10, -21));
+        public static UnitPrefix Zepto { get; } = new("Zepto", "z", Math.Pow(10, -21));
+
         /// <summary>
         /// The representation of the unit prefix Yocto.
         /// </summary>
-        public static readonly UnitPrefix Yocto = new("Yocto", "y", Math.Pow(10, -24));
+        public static UnitPrefix Yocto { get; } = new("Yocto", "y", Math.Pow(10, -24));
 
         private static readonly List<UnitPrefix> _unitPrefixes = new()
         {
@@ -144,6 +164,6 @@ namespace HLE.Numbers
         /// <summary>
         /// A <see cref="ReadOnlyCollection{UnitPrefix}"/> that contains every unit prefix.
         /// </summary>
-        public static readonly ReadOnlyCollection<UnitPrefix> UnitPrefixCollection = new(_unitPrefixes);
+        public static ReadOnlyCollection<UnitPrefix> UnitPrefixCollection { get; } = new(_unitPrefixes);
     }
 }

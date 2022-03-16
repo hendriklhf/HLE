@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using HLE.Collections;
@@ -24,16 +25,8 @@ namespace HLE.Emojis
 
         private readonly KeyValuePair<string, string>[] _illegalWords =
         {
-                new("100", "OneHundred"),
-                new("+1", "ThumbUp"),
-                new("-1", "ThumbDown"),
-                new("T-rex", "TRex"),
-                new("1stPlaceMedal", "FirstPlaceMedal"),
-                new("2ndPlaceMedal", "SecondPlaceMedal"),
-                new("3rdPlaceMedal", "ThirdPlaceMedal"),
-                new("8ball", "EightBall"),
-                new("Non-potableWater", "NonPotableWater"),
-                new("1234", "OneTwoThreeFour")
+            new("100", "OneHundred"), new("+1", "ThumbUp"), new("-1", "ThumbDown"), new("T-rex", "TRex"), new("1stPlaceMedal", "FirstPlaceMedal"), new("2ndPlaceMedal", "SecondPlaceMedal"),
+            new("3rdPlaceMedal", "ThirdPlaceMedal"), new("8ball", "EightBall"), new("Non-potableWater", "NonPotableWater"), new("1234", "OneTwoThreeFour")
         };
 
         public EmojiFileGenerator(string filePath, string namespaceName, char indentationChar = ' ', int indentationSize = 4)
@@ -64,31 +57,37 @@ namespace HLE.Emojis
                 {
                     continue;
                 }
+
                 name = $"{name[0]}".ToUpper() + name[1..];
                 string? emoji = request.Data?[i].GetProperty("emoji").GetString();
                 if (emoji is null)
                 {
                     continue;
                 }
+
                 builder.Append($"{new string(IndentationChar, IndentationSize << 1)}public const string {name} = \"{emoji}\";{Environment.NewLine}");
             }
+
             builder.Append($"{new string(IndentationChar, IndentationSize)}}}{Environment.NewLine}}}");
             char[] charList = builder.ToString().ToCharArray();
             for (int i = 0; i <= charList.Length - 1; i++)
             {
-                if (charList[i] == '_')
+                if (charList[i] != '_')
                 {
-                    unsafe
+                    continue;
+                }
+
+                unsafe
+                {
+                    fixed (char* c = &charList[i + 1])
                     {
-                        fixed (char* c = &charList[i + 1])
-                        {
-                            *c = char.ToUpper(*c);
-                            charList[i + 1] = char.ToUpper(charList[i + 1]);
-                        }
+                        *c = char.ToUpper(*c);
+                        charList[i + 1] = char.ToUpper(charList[i + 1]);
                     }
                 }
             }
-            builder = new(charList.ExceptWhere(c => c == '_').ConcatToString());
+
+            builder = new(charList.Where(c => c != '_').ConcatToString());
             builder.Append(Environment.NewLine);
             string result = builder.ToString();
             _illegalWords.ForEach(w =>

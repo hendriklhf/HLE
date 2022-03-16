@@ -38,12 +38,15 @@ namespace HLE.Random
             {
                 (max, min) = (min, max);
             }
+
             if (max < int.MaxValue)
             {
                 max++;
             }
+
             return new System.Random().Next(min, max);
         }
+
         /// <summary>
         /// Returns a <see cref="string"/> of the given <paramref name="length"/> filled with basic Latin characters.<br />
         /// Calls <see cref="Char()"/> to fill the result string.
@@ -56,11 +59,13 @@ namespace HLE.Random
             {
                 return string.Empty;
             }
+
             StringBuilder builder = new();
             for (ulong i = 0; i < length; i++)
             {
                 builder.Append(Char());
             }
+
             return builder.ToString();
         }
 

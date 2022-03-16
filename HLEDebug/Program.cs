@@ -1,15 +1,21 @@
-﻿using System;
-using HLE.Time;
+﻿#nullable enable
 
-namespace HLEDebug
+using System;
+using System.Text;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
+using HLE.Strings;
+
+namespace HLEDebug;
+
+public static class Program
 {
-    public class Program
+    private static void Main()
     {
-        private static void Main()
-        {
-            var t = TimeHelper.GetUnixDifference(TimeHelper.Now() + new Second(45).Milliseconds);
-            Console.WriteLine(t.ToString());
-            Console.ReadLine();
-        }
+        Console.OutputEncoding = Encoding.UTF8;
+        
+        Console.WriteLine($"a{StringHelper.InvisibleChar}a");
+        Console.WriteLine($"a{StringHelper.ZeroWidthChar}a");
+        Console.ReadLine();
     }
 }

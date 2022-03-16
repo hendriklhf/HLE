@@ -6,16 +6,6 @@
     public static class NumberHelper
     {
         /// <summary>
-        /// Converts an <see cref="int"/> to a <see cref="double"/>.
-        /// </summary>
-        /// <param name="i">The <see cref="int"/> that will be converted.</param>
-        /// <returns>Returns <paramref name="i"/> converted to a <see cref="double"/>.</returns>
-        public static double ToDouble(this int i)
-        {
-            return i;
-        }
-
-        /// <summary>
         /// Converts a <see cref="long"/> to a <see cref="double"/>.
         /// </summary>
         /// <param name="l">The <see cref="long"/> that will be converted.</param>

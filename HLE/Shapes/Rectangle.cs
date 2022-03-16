@@ -26,6 +26,7 @@ namespace HLE.Shapes
         /// The area of the rectangle.
         /// </summary>
         public override double Area => Width * Height;
+
         /// <summary>
         /// The circumference of the rectangle.
         /// </summary>

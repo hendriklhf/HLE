@@ -405,6 +405,7 @@ public static class TimeHelper
         {
             result = result[..^1];
         }
+
         return result;
     }
 
@@ -464,14 +465,10 @@ public static class TimeHelper
         }
 
         CheckYears();
-        if (returnNow)
-        {
-            return result;
-        }
-
         return result;
 
         #region Local methods
+
         void CheckMilliseconds()
         {
             if (unixTime > 0 && unixTime < secondMs)
@@ -513,6 +510,7 @@ public static class TimeHelper
                         }
                     }
                 }
+
                 returnNow = true;
             }
         }
@@ -567,8 +565,8 @@ public static class TimeHelper
             result.Years = (uint)roundedYears;
 
             CheckDays();
-            returnNow = true;
         }
+
         #endregion Local functions
     }
 
@@ -605,6 +603,7 @@ public static class TimeHelper
         {
             result += millisecond - now.Milliseconds;
         }
+
         now.Seconds++;
         if (now.Seconds > second)
         {
@@ -614,6 +613,7 @@ public static class TimeHelper
         {
             result += new Second(second - now.Seconds).Milliseconds;
         }
+
         now.Minutes++;
         if (now.Minutes > minute)
         {
@@ -624,6 +624,7 @@ public static class TimeHelper
         {
             result += new Minute(minute - now.Minutes).Milliseconds;
         }
+
         if (now.Hours > hour)
         {
             result += new Hour(24 - now.Hours + hour).Milliseconds;
@@ -632,6 +633,7 @@ public static class TimeHelper
         {
             result += new Hour(hour - now.Hours).Milliseconds;
         }
+
         return result;
     }
 

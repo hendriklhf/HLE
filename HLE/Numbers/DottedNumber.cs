@@ -8,17 +8,17 @@ namespace HLE.Numbers
     /// Works with positive and negative values.<br />
     /// For example: 1.465.564
     /// </summary>
-    public struct DottedNumber
+    public readonly struct DottedNumber
     {
         /// <summary>
         /// The number with the dots inserted displayed as a <see cref="string"/>.
         /// </summary>
-        public string Number { get; private set; }
+        public string Number { get; }
 
         /// <summary>
         /// The original number passed to the constructor.
         /// </summary>
-        public long OrigninalNumber { get; private set; }
+        public long OrigninalNumber { get; }
 
         /// <summary>
         /// The basic constructor of <see cref="DottedNumber"/>.
