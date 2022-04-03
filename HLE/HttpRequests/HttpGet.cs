@@ -22,7 +22,7 @@ namespace HLE.HttpRequests
         /// <summary>
         /// The answer stored in a <see cref="JsonElement"/>, if the answer was a json compatible string.
         /// </summary>
-        public JsonElement? Data { get; }
+        public JsonElement Data { get; }
 
         /// <summary>
         /// True, if the answer was a json compatible string, otherwise false.<br />
@@ -40,7 +40,7 @@ namespace HLE.HttpRequests
         public HttpGet(string url)
         {
             Url = url;
-            Task.Run(() => Result = GetRequest().Result).Wait();
+            Task.Run(async () => Result = await GetRequest()).Wait();
             try
             {
                 if (string.IsNullOrEmpty(Result))

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace HLE.HttpRequests
         /// <summary>
         /// The answer stored in a <see cref="JsonElement"/>, if the answer was a json compatible string.
         /// </summary>
-        public JsonElement? Data { get; }
+        public JsonElement Data { get; }
 
         /// <summary>
         /// True, if the answer was a json compatible string, otherwise false.<br />
@@ -44,11 +45,12 @@ namespace HLE.HttpRequests
         /// </summary>
         /// <param name="url">The URL to which the request will be send to.</param>
         /// <param name="headers">The header content that will be sent to the URL.</param>
-        public HttpPost(string url, List<KeyValuePair<string, string>> headers)
+        public HttpPost(string url, IEnumerable<(string Key, string Value)> headers)
         {
             Url = url;
-            HeaderContent = new FormUrlEncodedContent(headers);
-            Task.Run(() => Result = PostRequest().Result).Wait();
+            IEnumerable<KeyValuePair<string, string>> headerCollection = headers.Select(h => new KeyValuePair<string, string>(h.Key, h.Value));
+            HeaderContent = new FormUrlEncodedContent(headerCollection);
+            Task.Run(async () => Result = await PostRequest()).Wait();
             try
             {
                 if (string.IsNullOrEmpty(Result))
