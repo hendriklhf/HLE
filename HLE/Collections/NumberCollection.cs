@@ -8,7 +8,7 @@ namespace HLE.Collections
     /// </summary>
     public static class NumberCollection
     {
-        private static readonly List<int> _everyNumber = new()
+        private static readonly byte[] _everyNumber =
         {
             0,
             1,
@@ -25,7 +25,7 @@ namespace HLE.Collections
         /// <summary>
         /// A <see cref="ReadOnlyCollection{Int32}"/> of type <see cref="int"/> that contains every number from 0 to 9.
         /// </summary>
-        public static ReadOnlyCollection<int> Numbers => new(_everyNumber);
+        public static IEnumerable<byte> Numbers => _everyNumber;
 
         /// <summary>
         /// Creates a <see cref="List{Int64}"/> of type <see cref="long"/> that contains every number from <paramref name="min"/> to <paramref name="max"/>.

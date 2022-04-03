@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace HLE.Numbers
 {
@@ -162,8 +161,8 @@ namespace HLE.Numbers
         };
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{UnitPrefix}"/> that contains every unit prefix.
+        /// A <see cref="IEnumerable{UnitPrefix}"/> that contains every unit prefix.
         /// </summary>
-        public static ReadOnlyCollection<UnitPrefix> UnitPrefixCollection { get; } = new(_unitPrefixes);
+        public static IEnumerable<UnitPrefix> UnitPrefixCollection => _unitPrefixes;
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace HLE.Collections
@@ -9,7 +8,7 @@ namespace HLE.Collections
     /// </summary>
     public static class CharCollection
     {
-        private static readonly List<char> _alphabetLowerCase = new()
+        private static readonly char[] _alphabetLowerCase =
         {
             'a',
             'b',
@@ -39,7 +38,7 @@ namespace HLE.Collections
             'z'
         };
 
-        private static readonly List<char> _alphabetUpperCase = new()
+        private static readonly char[] _alphabetUpperCase =
         {
             'A',
             'B',
@@ -69,7 +68,7 @@ namespace HLE.Collections
             'Z'
         };
 
-        private static readonly List<char> _everyCharNumber = new()
+        private static readonly char[] _everyCharNumber =
         {
             '0',
             '1',
@@ -83,7 +82,7 @@ namespace HLE.Collections
             '9'
         };
 
-        private static readonly List<char> _specialChars = new()
+        private static readonly char[] _specialChars =
         {
             '!',
             '"',
@@ -120,39 +119,39 @@ namespace HLE.Collections
         };
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in upper and lower case.
+        /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in upper and lower case.
         /// </summary>
-        public static ReadOnlyCollection<char> Alphabet => new(_alphabetLowerCase.Concat(_alphabetUpperCase).ToList());
+        public static IEnumerable<char> Alphabet => _alphabetLowerCase.Concat(_alphabetUpperCase).ToArray();
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in lower case.
+        /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in lower case.
         /// </summary>
-        public static ReadOnlyCollection<char> AlphabetLowerCase => new(_alphabetLowerCase);
+        public static IEnumerable<char> AlphabetLowerCase => _alphabetLowerCase;
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in upper case.
+        /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains every letter of the Alphabet in upper case.
         /// </summary>
-        public static ReadOnlyCollection<char> AlphabetUpperCase => new(_alphabetUpperCase);
+        public static IEnumerable<char> AlphabetUpperCase => _alphabetUpperCase;
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every basic Latin character.<br />
+        /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains every basic Latin character.<br />
         /// Basically a combination of <see cref="Alphabet"/>, <see cref="CharNumbers"/> and <see cref="SpecialChars"/>.
         /// </summary>
-        public static ReadOnlyCollection<char> BasicLatinChars =>
-            new(_alphabetLowerCase
+        public static IEnumerable<char> BasicLatinChars =>
+            _alphabetLowerCase
                 .Concat(_alphabetUpperCase)
                 .Concat(_specialChars)
                 .Concat(_everyCharNumber)
-                .ToList());
+                .ToArray();
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains every number from 0 to 9.
+        /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains every number from 0 to 9.
         /// </summary>
-        public static ReadOnlyCollection<char> CharNumbers => new(_everyCharNumber);
+        public static IEnumerable<char> CharNumbers => _everyCharNumber;
 
         /// <summary>
-        /// A <see cref="ReadOnlyCollection{Char}"/> of type <see cref="char"/> that contains all basic Latin special characters.
+        /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains all basic Latin special characters.
         /// </summary>
-        public static ReadOnlyCollection<char> SpecialChars => new(_specialChars);
+        public static IEnumerable<char> SpecialChars => _specialChars;
     }
 }
