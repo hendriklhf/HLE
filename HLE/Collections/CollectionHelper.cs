@@ -125,5 +125,16 @@ namespace HLE.Collections
 
             return arr;
         }
+
+        public static IEnumerable<T> SelectEach<T>(this IEnumerable<IEnumerable<T>> collection)
+        {
+            List<T> result = new();
+            foreach (IEnumerable<T> e in collection)
+            {
+                result.AddRange(e);
+            }
+
+            return result;
+        }
     }
 }
