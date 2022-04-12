@@ -141,8 +141,7 @@ namespace HLE.Collections
             _alphabetLowerCase
                 .Concat(_alphabetUpperCase)
                 .Concat(_specialChars)
-                .Concat(_everyCharNumber)
-                .ToArray();
+                .Concat(_everyCharNumber);
 
         /// <summary>
         /// A <see cref="IEnumerable{Char}"/> of type <see cref="char"/> that contains every number from 0 to 9.
