@@ -78,12 +78,12 @@ namespace HLE.Collections
         {
             return string.Join(seperator, collection);
         }
-        
+
         public static string JoinToString(this IEnumerable<char> collection, char seperator)
         {
             return string.Join(seperator, collection);
         }
-        
+
         /// <summary>
         /// Concatenates every element of the <paramref name="collection"/> seperated by the <paramref name="seperator"/>.
         /// </summary>

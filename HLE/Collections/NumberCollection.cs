@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace HLE.Collections
 {
@@ -42,7 +41,7 @@ namespace HLE.Collections
                 max = min;
                 min = tmp;
             }
-            
+
             for (long i = min; i <= max; i++)
             {
                 result.Add(i);
