@@ -15,7 +15,7 @@ namespace HLE.Strings
         private static readonly Regex _multipleSpacesPattern = new(@"\s+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
         /// <summary>
-        /// This char moves the chars to right of this char to the left in Twitch chat.
+        /// This char moves the chars to the right of this char to the left in Twitch chat.
         /// </summary>
         public const char ZeroWidthChar = '�';
 
