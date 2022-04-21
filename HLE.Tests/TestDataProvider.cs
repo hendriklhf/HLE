@@ -1,4 +1,4 @@
-﻿namespace HLETests
+﻿namespace HLE.Tests
 {
     public class TestDataProvider
     {

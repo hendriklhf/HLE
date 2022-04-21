@@ -2,7 +2,7 @@
 using HLE.Time;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLETests.TimeTests;
+namespace HLE.Tests.TimeTests;
 
 [TestClass]
 public class TimeHelperTests

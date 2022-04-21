@@ -4,7 +4,7 @@ using System.Linq;
 using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLETests.CollectionsTests
+namespace HLE.Tests.CollectionsTests
 {
     [TestClass]
     public class CollectionHelperTest

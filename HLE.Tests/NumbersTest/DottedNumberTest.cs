@@ -1,7 +1,7 @@
 ﻿using HLE.Numbers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLETests.NumbersTest
+namespace HLE.Tests.NumbersTest
 {
     [TestClass]
     public class DottedNumberTest

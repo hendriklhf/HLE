@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.31313.79
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE", "HLE\HLE.csproj", "{BF550353-87F8-43E7-BC16-C0DCA4635B01}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLEDebug", "HLEDebug\HLEDebug.csproj", "{11B9B476-AD36-459B-B1AF-4474E0FED677}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.Debug", "HLE.Debug\HLE.Debug.csproj", "{11B9B476-AD36-459B-B1AF-4474E0FED677}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLETests", "HLETests\HLETests.csproj", "{6D5301A1-B1CA-4152-8D68-841D9E74165A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.Tests", "HLE.Tests\HLE.Tests.csproj", "{6D5301A1-B1CA-4152-8D68-841D9E74165A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

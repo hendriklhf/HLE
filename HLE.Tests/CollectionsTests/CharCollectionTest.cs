@@ -2,7 +2,7 @@
 using HLE.Strings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLETests.CollectionsTests
+namespace HLE.Tests.CollectionsTests
 {
     [TestClass]
     public class CharCollectionTest
