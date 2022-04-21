@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using HLE.Collections;
 
@@ -21,8 +20,68 @@ namespace HLE.Random
 
         public static char Char(ushort min, ushort max)
         {
-            List<long> numbers = NumberCollection.Create(min, max).ToList();
+            ushort[] numbers = NumberCollection.Create(min, max).ToArray();
             return (char)numbers.Random();
+        }
+
+        public static byte Byte(byte min = byte.MinValue, byte max = byte.MaxValue)
+        {
+            if (min > max)
+            {
+                (max, min) = (min, max);
+            }
+
+            if (max < byte.MaxValue)
+            {
+                max++;
+            }
+
+            return (byte)new System.Random().Next(min, max);
+        }
+
+        public static sbyte SByte(sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
+        {
+            if (min > max)
+            {
+                (max, min) = (min, max);
+            }
+
+            if (max < sbyte.MaxValue)
+            {
+                max++;
+            }
+
+            return (sbyte)new System.Random().Next(min, max);
+        }
+
+        public static short Short(short min = short.MinValue, short max = short.MaxValue)
+        {
+            if (min > max)
+            {
+                (max, min) = (min, max);
+            }
+
+            if (max < short.MaxValue)
+            {
+                max++;
+            }
+
+            return (short)new System.Random().Next(min, max);
+        }
+
+        public static ushort UShort(ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
+        {
+            if (min > max)
+            {
+                (max, min) = (min, max);
+            }
+
+            if (max < ushort.MaxValue)
+            {
+                max++;
+            }
+
+            return (ushort)new System.Random().Next(min, max);
         }
 
         /// <summary>
@@ -45,6 +104,46 @@ namespace HLE.Random
             }
 
             return new System.Random().Next(min, max);
+        }
+
+        public static uint UInt(uint min = uint.MinValue, uint max = uint.MaxValue)
+        {
+            if (min > max)
+            {
+                (max, min) = (min, max);
+            }
+
+            if (max < uint.MaxValue)
+            {
+                max++;
+            }
+
+            return (uint)new System.Random().NextInt64(min, max);
+        }
+
+        public static long Long(long min = long.MinValue, long max = long.MaxValue)
+        {
+            if (min > max)
+            {
+                (max, min) = (min, max);
+            }
+
+            if (max < int.MaxValue)
+            {
+                max++;
+            }
+
+            return new System.Random().NextInt64(min, max);
+        }
+
+        public static double Double()
+        {
+            return new System.Random().NextDouble();
+        }
+
+        public static float Float()
+        {
+            return new System.Random().NextSingle();
         }
 
         /// <summary>
