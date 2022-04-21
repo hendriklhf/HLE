@@ -84,7 +84,7 @@ namespace HLE.Emojis
                 {
                     continue;
                 }
-                
+
                 charList[i + 1] = char.ToUpper(charList[i + 1]);
             }
 

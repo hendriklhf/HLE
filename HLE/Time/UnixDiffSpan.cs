@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace HLE.Time;
 
@@ -29,8 +28,6 @@ public class UnixDiffSpan
 
     public override string ToString()
     {
-        StringBuilder builder = new();
-
         IEnumerable<string> timeValues = typeof(UnixDiffSpan).GetProperties().Select(p =>
         {
             TimeUnit? unit = p.GetCustomAttribute<TimeUnit>();
@@ -49,7 +46,6 @@ public class UnixDiffSpan
             return $"{value}{unit.Value}";
         }).Where(t => t[0] != '0');
 
-        builder.AppendJoin(", ", timeValues);
-        return builder.ToString();
+        return string.Join(", ", timeValues);
     }
 }
