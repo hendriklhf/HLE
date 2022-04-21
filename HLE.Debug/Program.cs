@@ -2,7 +2,7 @@
 
 #nullable enable
 
-namespace HLEDebug;
+namespace HLE.Debug;
 
 public static class Program
 {
