@@ -60,7 +60,7 @@ namespace HLE.Collections
         public static T? Random<T>(this IEnumerable<T> collection)
         {
             T[] arr = collection.ToArray();
-            return !arr.Any() ? default : arr[Rand.Int(0, arr.Length - 1)];
+            return arr.Length == 0 ? default : arr[Rand.Int(0, arr.Length - 1)];
         }
 
         /// <summary>
@@ -145,6 +145,41 @@ namespace HLE.Collections
             }
 
             return result;
+        }
+
+        public static T[][] Split<T>(this IEnumerable<T> collection, T seperator)
+        {
+            bool IsSeperator(T item) => item?.Equals(seperator) == true;
+
+            List<T[]> result = new();
+            List<int> idc = new();
+            T[] arr = collection.ToArray();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (IsSeperator(arr[i]))
+                {
+                    idc.Add(i);
+                }
+            }
+
+            int start = 0;
+            foreach (int i in idc)
+            {
+                T[] split = arr[start..i];
+                start = i + 1;
+                if (split.Length > 0)
+                {
+                    result.Add(split);
+                }
+            }
+
+            T[] end = arr[(idc[^1] + 1)..];
+            if (end.Length > 0)
+            {
+                result.Add(arr[(idc[^1] + 1)..]);
+            }
+
+            return result.ToArray();
         }
     }
 }
