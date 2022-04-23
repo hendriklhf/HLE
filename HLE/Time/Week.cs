@@ -45,7 +45,7 @@ namespace HLE.Time
         /// <summary>
         /// A Regex pattern that matches an amount of weeks in a <see cref="string"/>.
         /// </summary>
-        public string Pattern => @"\d+w(eek)?s?";
+        public const string Pattern = @"\d+w(eek)?s?";
 
         /// <summary>
         /// The basic constructor for <see cref="Week"/>.

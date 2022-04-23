@@ -45,7 +45,7 @@ namespace HLE.Time
         /// <summary>
         /// A pattern that will match an expression of minutes in a <see cref="string"/>.
         /// </summary>
-        public string Pattern => @"\d+m(in(ute)?)?s?";
+        public const string Pattern = @"\d+m(in(ute)?)?s?";
 
         /// <summary>
         /// A minute in milliseconds.

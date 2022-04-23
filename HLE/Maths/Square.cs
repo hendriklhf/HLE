@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HLE.Shapes
+namespace HLE.Maths
 {
     /// <summary>
     /// A class to do calculations with a square.
@@ -8,7 +8,7 @@ namespace HLE.Shapes
     public class Square : Shape
     {
         /// <summary>
-        /// The side length of the sqare.
+        /// The side length of the square.
         /// </summary>
         public double SideLength { get; set; }
 

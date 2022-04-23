@@ -46,7 +46,7 @@ namespace HLE.Time
         /// <summary>
         /// A Regex pattern that matches an amount of years in a <see cref="string"/>.
         /// </summary>
-        public string Pattern => @"\d+y(ear)?s?";
+        public const string Pattern = @"\d+y(ear)?s?";
 
         /// <summary>
         /// A year in milliseconds.

@@ -45,7 +45,7 @@ namespace HLE.Time
         /// <summary>
         /// A pattern that will match an expression of hours in a <see cref="string"/>.
         /// </summary>
-        public string Pattern => @"\d+h(our)?s?";
+        public const string Pattern = @"\d+h(our)?s?";
 
         /// <summary>
         /// An hour in milliseconds.

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Rand = HLE.Random.Random;
 
 namespace HLE.Collections
 {
@@ -60,7 +59,7 @@ namespace HLE.Collections
         public static T? Random<T>(this IEnumerable<T> collection)
         {
             T[] arr = collection.ToArray();
-            return arr.Length == 0 ? default : arr[Rand.Int(0, arr.Length - 1)];
+            return arr.Length == 0 ? default : arr[HLE.Random.Int(0, arr.Length - 1)];
         }
 
         /// <summary>

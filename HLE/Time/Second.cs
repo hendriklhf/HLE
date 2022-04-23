@@ -50,7 +50,7 @@ namespace HLE.Time
         /// <summary>
         /// A pattern that will match an expression of seconds in a <see cref="string"/>.
         /// </summary>
-        public string Pattern => @"\d+s(ec(ond)?)?s?";
+        public const string Pattern = @"\d+s(ec(ond)?)?s?";
 
         /// <summary>
         /// The basic constructor for <see cref="Second"/>.

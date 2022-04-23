@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using HLE.Numbers;
-using HLE.Strings;
 using HLE.Time.Enums;
 
 namespace HLE.Time;
@@ -13,54 +10,6 @@ namespace HLE.Time;
 /// </summary>
 public static class TimeHelper
 {
-    /// <summary>
-    /// Converts <see cref="string"/>s that match the <see cref="Interfaces.ITimeUnit.Pattern"/> in a <see cref="List{String}"/> to seconds.
-    /// </summary>
-    /// <param name="input">The <see cref="List{String}"/> in which the <see cref="string"/>s will be converted.</param>
-    /// <returns>The amount of seconds of all time <see cref="string"/>s.</returns>
-    public static long ConvertStringToSeconds(List<string> input)
-    {
-        return ConvertTimeToMilliseconds(input) / 1000;
-    }
-
-    /// <summary>
-    /// Converts <see cref="string"/>s that match the <see cref="Interfaces.ITimeUnit.Pattern"/> in a <see cref="List{String}"/> to milliseconds.
-    /// </summary>
-    /// <param name="input">The <see cref="List{String}"/> in which the <see cref="string"/>s will be converted.</param>
-    /// <returns>The amount of milliseconds of all time <see cref="string"/>s.</returns>
-    public static long ConvertTimeToMilliseconds(List<string> input)
-    {
-        long result = 0;
-        input.ForEach(str =>
-        {
-            if (str.IsMatch(new Year().Pattern))
-            {
-                result += new Year(str.Match(@"\d+").ToInt()).Milliseconds;
-            }
-            else if (str.IsMatch(new Day().Pattern))
-            {
-                result += new Day(str.Match(@"\d+").ToInt()).Milliseconds;
-            }
-            else if (str.IsMatch(new Week().Pattern))
-            {
-                result += new Week(str.Match(@"\d+").ToInt()).Milliseconds;
-            }
-            else if (str.IsMatch(new Hour().Pattern))
-            {
-                result += new Hour(str.Match(@"\d+").ToInt()).Milliseconds;
-            }
-            else if (str.IsMatch(new Minute().Pattern))
-            {
-                result += new Minute(str.Match(@"\d+").ToInt()).Milliseconds;
-            }
-            else if (str.IsMatch(new Second().Pattern))
-            {
-                result += new Second(str.Match(@"\d+").ToInt()).Milliseconds;
-            }
-        });
-        return result;
-    }
-
     /// <summary>
     /// Converts the a Unix time stamp into a time stamp with time units. The Unix time stamp can be in the future or past.<br />
     /// For example: "1h, 24min, 56s"

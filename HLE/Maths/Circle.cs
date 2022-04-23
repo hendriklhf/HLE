@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HLE.Shapes
+namespace HLE.Maths
 {
     /// <summary>
     /// A class to do calculations with a circle.

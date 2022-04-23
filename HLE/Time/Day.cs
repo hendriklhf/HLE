@@ -45,7 +45,7 @@ namespace HLE.Time
         /// <summary>
         /// A pattern that will match an expression of days in a <see cref="string"/>.
         /// </summary>
-        public string Pattern => @"\d+d(ay)?s?";
+        public const string Pattern = @"\d+d(ay)?s?";
 
         /// <summary>
         /// A day in milliseconds.

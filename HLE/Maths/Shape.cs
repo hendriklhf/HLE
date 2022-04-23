@@ -1,4 +1,4 @@
-﻿namespace HLE.Shapes
+﻿namespace HLE.Maths
 {
     /// <summary>
     /// An abstract class for shape objects.
