@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using HLE.Time;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -21,11 +22,11 @@ public class TimeHelperTests
 
         long[] times =
         {
-            new Year(counts[0]).Milliseconds,
-            new Day(counts[1]).Milliseconds,
-            new Hour(counts[2]).Milliseconds,
-            new Minute(counts[3]).Milliseconds,
-            new Second(counts[4]).Milliseconds
+            (long)TimeSpan.FromDays(counts[0] * 365).TotalMilliseconds,
+            (long)TimeSpan.FromDays(counts[1]).TotalMilliseconds,
+            (long)TimeSpan.FromHours(counts[2]).TotalMilliseconds,
+            (long)TimeSpan.FromMinutes(counts[3]).TotalMilliseconds,
+            (long)TimeSpan.FromSeconds(counts[4]).TotalMilliseconds
         };
 
         UnixDiffSpan d = TimeHelper.GetUnixDifference(TimeHelper.Now() + times.Sum() + 250);
