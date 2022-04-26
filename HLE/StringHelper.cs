@@ -46,11 +46,6 @@ public static class StringHelper
         return str.Replace(s, "");
     }
 
-    public static string Remove(this string str, char c)
-    {
-        return str.Replace(c.ToString(), "");
-    }
-
     public static IEnumerable<string> Split(this string str, int charCount, bool onlySplitOnWhitespace = false)
     {
         str = str.TrimAll();
@@ -111,6 +106,37 @@ public static class StringHelper
 
             return result;
         }
+    }
+
+    public static string TakeBetween(this string str, char firstChar, char secondChar)
+    {
+        int firstIdx = str.IndexOf(firstChar);
+        int secondIdx = str.IndexOf(secondChar);
+        Range range;
+        switch (firstIdx)
+        {
+            case -1 when secondIdx == -1:
+                range = Range.All;
+                break;
+            case -1:
+                range = ..secondIdx;
+                break;
+            default:
+            {
+                if (secondIdx == -1)
+                {
+                    range = (firstIdx + 1)..;
+                }
+                else
+                {
+                    range = (firstIdx + 1)..secondIdx;
+                }
+
+                break;
+            }
+        }
+
+        return str[range];
     }
 
     /// <summary>
@@ -197,16 +223,6 @@ public static class StringHelper
     public static string TrimAll(this string str)
     {
         return _multipleSpacesPattern.Replace(str.Trim(), " ");
-    }
-
-    /// <summary>
-    /// Returns a <see cref="string"/> that contains the given amount <paramref name="count"/> of spaces.
-    /// </summary>
-    /// <param name="count">The amount of spaces the <see cref="string"/> will contain.</param>
-    /// <returns>The <see cref="string"/> filled with whitespaces.</returns>
-    public static string Whitespace(int count)
-    {
-        return new string(' ', count);
     }
 
     public static StringBuilder Append(this StringBuilder builder, params string[] strings)

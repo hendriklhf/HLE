@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 
 namespace HLE.Twitch.Chatterino
@@ -15,7 +14,7 @@ namespace HLE.Twitch.Chatterino
         /// Gets all channels of all your tabs from the Chatterino settings.
         /// </summary>
         /// <returns>A <see cref="List{String}"/> of all channels.</returns>
-        public static IEnumerable<string> GetChannelsFromChatterinoSettings()
+        public static IEnumerable<string> GetChannels()
         {
             List<string> result = new();
             try
@@ -30,7 +29,7 @@ namespace HLE.Twitch.Chatterino
                         if (tabSettings.GetProperty("data").GetProperty("type").GetString() == "twitch")
                         {
                             string? name = tabSettings.GetProperty("data").GetProperty("name").GetString();
-                            if (name is not null)
+                            if (name is not null && !result.Contains(name))
                             {
                                 result.Add(name);
                             }
@@ -46,7 +45,7 @@ namespace HLE.Twitch.Chatterino
                                 if (tabItems[j].GetProperty("data").GetProperty("type").GetString() == "twitch")
                                 {
                                     string? name = tabItems[j].GetProperty("data").GetProperty("name").GetString();
-                                    if (name is not null)
+                                    if (name is not null && !result.Contains(name))
                                     {
                                         result.Add(name);
                                     }
@@ -63,7 +62,7 @@ namespace HLE.Twitch.Chatterino
             {
             }
 
-            return result.Distinct();
+            return result;
         }
     }
 }
