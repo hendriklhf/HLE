@@ -20,8 +20,17 @@ public class RoomstateArgs : EventArgs
 
     public bool SubOnly { get; init; }
 
-    public RoomstateArgs(string channel)
+    public RoomstateArgs(string ircMessage)
     {
-        Channel = channel;
+        string[] split = ircMessage.Split();
+        string[] roomstateSplit = split[0][1..].Split(';');
+        Channel = split[^1][1..];
+        EmoteOnly = roomstateSplit[0][^1] == '1';
+        FollowerOnly = Utils.EndingNumbersPattern.Match(roomstateSplit[1]).Value.ToInt();
+        R9K = roomstateSplit[2][^1] == '1';
+        Rituals = roomstateSplit[3][^1] == '1';
+        ChannelId = Utils.EndingNumbersPattern.Match(roomstateSplit[4]).Value.ToInt();
+        SlowMode = Utils.EndingNumbersPattern.Match(roomstateSplit[5]).Value.ToInt();
+        SubOnly = roomstateSplit[6][^1] == '1';
     }
 }
