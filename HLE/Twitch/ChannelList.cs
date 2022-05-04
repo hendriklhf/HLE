@@ -9,7 +9,7 @@ namespace HLE.Twitch;
 
 public class ChannelList : IEnumerable<Channel>
 {
-    public Channel? this[int id] => Get(id);
+    public Channel? this[long id] => Get(id);
 
     public Channel? this[string name] => Get(name);
 
@@ -29,7 +29,7 @@ public class ChannelList : IEnumerable<Channel>
         }
     }
 
-    private Channel? Get(int id)
+    private Channel? Get(long id)
     {
         return _channels.FirstOrDefault(c => c.Id == id);
     }

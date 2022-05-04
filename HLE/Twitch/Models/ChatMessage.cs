@@ -1,80 +1,145 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using HLE.Collections;
+using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;
 
+[SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
 public class ChatMessage
 {
-    public object? BadgeInfo { get; init; }
+    [IrcTagName("badge-info")]
+    public Dictionary<string, int> BadgeInfo { get; init; } = new();
 
-    public Badge[] Badges { get; init; }
+    [IrcTagName("badges")]
+    public Badge[] Badges { get; init; } = Array.Empty<Badge>();
 
+    [IrcTagName("color")]
     public Color Color { get; init; }
 
-    public string DisplayName { get; init; }
+    [IrcTagName("display-name")]
+    public string DisplayName { get; init; } = string.Empty;
 
-    public object? Emotes { get; init; }
-
+    [IrcTagName("first-msg")]
     public bool IsFirstMessage { get; init; }
 
-    public object? Flags { get; init; }
-
+    [IrcTagName("id")]
     public Guid Id { get; init; }
 
+    [IrcTagName("mod")]
     public bool IsModerator { get; init; }
 
-    public int ChannelId { get; init; }
+    [IrcTagName("room-id")]
+    public long ChannelId { get; init; }
 
+    [IrcTagName("subscriber")]
     public bool IsSubscriber { get; init; }
 
+    [IrcTagName("tmi-sent-ts")]
     public long TmiSentTs { get; init; }
 
+    [IrcTagName("turbo")]
     public bool IsTurboUser { get; init; }
 
-    public int UserId { get; init; }
-
-    public object? UserType { get; init; }
+    [IrcTagName("user-id")]
+    public long UserId { get; init; }
 
     public string Username { get; init; }
 
     public string Channel { get; init; }
 
-    public string Content { get; init; }
+    public string Message { get; init; }
 
     public string RawIrcMessage { get; init; }
 
     public ChatMessage(string ircMessage)
     {
         string[] split = ircMessage.Split();
-        string[] privmsgSplit = split[0][1..].Split(';');
+        string[] privmsgSplit = split[0][1..].Split(';').ToArray();
+        Dictionary<string, string> tagDic = privmsgSplit.Select(s => s.Split('=')).ToDictionary(sp => sp[0], sp => sp[1]);
+        PropertyInfo[] ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
+        MethodInfo[] methods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
-        //BadgeInfo =
-        string[] badgesComplete = privmsgSplit[1].Split('=');
-        string[] badges = badgesComplete[1].Split(',');
-        Badges = badges.Select(b =>
+        foreach (PropertyInfo prop in ircProps)
+        {
+            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>()!;
+            if (!tagDic.TryGetValue(attr.Value, out string? value))
+            {
+                continue;
+            }
+
+            MethodInfo method = methods.First(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name);
+            object? result = method.Invoke(this, new object[]
+            {
+                value
+            });
+
+            if (result is null)
+            {
+                continue;
+            }
+
+            prop.SetValue(this, result);
+        }
+
+        Username = string.IsNullOrEmpty(DisplayName) ? string.Empty : DisplayName.ToLower();
+        Channel = split[3][1..];
+        Message = split[4..].JoinToString(' ')[1..];
+        RawIrcMessage = ircMessage;
+    }
+
+    [MsgPropName(nameof(BadgeInfo))]
+    private Dictionary<string, int> GetBadgeInfo(string value)
+    {
+        return value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => s[1].ToInt());
+    }
+
+    [MsgPropName(nameof(Badges))]
+    private Badge[] GetBadges(string value)
+    {
+        string[] badges = value.Split(',');
+        return badges.Select(b =>
         {
             string[] bSplit = b.Split('/');
             return new Badge(bSplit[0], bSplit[1].ToInt());
         }).ToArray();
-        int[] rgb = privmsgSplit[2][1..].Split(2).Select(e => Convert.ToInt32(e, 16)).ToArray();
-        Color = Color.FromArgb(rgb[0], rgb[1], rgb[2]);
-        DisplayName = Utils.EndingWordPattern.Match(privmsgSplit[3]).Value;
-        //Emotes =
-        IsFirstMessage = privmsgSplit[5][^1] == '1';
-        //Flags =
-        Id = Guid.Parse(privmsgSplit[7].Split('=')[1]);
-        IsModerator = privmsgSplit[8][^1] == '1';
-        ChannelId = Utils.EndingNumbersPattern.Match(privmsgSplit[9]).Value.ToInt();
-        IsSubscriber = privmsgSplit[10][^1] == '1';
-        TmiSentTs = Utils.EndingNumbersPattern.Match(privmsgSplit[11]).Value.ToInt();
-        IsTurboUser = privmsgSplit[12][^1] == '1';
-        UserId = Utils.EndingNumbersPattern.Match(privmsgSplit[13]).Value.ToInt();
-        //UserType =
-        Username = DisplayName.ToLower();
-        Channel = split[3][1..];
-        Content = split[4..].JoinToString(' ')[1..];
-        RawIrcMessage = ircMessage;
     }
+
+    [MsgPropName(nameof(Color))]
+    private Color GetColor(string value)
+    {
+        int[] rgb = value[1..].Split(2).Select(e => Convert.ToInt32(e, 16)).ToArray();
+        return Color.FromArgb(rgb[0], rgb[1], rgb[2]);
+    }
+
+    [MsgPropName(nameof(DisplayName))]
+    private string GetDisplayName(string value) => Utils.EndingWordPattern.Match(value).Value;
+
+    [MsgPropName(nameof(IsFirstMessage))]
+    private bool GetIsFirstMsg(string value) => value[^1] == '1';
+
+    [MsgPropName(nameof(Id))]
+    private Guid GetId(string value) => Guid.Parse(value);
+
+    [MsgPropName(nameof(IsModerator))]
+    private bool GetIsModerator(string value) => value[^1] == '1';
+
+    [MsgPropName(nameof(ChannelId))]
+    private int GetChannelId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToInt();
+
+    [MsgPropName(nameof(IsSubscriber))]
+    private bool GetIsSubscriber(string value) => value[^1] == '1';
+
+    [MsgPropName(nameof(TmiSentTs))]
+    private long GetTmiSentTs(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToLong();
+
+    [MsgPropName(nameof(IsTurboUser))]
+    private bool GetIsTurboUser(string value) => value[^1] == '1';
+
+    [MsgPropName(nameof(UserId))]
+    private int GetUserId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToInt();
 }

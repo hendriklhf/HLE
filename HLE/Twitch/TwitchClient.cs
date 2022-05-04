@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HLE.Collections;
 using HLE.Twitch.Args;
+using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
@@ -24,7 +25,8 @@ public class TwitchClient
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
 
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
-    // public event EventHandler? OnChatMessageReceived;
+
+    public event EventHandler<ChatMessage>? OnChatMessageReceived;
     // public event EventHandler? OnWhisperReceived;
 
     #endregion Events
@@ -61,6 +63,7 @@ public class TwitchClient
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
         _ircHandler.OnRoomstateReceived += IrcClient_OnRoomstateReceived;
         _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
+        _ircHandler.OnChatMessageReceived += (_, e) => OnChatMessageReceived?.Invoke(this, e);
     }
 
     public void Send(string channel, string message)

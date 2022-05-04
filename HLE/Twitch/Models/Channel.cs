@@ -6,7 +6,7 @@ public class Channel
 {
     public string Name { get; }
 
-    public int Id { get; }
+    public long Id { get; }
 
     public bool EmoteOnly { get; private set; }
 

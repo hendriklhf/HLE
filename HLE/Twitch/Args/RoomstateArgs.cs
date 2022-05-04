@@ -12,7 +12,7 @@ public class RoomstateArgs : EventArgs
 
     public bool Rituals { get; init; }
 
-    public int ChannelId { get; init; }
+    public long ChannelId { get; init; }
 
     public string Channel { get; }
 
