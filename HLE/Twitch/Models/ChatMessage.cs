@@ -10,6 +10,7 @@ using HLE.Twitch.Attributes;
 namespace HLE.Twitch.Models;
 
 [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
+[SuppressMessage("ReSharper", "UnusedMember.Local")]
 public class ChatMessage
 {
     [IrcTagName("badge-info")]
@@ -56,15 +57,16 @@ public class ChatMessage
 
     public string RawIrcMessage { get; init; }
 
+    private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
+    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
+
     public ChatMessage(string ircMessage)
     {
         string[] split = ircMessage.Split();
         string[] privmsgSplit = split[0][1..].Split(';').ToArray();
         Dictionary<string, string> tagDic = privmsgSplit.Select(s => s.Split('=')).ToDictionary(sp => sp[0], sp => sp[1]);
-        PropertyInfo[] ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
-        MethodInfo[] methods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
-        foreach (PropertyInfo prop in ircProps)
+        foreach (PropertyInfo prop in _ircProps)
         {
             IrcTagName attr = prop.GetCustomAttribute<IrcTagName>()!;
             if (!tagDic.TryGetValue(attr.Value, out string? value))
@@ -72,7 +74,7 @@ public class ChatMessage
                 continue;
             }
 
-            MethodInfo method = methods.First(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name);
+            MethodInfo method = _ircMethods.First(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name);
             object? result = method.Invoke(this, new object[]
             {
                 value
@@ -145,7 +147,7 @@ public class ChatMessage
     private bool GetIsModerator(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(ChannelId))]
-    private int GetChannelId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToInt();
+    private long GetChannelId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToLong();
 
     [MsgPropName(nameof(IsSubscriber))]
     private bool GetIsSubscriber(string value) => value[^1] == '1';
@@ -157,5 +159,5 @@ public class ChatMessage
     private bool GetIsTurboUser(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(UserId))]
-    private int GetUserId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToInt();
+    private long GetUserId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToLong();
 }

@@ -26,8 +26,7 @@ public class TwitchClient
     //public event EventHandler? OnLeftChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
-    // public event EventHandler? OnWhisperReceived;
-    //public event EventHandler? OnDataReceived;
+    public event EventHandler<string>? OnDataReceived;
 
     #endregion Events
 
@@ -81,6 +80,17 @@ public class TwitchClient
         }
 
         _client.SendMessage(channel, message);
+    }
+
+    public void Send(long channelId, string message)
+    {
+        string? channel = Channels.FirstOrDefault(c => c.Id == channelId)?.Name;
+        if (channel is null)
+        {
+            return;
+        }
+
+        Send($"#{channel}", message);
     }
 
     public void SendRaw(string message)
@@ -161,7 +171,11 @@ public class TwitchClient
     {
         string message = Encoding.UTF8.GetString(e.ToArray());
         string[] lines = message.Remove("\r").Split('\n');
-        lines.ForEach(l => _ircHandler.Handle(l));
+        lines.ForEach(l =>
+        {
+            OnDataReceived?.Invoke(this, l);
+            _ircHandler.Handle(l);
+        });
 #if DEBUG
         Console.WriteLine(message);
 #endif
