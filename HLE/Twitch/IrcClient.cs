@@ -39,6 +39,11 @@ public class IrcClient
         _cancellationToken = tokenCreator.Token;
     }
 
+    public void SendRaw(string message)
+    {
+        Send(message).Wait(_cancellationToken);
+    }
+
     private void StartListening()
     {
         async Task StartListeningLocal()
@@ -94,9 +99,15 @@ public class IrcClient
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     private async Task JoinChannels(IEnumerable<string> channels)
     {
+        string[] channelArr = channels.ToArray();
+        if (channelArr.Length == 0)
+        {
+            return;
+        }
+
         int maxChannels = _isVerifiedBot ? 200 : 20;
         const short period = 10000;
-        string[] joins = channels.Select(c => $"JOIN {c}").ToArray();
+        string[] joins = channelArr.Select(c => $"JOIN {c}").ToArray();
         long start = TimeHelper.Now();
         for (int i = 0; i < joins.Length; i++)
         {

@@ -9,9 +9,9 @@ namespace HLE.Twitch;
 
 public class ChannelList : IEnumerable<Channel>
 {
-    public Channel? this[long id] => Get(id);
+    public Channel? this[long channelId] => Get(channelId);
 
-    public Channel? this[string name] => Get(name);
+    public Channel? this[string channel] => Get(channel);
 
     private readonly List<Channel> _channels = new();
 
@@ -27,6 +27,33 @@ public class ChannelList : IEnumerable<Channel>
         {
             channel.Update(args);
         }
+    }
+
+    internal void Remove(string name)
+    {
+        Channel? channel = _channels.FirstOrDefault(c => string.Equals(name, c.Name, StringComparison.OrdinalIgnoreCase));
+        if (channel is null)
+        {
+            return;
+        }
+
+        _channels.Remove(channel);
+    }
+
+    internal void Remove(int id)
+    {
+        Channel? channel = _channels.FirstOrDefault(c => id == c.Id);
+        if (channel is null)
+        {
+            return;
+        }
+
+        _channels.Remove(channel);
+    }
+
+    internal void Clear()
+    {
+        _channels.Clear();
     }
 
     private Channel? Get(long id)

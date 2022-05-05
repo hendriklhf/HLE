@@ -23,11 +23,11 @@ public class TwitchClient
 
     // public event EventHandler? OnConnected;
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
-
+    //public event EventHandler? OnLeftChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
-
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
     // public event EventHandler? OnWhisperReceived;
+    //public event EventHandler? OnDataReceived;
 
     #endregion Events
 
@@ -64,6 +64,7 @@ public class TwitchClient
         _ircHandler.OnRoomstateReceived += IrcClient_OnRoomstateReceived;
         _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
         _ircHandler.OnChatMessageReceived += (_, e) => OnChatMessageReceived?.Invoke(this, e);
+        _ircHandler.OnPingReceived += (_, e) => SendRaw($"PONG :{e.Message}");
     }
 
     public void Send(string channel, string message)
@@ -82,16 +83,21 @@ public class TwitchClient
         _client.SendMessage(channel, message);
     }
 
+    public void SendRaw(string message)
+    {
+        if (!IsConnected || IsAnonymousLogin)
+        {
+            return;
+        }
+
+        _client.SendRaw(message);
+    }
+
     public void Connect()
     {
         if (IsConnected)
         {
             return;
-        }
-
-        if (_ircChannels.Count == 0)
-        {
-            throw new Exception("The channel list can't be empty.");
         }
 
         _client.Connect(_ircChannels);
@@ -110,6 +116,7 @@ public class TwitchClient
     public void LeaveChannel(string channel)
     {
         _ircChannels.Remove(channel);
+        Channels.Remove(channel);
         if (IsConnected)
         {
             _client.LeaveChannel(channel);
@@ -128,6 +135,7 @@ public class TwitchClient
             _client.LeaveChannels(_ircChannels);
         }
 
+        Channels.Clear();
         _ircChannels.Clear();
     }
 
@@ -152,7 +160,7 @@ public class TwitchClient
     private void IrcClient_OnDataReceived(object? sender, Memory<byte> e)
     {
         string message = Encoding.UTF8.GetString(e.ToArray());
-        string[] lines = message.Remove("\r").Split("\n");
+        string[] lines = message.Remove("\r").Split('\n');
         lines.ForEach(l => _ircHandler.Handle(l));
 #if DEBUG
         Console.WriteLine(message);

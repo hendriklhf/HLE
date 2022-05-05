@@ -95,12 +95,19 @@ public class ChatMessage
     [MsgPropName(nameof(BadgeInfo))]
     private Dictionary<string, int> GetBadgeInfo(string value)
     {
-        return value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => s[1].ToInt());
+        return string.IsNullOrEmpty(value)
+            ? new()
+            : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => s[1].ToInt());
     }
 
     [MsgPropName(nameof(Badges))]
     private Badge[] GetBadges(string value)
     {
+        if (string.IsNullOrEmpty(value))
+        {
+            return Array.Empty<Badge>();
+        }
+
         string[] badges = value.Split(',');
         return badges.Select(b =>
         {
@@ -112,12 +119,21 @@ public class ChatMessage
     [MsgPropName(nameof(Color))]
     private Color GetColor(string value)
     {
+        if (string.IsNullOrEmpty(value))
+        {
+            return Color.Empty;
+        }
+
         int[] rgb = value[1..].Split(2).Select(e => Convert.ToInt32(e, 16)).ToArray();
         return Color.FromArgb(rgb[0], rgb[1], rgb[2]);
     }
 
     [MsgPropName(nameof(DisplayName))]
-    private string GetDisplayName(string value) => Utils.EndingWordPattern.Match(value).Value;
+    private string GetDisplayName(string value)
+    {
+        string displayName = Utils.EndingWordPattern.Match(value).Value;
+        return displayName.EndsWith(@"\s") ? displayName[..^2] : displayName;
+    }
 
     [MsgPropName(nameof(IsFirstMessage))]
     private bool GetIsFirstMsg(string value) => value[^1] == '1';

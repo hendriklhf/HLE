@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 using HLE.Twitch.Args;
 using HLE.Twitch.Models;
 
@@ -7,35 +6,47 @@ namespace HLE.Twitch;
 
 public class IrcHandler
 {
+    #region Events
+
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
+    public event EventHandler<PingArgs>? OnPingReceived;
 
-    private readonly Regex _joinChannelPattern = new(@"^:\w{3,25}!\w{3,25}@\w{3,25}\.tmi\.twitch\.tv\sJOIN\s#\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    #endregion Events
 
-    private readonly Regex _roomstatePattern = new(@"^@emote-only=[01];followers-only=-?\d+;r9k=[01];rituals=[01];room-id=\d+;slow=\d+;subs-only=[01]\s:tmi\.twitch\.tv\sROOMSTATE\s#\w{3,25}$",
-        RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
-
-    private readonly Regex _privmsgPattern = new(@"^@\S+=\S*(;\S+=\S*)*\s:\w{3,25}!\w{3,25}@\w{3,25}\.tmi\.twitch\.tv\sPRIVMSG\s#\w{3,25}\s:.*$", RegexOptions.Compiled,
-        TimeSpan.FromMilliseconds(250));
+    private readonly string[] _ircCmds =
+    {
+        "JOIN",
+        "ROOMSTATE",
+        "PRIVMSG",
+        "PING"
+    };
 
     public void Handle(string ircMessage)
     {
-        if (_joinChannelPattern.IsMatch(ircMessage))
+        string[] split = ircMessage.Split();
+        switch (split.Length)
         {
-            string[] split = ircMessage.Split();
-            string username = split[0].TakeBetween(':', '!');
-            string channel = split[^1][1..];
-            OnJoinedChannel?.Invoke(this, new(username, channel));
-        }
-        else if (_roomstatePattern.IsMatch(ircMessage))
-        {
-            OnRoomstateReceived?.Invoke(this, new(ircMessage));
-        }
-        else if (_privmsgPattern.IsMatch(ircMessage))
-        {
-            ChatMessage message = new(ircMessage);
-            OnChatMessageReceived?.Invoke(this, message);
+            case >= 3:
+            {
+                if (string.Equals(split[2], _ircCmds[1], StringComparison.Ordinal))
+                {
+                    OnRoomstateReceived?.Invoke(this, new(ircMessage));
+                }
+                else if (string.Equals(split[2], _ircCmds[2], StringComparison.Ordinal))
+                {
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage));
+                }
+
+                break;
+            }
+            case >= 2 when string.Equals(split[1], _ircCmds[0], StringComparison.Ordinal):
+                OnJoinedChannel?.Invoke(this, new(ircMessage));
+                break;
+            case >= 1 when string.Equals(split[0], _ircCmds[3], StringComparison.Ordinal):
+                OnPingReceived?.Invoke(this, new(ircMessage[6..]));
+                break;
         }
     }
 }

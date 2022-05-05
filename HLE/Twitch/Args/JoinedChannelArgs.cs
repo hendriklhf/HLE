@@ -8,9 +8,10 @@ public class JoinedChannelArgs : EventArgs
 
     public string Channel { get; }
 
-    public JoinedChannelArgs(string username, string channel)
+    public JoinedChannelArgs(string ircMessage)
     {
-        Username = username;
-        Channel = channel;
+        string[] split = ircMessage.Split();
+        Username = split[0].TakeBetween(':', '!');
+        Channel = split[^1][1..];
     }
 }
