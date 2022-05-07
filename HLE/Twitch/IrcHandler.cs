@@ -9,6 +9,7 @@ public class IrcHandler
     #region Events
 
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
+    public event EventHandler<LeftChannelArgs>? OnLeftChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
     public event EventHandler<PingArgs>? OnPingReceived;
@@ -20,7 +21,8 @@ public class IrcHandler
         "JOIN",
         "ROOMSTATE",
         "PRIVMSG",
-        "PING"
+        "PING",
+        "PART"
     };
 
     public void Handle(string ircMessage)
@@ -41,9 +43,19 @@ public class IrcHandler
 
                 break;
             }
-            case >= 2 when string.Equals(split[1], _ircCmds[0], StringComparison.Ordinal):
-                OnJoinedChannel?.Invoke(this, new(ircMessage));
+            case >= 2:
+            {
+                if (string.Equals(split[1], _ircCmds[0], StringComparison.Ordinal))
+                {
+                    OnJoinedChannel?.Invoke(this, new(ircMessage));
+                }
+                else if (string.Equals(split[1], _ircCmds[4], StringComparison.Ordinal))
+                {
+                    OnLeftChannel?.Invoke(this, new(ircMessage));
+                }
+
                 break;
+            }
             case >= 1 when string.Equals(split[0], _ircCmds[3], StringComparison.Ordinal):
                 OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;

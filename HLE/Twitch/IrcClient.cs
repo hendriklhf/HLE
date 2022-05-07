@@ -19,6 +19,7 @@ public class IrcClient
 
     #region Events
 
+    public event EventHandler? OnConnected;
     public event EventHandler<Memory<byte>>? OnDataReceived;
     public event EventHandler<Memory<byte>>? OnDataSent;
 
@@ -72,6 +73,7 @@ public class IrcClient
         async Task ConnectLocal()
         {
             await _webSocket.ConnectAsync(new("wss://irc-ws.chat.twitch.tv:443"), _cancellationToken);
+            OnConnected?.Invoke(this, EventArgs.Empty);
             StartListening();
             if (OAuthToken is not null)
             {

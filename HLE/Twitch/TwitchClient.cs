@@ -21,11 +21,12 @@ public class TwitchClient
 
     #region Events
 
-    // public event EventHandler? OnConnected;
+    public event EventHandler? OnConnected;
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
-    //public event EventHandler? OnLeftChannel;
+    public event EventHandler<LeftChannelArgs>? OnLeftChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
+    public event EventHandler<ChatMessage>? OnChatMessageSent;
     public event EventHandler<string>? OnDataReceived;
 
     #endregion Events
@@ -56,14 +57,16 @@ public class TwitchClient
 
     private void SetEvents()
     {
+        _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
         _client.OnDataReceived += IrcClient_OnDataReceived;
         _client.OnDataSent += IrcClient_OnDataSent;
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
         _ircHandler.OnRoomstateReceived += IrcClient_OnRoomstateReceived;
         _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
-        _ircHandler.OnChatMessageReceived += (_, e) => OnChatMessageReceived?.Invoke(this, e);
+        _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += (_, e) => SendRaw($"PONG :{e.Message}");
+        _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
     }
 
     public void Send(string channel, string message)
@@ -125,8 +128,9 @@ public class TwitchClient
 
     public void LeaveChannel(string channel)
     {
+        channel = FormatChannel(channel);
         _ircChannels.Remove(channel);
-        Channels.Remove(channel);
+        Channels.Remove(channel[1..]);
         if (IsConnected)
         {
             _client.LeaveChannel(channel);
@@ -142,7 +146,7 @@ public class TwitchClient
 
         if (IsConnected)
         {
-            _client.LeaveChannels(_ircChannels);
+            _client.LeaveChannels(FormatChannels(_ircChannels));
         }
 
         Channels.Clear();
@@ -164,7 +168,7 @@ public class TwitchClient
             return;
         }
 
-        _ircChannels = FormatChannels(channels);
+        _ircChannels = FormatChannels(channels).ToList();
     }
 
     private void IrcClient_OnDataReceived(object? sender, Memory<byte> e)
@@ -190,7 +194,19 @@ public class TwitchClient
 
     private void IrcClient_OnRoomstateReceived(object? sender, RoomstateArgs e)
     {
-        Channels.Add(e);
+        Channels.Update(e);
+    }
+
+    private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage e)
+    {
+        if (string.Equals(e.Username, Username, StringComparison.OrdinalIgnoreCase))
+        {
+            OnChatMessageSent?.Invoke(this, e);
+        }
+        else
+        {
+            OnChatMessageReceived?.Invoke(this, e);
+        }
     }
 
     private static string FormatChannel(string channel)
@@ -198,9 +214,9 @@ public class TwitchClient
         return (channel.StartsWith('#') ? channel : $"#{channel}").ToLower();
     }
 
-    private static List<string> FormatChannels(IEnumerable<string> channels)
+    private static IEnumerable<string> FormatChannels(IEnumerable<string> channels)
     {
-        return channels.Where(c => _channelPattern.IsMatch(c)).Select(FormatChannel).ToList();
+        return channels.Where(c => _channelPattern.IsMatch(c)).Select(FormatChannel);
     }
 
     private static string ValidateOAuthToken(string oAuthToken)

@@ -1,4 +1,6 @@
-﻿using HLE.Twitch.Args;
+﻿using System.Linq;
+using System.Reflection;
+using HLE.Twitch.Args;
 
 namespace HLE.Twitch.Models;
 
@@ -14,8 +16,6 @@ public class Channel
 
     public bool R9K { get; private set; }
 
-    public bool Rituals { get; private set; }
-
     public int SlowMode { get; private set; }
 
     public bool SubOnly { get; private set; }
@@ -29,11 +29,10 @@ public class Channel
 
     internal void Update(RoomstateArgs args)
     {
-        EmoteOnly = args.EmoteOnly;
-        FollowerOnly = args.FollowerOnly;
-        R9K = args.R9K;
-        Rituals = args.Rituals;
-        SlowMode = args.SlowMode;
-        SubOnly = args.SubOnly;
+        PropertyInfo[] changedProps = RoomstateArgs.IrcProps.Where(p => args.ChangedProperties.Contains(p.Name)).ToArray();
+        foreach (PropertyInfo prop in changedProps)
+        {
+            prop.SetValue(this, prop.GetValue(args));
+        }
     }
 }

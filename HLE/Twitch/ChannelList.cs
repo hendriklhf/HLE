@@ -15,7 +15,7 @@ public class ChannelList : IEnumerable<Channel>
 
     private readonly List<Channel> _channels = new();
 
-    internal void Add(RoomstateArgs args)
+    internal void Update(RoomstateArgs args)
     {
         Channel? channel = _channels.FirstOrDefault(c => c.Id == args.ChannelId);
         if (channel is null)
@@ -40,7 +40,7 @@ public class ChannelList : IEnumerable<Channel>
         _channels.Remove(channel);
     }
 
-    internal void Remove(int id)
+    internal void Remove(long id)
     {
         Channel? channel = _channels.FirstOrDefault(c => id == c.Id);
         if (channel is null)
