@@ -31,7 +31,7 @@ public class RoomstateArgs : EventArgs
     [IrcTagName("subs-only")]
     public bool SubsOnly { get; init; }
 
-    internal string[] ChangedProperties { get; }
+    internal List<PropertyInfo> ChangedProperties { get; } = new();
 
     internal static PropertyInfo[] IrcProps { get; } = typeof(RoomstateArgs).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
 
@@ -43,7 +43,6 @@ public class RoomstateArgs : EventArgs
         string[] split = ircMessage.Split();
         string[] roomstateSplit = split[0][1..].Split(';').ToArray();
         Dictionary<string, string> tagDic = roomstateSplit.Select(s => s.Split('=')).ToDictionary(sp => sp[0], sp => sp[1]);
-        ChangedProperties = tagDic.Keys.ToArray();
 
         foreach (PropertyInfo prop in IrcProps)
         {
@@ -65,6 +64,7 @@ public class RoomstateArgs : EventArgs
             }
 
             prop.SetValue(this, result);
+            ChangedProperties.Add(prop);
         }
 
         Channel = split[^1][1..];

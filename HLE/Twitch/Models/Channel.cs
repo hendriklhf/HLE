@@ -1,9 +1,10 @@
-﻿using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using HLE.Twitch.Args;
 
 namespace HLE.Twitch.Models;
 
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
 public class Channel
 {
     public string Name { get; }
@@ -29,8 +30,7 @@ public class Channel
 
     internal void Update(RoomstateArgs args)
     {
-        PropertyInfo[] changedProps = RoomstateArgs.IrcProps.Where(p => args.ChangedProperties.Contains(p.Name)).ToArray();
-        foreach (PropertyInfo prop in changedProps)
+        foreach (PropertyInfo prop in args.ChangedProperties)
         {
             prop.SetValue(this, prop.GetValue(args));
         }
