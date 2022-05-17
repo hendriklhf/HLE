@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -22,7 +21,7 @@ namespace HLE.Tests.CollectionsTests
             };
             for (int i = 0; i <= 50; i++)
             {
-                Assert.IsFalse(string.IsNullOrEmpty(arr.Random()));
+                Assert.IsTrue(arr.Contains(arr.Random()));
             }
         }
 
@@ -38,16 +37,27 @@ namespace HLE.Tests.CollectionsTests
             }
 
             arr.ForEach(_ => idx++);
-            Assert.IsTrue(idx == arraySize);
-            Assert.IsTrue(arr[0] == 0);
-            arr.Skip(1).ForEach(a => Assert.IsTrue(a != default));
+            Assert.AreEqual(arraySize, idx);
+            Assert.AreEqual(0, arr[0]);
+
+            for (int i = 0; i < arr.Length; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        Assert.AreEqual(default, arr[i]);
+                        break;
+                    default:
+                        Assert.AreNotEqual(default, arr[i]);
+                        break;
+                }
+            }
         }
 
         [TestMethod]
         public void IsNullOrEmptyTest()
         {
-            int[] arrNull = null;
-            // ReSharper disable once ExpressionIsAlwaysNull
+            int[]? arrNull = null;
             Assert.IsTrue(arrNull.IsNullOrEmpty());
             int[] arr = new int[10];
             Assert.IsFalse(arr.IsNullOrEmpty());
@@ -58,10 +68,8 @@ namespace HLE.Tests.CollectionsTests
                 3
             };
             Assert.IsFalse(arrFull.IsNullOrEmpty());
-            List<int> listNull = null;
-            // ReSharper disable once ExpressionIsAlwaysNull
+            List<int>? listNull = null;
             Assert.IsTrue(listNull.IsNullOrEmpty());
-            // ReSharper disable once CollectionNeverUpdated.Local
             List<int> listEmpty = new();
             Assert.IsTrue(listEmpty.IsNullOrEmpty());
         }
@@ -75,7 +83,20 @@ namespace HLE.Tests.CollectionsTests
                 "b",
                 "c"
             };
-            Assert.AreEqual(arr.JoinToString(' '), "a b c");
+            Assert.AreEqual("a b c", arr.JoinToString(' '));
+        }
+
+        [TestMethod]
+        public void ConcatToStringTest()
+        {
+            string[] arr =
+            {
+                "a",
+                "b",
+                "c"
+            };
+
+            Assert.AreEqual("abc", arr.ConcatToString());
         }
 
         [TestMethod]
@@ -111,6 +132,45 @@ namespace HLE.Tests.CollectionsTests
             };
             arr = arr.Replace(i => i == 2, 4).ToArray();
             Assert.AreEqual(5, arr.Count(i => i == 4));
+        }
+
+        [TestMethod]
+        public void SelectEachTest()
+        {
+            int[][] arrArr =
+            {
+                new[]
+                {
+                    0,
+                    1,
+                    2,
+                    3,
+                    4
+                },
+                new[]
+                {
+                    5,
+                    6,
+                    7,
+                    8,
+                    9
+                },
+                new[]
+                {
+                    10,
+                    11,
+                    12,
+                    13,
+                    14
+                }
+            };
+
+            int[] arr = arrArr.SelectEach().ToArray();
+            Assert.AreEqual(15, arr.Length);
+            for (int i = 0; i < arr.Length; i++)
+            {
+                Assert.AreEqual(i, arr[i]);
+            }
         }
 
         [TestMethod]
@@ -151,6 +211,43 @@ namespace HLE.Tests.CollectionsTests
             {
                 Assert.AreEqual(lengths[i], split[i].Length);
             }
+        }
+
+        [TestMethod]
+        public void WherePTest()
+        {
+            bool Longer3(string s) => s.Length > 3;
+            bool Shorter5(string s) => s.Length < 5;
+
+            string[] arr =
+            {
+                "aaaaaaaa",
+                "aaa",
+                "aaaa",
+                "aaaaa",
+                "a",
+                "aaaa",
+                "aaaaaaaaa",
+                "aaaa"
+            };
+
+            arr = arr.WhereP(Longer3, Shorter5).ToArray();
+            Assert.AreEqual(3, arr.Length);
+            Assert.IsTrue(arr.All(s => s.Length == 4));
+        }
+
+        [TestMethod]
+        public void RandomWordTest()
+        {
+            char[] arr =
+            {
+                'A',
+                'B',
+                'C'
+            };
+
+            string word = arr.RandomWord(5);
+            Assert.AreEqual(5, word.Length);
         }
     }
 }

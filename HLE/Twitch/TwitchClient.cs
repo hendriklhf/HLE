@@ -33,7 +33,7 @@ public class TwitchClient
 
     private readonly IrcClient _client;
     private readonly IrcHandler _ircHandler = new();
-    private List<string> _ircChannels = new();
+    private readonly List<string> _ircChannels = new();
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
@@ -126,6 +126,26 @@ public class TwitchClient
         }
     }
 
+    public void JoinChannels(params string[] channels)
+    {
+        channels = FormatChannels(channels).ToArray();
+        _ircChannels.AddRange(channels);
+        if (IsConnected)
+        {
+            channels.ForEach(_client.JoinChannel);
+        }
+    }
+
+    public void JoinChannels(IEnumerable<string> channels)
+    {
+        string[] chnls = FormatChannels(channels).ToArray();
+        _ircChannels.AddRange(chnls);
+        if (IsConnected)
+        {
+            chnls.ForEach(_client.JoinChannel);
+        }
+    }
+
     public void LeaveChannel(string channel)
     {
         channel = FormatChannel(channel);
@@ -159,16 +179,6 @@ public class TwitchClient
         {
             _client.Disconnect();
         }
-    }
-
-    public void SetChannels(IEnumerable<string> channels)
-    {
-        if (IsConnected)
-        {
-            return;
-        }
-
-        _ircChannels = FormatChannels(channels).ToList();
     }
 
     private void IrcClient_OnDataReceived(object? sender, Memory<byte> e)

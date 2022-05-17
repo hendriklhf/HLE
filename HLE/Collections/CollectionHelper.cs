@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace HLE.Collections
 {
@@ -179,6 +180,23 @@ namespace HLE.Collections
             }
 
             return result.ToArray();
+        }
+
+        public static IEnumerable<T> WhereP<T>(this IEnumerable<T> collection, params Func<T, bool>[] predicates)
+        {
+            return collection.Where(i => predicates.All(p => p(i)));
+        }
+
+        public static string RandomWord(this IEnumerable<char> collection, int wordLength)
+        {
+            char[] arr = collection.ToArray();
+            StringBuilder builder = new();
+            for (int i = 0; i < wordLength; i++)
+            {
+                builder.Append(arr.Random());
+            }
+
+            return builder.ToString();
         }
     }
 }

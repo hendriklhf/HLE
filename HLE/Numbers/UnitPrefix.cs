@@ -135,7 +135,7 @@ namespace HLE.Numbers
         /// </summary>
         public static UnitPrefix Yocto { get; } = new("Yocto", "y", Math.Pow(10, -24));
 
-        private static readonly List<UnitPrefix> _unitPrefixes = new()
+        private static readonly UnitPrefix[] _unitPrefixes =
         {
             Yotta,
             Zetta,

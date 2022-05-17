@@ -37,7 +37,7 @@ public class HTimer
         _timer = new(interval);
         _timer.Elapsed += (sender, e) =>
         {
-            Elapsed?.Invoke(this, new());
+            Elapsed?.Invoke(this, EventArgs.Empty);
             if (AutoReset)
             {
                 Start();

@@ -36,10 +36,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (byte i = min; i <= max; i++)
+            for (byte i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -54,10 +56,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (sbyte i = min; i <= max; i++)
+            for (sbyte i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -72,10 +76,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (short i = min; i <= max; i++)
+            for (short i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -90,10 +96,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (ushort i = min; i <= max; i++)
+            for (ushort i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -108,10 +116,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (int i = min; i <= max; i++)
+            for (int i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -126,10 +136,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (uint i = min; i <= max; i++)
+            for (uint i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -150,10 +162,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (long i = min; i <= max; i++)
+            for (long i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
@@ -168,10 +182,12 @@ namespace HLE.Collections
                 min = tmp;
             }
 
-            for (ulong i = min; i <= max; i++)
+            for (ulong i = min; i < max; i++)
             {
                 result.Add(i);
             }
+
+            result.Add(max);
 
             return result;
         }
