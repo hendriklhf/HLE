@@ -57,8 +57,10 @@ public class IrcHandler
                 break;
             }
             case >= 1 when string.Equals(split[0], _ircCmds[3], StringComparison.Ordinal):
+            {
                 OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;
+            }
         }
     }
 }

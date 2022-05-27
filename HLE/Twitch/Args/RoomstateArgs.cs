@@ -11,23 +11,30 @@ namespace HLE.Twitch.Args;
 [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
 public class RoomstateArgs : EventArgs
 {
+    [ChannelPropName(nameof(Models.Channel.EmoteOnly))]
     [IrcTagName("emote-only")]
     public bool EmoteOnly { get; init; }
 
+    [ChannelPropName(nameof(Models.Channel.FollowersOnly))]
     [IrcTagName("followers-only")]
     public int FollowersOnly { get; init; }
 
+    [ChannelPropName(nameof(Models.Channel.R9K))]
     [IrcTagName("r9k")]
     public bool R9K { get; init; }
 
+    [ChannelPropName(nameof(Models.Channel.Id))]
     [IrcTagName("room-id")]
     public long ChannelId { get; init; }
 
+    [ChannelPropName(nameof(Models.Channel.Name))]
     public string Channel { get; }
 
+    [ChannelPropName(nameof(Models.Channel.SlowMode))]
     [IrcTagName("slow")]
     public int SlowMode { get; init; }
 
+    [ChannelPropName(nameof(Models.Channel.SubsOnly))]
     [IrcTagName("subs-only")]
     public bool SubsOnly { get; init; }
 
@@ -46,13 +53,13 @@ public class RoomstateArgs : EventArgs
 
         foreach (PropertyInfo prop in IrcProps)
         {
-            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>()!;
+            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>() ?? throw new ArgumentNullException(nameof(attr));
             if (!tagDic.TryGetValue(attr.Value, out string? value))
             {
                 continue;
             }
 
-            MethodInfo method = _ircMethods.First(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name);
+            MethodInfo method = _ircMethods.FirstOrDefault(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name) ?? throw new ArgumentNullException(nameof(method));
             object? result = method.Invoke(this, new object[]
             {
                 value
