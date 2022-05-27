@@ -1,13 +1,15 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace HLE.HttpRequests
+namespace HLE.Http
 {
     /// <summary>
-    /// A class that performs a Http GET request on creation of the object.
+    /// A class that performs a Http POST request on creation of the object.
     /// </summary>
-    public class HttpGet
+    public class HttpPost
     {
         /// <summary>
         /// The URL of the request.
@@ -18,6 +20,11 @@ namespace HLE.HttpRequests
         /// The complete answer as a string.
         /// </summary>
         public string? Result { get; private set; }
+
+        /// <summary>
+        /// The header content that will be sent to the URL.
+        /// </summary>
+        public HttpContent HeaderContent { get; }
 
         /// <summary>
         /// The answer stored in a <see cref="JsonElement"/>, if the answer was a json compatible string.
@@ -33,19 +40,22 @@ namespace HLE.HttpRequests
         private readonly HttpClient _httpClient = new();
 
         /// <summary>
-        /// The main constructor of <see cref="HttpGet"/>.<br />
+        /// The main constructor of <see cref="HttpPost"/>.<br />
         /// The request will be executed in the constructor.
         /// </summary>
-        /// <param name="url">The URL to which the request will be sent to.</param>
-        public HttpGet(string url)
+        /// <param name="url">The URL to which the request will be send to.</param>
+        /// <param name="headers">The header content that will be sent to the URL.</param>
+        public HttpPost(string url, IEnumerable<(string Key, string Value)> headers)
         {
             Url = url;
-            Task.Run(async () => Result = await GetRequest()).Wait();
+            IEnumerable<KeyValuePair<string, string>> headerCollection = headers.Select(h => new KeyValuePair<string, string>(h.Key, h.Value));
+            HeaderContent = new FormUrlEncodedContent(headerCollection);
+            Task.Run(async () => Result = await PostRequest()).Wait();
             try
             {
                 if (string.IsNullOrEmpty(Result))
                 {
-                    throw new JsonException("HttpGet.Result is null or empty");
+                    throw new JsonException("HttpPost.Result is null or empty");
                 }
 
                 Data = JsonSerializer.Deserialize<JsonElement>(Result);
@@ -56,9 +66,9 @@ namespace HLE.HttpRequests
             }
         }
 
-        private async Task<string> GetRequest()
+        private async Task<string> PostRequest()
         {
-            HttpResponseMessage response = await _httpClient.GetAsync(Url);
+            HttpResponseMessage response = await _httpClient.PostAsync(Url, HeaderContent);
             return await response.Content.ReadAsStringAsync();
         }
     }
