@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Text.Json;
 
 namespace HLE.Twitch.Chatterino
@@ -14,52 +15,43 @@ namespace HLE.Twitch.Chatterino
         /// Gets all channels of all your tabs from the Chatterino settings.
         /// </summary>
         /// <returns>A <see cref="List{String}"/> of all channels.</returns>
+        [SupportedOSPlatform("windows")]
         public static IEnumerable<string> GetChannels()
         {
             List<string> result = new();
-            try
+
+            void GetChannelsFromSplits(JsonElement splits)
             {
-                string chatterinoSettingsDirectory = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Chatterino2\Settings\window-layout.json";
-                JsonElement chatterinoTabs = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(chatterinoSettingsDirectory)).GetProperty("windows")[0].GetProperty("tabs");
-                for (int i = 0; i < chatterinoTabs.GetArrayLength(); i++)
+                if (splits.TryGetProperty("data", out JsonElement data))
                 {
-                    JsonElement tabSettings = chatterinoTabs[i].GetProperty("splits2");
-                    try
+                    if (data.GetProperty("type").GetString() != "twitch")
                     {
-                        if (tabSettings.GetProperty("data").GetProperty("type").GetString() == "twitch")
-                        {
-                            string? name = tabSettings.GetProperty("data").GetProperty("name").GetString();
-                            if (name is not null && !result.Contains(name))
-                            {
-                                result.Add(name);
-                            }
-                        }
+                        return;
                     }
-                    catch (Exception)
+
+                    string channel = data.GetProperty("name").GetString()?.ToLower() ??
+                                     throw new JsonException("Property \"name\" does not exist. This method might not work anymore due to changes in the Chatterino settings format.");
+                    if (!result.Contains(channel))
                     {
-                        try
-                        {
-                            JsonElement tabItems = tabSettings.GetProperty("items");
-                            for (int j = 0; j < tabItems.GetArrayLength(); j++)
-                            {
-                                if (tabItems[j].GetProperty("data").GetProperty("type").GetString() == "twitch")
-                                {
-                                    string? name = tabItems[j].GetProperty("data").GetProperty("name").GetString();
-                                    if (name is not null && !result.Contains(name))
-                                    {
-                                        result.Add(name);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception)
-                        {
-                        }
+                        result.Add(channel);
+                    }
+                }
+                else
+                {
+                    JsonElement items = splits.GetProperty("items");
+                    for (int i = 0; i < items.GetArrayLength(); i++)
+                    {
+                        GetChannelsFromSplits(items[i]);
                     }
                 }
             }
-            catch (Exception)
+
+            string windowLayoutPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Chatterino2\Settings\window-layout.json";
+            JsonElement chatterinoTabs = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(windowLayoutPath)).GetProperty("windows")[0].GetProperty("tabs");
+            for (int i = 0; i < chatterinoTabs.GetArrayLength(); i++)
             {
+                JsonElement splits = chatterinoTabs[i].GetProperty("splits2");
+                GetChannelsFromSplits(splits);
             }
 
             return result;
