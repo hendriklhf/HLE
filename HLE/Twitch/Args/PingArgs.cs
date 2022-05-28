@@ -2,7 +2,7 @@
 
 namespace HLE.Twitch.Args;
 
-public class PingArgs : EventArgs
+internal class PingArgs : EventArgs
 {
     public string Message { get; }
 

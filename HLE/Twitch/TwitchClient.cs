@@ -22,12 +22,14 @@ public class TwitchClient
     #region Events
 
     public event EventHandler? OnConnected;
+    public event EventHandler? OnDisconnected;
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
     public event EventHandler<LeftChannelArgs>? OnLeftChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
     public event EventHandler<ChatMessage>? OnChatMessageSent;
     public event EventHandler<string>? OnDataReceived;
+    public event EventHandler<string>? OnDataSent;
 
     #endregion Events
 
@@ -58,6 +60,7 @@ public class TwitchClient
     private void SetEvents()
     {
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
+        _client.OnDisconnected += (_, e) => OnDisconnected?.Invoke(this, e);
         _client.OnDataReceived += IrcClient_OnDataReceived;
         _client.OnDataSent += IrcClient_OnDataSent;
 
@@ -148,12 +151,25 @@ public class TwitchClient
 
     public void LeaveChannel(string channel)
     {
+        if (_ircChannels.Count == 0)
+        {
+            return;
+        }
+
         channel = FormatChannel(channel);
         _ircChannels.Remove(channel);
         Channels.Remove(channel[1..]);
         if (IsConnected)
         {
             _client.LeaveChannel(channel);
+        }
+    }
+
+    public void LeaveChannels(params string[] channels)
+    {
+        foreach (string channel in channels)
+        {
+            LeaveChannel(channel);
         }
     }
 
@@ -178,6 +194,7 @@ public class TwitchClient
         if (IsConnected)
         {
             _client.Disconnect();
+            OnDisconnected?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -187,18 +204,20 @@ public class TwitchClient
         string[] lines = message.Remove("\r").Split('\n');
         lines.ForEach(l =>
         {
-            OnDataReceived?.Invoke(this, l);
             _ircHandler.Handle(l);
+            OnDataReceived?.Invoke(this, l);
         });
 #if DEBUG
         Console.WriteLine(message);
 #endif
     }
 
-    private static void IrcClient_OnDataSent(object? sender, Memory<byte> e)
+    private void IrcClient_OnDataSent(object? sender, Memory<byte> e)
     {
+        string message = Encoding.UTF8.GetString(e.ToArray());
+        OnDataSent?.Invoke(this, message);
 #if DEBUG
-        Console.WriteLine(Encoding.UTF8.GetString(e.ToArray()));
+        Console.WriteLine(message);
 #endif
     }
 

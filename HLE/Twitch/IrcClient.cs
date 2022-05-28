@@ -20,6 +20,7 @@ public class IrcClient
     #region Events
 
     public event EventHandler? OnConnected;
+    public event EventHandler? OnDisconnected;
     public event EventHandler<Memory<byte>>? OnDataReceived;
     public event EventHandler<Memory<byte>>? OnDataSent;
 
@@ -113,7 +114,7 @@ public class IrcClient
         long start = TimeHelper.Now();
         for (int i = 0; i < joins.Length; i++)
         {
-            if (i % maxChannels == 0 && i != default)
+            if (i > 0 && i % maxChannels == 0)
             {
                 int waitTime = (int)(period - (TimeHelper.Now() - start));
                 if (waitTime > 0)
@@ -170,5 +171,6 @@ public class IrcClient
         }
 
         Task.Run(DisconnectLocal, _cancellationToken).Wait(_cancellationToken);
+        OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 }

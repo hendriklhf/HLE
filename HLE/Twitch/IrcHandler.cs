@@ -12,7 +12,7 @@ public class IrcHandler
     public event EventHandler<LeftChannelArgs>? OnLeftChannel;
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
-    public event EventHandler<PingArgs>? OnPingReceived;
+    internal event EventHandler<PingArgs>? OnPingReceived;
 
     #endregion Events
 

@@ -9,52 +9,104 @@ using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;
 
+/// <summary>
+/// A class that represents a chat message.
+/// </summary>
 [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
 public class ChatMessage
 {
+    /// <summary>
+    /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
+    /// </summary>
     [IrcTagName("badge-info")]
     public Dictionary<string, int> BadgeInfo { get; init; } = new();
 
+    /// <summary>
+    /// Holds all the badges the user has.
+    /// </summary>
     [IrcTagName("badges")]
     public Badge[] Badges { get; init; } = Array.Empty<Badge>();
 
+    /// <summary>
+    /// The color of the user's name in a Twitch chat overlay.
+    /// </summary>
     [IrcTagName("color")]
     public Color Color { get; init; }
 
+    /// <summary>
+    /// The display name of the user with the preferred casing.
+    /// </summary>
     [IrcTagName("display-name")]
     public string DisplayName { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Indicates whether the message is the first message the user has sent in this channel or not.
+    /// </summary>
     [IrcTagName("first-msg")]
     public bool IsFirstMessage { get; init; }
 
+    /// <summary>
+    /// The unique message id.
+    /// </summary>
     [IrcTagName("id")]
     public Guid Id { get; init; }
 
+    /// <summary>
+    /// Indicates whether the user is a moderator or not.
+    /// </summary>
     [IrcTagName("mod")]
     public bool IsModerator { get; init; }
 
+    /// <summary>
+    /// The user id of the channel owner.
+    /// </summary>
     [IrcTagName("room-id")]
     public long ChannelId { get; init; }
 
+    /// <summary>
+    /// Indicates whether the user is a subscriber or not.
+    /// The subscription age can be obtained from <see cref="Badges"/> and <see cref="BadgeInfo"/>.
+    /// </summary>
     [IrcTagName("subscriber")]
     public bool IsSubscriber { get; init; }
 
+    /// <summary>
+    /// The unix timestamp in milliseconds of the moment the message has been sent.
+    /// </summary>
     [IrcTagName("tmi-sent-ts")]
     public long TmiSentTs { get; init; }
 
+    /// <summary>
+    /// Indicates whether the user is subscribing to Twitch Turbo or not.
+    /// </summary>
     [IrcTagName("turbo")]
     public bool IsTurboUser { get; init; }
 
+    /// <summary>
+    /// The user id of the user who sent the message.
+    /// </summary>
     [IrcTagName("user-id")]
     public long UserId { get; init; }
 
+    /// <summary>
+    /// The username of the user who sent the message. All lower case.
+    /// </summary>
     public string Username { get; init; }
 
+    /// <summary>
+    /// The username of the channel owner. All lower case.
+    /// </summary>
     public string Channel { get; init; }
 
+    /// <summary>
+    /// The message content.
+    /// </summary>
     public string Message { get; init; }
 
+    /// <summary>
+    /// The raw IRC message.
+    /// </summary>
     public string RawIrcMessage { get; init; }
 
     private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
@@ -62,6 +114,10 @@ public class ChatMessage
     private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null)
         .ToArray();
 
+    /// <summary>
+    /// The basic constructor of <see cref="ChatMessage"/>.
+    /// </summary>
+    /// <param name="ircMessage">The IRC message.</param>
     public ChatMessage(string ircMessage)
     {
         string[] split = ircMessage.Split();
