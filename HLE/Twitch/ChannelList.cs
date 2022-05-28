@@ -7,10 +7,21 @@ using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// A class that represents a list of channels the client is connected to.
+/// </summary>
 public class ChannelList : IEnumerable<Channel>
 {
+    /// <summary>
+    /// Retrieves a channel by the user id of the channel owner. Returns null if the client is not connected to the channel.
+    /// </summary>
+    /// <param name="channelId">The user id of the channel owner.</param>
     public Channel? this[long channelId] => Get(channelId);
 
+    /// <summary>
+    /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to channel.
+    /// </summary>
+    /// <param name="channel">The username of the channel owner.</param>
     public Channel? this[string channel] => Get(channel);
 
     private readonly List<Channel> _channels = new();

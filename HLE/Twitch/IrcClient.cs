@@ -9,19 +9,43 @@ using HLE.Time;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// A class that represents a IRC client for Twitch chats. Connects to "wss://irc-ws.chat.twitch.tv:443".
+/// </summary>
 public class IrcClient
 {
+    /// <summary>
+    /// The username of the client.
+    /// </summary>
     public string Username { get; }
 
+    /// <summary>
+    /// The OAuth token of the user.
+    /// </summary>
     public string? OAuthToken { get; }
 
+    /// <summary>
+    /// Indicates whether the client is connected or not.
+    /// </summary>
     public bool IsConnected => _webSocket.State is WebSocketState.Open;
 
     #region Events
 
+    /// <summary>
+    /// Is invoked if the client connects.
+    /// </summary>
     public event EventHandler? OnConnected;
+    /// <summary>
+    /// Is invoked if the client disconnects.
+    /// </summary>
     public event EventHandler? OnDisconnected;
+    /// <summary>
+    /// Is invoked if the client receives data.
+    /// </summary>
     public event EventHandler<Memory<byte>>? OnDataReceived;
+    /// <summary>
+    /// Is invoked if the client sends data.
+    /// </summary>
     public event EventHandler<Memory<byte>>? OnDataSent;
 
     #endregion Events
@@ -31,6 +55,12 @@ public class IrcClient
     private readonly ClientWebSocket _webSocket = new();
     private readonly CancellationToken _cancellationToken;
 
+    /// <summary>
+    /// The basic constructor of <see cref="IrcClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
+    /// </summary>
+    /// <param name="username">The username of the client.</param>
+    /// <param name="oAuthToken">The OAuth token of the client.</param>
+    /// <param name="isVerifiedBot">If the client user is a verified bot, pass true, otherwise false.</param>
     public IrcClient(string username, string? oAuthToken, bool isVerifiedBot = false)
     {
         Username = username;
