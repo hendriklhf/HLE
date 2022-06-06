@@ -182,7 +182,10 @@ public class TwitchClient
 
         if (IsConnected)
         {
-            _client.LeaveChannels(FormatChannels(_ircChannels));
+            foreach (string channel in _ircChannels)
+            {
+                LeaveChannel(channel);
+            }
         }
 
         Channels.Clear();

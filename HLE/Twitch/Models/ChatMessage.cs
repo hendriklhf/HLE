@@ -148,7 +148,7 @@ public class ChatMessage
 
         Username = string.IsNullOrEmpty(DisplayName) ? string.Empty : DisplayName.ToLower();
         Channel = split[3][1..];
-        Message = split[4..].JoinToString(' ')[1..];
+        Message = split[4..].JoinToString(' ');
         RawIrcMessage = ircMessage;
     }
 

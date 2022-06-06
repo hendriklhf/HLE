@@ -55,31 +55,26 @@ public class IrcHandler
         {
             case >= 3:
             {
-                if (string.Equals(split[2], _ircCmds[1], StringComparison.Ordinal))
+                if (split[2] == _ircCmds[1])
                 {
                     OnRoomstateReceived?.Invoke(this, new(ircMessage));
                 }
-                else if (string.Equals(split[2], _ircCmds[2], StringComparison.Ordinal))
+                else if (split[2] == _ircCmds[2])
                 {
                     OnChatMessageReceived?.Invoke(this, new(ircMessage));
                 }
-
-                break;
-            }
-            case >= 2:
-            {
-                if (string.Equals(split[1], _ircCmds[0], StringComparison.Ordinal))
+                else if (split[1] == _ircCmds[0])
                 {
                     OnJoinedChannel?.Invoke(this, new(ircMessage));
                 }
-                else if (string.Equals(split[1], _ircCmds[4], StringComparison.Ordinal))
+                else if (split[1] == _ircCmds[4])
                 {
                     OnLeftChannel?.Invoke(this, new(ircMessage));
                 }
 
                 break;
             }
-            case >= 1 when string.Equals(split[0], _ircCmds[3], StringComparison.Ordinal):
+            case >= 1 when split[0] == _ircCmds[3]:
             {
                 OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;
