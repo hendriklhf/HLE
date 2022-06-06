@@ -128,7 +128,7 @@ public static class Random
             (max, min) = (min, max);
         }
 
-        if (max < int.MaxValue)
+        if (max < long.MaxValue)
         {
             max++;
         }
@@ -163,6 +163,23 @@ public static class Random
         for (ulong i = 0; i < length; i++)
         {
             builder.Append(Char());
+        }
+
+        return builder.ToString();
+    }
+
+    public static string String(ulong length, ushort minChar, ushort maxChar)
+    {
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+
+        ushort[] chars = NumberCollection.Create(minChar, maxChar).ToArray();
+        StringBuilder builder = new();
+        for (ulong i = 0; i < length; i++)
+        {
+            builder.Append((char)chars.Random());
         }
 
         return builder.ToString();

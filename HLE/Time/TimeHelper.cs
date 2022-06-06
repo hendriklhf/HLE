@@ -249,12 +249,12 @@ public static class TimeHelper
     }
 
     /// <summary>
-    /// Return the Unix time stamp in milliseconds for the computer's time zone.
+    /// Return the Unix time stamp in milliseconds for the UTC time zone.
     /// </summary>
     /// <returns>The Unix time stamp.</returns>
     public static long Now()
     {
-        return DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     }
 
     /// <summary>
