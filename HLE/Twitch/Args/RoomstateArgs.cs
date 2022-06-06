@@ -52,7 +52,7 @@ public class RoomstateArgs : EventArgs
 
     /// <summary>
     /// Indicates whether slow mode os turned on or off.
-    /// Value is "-1" if turned off, otherwise the value indicates the number of seconds between each message a user can send.
+    /// Value is "0" if turned off, otherwise the value indicates the number of seconds between each message a user can send.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.SlowMode))]
     [IrcTagName("slow")]

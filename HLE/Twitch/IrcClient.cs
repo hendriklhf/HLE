@@ -10,7 +10,8 @@ using HLE.Time;
 namespace HLE.Twitch;
 
 /// <summary>
-/// A class that represents a IRC client for Twitch chats. Connects to "wss://irc-ws.chat.twitch.tv:443".
+/// A class that represents a IRC client for Twitch chats. Connects to "wss://irc-ws.chat.twitch.tv:443".<br/>
+/// Only provides the connection. Received message are not handled here. Use this class if you want to handle the messages by yourself.
 /// </summary>
 public class IrcClient
 {
@@ -71,6 +72,10 @@ public class IrcClient
         _cancellationToken = tokenCreator.Token;
     }
 
+    /// <summary>
+    /// Sends a raw message to the Twitch IRC server.
+    /// </summary>
+    /// <param name="message">The IRC message.</param>
     public void SendRaw(string message)
     {
         Send(message).Wait(_cancellationToken);
@@ -99,6 +104,10 @@ public class IrcClient
         OnDataSent?.Invoke(this, msg);
     }
 
+    /// <summary>
+    /// Connects the client to the Twitch IRC server on "wss://irc-ws.chat.twitch.tv:443".
+    /// </summary>
+    /// <param name="channels">The collection of channels the client will join on connect.</param>
     public void Connect(IEnumerable<string> channels)
     {
         async Task ConnectLocal()
@@ -119,6 +128,11 @@ public class IrcClient
         Task.Run(ConnectLocal, _cancellationToken).Wait(_cancellationToken);
     }
 
+    /// <summary>
+    /// Sends a chat message to a channel.
+    /// </summary>
+    /// <param name="channel">The channel the message will be sent to.</param>
+    /// <param name="message">The message that will be sent to the channel.</param>
     public void SendMessage(string channel, string message)
     {
         async Task SendLocal()
@@ -159,6 +173,10 @@ public class IrcClient
         }
     }
 
+    /// <summary>
+    /// Joins one channel.
+    /// </summary>
+    /// <param name="channel">The channel the client will join.</param>
     public void JoinChannel(string channel)
     {
         async Task JoinChannelLocal()
@@ -169,6 +187,10 @@ public class IrcClient
         Task.Run(JoinChannelLocal, _cancellationToken).Wait(_cancellationToken);
     }
 
+    /// <summary>
+    /// Leaves one channel.
+    /// </summary>
+    /// <param name="channel">The channel the client will leave.</param>
     public void LeaveChannel(string channel)
     {
         async Task LeaveChannelLocal()
@@ -179,20 +201,10 @@ public class IrcClient
         Task.Run(LeaveChannelLocal, _cancellationToken).Wait(_cancellationToken);
     }
 
-    public void LeaveChannels(IEnumerable<string> channels)
-    {
-        async Task LeaveChannelsLocal()
-        {
-            IEnumerable<string> parts = channels.Select(c => $"PART {c}");
-            foreach (string part in parts)
-            {
-                await Send(part);
-            }
-        }
-
-        Task.Run(LeaveChannelsLocal, _cancellationToken).Wait(_cancellationToken);
-    }
-
+    /// <summary>
+    /// Disconnects the client.
+    /// </summary>
+    /// <param name="closeMessage">A close message or reason.</param>
     public void Disconnect(string closeMessage = "Manually closed")
     {
         async Task DisconnectLocal()

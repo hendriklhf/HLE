@@ -4,14 +4,33 @@ using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// A class that handles incoming IRC messages.
+/// </summary>
 public class IrcHandler
 {
     #region Events
 
+    /// <summary>
+    /// Is invoked if a JOIN message has been received.
+    /// </summary>
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
+
+    /// <summary>
+    /// Is invoked if a PART message has been received.
+    /// </summary>
     public event EventHandler<LeftChannelArgs>? OnLeftChannel;
+
+    /// <summary>
+    /// Is invoked if a ROOMSTATE message has been received.
+    /// </summary>
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
+
+    /// <summary>
+    /// Is invoked if a PRIVMSG message has been received.
+    /// </summary>
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
+
     internal event EventHandler<PingArgs>? OnPingReceived;
 
     #endregion Events
@@ -25,6 +44,10 @@ public class IrcHandler
         "PART"
     };
 
+    /// <summary>
+    /// Handles the incoming messages.
+    /// </summary>
+    /// <param name="ircMessage">The IRC message.</param>
     public void Handle(string ircMessage)
     {
         string[] split = ircMessage.Split();
