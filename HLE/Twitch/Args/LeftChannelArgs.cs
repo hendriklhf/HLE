@@ -21,9 +21,11 @@ public class LeftChannelArgs : EventArgs
     /// The basic constructor for <see cref="LeftChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public LeftChannelArgs(string ircMessage)
+    /// /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>
+    public LeftChannelArgs(string ircMessage, string[]? split = null)
     {
-        Username = ircMessage.TakeBetween(':', '!');
-        Channel = ircMessage.Split()[2][1..];
+        split ??= ircMessage.Split();
+        Username = split[0].TakeBetween(':', '!');
+        Channel = split[2][1..];
     }
 }

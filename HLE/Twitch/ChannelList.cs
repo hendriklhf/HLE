@@ -28,7 +28,7 @@ public class ChannelList : IEnumerable<Channel>
 
     internal void Update(RoomstateArgs args)
     {
-        Channel? channel = _channels.FirstOrDefault(c => c.Id == args.ChannelId);
+        Channel? channel = this.FirstOrDefault(c => c.Id == args.ChannelId);
         if (channel is null)
         {
             channel = new(args);
@@ -42,7 +42,7 @@ public class ChannelList : IEnumerable<Channel>
 
     internal void Remove(string name)
     {
-        Channel? channel = _channels.FirstOrDefault(c => string.Equals(name, c.Name, StringComparison.OrdinalIgnoreCase));
+        Channel? channel = this.FirstOrDefault(c => string.Equals(name, c.Name, StringComparison.OrdinalIgnoreCase));
         if (channel is null)
         {
             return;
@@ -53,7 +53,7 @@ public class ChannelList : IEnumerable<Channel>
 
     internal void Remove(long id)
     {
-        Channel? channel = _channels.FirstOrDefault(c => id == c.Id);
+        Channel? channel = this.FirstOrDefault(c => id == c.Id);
         if (channel is null)
         {
             return;
@@ -69,12 +69,12 @@ public class ChannelList : IEnumerable<Channel>
 
     private Channel? Get(long id)
     {
-        return _channels.FirstOrDefault(c => c.Id == id);
+        return this.FirstOrDefault(c => c.Id == id);
     }
 
     private Channel? Get(string name)
     {
-        return _channels.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+        return this.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 
     public IEnumerator<Channel> GetEnumerator()

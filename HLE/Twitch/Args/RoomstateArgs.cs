@@ -76,9 +76,10 @@ public class RoomstateArgs : EventArgs
     /// The basic constructor of <see cref="RoomstateArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public RoomstateArgs(string ircMessage)
+    /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>
+    public RoomstateArgs(string ircMessage, string[]? split = null)
     {
-        string[] split = ircMessage.Split();
+        split ??= ircMessage.Split();
         string[] roomstateSplit = split[0][1..].Split(';').ToArray();
         Dictionary<string, string> tagDic = roomstateSplit.Select(s => s.Split('=')).ToDictionary(sp => sp[0], sp => sp[1]);
 

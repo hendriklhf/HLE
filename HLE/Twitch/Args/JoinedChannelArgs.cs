@@ -21,9 +21,10 @@ public class JoinedChannelArgs : EventArgs
     /// The basic constructor for <see cref="JoinedChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public JoinedChannelArgs(string ircMessage)
+    /// /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>
+    public JoinedChannelArgs(string ircMessage, string[]? split = null)
     {
-        string[] split = ircMessage.Split();
+        split ??= ircMessage.Split();
         Username = split[0].TakeBetween(':', '!');
         Channel = split[^1][1..];
     }

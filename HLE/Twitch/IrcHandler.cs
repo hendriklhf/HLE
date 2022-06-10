@@ -57,19 +57,19 @@ public class IrcHandler
             {
                 if (split[2] == _ircCmds[1])
                 {
-                    OnRoomstateReceived?.Invoke(this, new(ircMessage));
+                    OnRoomstateReceived?.Invoke(this, new(ircMessage, split));
                 }
                 else if (split[2] == _ircCmds[2])
                 {
-                    OnChatMessageReceived?.Invoke(this, new(ircMessage));
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage, split));
                 }
                 else if (split[1] == _ircCmds[0])
                 {
-                    OnJoinedChannel?.Invoke(this, new(ircMessage));
+                    OnJoinedChannel?.Invoke(this, new(ircMessage, split));
                 }
                 else if (split[1] == _ircCmds[4])
                 {
-                    OnLeftChannel?.Invoke(this, new(ircMessage));
+                    OnLeftChannel?.Invoke(this, new(ircMessage, split));
                 }
 
                 break;

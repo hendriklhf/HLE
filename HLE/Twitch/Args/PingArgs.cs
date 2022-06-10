@@ -4,9 +4,9 @@ namespace HLE.Twitch.Args;
 
 internal class PingArgs : EventArgs
 {
-    public string Message { get; }
+    internal string Message { get; }
 
-    public PingArgs(string message)
+    internal PingArgs(string message)
     {
         Message = message;
     }

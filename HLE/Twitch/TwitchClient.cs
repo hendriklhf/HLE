@@ -9,26 +9,76 @@ using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// A class that represents a Twitch chat client. Uses <see cref="IrcClient"/> to connect to the chat servers and <see cref="IrcHandler"/> to handle messages.
+/// </summary>
 public class TwitchClient
 {
+    /// <summary>
+    /// The username of the client.
+    /// </summary>
     public string Username { get; }
 
+    /// <summary>
+    /// Indicates whether the client is connected anonymously or not.
+    /// </summary>
     public bool IsAnonymousLogin { get; }
 
+    /// <summary>
+    /// Indicates whether the client is connected or not.
+    /// </summary>
     public bool IsConnected => _client.IsConnected;
 
+    /// <summary>
+    /// The list of channels the client is connected to. Channels can be retrieved by the owner's username or user id in order to read the room state, e.g. if slow-mode is on.
+    /// </summary>
     public ChannelList Channels { get; } = new();
 
     #region Events
 
+    /// <summary>
+    /// Is invoked if the client connects.
+    /// </summary>
     public event EventHandler? OnConnected;
+
+    /// <summary>
+    /// Is invoked if the client disconnects.
+    /// </summary>
     public event EventHandler? OnDisconnected;
+
+    /// <summary>
+    /// Is invoked if a user joins a channel. A user can be the client or any other user.
+    /// </summary>
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
+
+    /// <summary>
+    /// Is invoked if a user leaves a channel. A user can be the client or any other user.
+    /// </summary>
     public event EventHandler<LeftChannelArgs>? OnLeftChannel;
+
+    /// <summary>
+    /// Is invoked if a room state has been received.
+    /// </summary>
     public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
+
+    /// <summary>
+    /// Is invoked if a chat message has been received.
+    /// </summary>
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
+
+    /// <summary>
+    /// Is invoked if the client sends a chat messages.
+    /// </summary>
     public event EventHandler<ChatMessage>? OnChatMessageSent;
+
+    /// <summary>
+    /// Is invoked if data is received from the chat server.
+    /// </summary>
     public event EventHandler<string>? OnDataReceived;
+
+    /// <summary>
+    /// Is invoked if data is sent to the chat server.
+    /// </summary>
     public event EventHandler<string>? OnDataSent;
 
     #endregion Events
@@ -39,6 +89,10 @@ public class TwitchClient
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
+    /// <summary>
+    /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.<br/>
+    /// Connects with the username "justinfan123".
+    /// </summary>
     public TwitchClient()
     {
         Username = "justinfan123";
@@ -48,9 +102,16 @@ public class TwitchClient
         SetEvents();
     }
 
+    /// <summary>
+    /// The constructor for a normal chat client.
+    /// </summary>
+    /// <param name="username">The username of the client</param>
+    /// <param name="oAuthToken">The OAuth token of the client</param>
+    /// <param name="isVerifiedBot">If true, the client uses different rate limiting to join channels faster. Condition to use this is that your Twitch account has to be a verified bot.</param>
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
     public TwitchClient(string username, string oAuthToken, bool isVerifiedBot = false)
     {
-        Username = username;
+        Username = FormatUsername(username);
         oAuthToken = ValidateOAuthToken(oAuthToken);
         _client = new(Username, oAuthToken, isVerifiedBot);
 
@@ -72,6 +133,12 @@ public class TwitchClient
         _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
     }
 
+    /// <summary>
+    /// Sends a chat messages.
+    /// </summary>
+    /// <param name="channel">The username of the channel owner</param>
+    /// <param name="message">The message that will be sent</param>
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="channel"/> is in the wrong format.</exception>
     public void Send(string channel, string message)
     {
         if (!IsConnected || IsAnonymousLogin)
@@ -79,7 +146,7 @@ public class TwitchClient
             return;
         }
 
-        channel = FormatChannel(channel);
+        channel = FormatUsername(channel);
         if (!_ircChannels.Contains(channel))
         {
             return;
@@ -88,6 +155,11 @@ public class TwitchClient
         _client.SendMessage(channel, message);
     }
 
+    /// <summary>
+    /// Sends a chat message.
+    /// </summary>
+    /// <param name="channelId">The user id of the channel owner</param>
+    /// <param name="message">The message that will be sent</param>
     public void Send(long channelId, string message)
     {
         string? channel = Channels.FirstOrDefault(c => c.Id == channelId)?.Name;
@@ -99,6 +171,10 @@ public class TwitchClient
         Send($"#{channel}", message);
     }
 
+    /// <summary>
+    /// Sends a raw message to the chat server.
+    /// </summary>
+    /// <param name="message">The raw message</param>
     public void SendRaw(string message)
     {
         if (!IsConnected || IsAnonymousLogin)
@@ -109,6 +185,9 @@ public class TwitchClient
         _client.SendRaw(message);
     }
 
+    /// <summary>
+    /// Connects the client to the chat server.
+    /// </summary>
     public void Connect()
     {
         if (IsConnected)
@@ -119,9 +198,14 @@ public class TwitchClient
         _client.Connect(_ircChannels);
     }
 
+    /// <summary>
+    /// If the client is not connected, adds the channel to the channel list, otherwise connects the client to the channel.
+    /// </summary>
+    /// <param name="channel">The channel</param>
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if the <paramref name="channel"/> is in the wrong format.</exception>
     public void JoinChannel(string channel)
     {
-        channel = FormatChannel(channel);
+        channel = FormatUsername(channel);
         _ircChannels.Add(channel);
         if (IsConnected)
         {
@@ -129,9 +213,14 @@ public class TwitchClient
         }
     }
 
+    /// <summary>
+    /// If the client is not connected, adds the channels to the channel list, otherwise connects the client to the channels.
+    /// </summary>
+    /// <param name="channels">The channels</param>
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(params string[] channels)
     {
-        channels = FormatChannels(channels).ToArray();
+        channels = FormatUsernames(channels).ToArray();
         _ircChannels.AddRange(channels);
         if (IsConnected)
         {
@@ -139,9 +228,14 @@ public class TwitchClient
         }
     }
 
+    /// <summary>
+    /// If the client is not connected, adds the channels to the channel list, otherwise connects the client to the channels.
+    /// </summary>
+    /// <param name="channels">The channels</param>
+    /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(IEnumerable<string> channels)
     {
-        string[] chnls = FormatChannels(channels).ToArray();
+        string[] chnls = FormatUsernames(channels).ToArray();
         _ircChannels.AddRange(chnls);
         if (IsConnected)
         {
@@ -149,6 +243,10 @@ public class TwitchClient
         }
     }
 
+    /// <summary>
+    /// If the client is not connected, removes the channel from the channel list, otherwise leaves the channel.
+    /// </summary>
+    /// <param name="channel">The channel</param>
     public void LeaveChannel(string channel)
     {
         if (_ircChannels.Count == 0)
@@ -156,7 +254,7 @@ public class TwitchClient
             return;
         }
 
-        channel = FormatChannel(channel);
+        channel = FormatUsername(channel);
         _ircChannels.Remove(channel);
         Channels.Remove(channel[1..]);
         if (IsConnected)
@@ -165,6 +263,10 @@ public class TwitchClient
         }
     }
 
+    /// <summary>
+    /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
+    /// </summary>
+    /// <param name="channels">The channels</param>
     public void LeaveChannels(params string[] channels)
     {
         foreach (string channel in channels)
@@ -173,6 +275,9 @@ public class TwitchClient
         }
     }
 
+    /// <summary>
+    /// If the client is not connected, clears the channel list, otherwise leaves all channels.
+    /// </summary>
     public void LeaveChannels()
     {
         if (_ircChannels.Count == 0)
@@ -192,13 +297,18 @@ public class TwitchClient
         _ircChannels.Clear();
     }
 
+    /// <summary>
+    /// Disconnects the client from the chat server.
+    /// </summary>
     public void Disconnect()
     {
-        if (IsConnected)
+        if (!IsConnected)
         {
-            _client.Disconnect();
-            OnDisconnected?.Invoke(this, EventArgs.Empty);
+            return;
         }
+
+        _client.Disconnect();
+        OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
     private void IrcClient_OnDataReceived(object? sender, Memory<byte> e)
@@ -210,18 +320,12 @@ public class TwitchClient
             _ircHandler.Handle(l);
             OnDataReceived?.Invoke(this, l);
         });
-#if DEBUG
-        Console.WriteLine(message);
-#endif
     }
 
     private void IrcClient_OnDataSent(object? sender, Memory<byte> e)
     {
         string message = Encoding.UTF8.GetString(e.ToArray());
         OnDataSent?.Invoke(this, message);
-#if DEBUG
-        Console.WriteLine(message);
-#endif
     }
 
     private void IrcClient_OnRoomstateReceived(object? sender, RoomstateArgs e)
@@ -241,14 +345,19 @@ public class TwitchClient
         }
     }
 
-    private static string FormatChannel(string channel)
+    private static string FormatUsername(string username)
     {
-        return (channel.StartsWith('#') ? channel : $"#{channel}").ToLower();
+        if (!_channelPattern.IsMatch(username))
+        {
+            throw new FormatException("The channel or username is in an invalid format.");
+        }
+
+        return (username.StartsWith('#') ? username : $"#{username}").ToLower();
     }
 
-    private static IEnumerable<string> FormatChannels(IEnumerable<string> channels)
+    private static IEnumerable<string> FormatUsernames(IEnumerable<string> usernames)
     {
-        return channels.Where(c => _channelPattern.IsMatch(c)).Select(FormatChannel);
+        return usernames.Select(FormatUsername);
     }
 
     private static string ValidateOAuthToken(string oAuthToken)

@@ -118,9 +118,10 @@ public class ChatMessage
     /// The basic constructor of <see cref="ChatMessage"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public ChatMessage(string ircMessage)
+    /// /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>
+    public ChatMessage(string ircMessage, string[]? split = null)
     {
-        string[] split = ircMessage.Split();
+        split ??= ircMessage.Split();
         string[] privmsgSplit = split[0][1..].Split(';').ToArray();
         Dictionary<string, string> tagDic = privmsgSplit.Select(s => s.Split('=')).ToDictionary(sp => sp[0], sp => sp[1]);
 
@@ -150,6 +151,17 @@ public class ChatMessage
         Channel = split[3][1..];
         Message = split[4..].JoinToString(' ');
         RawIrcMessage = ircMessage;
+    }
+
+    /// <summary>
+    /// An empty constructor. Can be used to set properties on initialization.
+    /// </summary>
+    public ChatMessage()
+    {
+        Username = string.Empty;
+        Channel = string.Empty;
+        Message = string.Empty;
+        RawIrcMessage = string.Empty;
     }
 
     [MsgPropName(nameof(BadgeInfo))]

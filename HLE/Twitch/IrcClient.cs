@@ -36,14 +36,17 @@ public class IrcClient
     /// Is invoked if the client connects.
     /// </summary>
     public event EventHandler? OnConnected;
+
     /// <summary>
     /// Is invoked if the client disconnects.
     /// </summary>
     public event EventHandler? OnDisconnected;
+
     /// <summary>
     /// Is invoked if the client receives data.
     /// </summary>
     public event EventHandler<Memory<byte>>? OnDataReceived;
+
     /// <summary>
     /// Is invoked if the client sends data.
     /// </summary>
