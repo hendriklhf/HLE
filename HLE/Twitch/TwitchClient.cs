@@ -335,7 +335,7 @@ public class TwitchClient
 
     private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage e)
     {
-        if (string.Equals(e.Username, Username, StringComparison.OrdinalIgnoreCase))
+        if (e.Username == Username)
         {
             OnChatMessageSent?.Invoke(this, e);
         }
@@ -367,12 +367,12 @@ public class TwitchClient
 
         if (oAuthPattern.IsMatch(oAuthToken))
         {
-            return oAuthToken.ToLower();
+            return oAuthToken;
         }
 
         if (oAuthPatternNoPrefix.IsMatch(oAuthToken))
         {
-            return $"oauth:{oAuthToken.ToLower()}";
+            return $"oauth:{oAuthToken}";
         }
 
         throw new FormatException("The OAuthToken is in an invalid format.");
