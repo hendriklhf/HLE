@@ -215,6 +215,26 @@ public static class StringHelper
         return Convert.ToSByte(str);
     }
 
+    public static float ToFloat(this string str)
+    {
+        return Convert.ToSingle(str);
+    }
+
+    public static double ToDouble(this string str)
+    {
+        return Convert.ToDouble(str);
+    }
+
+    public static decimal ToDecimal(this string str)
+    {
+        return Convert.ToDecimal(str);
+    }
+
+    public static bool ToBool(this string str)
+    {
+        return Convert.ToBoolean(str);
+    }
+
     /// <summary>
     /// Trims all spaces in the beginning, end and middle of the <see cref="string"/> <paramref name="str"/>.
     /// </summary>
