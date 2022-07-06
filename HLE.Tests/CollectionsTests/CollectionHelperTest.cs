@@ -198,7 +198,7 @@ namespace HLE.Tests.CollectionsTests
                 "."
             };
 
-            var split = arr.Split(".");
+            var split = arr.Split(".").ToArray();
             Assert.AreEqual(4, split.Length);
             byte[] lengths =
             {

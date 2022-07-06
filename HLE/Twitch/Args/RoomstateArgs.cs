@@ -85,13 +85,13 @@ public class RoomstateArgs : EventArgs
 
         foreach (PropertyInfo prop in IrcProps)
         {
-            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>() ?? throw new ArgumentNullException(nameof(attr));
+            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>()!;
             if (!tagDic.TryGetValue(attr.Value, out string? value))
             {
                 continue;
             }
 
-            MethodInfo method = _ircMethods.FirstOrDefault(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name) ?? throw new ArgumentNullException(nameof(method));
+            MethodInfo method = _ircMethods.FirstOrDefault(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name)!;
             object? result = method.Invoke(this, new object[]
             {
                 value
@@ -113,16 +113,16 @@ public class RoomstateArgs : EventArgs
     private bool GetEmoteOnly(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(FollowersOnly))]
-    private int GetFollowersOnly(string value) => value.ToInt();
+    private int GetFollowersOnly(string value) => int.Parse(value);
 
     [MsgPropName(nameof(R9K))]
     private bool GetR9K(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(ChannelId))]
-    private long GetChannelId(string value) => value.ToLong();
+    private long GetChannelId(string value) => long.Parse(value);
 
     [MsgPropName(nameof(SlowMode))]
-    private int GetSlowMode(string value) => value.ToInt();
+    private int GetSlowMode(string value) => int.Parse(value);
 
     [MsgPropName(nameof(SubsOnly))]
     private bool GetSubsOnly(string value) => value[^1] == '1';

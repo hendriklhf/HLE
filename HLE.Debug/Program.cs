@@ -6,6 +6,8 @@ public static class Program
 {
     private static void Main()
     {
-        Console.ReadLine();
+        HString h = "hello";
+        h[3] = 'x';
+        Console.WriteLine(h);
     }
 }

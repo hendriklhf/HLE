@@ -95,16 +95,7 @@ public static class StringHelper
                 }
             }
 
-            List<string> result = new();
-            foreach (List<string>? l in list)
-            {
-                if (l is not null)
-                {
-                    result.Add(string.Join(' ', l));
-                }
-            }
-
-            return result;
+            return list.Where(l => l is not null).Select(l => string.Join(' ', l!));
         }
     }
 
@@ -140,102 +131,6 @@ public static class StringHelper
     }
 
     /// <summary>
-    /// Converts a <see cref="string"/> to an <see cref="int"/>.<br />
-    /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-    /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="int"/>.</returns>
-    public static int ToInt(this string str)
-    {
-        return Convert.ToInt32(str);
-    }
-
-    /// <summary>
-    /// Converts a <see cref="string"/> to a <see cref="long"/>.<br />
-    /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-    /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to a <see cref="long"/>.</returns>
-    public static long ToLong(this string str)
-    {
-        return Convert.ToInt64(str);
-    }
-
-    /// <summary>
-    /// Converts a <see cref="string"/> to a <see cref="short"/>.<br />
-    /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-    /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="short"/>.</returns>
-    public static short ToShort(this string str)
-    {
-        return Convert.ToInt16(str);
-    }
-
-    /// <summary>
-    /// Converts a <see cref="string"/> to an <see cref="uint"/>.<br />
-    /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-    /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="uint"/>.</returns>
-    public static uint ToUInt(this string str)
-    {
-        return Convert.ToUInt32(str);
-    }
-
-    /// <summary>
-    /// Converts a <see cref="string"/> to an <see cref="ulong"/>.<br />
-    /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-    /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="ulong"/>.</returns>
-    public static ulong ToULong(this string str)
-    {
-        return Convert.ToUInt64(str);
-    }
-
-    /// <summary>
-    /// Converts a <see cref="string"/> to an <see cref="ushort"/>.<br />
-    /// Only works, if the input <see cref="string"/> <paramref name="str"/> contains only numbers.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be converted to a number.</param>
-    /// <returns>The input <see cref="string"/> <paramref name="str"/> converted to an <see cref="ushort"/>.</returns>
-    public static ushort ToUShort(this string str)
-    {
-        return Convert.ToUInt16(str);
-    }
-
-    public static byte ToByte(this string str)
-    {
-        return Convert.ToByte(str);
-    }
-
-    public static sbyte ToSByte(this string str)
-    {
-        return Convert.ToSByte(str);
-    }
-
-    public static float ToFloat(this string str)
-    {
-        return Convert.ToSingle(str);
-    }
-
-    public static double ToDouble(this string str)
-    {
-        return Convert.ToDouble(str);
-    }
-
-    public static decimal ToDecimal(this string str)
-    {
-        return Convert.ToDecimal(str);
-    }
-
-    public static bool ToBool(this string str)
-    {
-        return Convert.ToBoolean(str);
-    }
-
-    /// <summary>
     /// Trims all spaces in the beginning, end and middle of the <see cref="string"/> <paramref name="str"/>.
     /// </summary>
     /// <param name="str">The <see cref="string"/> that will be trimmed.</param>
@@ -253,5 +148,137 @@ public static class StringHelper
         }
 
         return builder;
+    }
+
+    public static string InsertKDots(this byte number)
+    {
+        string num = number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return num;
+    }
+
+    public static string InsertKDots(this sbyte number)
+    {
+        bool negative = number < 0;
+        string num = negative ? number.ToString()[1..] : number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return negative ? '-' + num : num;
+    }
+
+    public static string InsertKDots(this short number)
+    {
+        bool negative = number < 0;
+        string num = negative ? number.ToString()[1..] : number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return negative ? '-' + num : num;
+    }
+
+    public static string InsertKDots(this ushort number)
+    {
+        string num = number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return num;
+    }
+
+    public static string InsertKDots(this int number)
+    {
+        bool negative = number < 0;
+        string num = negative ? number.ToString()[1..] : number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return negative ? '-' + num : num;
+    }
+
+    public static string InsertKDots(this uint number)
+    {
+        string num = number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return num;
+    }
+
+    public static string InsertKDots(this long number)
+    {
+        bool negative = number < 0;
+        string num = negative ? number.ToString()[1..] : number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return negative ? '-' + num : num;
+    }
+
+    public static string InsertKDots(this ulong number)
+    {
+        string num = number.ToString();
+        if (num.Length < 4)
+        {
+            return num;
+        }
+
+        for (int i = num.Length - 3; i > 0; i -= 3)
+        {
+            num = num.Insert(i, ".");
+        }
+
+        return num;
     }
 }

@@ -111,8 +111,8 @@ public class ChatMessage
 
     private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
 
-    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null)
-        .ToArray();
+    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+        .Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
     /// <summary>
     /// The basic constructor of <see cref="ChatMessage"/>.
@@ -169,7 +169,7 @@ public class ChatMessage
     {
         return string.IsNullOrEmpty(value)
             ? new()
-            : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => s[1].ToInt());
+            : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => int.Parse(s[1]));
     }
 
     [MsgPropName(nameof(Badges))]
@@ -184,7 +184,7 @@ public class ChatMessage
         return badges.Select(b =>
         {
             string[] bSplit = b.Split('/');
-            return new Badge(bSplit[0], bSplit[1].ToInt());
+            return new Badge(bSplit[0], int.Parse(bSplit[1]));
         }).ToArray();
     }
 
@@ -217,17 +217,17 @@ public class ChatMessage
     private bool GetIsModerator(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(ChannelId))]
-    private long GetChannelId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToLong();
+    private long GetChannelId(string value) => long.Parse(Utils.EndingNumbersPattern.Match(value).Value);
 
     [MsgPropName(nameof(IsSubscriber))]
     private bool GetIsSubscriber(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(TmiSentTs))]
-    private long GetTmiSentTs(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToLong();
+    private long GetTmiSentTs(string value) => long.Parse(Utils.EndingNumbersPattern.Match(value).Value);
 
     [MsgPropName(nameof(IsTurboUser))]
     private bool GetIsTurboUser(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(UserId))]
-    private long GetUserId(string value) => Utils.EndingNumbersPattern.Match(value).Value.ToLong();
+    private long GetUserId(string value) => long.Parse(Utils.EndingNumbersPattern.Match(value).Value);
 }
