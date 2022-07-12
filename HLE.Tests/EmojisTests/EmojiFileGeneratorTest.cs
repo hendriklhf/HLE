@@ -11,15 +11,16 @@ namespace HLE.Tests.EmojisTests
         [TestMethod]
         public void GenerateTest()
         {
-            EmojiFileGenerator generator = new(@".\Emoji.cs", "Emojis");
-            generator.Generate();
-            Assert.IsFalse(string.IsNullOrEmpty(File.ReadAllText(@".\Emoji.cs")));
+            EmojiFileGenerator generator = new("Emojis");
+            string content = generator.Generate();
+            Assert.IsFalse(string.IsNullOrEmpty(content));
         }
 
         [TestMethod]
         public void ValueTest()
         {
-            FieldInfo[] fields = typeof(Emoji).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+            FieldInfo[] fields = typeof(Emoji).GetFields(BindingFlags.Public | BindingFlags.Static);
+            Assert.IsTrue(fields.Length > 0);
             foreach (FieldInfo f in fields)
             {
                 string? value = f.GetValue(null)?.ToString();

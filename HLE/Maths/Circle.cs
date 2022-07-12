@@ -5,7 +5,7 @@ namespace HLE.Maths
     /// <summary>
     /// A class to do calculations with a circle.
     /// </summary>
-    public class Circle : Shape
+    public class Circle : IShape
     {
         /// <summary>
         /// The radius of the circle.
@@ -20,12 +20,12 @@ namespace HLE.Maths
         /// <summary>
         /// The area of the circle.
         /// </summary>
-        public override double Area => Math.PI * Math.Pow(Radius, 2);
+        public double Area => Math.PI * Math.Pow(Radius, 2);
 
         /// <summary>
         /// The circumference of the circle.
         /// </summary>
-        public override double Circumference => Diameter * Math.PI;
+        public double Circumference => Diameter * Math.PI;
 
         /// <summary>
         /// The basic constructor of <see cref="Circle"/>.

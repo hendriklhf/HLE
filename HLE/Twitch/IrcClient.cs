@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Time;
@@ -101,7 +102,7 @@ public class IrcClient
 
     private async Task Send(string message)
     {
-        byte[] bytes = message.Encode();
+        byte[] bytes = Encoding.Unicode.GetBytes(message);
         Memory<byte> msg = new(bytes);
         await _webSocket.SendAsync(new(bytes), WebSocketMessageType.Text, true, _cancellationToken);
         OnDataSent?.Invoke(this, msg);

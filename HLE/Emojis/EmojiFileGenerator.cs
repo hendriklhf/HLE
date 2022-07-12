@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -14,8 +13,6 @@ namespace HLE.Emojis;
 /// </summary>
 public class EmojiFileGenerator
 {
-    public string FilePath { get; set; }
-
     public string NamespaceName { get; set; }
 
     public char IndentationChar { get; set; }
@@ -38,18 +35,17 @@ public class EmojiFileGenerator
 
     private JsonElement? _emojiData;
 
-    public EmojiFileGenerator(string filePath, string namespaceName, char indentationChar = ' ', int indentationSize = 4)
+    public EmojiFileGenerator(string namespaceName, char indentationChar = ' ', int indentationSize = 4)
     {
-        FilePath = filePath;
         NamespaceName = namespaceName;
         IndentationChar = indentationChar;
         IndentationSize = indentationSize;
     }
 
     /// <summary>
-    /// Generates the Emoji file in the given <see cref="FilePath"/> and with a given namespace <see cref="NamespaceName"/>.<br />
+    /// Generates the Emoji file in the given <see cref="FilePath"/> and with a given namespace <see cref="NamespaceName"/>.
     /// </summary>
-    public void Generate()
+    public string Generate()
     {
         if (!_emojiData.HasValue)
         {
@@ -103,6 +99,6 @@ public class EmojiFileGenerator
             string replacement = $" {w.Replacement} ";
             result = Regex.Replace(result, pattern, replacement);
         });
-        File.WriteAllText(FilePath, result);
+        return result;
     }
 }

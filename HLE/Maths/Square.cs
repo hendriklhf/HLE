@@ -5,7 +5,7 @@ namespace HLE.Maths
     /// <summary>
     /// A class to do calculations with a square.
     /// </summary>
-    public class Square : Shape
+    public class Square : IShape
     {
         /// <summary>
         /// The side length of the square.
@@ -15,12 +15,12 @@ namespace HLE.Maths
         /// <summary>
         /// The area of the square.
         /// </summary>
-        public override double Area => SideLength * SideLength;
+        public double Area => SideLength * SideLength;
 
         /// <summary>
         /// The circumference of the square.
         /// </summary>
-        public override double Circumference => 4 * SideLength;
+        public double Circumference => 4 * SideLength;
 
         /// <summary>
         /// The length of the diagonal line of the square.

@@ -16,12 +16,15 @@ public static class CollectionHelper
     /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
     /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
     /// <param name="action">The action that will be performed.</param>
-    public static void ForEach<T>(this IEnumerable<T> collection, Action<T> action)
+    public static IEnumerable<T> ForEach<T>(this IEnumerable<T> collection, Action<T> action)
     {
-        foreach (T item in collection)
+        T[] arr = collection.ToArray();
+        foreach (T item in arr)
         {
             action(item);
         }
+
+        return arr;
     }
 
     /// <summary>
@@ -31,13 +34,15 @@ public static class CollectionHelper
     /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
     /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
     /// <param name="action">The action that will be performed.</param>
-    public static void ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
+    public static IEnumerable<T> ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
     {
         T[] arr = collection.ToArray();
         for (int i = 0; i < arr.Length; i++)
         {
             action(arr[i], i);
         }
+
+        return arr;
     }
 
     /// <summary>
@@ -149,18 +154,11 @@ public static class CollectionHelper
 
     public static IEnumerable<T[]> Split<T>(this IEnumerable<T> collection, T separator)
     {
-        bool Isseparator(T item) => item?.Equals(separator) == true;
+        bool IsSeparator(T item) => item?.Equals(separator) == true;
 
         List<T[]> result = new();
-        List<int> idc = new();
         T[] arr = collection.ToArray();
-        for (int i = 0; i < arr.Length; i++)
-        {
-            if (Isseparator(arr[i]))
-            {
-                idc.Add(i);
-            }
-        }
+        int[] idc = arr.IndecesOf(IsSeparator).ToArray();
 
         int start = 0;
         foreach (int i in idc)
@@ -211,6 +209,6 @@ public static class CollectionHelper
             }
         }
 
-        return indeces.ToArray();
+        return indeces;
     }
 }

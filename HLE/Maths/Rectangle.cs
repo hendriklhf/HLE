@@ -5,7 +5,7 @@ namespace HLE.Maths
     /// <summary>
     /// A class to do calculations with a rectangle.
     /// </summary>
-    public class Rectangle : Shape
+    public class Rectangle : IShape
     {
         /// <summary>
         /// The width of the rectangle.
@@ -25,12 +25,12 @@ namespace HLE.Maths
         /// <summary>
         /// The area of the rectangle.
         /// </summary>
-        public override double Area => Width * Height;
+        public double Area => Width * Height;
 
         /// <summary>
         /// The circumference of the rectangle.
         /// </summary>
-        public override double Circumference => 2 * (Width + Height);
+        public double Circumference => 2 * (Width + Height);
 
         /// <summary>
         /// The basic constructor for <see cref="Rectangle"/>.

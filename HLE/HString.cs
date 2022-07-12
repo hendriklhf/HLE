@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using HLE.Collections;
 
+#pragma warning disable CS0660, CS0661
+
 namespace HLE;
 
-public class HString : IEnumerable<char>, ICloneable
+[DebuggerDisplay("\"{GetString()}\"  Length = {Length}")]
+public class HString : IEnumerable<char>, ICloneable, IConvertible
 {
     public char this[int idx]
     {
@@ -85,7 +89,7 @@ public class HString : IEnumerable<char>, ICloneable
     {
         if (idx < 0)
         {
-            throw new IndexOutOfRangeException();
+            throw new IndexOutOfRangeException($"Index {idx} can't be negative.");
         }
 
         if (idx >= _chars.Length)
@@ -103,7 +107,7 @@ public class HString : IEnumerable<char>, ICloneable
     {
         if (idx < 0 || idx >= _chars.Length)
         {
-            throw new IndexOutOfRangeException();
+            throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has only a length of {_chars.Length}.");
         }
 
         return _chars[idx];
@@ -229,18 +233,43 @@ public class HString : IEnumerable<char>, ICloneable
         };
     }
 
-    public object Clone()
-    {
-        return new HString((char[])_chars.Clone());
-    }
+    public object Clone() => new HString((char[])_chars.Clone());
 
-    public IEnumerator<char> GetEnumerator()
-    {
-        return _chars.AsEnumerable().GetEnumerator();
-    }
+    public IEnumerator<char> GetEnumerator() => _chars.AsEnumerable().GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public TypeCode GetTypeCode() => TypeCode.String;
+
+    public bool ToBoolean(IFormatProvider? provider) => Convert.ToBoolean(GetString(), provider);
+
+    public byte ToByte(IFormatProvider? provider) => Convert.ToByte(GetString(), provider);
+
+    public char ToChar(IFormatProvider? provider) => Convert.ToChar(GetString(), provider);
+
+    public DateTime ToDateTime(IFormatProvider? provider) => Convert.ToDateTime(GetString(), provider);
+
+    public decimal ToDecimal(IFormatProvider? provider) => Convert.ToDecimal(GetString(), provider);
+
+    public double ToDouble(IFormatProvider? provider) => Convert.ToDouble(GetString(), provider);
+
+    public short ToInt16(IFormatProvider? provider) => Convert.ToInt16(GetString(), provider);
+
+    public int ToInt32(IFormatProvider? provider) => Convert.ToInt32(GetString(), provider);
+
+    public long ToInt64(IFormatProvider? provider) => Convert.ToInt64(GetString(), provider);
+
+    public sbyte ToSByte(IFormatProvider? provider) => Convert.ToSByte(GetString(), provider);
+
+    public float ToSingle(IFormatProvider? provider) => Convert.ToSingle(GetString(), provider);
+
+    public string ToString(IFormatProvider? provider) => GetString();
+
+    public object ToType(Type conversionType, IFormatProvider? provider) => Convert.ChangeType(GetString(), conversionType, provider);
+
+    public ushort ToUInt16(IFormatProvider? provider) => Convert.ToUInt16(GetString(), provider);
+
+    public uint ToUInt32(IFormatProvider? provider) => Convert.ToUInt32(GetString(), provider);
+
+    public ulong ToUInt64(IFormatProvider? provider) => Convert.ToUInt64(GetString(), provider);
 }

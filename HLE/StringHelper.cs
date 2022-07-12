@@ -14,26 +14,19 @@ public static class StringHelper
     private static readonly Regex _multipleSpacesPattern = new(@"\s+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
     /// <summary>
-    /// This char moves the chars to the right of this char to the left in Twitch chat.
+    /// Is invisible in Twitch chat.
     /// </summary>
-    public const char ZeroWidthChar = '�';
+    public const char InvisibleChar = '\uFFFD';
 
     /// <summary>
-    /// This char is not visible in Twitch chat.
+    /// Creates a invisible block in Twitch chat.
     /// </summary>
-    public const char InvisibleChar = '⠀';
+    public const char InvisibleBlockChar = '\u2800';
 
-    public static string Decode(this byte[] bytes, Encoding? encoding = null)
-    {
-        encoding ??= Encoding.UTF8;
-        return encoding.GetString(bytes);
-    }
-
-    public static byte[] Encode(this string str, Encoding? encoding = null)
-    {
-        encoding ??= Encoding.UTF8;
-        return encoding.GetBytes(str);
-    }
+    /// <summary>
+    /// Can be placed inside a username, which not mention the user.
+    /// </summary>
+    public const string AntipingChar = "\uDB40\uDC00";
 
     /// <summary>
     /// Removes the given <see cref="string"/> <paramref name="s"/> from the input <see cref="string"/> <paramref name="str"/>.
@@ -69,40 +62,48 @@ public static class StringHelper
             result.Add(str);
             return result;
         }
-        else
+
+        string[] split = str.Split();
+        List<List<string>> list = new();
+        int listIdx = 0;
+        int sum = 0;
+        foreach (string s in split)
         {
-            string[] split = str.Split();
-            List<List<string>?> list = new();
-            int listIdx = 0;
-            for (int i = 0; i < split.Length; i++)
+            if (list.Count < listIdx + 1)
             {
-                if (list.Count < listIdx + 1)
-                {
-                    list.Add(new());
-                }
+                list.Add(new());
+            }
 
-                list[listIdx] ??= new();
-
-                bool doesntExceedMaxCharCount = list[listIdx]!.Select(st => st.Length).Sum() + list[listIdx]!.Count + split[i].Length <= charCount;
-                if (doesntExceedMaxCharCount)
+            bool exceedsMaxCharCount = sum + list[listIdx].Count + s.Length > charCount;
+            if (!exceedsMaxCharCount)
+            {
+                list[listIdx].Add(s);
+                sum += s.Length;
+            }
+            else
+            {
+                if (sum == 0)
                 {
-                    list[listIdx]!.Add(split[i]);
+                    list[listIdx].Add(s);
                 }
                 else
                 {
-                    listIdx++;
-                    i--;
+                    list.Add(new());
+                    list[++listIdx].Add(s);
                 }
-            }
 
-            return list.Where(l => l is not null).Select(l => string.Join(' ', l!));
+                listIdx++;
+                sum = 0;
+            }
         }
+
+        return list.Select(l => string.Join(' ', l));
     }
 
     public static string TakeBetween(this string str, char firstChar, char secondChar)
     {
         int firstIdx = str.IndexOf(firstChar);
-        int secondIdx = str.IndexOf(secondChar);
+        int secondIdx = str.IndexOf(secondChar, firstIdx + 1);
         Range range;
         switch (firstIdx)
         {
@@ -150,7 +151,7 @@ public static class StringHelper
         return builder;
     }
 
-    public static string InsertKDots(this byte number)
+    public static string InsertKDots(this byte number, char kchar = '.')
     {
         string num = number.ToString();
         if (num.Length < 4)
@@ -158,15 +159,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return num;
     }
 
-    public static string InsertKDots(this sbyte number)
+    public static string InsertKDots(this sbyte number, char kchar = '.')
     {
         bool negative = number < 0;
         string num = negative ? number.ToString()[1..] : number.ToString();
@@ -175,15 +177,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return negative ? '-' + num : num;
     }
 
-    public static string InsertKDots(this short number)
+    public static string InsertKDots(this short number, char kchar = '.')
     {
         bool negative = number < 0;
         string num = negative ? number.ToString()[1..] : number.ToString();
@@ -192,15 +195,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return negative ? '-' + num : num;
     }
 
-    public static string InsertKDots(this ushort number)
+    public static string InsertKDots(this ushort number, char kchar = '.')
     {
         string num = number.ToString();
         if (num.Length < 4)
@@ -208,15 +212,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return num;
     }
 
-    public static string InsertKDots(this int number)
+    public static string InsertKDots(this int number, char kchar = '.')
     {
         bool negative = number < 0;
         string num = negative ? number.ToString()[1..] : number.ToString();
@@ -225,15 +230,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return negative ? '-' + num : num;
     }
 
-    public static string InsertKDots(this uint number)
+    public static string InsertKDots(this uint number, char kchar = '.')
     {
         string num = number.ToString();
         if (num.Length < 4)
@@ -241,15 +247,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return num;
     }
 
-    public static string InsertKDots(this long number)
+    public static string InsertKDots(this long number, char kchar = '.')
     {
         bool negative = number < 0;
         string num = negative ? number.ToString()[1..] : number.ToString();
@@ -258,15 +265,16 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return negative ? '-' + num : num;
     }
 
-    public static string InsertKDots(this ulong number)
+    public static string InsertKDots(this ulong number, char kchar = '.')
     {
         string num = number.ToString();
         if (num.Length < 4)
@@ -274,9 +282,10 @@ public static class StringHelper
             return num;
         }
 
+        string c = kchar.ToString();
         for (int i = num.Length - 3; i > 0; i -= 3)
         {
-            num = num.Insert(i, ".");
+            num = num.Insert(i, c);
         }
 
         return num;
