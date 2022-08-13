@@ -10,7 +10,8 @@ using HLE.Twitch.Models;
 namespace HLE.Twitch;
 
 /// <summary>
-/// A class that represents a Twitch chat client. Uses <see cref="IrcClient"/> to connect to the chat servers and <see cref="IrcHandler"/> to handle messages.
+/// A class that represents a Twitch chat client. The client type can be changed by setting the <see cref="ClientType"/> property.
+/// By default uses the <see cref="WebSocketClient"/> to connect to the chat server.
 /// </summary>
 public class TwitchClient
 {
@@ -29,6 +30,11 @@ public class TwitchClient
     /// </summary>
     public bool IsConnected => _client.IsConnected;
 
+    public ClientType ClientType { get; init; } = ClientType.WebSocket;
+
+    // ReSharper disable once InconsistentNaming
+    public bool UseSSL { get; init; }
+
     /// <summary>
     /// The list of channels the client is connected to. Channels can be retrieved by the owner's username or user id in order to read the room state, e.g. if slow-mode is on.
     /// </summary>
@@ -38,7 +44,7 @@ public class TwitchClient
 
     /// <summary>
     /// Is invoked if the client connects.
-    /// </summary>
+    /// </summary>W
     public event EventHandler? OnConnected;
 
     /// <summary>
@@ -90,13 +96,24 @@ public class TwitchClient
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
     /// <summary>
-    /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.<br/>
+    /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.
     /// Connects with the username "justinfan123".
     /// </summary>
     public TwitchClient()
     {
         Username = "justinfan123";
-        _client = new(Username, null);
+        _client = ClientType switch
+        {
+            ClientType.WebSocket => new WebSocketClient(Username)
+            {
+                UseSSL = UseSSL
+            },
+            ClientType.Tcp => new TcpIrcClient(Username)
+            {
+                UseSSL = UseSSL
+            },
+            _ => throw new InvalidOperationException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
+        };
         IsAnonymousLogin = true;
 
         SetEvents();
@@ -113,7 +130,20 @@ public class TwitchClient
     {
         Username = FormatUsername(username);
         oAuthToken = ValidateOAuthToken(oAuthToken);
-        _client = new(Username, oAuthToken, isVerifiedBot);
+        _client = ClientType switch
+        {
+            ClientType.WebSocket => new WebSocketClient(Username, oAuthToken)
+            {
+                UseSSL = UseSSL,
+                IsVerifiedBot = isVerifiedBot
+            },
+            ClientType.Tcp => new TcpIrcClient(Username, oAuthToken)
+            {
+                UseSSL = UseSSL,
+                IsVerifiedBot = isVerifiedBot
+            },
+            _ => throw new InvalidOperationException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
+        };
 
         SetEvents();
     }

@@ -1,20 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Time;
 
 namespace HLE.Twitch;
 
-/// <summary>
-/// A class that represents a IRC client for Twitch chats. Connects to "wss://irc-ws.chat.twitch.tv:443".<br/>
-/// Only provides the connection. Received message are not handled here. Use this class if you want to handle the messages by yourself.
-/// </summary>
-public class IrcClient
+public abstract class IrcClient
 {
     /// <summary>
     /// The username of the client.
@@ -22,16 +15,19 @@ public class IrcClient
     public string Username { get; }
 
     /// <summary>
-    /// The OAuth token of the user.
+    /// The OAuth token of the user. If null, the client is connected anonymously.
     /// </summary>
     public string? OAuthToken { get; }
+
+    // ReSharper disable once InconsistentNaming
+    public bool UseSSL { get; init; }
+
+    public bool IsVerifiedBot { get; init; }
 
     /// <summary>
     /// Indicates whether the client is connected or not.
     /// </summary>
-    public bool IsConnected => _webSocket.State is WebSocketState.Open;
-
-    #region Events
+    public abstract bool IsConnected { get; }
 
     /// <summary>
     /// Is invoked if the client connects.
@@ -53,70 +49,28 @@ public class IrcClient
     /// </summary>
     public event EventHandler<Memory<byte>>? OnDataSent;
 
-    #endregion Events
+    private protected readonly CancellationTokenSource _tokenSource = new();
+    private protected readonly CancellationToken _token;
+    private protected readonly (string Url, int Port) _url;
 
-    private readonly bool _isVerifiedBot;
-
-    private readonly ClientWebSocket _webSocket = new();
-    private readonly CancellationToken _cancellationToken;
-
-    /// <summary>
-    /// The basic constructor of <see cref="IrcClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
-    /// </summary>
-    /// <param name="username">The username of the client.</param>
-    /// <param name="oAuthToken">The OAuth token of the client.</param>
-    /// <param name="isVerifiedBot">If the client user is a verified bot, pass true, otherwise false.</param>
-    public IrcClient(string username, string? oAuthToken, bool isVerifiedBot = false)
+    protected IrcClient(string username, string? oAuthToken = null)
     {
         Username = username;
         OAuthToken = oAuthToken;
-        _isVerifiedBot = isVerifiedBot;
-
-        using CancellationTokenSource tokenCreator = new();
-        _cancellationToken = tokenCreator.Token;
+        _token = _tokenSource.Token;
+        // ReSharper disable once VirtualMemberCallInConstructor
+        _url = GetUrl();
     }
 
     /// <summary>
-    /// Sends a raw message to the Twitch IRC server.
-    /// </summary>
-    /// <param name="message">The IRC message.</param>
-    public void SendRaw(string message)
-    {
-        Send(message).Wait(_cancellationToken);
-    }
-
-    private void StartListening()
-    {
-        async Task StartListeningLocal()
-        {
-            while (!_cancellationToken.IsCancellationRequested && IsConnected)
-            {
-                Memory<byte> buffer = new(new byte[1024]);
-                ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _cancellationToken);
-                OnDataReceived?.Invoke(this, buffer[..(result.Count - 1)]);
-            }
-        }
-
-        Task.Run(StartListeningLocal, _cancellationToken);
-    }
-
-    private async Task Send(string message)
-    {
-        byte[] bytes = Encoding.Unicode.GetBytes(message);
-        Memory<byte> msg = new(bytes);
-        await _webSocket.SendAsync(new(bytes), WebSocketMessageType.Text, true, _cancellationToken);
-        OnDataSent?.Invoke(this, msg);
-    }
-
-    /// <summary>
-    /// Connects the client to the Twitch IRC server on "wss://irc-ws.chat.twitch.tv:443".
+    /// Connects the client to the Twitch IRC server.
     /// </summary>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public void Connect(IEnumerable<string> channels)
     {
         async Task ConnectLocal()
         {
-            await _webSocket.ConnectAsync(new("wss://irc-ws.chat.twitch.tv:443"), _cancellationToken);
+            await ConnectClient();
             OnConnected?.Invoke(this, EventArgs.Empty);
             StartListening();
             if (OAuthToken is not null)
@@ -129,7 +83,16 @@ public class IrcClient
             await JoinChannels(channels);
         }
 
-        Task.Run(ConnectLocal, _cancellationToken).Wait(_cancellationToken);
+        Task.Run(ConnectLocal, _token).Wait(_token);
+    }
+
+    /// <summary>
+    /// Sends a raw message to the Twitch IRC server.
+    /// </summary>
+    /// <param name="message">The IRC message.</param>
+    public void SendRaw(string message)
+    {
+        Send(message).Wait(_token);
     }
 
     /// <summary>
@@ -144,37 +107,7 @@ public class IrcClient
             await Send($"PRIVMSG {channel} :{message}");
         }
 
-        Task.Run(SendLocal, _cancellationToken).Wait(_cancellationToken);
-    }
-
-    [SuppressMessage("ReSharper", "InconsistentNaming")]
-    private async Task JoinChannels(IEnumerable<string> channels)
-    {
-        string[] channelArr = channels.ToArray();
-        if (channelArr.Length == 0)
-        {
-            return;
-        }
-
-        int maxChannels = _isVerifiedBot ? 200 : 20;
-        const short period = 10000;
-        string[] joins = channelArr.Select(c => $"JOIN {c}").ToArray();
-        long start = TimeHelper.Now();
-        for (int i = 0; i < joins.Length; i++)
-        {
-            if (i > 0 && i % maxChannels == 0)
-            {
-                int waitTime = (int)(period - (TimeHelper.Now() - start));
-                if (waitTime > 0)
-                {
-                    await Task.Delay(waitTime, _cancellationToken);
-                }
-
-                start = TimeHelper.Now();
-            }
-
-            await Send(joins[i]);
-        }
+        Task.Run(SendLocal, _token).Wait(_token);
     }
 
     /// <summary>
@@ -188,7 +121,7 @@ public class IrcClient
             await Send($"JOIN {channel}");
         }
 
-        Task.Run(JoinChannelLocal, _cancellationToken).Wait(_cancellationToken);
+        Task.Run(JoinChannelLocal, _token).Wait(_token);
     }
 
     /// <summary>
@@ -202,7 +135,7 @@ public class IrcClient
             await Send($"PART {channel}");
         }
 
-        Task.Run(LeaveChannelLocal, _cancellationToken).Wait(_cancellationToken);
+        Task.Run(LeaveChannelLocal, _token).Wait(_token);
     }
 
     /// <summary>
@@ -213,10 +146,60 @@ public class IrcClient
     {
         async Task DisconnectLocal()
         {
-            await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _cancellationToken);
+            await DisconnectClient(closeMessage);
         }
 
-        Task.Run(DisconnectLocal, _cancellationToken).Wait(_cancellationToken);
+        Task.Run(DisconnectLocal, _token).Wait(_token);
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
+
+    private async Task JoinChannels(IEnumerable<string> channels)
+    {
+        string[] channelArr = channels.ToArray();
+        if (channelArr.Length == 0)
+        {
+            return;
+        }
+
+        int maxChannels = IsVerifiedBot ? 200 : 20;
+        // ReSharper disable once InconsistentNaming
+        const short period = 10000;
+        string[] joins = channelArr.Select(c => $"JOIN {c}").ToArray();
+        long start = TimeHelper.Now();
+        for (int i = 0; i < joins.Length; i++)
+        {
+            if (i > 0 && i % maxChannels == 0)
+            {
+                int waitTime = (int)(period - (TimeHelper.Now() - start));
+                if (waitTime > 0)
+                {
+                    await Task.Delay(waitTime, _token);
+                }
+
+                start = TimeHelper.Now();
+            }
+
+            await Send(joins[i]);
+        }
+    }
+
+    private protected void InvokeDataReceived(IrcClient sender, Memory<byte> message)
+    {
+        OnDataReceived?.Invoke(sender, message);
+    }
+
+    private protected void InvokeDataSent(IrcClient sender, Memory<byte> message)
+    {
+        OnDataSent?.Invoke(sender, message);
+    }
+
+    private protected abstract Task Send(string message);
+
+    private protected abstract void StartListening();
+
+    private protected abstract Task ConnectClient();
+
+    private protected abstract Task DisconnectClient(string closeMessage);
+
+    private protected abstract (string Url, int Port) GetUrl();
 }

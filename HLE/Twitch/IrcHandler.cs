@@ -55,11 +55,7 @@ public class IrcHandler
         {
             case >= 3:
             {
-                if (split[2] == _ircCmds[1])
-                {
-                    OnRoomstateReceived?.Invoke(this, new(ircMessage, split));
-                }
-                else if (split[2] == _ircCmds[2])
+                if (split[2] == _ircCmds[2])
                 {
                     OnChatMessageReceived?.Invoke(this, new(ircMessage, split));
                 }
@@ -70,6 +66,10 @@ public class IrcHandler
                 else if (split[1] == _ircCmds[4])
                 {
                     OnLeftChannel?.Invoke(this, new(ircMessage, split));
+                }
+                else if (split[2] == _ircCmds[1])
+                {
+                    OnRoomstateReceived?.Invoke(this, new(ircMessage, split));
                 }
 
                 break;
