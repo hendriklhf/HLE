@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using HLE.Collections;
-
-#pragma warning disable CS0660, CS0661
 
 namespace HLE;
 
@@ -67,8 +64,6 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public string TrimAll() => GetString().TrimAll();
 
-    public int[] IndecesOf(char value) => _chars.IndecesOf(c => c == value).ToArray();
-
     public bool StartsWith(char value) => GetString().StartsWith(value);
 
     public bool StartsWith(string value) => GetString().StartsWith(value);
@@ -81,9 +76,13 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public string ToUpper() => GetString().ToUpper();
 
-    public char[] ToCharArray() => _chars;
+    public char[] ToCharArray() => (char[])_chars.Clone();
 
-    public char RandomChar() => _chars.Random();
+    public unsafe char* GetCharPtr(int idx)
+    {
+        fixed (char* c = &_chars[idx])
+            return c;
+    }
 
     private void SetChar(int idx, char c)
     {
@@ -200,7 +199,7 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
     {
         switch (count)
         {
-            case 1:
+            case <= 1:
             {
                 return left;
             }
@@ -222,6 +221,28 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
         }
     }
 
+    public static HString operator ++(HString left)
+    {
+        for (int i = 0; i < left.Length; i++)
+        {
+            left._chars[i]++;
+        }
+
+        left._string = null;
+        return left;
+    }
+
+    public static HString operator --(HString left)
+    {
+        for (int i = 0; i < left.Length; i++)
+        {
+            left._chars[i]--;
+        }
+
+        left._string = null;
+        return left;
+    }
+
     public override bool Equals(object? obj)
     {
         return obj switch
@@ -232,6 +253,10 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
             _ => false
         };
     }
+
+    public override int GetHashCode() => GetString().GetHashCode();
+
+    public override string ToString() => GetString();
 
     public object Clone() => new HString((char[])_chars.Clone());
 

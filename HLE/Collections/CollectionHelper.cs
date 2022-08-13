@@ -185,7 +185,7 @@ public static class CollectionHelper
         return collection.Where(i => predicates.All(p => p(i)));
     }
 
-    public static string RandomWord(this IEnumerable<char> collection, int wordLength)
+    public static string RandomString(this IEnumerable<char> collection, int wordLength)
     {
         char[] arr = collection.ToArray();
         StringBuilder builder = new();

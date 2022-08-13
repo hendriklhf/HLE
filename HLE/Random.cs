@@ -20,8 +20,7 @@ public static class Random
 
     public static char Char(ushort min, ushort max)
     {
-        ushort[] numbers = NumberCollection.Create(min, max).ToArray();
-        return (char)numbers.Random();
+        return (char)UShort(min, max);
     }
 
     public static byte Byte(byte min = byte.MinValue, byte max = byte.MaxValue)
@@ -152,7 +151,7 @@ public static class Random
     /// </summary>
     /// <param name="length">The <paramref name="length"/> of the <see cref="string"/>.</param>
     /// <returns>A string of the given <paramref name="length"/>.</returns>
-    public static string String(ulong length = 10)
+    public static string String(int length = 10)
     {
         if (length <= 0)
         {
@@ -160,7 +159,7 @@ public static class Random
         }
 
         StringBuilder builder = new();
-        for (ulong i = 0; i < length; i++)
+        for (int i = 0; i < length; i++)
         {
             builder.Append(Char());
         }
@@ -168,7 +167,7 @@ public static class Random
         return builder.ToString();
     }
 
-    public static string String(ulong length, ushort minChar, ushort maxChar)
+    public static string String(int length, ushort minChar, ushort maxChar)
     {
         if (length <= 0)
         {
@@ -177,7 +176,7 @@ public static class Random
 
         ushort[] chars = NumberCollection.Create(minChar, maxChar).ToArray();
         StringBuilder builder = new();
-        for (ulong i = 0; i < length; i++)
+        for (int i = 0; i < length; i++)
         {
             builder.Append((char)chars.Random());
         }
@@ -187,7 +186,7 @@ public static class Random
 
     public static bool Bool()
     {
-        return Int(0, 1) switch
+        return Byte(0, 1) switch
         {
             0 => true,
             1 => false,

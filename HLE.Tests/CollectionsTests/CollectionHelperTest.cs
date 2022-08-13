@@ -246,7 +246,7 @@ namespace HLE.Tests.CollectionsTests
                 'C'
             };
 
-            string word = arr.RandomWord(5);
+            string word = arr.RandomString(5);
             Assert.AreEqual(5, word.Length);
         }
     }
