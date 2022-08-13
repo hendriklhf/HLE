@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
-using HLE.Collections;
 using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;
@@ -90,6 +89,11 @@ public class ChatMessage
     public long UserId { get; init; }
 
     /// <summary>
+    /// Indicates whether the message was sent as an action (prefixed with "/me") or not.
+    /// </summary>
+    public bool IsAction { get; init; }
+
+    /// <summary>
     /// The username of the user who sent the message. All lower case.
     /// </summary>
     public string Username { get; init; }
@@ -113,6 +117,8 @@ public class ChatMessage
 
     private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
         .Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
+
+    private const string _actionPrefix = ":\u0001ACTION";
 
     /// <summary>
     /// The basic constructor of <see cref="ChatMessage"/>.
@@ -147,9 +153,10 @@ public class ChatMessage
             prop.SetValue(this, result);
         }
 
+        IsAction = split[4] == _actionPrefix;
         Username = string.IsNullOrEmpty(DisplayName) ? string.Empty : DisplayName.ToLower();
         Channel = split[3][1..];
-        Message = split[4..].JoinToString(' ')[1..];
+        Message = GetMessage(ircMessage, split);
         RawIrcMessage = ircMessage;
     }
 
@@ -162,6 +169,13 @@ public class ChatMessage
         Channel = string.Empty;
         Message = string.Empty;
         RawIrcMessage = string.Empty;
+    }
+
+    private string GetMessage(string ircMessage, string[] split)
+    {
+        return IsAction
+            ? ircMessage[(split[..5].Sum(s => s.Length) + 5)..^1]
+            : ircMessage[(split[..4].Sum(s => s.Length) + 5)..];
     }
 
     [MsgPropName(nameof(BadgeInfo))]
