@@ -33,7 +33,7 @@ namespace HLE.Maths
         public double Circumference => 2 * (Width + Height);
 
         /// <summary>
-        /// The basic constructor for <see cref="Rectangle"/>.
+        /// The default constructor of <see cref="Rectangle"/>.
         /// </summary>
         /// <param name="width">The width.</param>
         /// <param name="height">The height.</param>

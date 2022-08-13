@@ -121,7 +121,7 @@ public class ChatMessage
     private const string _actionPrefix = ":\u0001ACTION";
 
     /// <summary>
-    /// The basic constructor of <see cref="ChatMessage"/>.
+    /// The default constructor of <see cref="ChatMessage"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>

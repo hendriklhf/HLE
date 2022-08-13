@@ -5,12 +5,23 @@ using System.Threading.Tasks;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// Provides a Twitch IRC server connection via a <see cref="TcpClient"/>.
+/// </summary>
 public class TcpIrcClient : IrcClient
 {
+    /// <summary>
+    /// Indicates whether the client is connected or not.
+    /// </summary>
     public override bool IsConnected => _tcpClient.Connected && !_token.IsCancellationRequested;
 
     private readonly TcpClient _tcpClient = new();
 
+    /// <summary>
+    /// The default constructor of <see cref="TcpIrcClient"/>.
+    /// </summary>
+    /// <param name="username">The username of the client.</param>
+    /// <param name="oAuthToken">The OAuth token of the client.</param>
     public TcpIrcClient(string username, string? oAuthToken = null) : base(username, oAuthToken)
     {
     }

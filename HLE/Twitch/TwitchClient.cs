@@ -30,8 +30,14 @@ public class TwitchClient
     /// </summary>
     public bool IsConnected => _client.IsConnected;
 
+    /// <summary>
+    /// The client type of the connection. Can be either a websocket or a TCP connection.
+    /// </summary>
     public ClientType ClientType { get; init; } = ClientType.WebSocket;
 
+    /// <summary>
+    /// Indicates whether the connection uses SSL or not.
+    /// </summary>
     // ReSharper disable once InconsistentNaming
     public bool UseSSL { get; init; }
 

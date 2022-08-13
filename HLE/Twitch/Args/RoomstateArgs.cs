@@ -73,7 +73,7 @@ public class RoomstateArgs : EventArgs
         .ToArray();
 
     /// <summary>
-    /// The basic constructor of <see cref="RoomstateArgs"/>.
+    /// The default constructor of <see cref="RoomstateArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>

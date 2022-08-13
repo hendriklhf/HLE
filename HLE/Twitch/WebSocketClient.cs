@@ -5,14 +5,20 @@ using System.Threading.Tasks;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// Provides a Twitch IRC server connection via a <see cref="ClientWebSocket"/>.
+/// </summary>
 public class WebSocketClient : IrcClient
 {
+    /// <summary>
+    /// Indicates whether the client is connected or not.
+    /// </summary>
     public override bool IsConnected => _webSocket.State is WebSocketState.Open && !_token.IsCancellationRequested;
 
     private readonly ClientWebSocket _webSocket = new();
 
     /// <summary>
-    /// The basic constructor of <see cref="WebSocketClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
+    /// The default constructor of <see cref="WebSocketClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
     /// </summary>
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>

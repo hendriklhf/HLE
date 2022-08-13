@@ -28,7 +28,7 @@ namespace HLE.Maths
         public double Circumference => Diameter * Math.PI;
 
         /// <summary>
-        /// The basic constructor of <see cref="Circle"/>.
+        /// The default constructor of <see cref="Circle"/>.
         /// </summary>
         /// <param name="radius">The radius.</param>
         public Circle(double radius)

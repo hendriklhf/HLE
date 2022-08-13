@@ -16,7 +16,7 @@ public class Badge
     public int Level { get; }
 
     /// <summary>
-    /// The basic constructor of <see cref="Badge"/>.
+    /// The default constructor of <see cref="Badge"/>.
     /// </summary>
     /// <param name="name">The name of the badge.</param>
     /// <param name="lvl">The level of the badge.</param>

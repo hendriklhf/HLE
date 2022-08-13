@@ -28,7 +28,7 @@ namespace HLE.Maths
         public double Diagonal => Math.Sqrt(2 * Math.Pow(SideLength, 2));
 
         /// <summary>
-        /// The basic constructor for <see cref="Square"/>.
+        /// The default constructor of <see cref="Square"/>.
         /// </summary>
         /// <param name="sideLength">The side length.</param>
         public Square(double sideLength)

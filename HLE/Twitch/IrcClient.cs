@@ -7,6 +7,9 @@ using HLE.Time;
 
 namespace HLE.Twitch;
 
+/// <summary>
+/// The base class for IRC clients.
+/// </summary>
 public abstract class IrcClient
 {
     /// <summary>
@@ -19,9 +22,15 @@ public abstract class IrcClient
     /// </summary>
     public string? OAuthToken { get; }
 
+    /// <summary>
+    /// Indicates whether the connection uses SSL or not.
+    /// </summary>
     // ReSharper disable once InconsistentNaming
     public bool UseSSL { get; init; }
 
+    /// <summary>
+    /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.
+    /// </summary>
     public bool IsVerifiedBot { get; init; }
 
     /// <summary>
@@ -53,6 +62,11 @@ public abstract class IrcClient
     private protected readonly CancellationToken _token;
     private protected readonly (string Url, int Port) _url;
 
+    /// <summary>
+    /// The default constructor of the base <see cref="IrcClient"/>.
+    /// </summary>
+    /// <param name="username">The username of the client.</param>
+    /// <param name="oAuthToken">The OAuth token of the client.</param>
     protected IrcClient(string username, string? oAuthToken = null)
     {
         Username = username;

@@ -18,7 +18,7 @@ public class LeftChannelArgs : EventArgs
     public string Channel { get; }
 
     /// <summary>
-    /// The basic constructor for <see cref="LeftChannelArgs"/>.
+    /// The default constructor of <see cref="LeftChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>
