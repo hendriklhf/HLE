@@ -14,13 +14,13 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
     <PackageTags>library c# csharp .net6</PackageTags>
-    <Version>2.0.1</Version>
     <OutputType>Library</OutputType>
-    <AssemblyVersion>2.0.1</AssemblyVersion>
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
-    <PackageVersion>2.0.1</PackageVersion>
+    <Version>2.0.2</Version>
+    <PackageVersion>2.0.2</PackageVersion>
+    <AssemblyVersion>2.0.2</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
