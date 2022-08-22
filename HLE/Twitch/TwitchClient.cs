@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using HLE.Collections;
 using HLE.Twitch.Args;
@@ -33,13 +32,13 @@ public class TwitchClient
     /// <summary>
     /// The client type of the connection. Can be either a websocket or a TCP connection.
     /// </summary>
-    public ClientType ClientType { get; init; } = ClientType.WebSocket;
+    public ClientType ClientType { get; }
 
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; init; }
+    public bool UseSSL { get; }
 
     /// <summary>
     /// The list of channels the client is connected to. Channels can be retrieved by the owner's username or user id in order to read the room state, e.g. if slow-mode is on.
@@ -104,10 +103,14 @@ public class TwitchClient
     /// <summary>
     /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.
     /// Connects with the username "justinfan123".
+    /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// </summary>
-    public TwitchClient()
+    public TwitchClient(ClientOptions? options = null)
     {
         Username = "justinfan123";
+        options ??= new();
+        ClientType = options.ClientType;
+        UseSSL = options.UseSSL;
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketClient(Username)
@@ -130,23 +133,24 @@ public class TwitchClient
     /// </summary>
     /// <param name="username">The username of the client</param>
     /// <param name="oAuthToken">The OAuth token of the client</param>
-    /// <param name="isVerifiedBot">If true, the client uses different rate limiting to join channels faster. Condition to use this is that your Twitch account has to be a verified bot.</param>
+    /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
-    public TwitchClient(string username, string oAuthToken, bool isVerifiedBot = false)
+    public TwitchClient(string username, string oAuthToken, ClientOptions? options = null)
     {
-        Username = FormatUsername(username);
+        Username = FormatChannel(username)[1..];
         oAuthToken = ValidateOAuthToken(oAuthToken);
+        options ??= new();
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketClient(Username, oAuthToken)
             {
                 UseSSL = UseSSL,
-                IsVerifiedBot = isVerifiedBot
+                IsVerifiedBot = options.IsVerifiedBot
             },
             ClientType.Tcp => new TcpIrcClient(Username, oAuthToken)
             {
                 UseSSL = UseSSL,
-                IsVerifiedBot = isVerifiedBot
+                IsVerifiedBot = options.IsVerifiedBot
             },
             _ => throw new InvalidOperationException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
@@ -162,7 +166,7 @@ public class TwitchClient
         _client.OnDataSent += IrcClient_OnDataSent;
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnRoomstateReceived += IrcClient_OnRoomstateReceived;
+        _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += (_, e) => SendRaw($"PONG :{e.Message}");
@@ -182,7 +186,7 @@ public class TwitchClient
             return;
         }
 
-        channel = FormatUsername(channel);
+        channel = FormatChannel(channel);
         if (!_ircChannels.Contains(channel))
         {
             return;
@@ -213,7 +217,7 @@ public class TwitchClient
     /// <param name="message">The raw message</param>
     public void SendRaw(string message)
     {
-        if (!IsConnected || IsAnonymousLogin)
+        if (!IsConnected)
         {
             return;
         }
@@ -241,7 +245,7 @@ public class TwitchClient
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if the <paramref name="channel"/> is in the wrong format.</exception>
     public void JoinChannel(string channel)
     {
-        channel = FormatUsername(channel);
+        channel = FormatChannel(channel);
         _ircChannels.Add(channel);
         if (IsConnected)
         {
@@ -256,7 +260,7 @@ public class TwitchClient
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(params string[] channels)
     {
-        channels = FormatUsernames(channels).ToArray();
+        channels = FormatChannels(channels).ToArray();
         _ircChannels.AddRange(channels);
         if (IsConnected)
         {
@@ -271,7 +275,7 @@ public class TwitchClient
     /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(IEnumerable<string> channels)
     {
-        string[] chnls = FormatUsernames(channels).ToArray();
+        string[] chnls = FormatChannels(channels).ToArray();
         _ircChannels.AddRange(chnls);
         if (IsConnected)
         {
@@ -290,7 +294,7 @@ public class TwitchClient
             return;
         }
 
-        channel = FormatUsername(channel);
+        channel = FormatChannel(channel);
         _ircChannels.Remove(channel);
         Channels.Remove(channel[1..]);
         if (IsConnected)
@@ -347,24 +351,18 @@ public class TwitchClient
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
-    private void IrcClient_OnDataReceived(object? sender, Memory<byte> e)
+    private void IrcClient_OnDataReceived(object? sender, string message)
     {
-        string message = Encoding.UTF8.GetString(e.ToArray());
-        string[] lines = message.Remove("\r").Split('\n');
-        lines.ForEach(l =>
-        {
-            _ircHandler.Handle(l);
-            OnDataReceived?.Invoke(this, l);
-        });
+        _ircHandler.Handle(message);
+        OnDataReceived?.Invoke(this, message);
     }
 
-    private void IrcClient_OnDataSent(object? sender, Memory<byte> e)
+    private void IrcClient_OnDataSent(object? sender, string message)
     {
-        string message = Encoding.UTF8.GetString(e.ToArray());
         OnDataSent?.Invoke(this, message);
     }
 
-    private void IrcClient_OnRoomstateReceived(object? sender, RoomstateArgs e)
+    private void IrcHandler_OnRoomstateReceived(object? sender, RoomstateArgs e)
     {
         Channels.Update(e);
     }
@@ -381,34 +379,34 @@ public class TwitchClient
         }
     }
 
-    private static string FormatUsername(string username)
+    private static string FormatChannel(string channel)
     {
-        if (!_channelPattern.IsMatch(username))
+        if (!_channelPattern.IsMatch(channel))
         {
-            throw new FormatException("The channel or username is in an invalid format.");
+            throw new FormatException("The channel name is in an invalid format.");
         }
 
-        return (username.StartsWith('#') ? username : $"#{username}").ToLower();
+        return (channel.StartsWith('#') ? channel : $"#{channel}").ToLower();
     }
 
-    private static IEnumerable<string> FormatUsernames(IEnumerable<string> usernames)
+    private static IEnumerable<string> FormatChannels(IEnumerable<string> channels)
     {
-        return usernames.Select(FormatUsername);
+        return channels.Select(FormatChannel);
     }
 
     private static string ValidateOAuthToken(string oAuthToken)
     {
-        Regex oAuthPattern = new(@"^oauth:[a-z0-9]{30}$", RegexOptions.None, TimeSpan.FromMilliseconds(250));
-        Regex oAuthPatternNoPrefix = new(@"^[a-z0-9]{30}$", RegexOptions.None, TimeSpan.FromMilliseconds(250));
+        Regex oAuthPattern = new(@"^oauth:[a-z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+        Regex oAuthPatternNoPrefix = new(@"^[a-z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
         if (oAuthPattern.IsMatch(oAuthToken))
         {
-            return oAuthToken;
+            return oAuthToken.ToLower();
         }
 
         if (oAuthPatternNoPrefix.IsMatch(oAuthToken))
         {
-            return $"oauth:{oAuthToken}";
+            return $"oauth:{oAuthToken}".ToLower();
         }
 
         throw new FormatException("The OAuthToken is in an invalid format.");

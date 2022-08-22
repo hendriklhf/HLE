@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Reflection;
+﻿using System.Reflection;
 using HLE.Emojis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

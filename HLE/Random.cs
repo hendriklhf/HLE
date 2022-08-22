@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using HLE.Collections;
 
@@ -190,7 +191,7 @@ public static class Random
         {
             0 => true,
             1 => false,
-            _ => true
+            _ => throw new InvalidOperationException("wtf")
         };
     }
 }

@@ -165,7 +165,7 @@ namespace HLE.Tests.CollectionsTests
                 }
             };
 
-            int[] arr = arrArr.SelectEach().ToArray();
+            int[] arr = arrArr.SelectMany().ToArray();
             Assert.AreEqual(15, arr.Length);
             for (int i = 0; i < arr.Length; i++)
             {
@@ -248,6 +248,30 @@ namespace HLE.Tests.CollectionsTests
 
             string word = arr.RandomString(5);
             Assert.AreEqual(5, word.Length);
+        }
+
+        [TestMethod]
+        public void ContentEqualsTest()
+        {
+            int[] arr1 =
+            {
+                1,
+                2,
+                3
+            };
+
+            int[] arr2 =
+            {
+                1,
+                2,
+                3
+            };
+            
+            Assert.IsTrue(arr1.ContentEquals(arr2));
+
+            string s1 = "hello";
+            string s2 = "hello";
+            Assert.IsTrue(s1.ContentEquals(s2));
         }
     }
 }

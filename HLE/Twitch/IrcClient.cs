@@ -51,12 +51,12 @@ public abstract class IrcClient
     /// <summary>
     /// Is invoked if the client receives data.
     /// </summary>
-    public event EventHandler<Memory<byte>>? OnDataReceived;
+    public event EventHandler<string>? OnDataReceived;
 
     /// <summary>
     /// Is invoked if the client sends data.
     /// </summary>
-    public event EventHandler<Memory<byte>>? OnDataSent;
+    public event EventHandler<string>? OnDataSent;
 
     private protected readonly CancellationTokenSource _tokenSource = new();
     private protected readonly CancellationToken _token;
@@ -197,12 +197,12 @@ public abstract class IrcClient
         }
     }
 
-    private protected void InvokeDataReceived(IrcClient sender, Memory<byte> message)
+    private protected void InvokeDataReceived(IrcClient sender, string message)
     {
         OnDataReceived?.Invoke(sender, message);
     }
 
-    private protected void InvokeDataSent(IrcClient sender, Memory<byte> message)
+    private protected void InvokeDataSent(IrcClient sender, string message)
     {
         OnDataSent?.Invoke(sender, message);
     }

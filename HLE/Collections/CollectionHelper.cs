@@ -122,9 +122,9 @@ public static class CollectionHelper
 
     public static IEnumerable<T> Swap<T>(this IEnumerable<T> collection, int idx, int idx2)
     {
-        List<T> items = collection.ToList();
-        (items[idx2], items[idx]) = (items[idx], items[idx2]);
-        return items;
+        T[] arr = collection.ToArray();
+        (arr[idx2], arr[idx]) = (arr[idx], arr[idx2]);
+        return arr;
     }
 
     public static IEnumerable<T> Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
@@ -141,15 +141,9 @@ public static class CollectionHelper
         return arr;
     }
 
-    public static IEnumerable<T> SelectEach<T>(this IEnumerable<IEnumerable<T>> collection)
+    public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> collection)
     {
-        List<T> result = new();
-        foreach (IEnumerable<T> e in collection)
-        {
-            result.AddRange(e);
-        }
-
-        return result;
+        return collection.SelectMany(t => t);
     }
 
     public static IEnumerable<T[]> Split<T>(this IEnumerable<T> collection, T separator)
@@ -210,5 +204,37 @@ public static class CollectionHelper
         }
 
         return indeces;
+    }
+
+    public static bool ContentEquals<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
+    {
+        T[] arr = collection.ToArray();
+        T[] arr2 = collection2.ToArray();
+        if (arr.Length != arr2.Length)
+        {
+            return false;
+        }
+
+        // ReSharper disable once LoopCanBeConvertedToQuery
+        for (int i = 0; i < arr.Length; i++)
+        {
+            if (arr[i]?.Equals(arr2[i]) == false)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static T?[] CreateArray<T>(int length, T? defaultValue = default)
+    {
+        T?[] arr = new T[length];
+        for (int i = 0; i < arr.Length; i++)
+        {
+            arr[i] = defaultValue;
+        }
+
+        return arr;
     }
 }

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;
@@ -118,6 +119,9 @@ public class ChatMessage
     private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
         .Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
+    private static readonly Regex _endingNumbersPattern = new(@"-?\d+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _endingWordPattern = new(@"\w+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+
     private const string _actionPrefix = ":\u0001ACTION";
 
     /// <summary>
@@ -217,7 +221,7 @@ public class ChatMessage
     [MsgPropName(nameof(DisplayName))]
     private string GetDisplayName(string value)
     {
-        string displayName = Utils.EndingWordPattern.Match(value).Value;
+        string displayName = _endingWordPattern.Match(value).Value;
         return displayName.EndsWith(@"\s") ? displayName[..^2] : displayName;
     }
 
@@ -231,17 +235,17 @@ public class ChatMessage
     private bool GetIsModerator(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(ChannelId))]
-    private long GetChannelId(string value) => long.Parse(Utils.EndingNumbersPattern.Match(value).Value);
+    private long GetChannelId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
     [MsgPropName(nameof(IsSubscriber))]
     private bool GetIsSubscriber(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(TmiSentTs))]
-    private long GetTmiSentTs(string value) => long.Parse(Utils.EndingNumbersPattern.Match(value).Value);
+    private long GetTmiSentTs(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
     [MsgPropName(nameof(IsTurboUser))]
     private bool GetIsTurboUser(string value) => value[^1] == '1';
 
     [MsgPropName(nameof(UserId))]
-    private long GetUserId(string value) => long.Parse(Utils.EndingNumbersPattern.Match(value).Value);
+    private long GetUserId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 }

@@ -78,12 +78,6 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public char[] ToCharArray() => (char[])_chars.Clone();
 
-    public unsafe char* GetCharPtr(int idx)
-    {
-        fixed (char* c = &_chars[idx])
-            return c;
-    }
-
     private void SetChar(int idx, char c)
     {
         if (idx < 0)
@@ -249,7 +243,7 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
         {
             HString h => GetString() == h.GetString(),
             string s => GetString() == s,
-            char c => GetString().Length == 1 && GetString().First() == c,
+            char c => GetString().Length == 1 && GetString()[0] == c,
             _ => false
         };
     }

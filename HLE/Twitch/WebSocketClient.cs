@@ -29,9 +29,8 @@ public class WebSocketClient : IrcClient
     private protected override async Task Send(string message)
     {
         byte[] bytes = Encoding.UTF8.GetBytes(message);
-        Memory<byte> msg = new(bytes);
-        await _webSocket.SendAsync(new(bytes), WebSocketMessageType.Text, true, _token);
-        InvokeDataSent(this, msg);
+        await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
+        InvokeDataSent(this, message);
     }
 
     private protected override void StartListening()
@@ -42,7 +41,17 @@ public class WebSocketClient : IrcClient
             {
                 Memory<byte> buffer = new(new byte[2048]);
                 ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
-                InvokeDataReceived(this, buffer[..(result.Count - 1)]);
+                if (result.Count == 0)
+                {
+                    continue;
+                }
+
+                string message = Encoding.UTF8.GetString(buffer[..result.Count].ToArray());
+                string[] messages = message.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+                foreach (string m in messages)
+                {
+                    InvokeDataReceived(this, m);
+                }
             }
         }
 

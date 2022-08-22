@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IO;
+using System.Net.Security;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
+using HLE.Collections;
 
 namespace HLE.Twitch;
 
@@ -16,6 +18,8 @@ public class TcpIrcClient : IrcClient
     public override bool IsConnected => _tcpClient.Connected && !_token.IsCancellationRequested;
 
     private readonly TcpClient _tcpClient = new();
+    private StreamReader? _reader;
+    private StreamWriter? _writer;
 
     /// <summary>
     /// The default constructor of <see cref="TcpIrcClient"/>.
@@ -28,23 +32,36 @@ public class TcpIrcClient : IrcClient
 
     private protected override async Task Send(string message)
     {
-        NetworkStream stream = _tcpClient.GetStream();
-        byte[] bytes = Encoding.UTF8.GetBytes(message);
-        await stream.WriteAsync(bytes, _token);
-        InvokeDataSent(this, bytes);
+        if (_writer is null)
+        {
+            throw new ArgumentNullException(nameof(_writer));
+        }
+
+        char[] chars = message.ToCharArray();
+        await _writer.WriteLineAsync(chars, _token);
+        await _writer.FlushAsync();
+        InvokeDataSent(this, chars.ConcatToString());
     }
 
     private protected override void StartListening()
     {
         async Task StartListeningLocal()
         {
-            NetworkStream stream = _tcpClient.GetStream();
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
-                Memory<byte> buffer = new(new byte[2048]);
-                int count = await stream.ReadAsync(buffer, _token);
-                InvokeDataReceived(this, buffer[..(count - 1)]);
+                string? message = await _reader.ReadLineAsync();
+                if (message is null)
+                {
+                    continue;
+                }
+
+                InvokeDataReceived(this, message);
             }
+        }
+
+        if (_reader is null)
+        {
+            throw new ArgumentNullException(nameof(_reader));
         }
 
         Task.Run(StartListeningLocal, _token);
@@ -53,6 +70,18 @@ public class TcpIrcClient : IrcClient
     private protected override async Task ConnectClient()
     {
         await _tcpClient.ConnectAsync(_url.Url, _url.Port, _token);
+        if (UseSSL)
+        {
+            SslStream sslStream = new(_tcpClient.GetStream(), false);
+            await sslStream.AuthenticateAsClientAsync(_url.Url);
+            _reader = new(sslStream);
+            _writer = new(sslStream);
+        }
+        else
+        {
+            _reader = new(_tcpClient.GetStream());
+            _writer = new(_tcpClient.GetStream());
+        }
     }
 
     private protected override Task DisconnectClient(string closeMessage)
