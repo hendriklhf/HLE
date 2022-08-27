@@ -1,19 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NeutralLanguage>en</NeutralLanguage>
     <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>Resources\AssemblyKey.pfx</AssemblyOriginatorKeyFile>
     <Product>HLE</Product>
     <Description>A class library containing usefull methods and data lists.</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
-    <PackageTags>library c# csharp .net6</PackageTags>
+    <PackageTags>library c# csharp .net7</PackageTags>
     <OutputType>Library</OutputType>
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
@@ -21,6 +20,7 @@
     <Version>2.0.2</Version>
     <PackageVersion>2.0.2</PackageVersion>
     <AssemblyVersion>2.0.2</AssemblyVersion>
+    <PackageIcon>Resources\Okayge.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -29,16 +29,9 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>C:\Users\Hendrik\Documents\Git\HLEClassLibrary\Build\HLE.xml</DocumentationFile>
+    <DocumentationFile>..\Build\HLE.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>;NU1605</WarningsAsErrors>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="..\LICENSE" Link="Resources\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
 
 </Project>

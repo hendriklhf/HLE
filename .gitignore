@@ -6,7 +6,7 @@
 HLE/Resources/todo.txt
 
 # Debug project
-HLEDebug/
+HLE.Debug/
 
 ### ASPNETCore ###
 ## Ignore Visual Studio temporary files, build results, and
