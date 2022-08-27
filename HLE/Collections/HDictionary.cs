@@ -5,6 +5,12 @@ using System.Linq;
 
 namespace HLE.Collections;
 
+/// <summary>
+/// A type of dictionary that doesn't need .TryGetValue(...) or .TryAdd(...).
+/// Data can only be added and retrieved via the indexer. If a key isn't found in the dictionary, the default value of <see cref="TValue"/> will be returned.
+/// </summary>
+/// <typeparam name="TKey">The key.</typeparam>
+/// <typeparam name="TValue">The value.</typeparam>
 [DebuggerDisplay("Count = {Count}")]
 public class HDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
 {
