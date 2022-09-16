@@ -36,7 +36,7 @@ public static class StringHelper
     /// <returns>Returns the <see cref="string"/> <paramref name="str"/> with the <paramref name="s"/> removed.</returns>
     public static string Remove(this string str, string s)
     {
-        return str.Replace(s, "");
+        return str.Replace(s, string.Empty);
     }
 
     public static IEnumerable<string> Split(this string str, int charCount, bool onlySplitOnWhitespace = false)

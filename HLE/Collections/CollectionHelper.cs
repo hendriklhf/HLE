@@ -215,6 +215,11 @@ public static class CollectionHelper
             return false;
         }
 
+        if (arr.Length == 0 || arr2.Length == 0)
+        {
+            return true;
+        }
+
         // ReSharper disable once LoopCanBeConvertedToQuery
         for (int i = 0; i < arr.Length; i++)
         {
@@ -230,11 +235,40 @@ public static class CollectionHelper
     public static T?[] CreateArray<T>(int length, T? defaultValue = default)
     {
         T?[] arr = new T[length];
-        for (int i = 0; i < arr.Length; i++)
+        Array.Fill(arr, defaultValue);
+        return arr;
+    }
+
+    public static IEnumerable<T> ForEachByRange<T>(this IEnumerable<T> collection, params (int Begin, int End, Action<T> Action)[] operations)
+    {
+        T[] arr = collection.ToArray();
+        foreach (var op in operations)
         {
-            arr[i] = defaultValue;
+            for (int i = op.Begin; i <= op.End; i++)
+            {
+                op.Action(arr[i]);
+            }
         }
 
         return arr;
+    }
+
+    public static IEnumerable<T> ForEachByRange<T>(this IEnumerable<T> collection, params (int Begin, int End, Func<T, T> Func)[] operations)
+    {
+        T[] arr = collection.ToArray();
+        foreach (var op in operations)
+        {
+            for (int i = op.Begin; i <= op.End; i++)
+            {
+                arr[i] = op.Func(arr[i]);
+            }
+        }
+
+        return arr;
+    }
+
+    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey Key, TValue Value)> collection) where TKey : notnull
+    {
+        return collection.ToDictionary(i => i.Key, i => i.Value);
     }
 }

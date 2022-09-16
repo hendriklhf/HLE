@@ -10,7 +10,7 @@ public class SquareTest
     [TestMethod]
     public void GeneralSquareTest()
     {
-        double length = 5;
+        const double length = 5;
         Square sq = new(length);
         Assert.AreEqual(25, sq.Area);
         Assert.AreEqual(20, sq.Circumference);

@@ -13,7 +13,7 @@ namespace HLE.Twitch.Args;
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
 [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
-public class RoomstateArgs : EventArgs
+public sealed class RoomstateArgs : EventArgs
 {
     /// <summary>
     /// Indicates whether emote-only mode is turned on or off.
@@ -67,10 +67,9 @@ public class RoomstateArgs : EventArgs
 
     internal List<PropertyInfo> ChangedProperties { get; } = new();
 
-    internal static PropertyInfo[] IrcProps { get; } = typeof(RoomstateArgs).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
+    private static PropertyInfo[] IrcProps { get; } = typeof(RoomstateArgs).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
 
-    private static readonly MethodInfo[] _ircMethods = typeof(RoomstateArgs).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null)
-        .ToArray();
+    private static readonly MethodInfo[] _ircMethods = typeof(RoomstateArgs).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
     /// <summary>
     /// The default constructor of <see cref="RoomstateArgs"/>.

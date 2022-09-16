@@ -7,12 +7,13 @@ namespace HLE.Collections;
 
 /// <summary>
 /// A type of dictionary that doesn't need .TryGetValue(...) or .TryAdd(...).
-/// Data can only be added and retrieved via the indexer. If a key isn't found in the dictionary, the default value of <see cref="TValue"/> will be returned.
+/// Data can only be added and retrieved via the indexer. If a key isn't found in the dictionary, null will be returned.
+/// Therefore <typeparamref name="TValue"/> must be a reference type.
 /// </summary>
 /// <typeparam name="TKey">The key.</typeparam>
 /// <typeparam name="TValue">The value.</typeparam>
 [DebuggerDisplay("Count = {Count}")]
-public class HDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull
+public sealed class HDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull where TValue : class
 {
     public int Count => _dictionary.Count;
 
@@ -66,6 +67,11 @@ public class HDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
         {
             _dictionary.Add(key, value);
         }
+    }
+
+    public static implicit operator HDictionary<TKey, TValue>(Dictionary<TKey, TValue> dictionary)
+    {
+        return new(dictionary);
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

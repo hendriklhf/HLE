@@ -10,8 +10,8 @@ public class RectangleTest
     [TestMethod]
     public void GeneralRectangleTest()
     {
-        double width = 10;
-        double height = 5;
+        const double width = 10;
+        const double height = 5;
         Rectangle rec = new(width, height);
         Assert.AreEqual(50, rec.Area);
         Assert.AreEqual(30, rec.Circumference);

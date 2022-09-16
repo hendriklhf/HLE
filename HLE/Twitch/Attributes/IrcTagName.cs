@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
-internal class IrcTagName : Attribute
+internal sealed class IrcTagName : Attribute
 {
     public string Value { get; }
 

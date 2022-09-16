@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests;
@@ -12,7 +13,7 @@ public class RandomTest
         for (int i = 0; i < 100_000; i++)
         {
             char c = Random.Char();
-            Assert.IsTrue(c >= 0 && c <= 255);
+            Assert.IsTrue(c >= 33 && c <= 126);
         }
     }
 
@@ -28,7 +29,7 @@ public class RandomTest
             Assert.IsTrue(c >= min && c <= max);
         }
     }
-    
+
     [TestMethod]
     public void BoolTest()
     {
@@ -37,6 +38,20 @@ public class RandomTest
 #pragma warning disable CS8794
             Assert.IsTrue(Random.Bool() is true or false);
 #pragma warning restore CS8794
+        }
+    }
+
+    [TestMethod]
+    public void StringTest()
+    {
+        const byte strLength = 50;
+        const byte min = 33;
+        const byte max = 126;
+        for (int i = 0; i < 100_000; i++)
+        {
+            string s = Random.String(strLength, min, max);
+            Assert.AreEqual(strLength, s.Length);
+            Assert.IsTrue(s.All(c => min <= c && c <= max));
         }
     }
 }

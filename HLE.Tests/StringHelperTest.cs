@@ -6,9 +6,10 @@ namespace HLE.Tests;
 [TestClass]
 public class StringHelperTest
 {
-    private static string Str(int count) => new('*', count);
     private readonly string _str = $"{Str(50)} {Str(10)} {Str(25)} {Str(5)} {Str(100)} {Str(30)}";
-    
+
+    private static string Str(int count) => new('*', count);
+
     [TestMethod]
     public void SplitTest()
     {

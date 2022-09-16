@@ -12,7 +12,7 @@ namespace HLE.Twitch;
 /// A class that represents a Twitch chat client. The client type can be changed by setting the <see cref="ClientType"/> property.
 /// By default uses the <see cref="WebSocketClient"/> to connect to the chat server.
 /// </summary>
-public class TwitchClient
+public sealed class TwitchClient
 {
     /// <summary>
     /// The username of the client.

@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Attributes;
 
 [AttributeUsage(AttributeTargets.Method)]
-internal class MsgPropName : Attribute
+internal sealed class MsgPropName : Attribute
 {
     public string Value { get; }
 

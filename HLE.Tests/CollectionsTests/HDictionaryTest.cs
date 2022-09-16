@@ -30,21 +30,21 @@ public class HDictionaryTest
     [TestMethod]
     public void IndexerTest()
     {
-        KeyValuePair<string, int>[] kvp =
+        KeyValuePair<string, string>[] kvp =
         {
-            new("hello", 5),
-            new("mmm", 10),
-            new("123", 20)
+            new("hello", "5"),
+            new("mmm", "10"),
+            new("123", "20")
         };
-        HDictionary<string, int> dic = new(kvp);
-        
-        Assert.AreEqual(5, dic["hello"]);
-        Assert.AreEqual(10, dic["mmm"]);
-        Assert.AreEqual(20, dic["123"]);
-        Assert.AreEqual(0,  dic["xd"]);
+        HDictionary<string, string> dic = new(kvp);
 
-        dic["xd"] = 12;
-        Assert.AreEqual(12, dic["xd"]);
+        Assert.AreEqual("5", dic["hello"]);
+        Assert.AreEqual("10", dic["mmm"]);
+        Assert.AreEqual("20", dic["123"]);
+        Assert.AreEqual(null, dic["xd"]);
+
+        dic["xd"] = "12";
+        Assert.AreEqual("12", dic["xd"]);
         Assert.IsTrue(dic.Count == 4);
     }
 }

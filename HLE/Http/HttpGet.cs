@@ -7,7 +7,7 @@ namespace HLE.Http;
 /// <summary>
 /// A class that performs a Http GET request on creation of the object.
 /// </summary>
-public class HttpGet
+public sealed class HttpGet
 {
     /// <summary>
     /// The URL of the request.
@@ -30,7 +30,7 @@ public class HttpGet
     /// </summary>
     public bool IsValidJsonData { get; } = true;
 
-    private readonly HttpClient _httpClient = new();
+    private static readonly HttpClient _httpClient = new();
 
     /// <summary>
     /// The main constructor of <see cref="HttpGet"/>.<br />
@@ -45,7 +45,7 @@ public class HttpGet
         {
             if (string.IsNullOrEmpty(Result))
             {
-                throw new JsonException("HttpGet.Result is null or empty");
+                throw new JsonException($"{nameof(Result)} is null or empty");
             }
 
             Data = JsonSerializer.Deserialize<JsonElement>(Result);

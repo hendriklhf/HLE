@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using HLE.Time;
 
 namespace HLE.Twitch;
 
@@ -176,21 +175,20 @@ public abstract class IrcClient
         }
 
         int maxChannels = IsVerifiedBot ? 200 : 20;
-        // ReSharper disable once InconsistentNaming
         const short period = 10000;
         string[] joins = channelArr.Select(c => $"JOIN {c}").ToArray();
-        long start = TimeHelper.Now();
+        long start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         for (int i = 0; i < joins.Length; i++)
         {
             if (i > 0 && i % maxChannels == 0)
             {
-                int waitTime = (int)(period - (TimeHelper.Now() - start));
+                int waitTime = (int)(period - (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start));
                 if (waitTime > 0)
                 {
                     await Task.Delay(waitTime, _token);
                 }
 
-                start = TimeHelper.Now();
+                start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
             await Send(joins[i]);

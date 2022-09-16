@@ -84,4 +84,11 @@ public class HStringTest
         s = _testChar;
         Assert.IsTrue(s == _testChar);
     }
+
+    [TestMethod]
+    public void EmptyTest()
+    {
+        Assert.IsTrue(HString.Empty.Length == 0);
+        Assert.IsTrue(string.Empty == HString.Empty);
+    }
 }

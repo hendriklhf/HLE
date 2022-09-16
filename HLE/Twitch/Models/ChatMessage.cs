@@ -14,7 +14,7 @@ namespace HLE.Twitch.Models;
 /// </summary>
 [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
-public class ChatMessage
+public sealed class ChatMessage
 {
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
@@ -115,9 +115,7 @@ public class ChatMessage
     public string RawIrcMessage { get; init; }
 
     private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
-
-    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-        .Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
+    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
     private static readonly Regex _endingNumbersPattern = new(@"-?\d+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
     private static readonly Regex _endingWordPattern = new(@"\w+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
@@ -167,6 +165,7 @@ public class ChatMessage
     /// <summary>
     /// An empty constructor. Can be used to set properties on initialization.
     /// </summary>
+    // ReSharper disable once UnusedMember.Global
     public ChatMessage()
     {
         Username = string.Empty;
@@ -177,17 +176,13 @@ public class ChatMessage
 
     private string GetMessage(string ircMessage, string[] split)
     {
-        return IsAction
-            ? ircMessage[(split[..5].Sum(s => s.Length) + 5)..^1]
-            : ircMessage[(split[..4].Sum(s => s.Length) + 5)..];
+        return IsAction ? ircMessage[(split[..5].Sum(s => s.Length) + 5)..^1] : ircMessage[(split[..4].Sum(s => s.Length) + 5)..];
     }
 
     [MsgPropName(nameof(BadgeInfo))]
     private Dictionary<string, int> GetBadgeInfo(string value)
     {
-        return string.IsNullOrEmpty(value)
-            ? new()
-            : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => int.Parse(s[1]));
+        return string.IsNullOrEmpty(value) ? new() : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => int.Parse(s[1]));
     }
 
     [MsgPropName(nameof(Badges))]
@@ -248,4 +243,9 @@ public class ChatMessage
 
     [MsgPropName(nameof(UserId))]
     private long GetUserId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+
+    public override string ToString()
+    {
+        return $"<#{Channel}> {Username}: {Message}";
+    }
 }

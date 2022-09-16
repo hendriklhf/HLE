@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
-internal class ChannelPropName : Attribute
+internal sealed class ChannelPropName : Attribute
 {
     public string Value { get; }
 

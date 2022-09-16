@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Timers;
-using HLE.Time.Exceptions;
 
 namespace HLE.Time;
 
-public class HTimer
+public sealed class HTimer
 {
     public bool AutoReset
     {
@@ -12,11 +11,7 @@ public class HTimer
         set => _timer.AutoReset = value;
     }
 
-    public bool Enabled
-    {
-        get => _timer.Enabled;
-        set => _timer.Enabled = value;
-    }
+    public bool Enabled => _timer.Enabled;
 
     public double Interval
     {
@@ -24,20 +19,20 @@ public class HTimer
         set => _timer.Interval = value;
     }
 
-    public double? RemainingTime => GetRemainingTime();
+    public double RemainingTime => GetRemainingTime();
 
-    public event EventHandler? Elapsed;
+    public event EventHandler? OnElapsed;
 
     private readonly Timer _timer;
 
-    private double? _end;
+    private double _end;
 
     public HTimer(double interval)
     {
         _timer = new(interval);
         _timer.Elapsed += (_, _) =>
         {
-            Elapsed?.Invoke(this, EventArgs.Empty);
+            OnElapsed?.Invoke(this, EventArgs.Empty);
             if (AutoReset)
             {
                 Start();
@@ -45,34 +40,27 @@ public class HTimer
         };
     }
 
-    public HTimer(double interval, Action<object?, EventArgs> onElapsed)
-        : this(interval)
-    {
-        Elapsed += (sender, e) => onElapsed(sender, e);
-    }
-
     public void Start()
     {
-        _end = TimeHelper.Now() + Interval;
+        _end = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + Interval;
         _timer.Start();
     }
 
     public void Stop()
     {
-        _end = null;
+        _end = -1;
         _timer.Stop();
     }
 
-    private double? GetRemainingTime()
+    private double GetRemainingTime()
     {
-        if (_end is not null && Enabled)
+        if (Math.Abs(_end + 1) < 0 || !Enabled)
         {
-            double? result = _end - TimeHelper.Now();
-            return result >= 0 ? result : 0;
+            return -1;
         }
-        else
-        {
-            throw new TimerNotRunningException();
-        }
+
+        double result = _end - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return result >= 0 ? result : 0;
+
     }
 }

@@ -5,7 +5,7 @@ namespace HLE.Twitch.Args;
 /// <summary>
 /// <see cref="EventArgs"/> used when a user joined a channel.
 /// </summary>
-public class JoinedChannelArgs : EventArgs
+public sealed class JoinedChannelArgs : EventArgs
 {
     /// <summary>
     /// The username of the user that joined the channel. All lower case.

@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 
-namespace HLE.Numbers;
+namespace HLE.Maths;
 
 /// <summary>
 /// A class that represents a unit prefix.
 /// </summary>
-public class UnitPrefix
+public sealed class UnitPrefix
 {
     /// <summary>
     /// The representation of the unit prefix Yotta.
@@ -58,7 +58,7 @@ public class UnitPrefix
     public static UnitPrefix Deca { get; } = new("Deca", "da", 10e1);
 
     /// <summary>
-    /// The representation of no unit prefix. 
+    /// The representation of no unit prefix.
     /// </summary>
     public static UnitPrefix Null { get; } = new("", "", 10e0);
 

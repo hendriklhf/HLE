@@ -9,8 +9,6 @@
     <SignAssembly>false</SignAssembly>
     <Product>HLE</Product>
     <Description>A class library containing usefull methods and data lists.</Description>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Hendrik</Authors>
     <PackageTags>library c# csharp .net7</PackageTags>
     <OutputType>Library</OutputType>
@@ -20,7 +18,6 @@
     <Version>2.0.2</Version>
     <PackageVersion>2.0.2</PackageVersion>
     <AssemblyVersion>2.0.2</AssemblyVersion>
-    <PackageIcon>Resources\Okayge.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -33,5 +30,5 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>;NU1605</WarningsAsErrors>
   </PropertyGroup>
-
+  
 </Project>

@@ -5,7 +5,7 @@ namespace HLE.Twitch.Args;
 /// <summary>
 /// <see cref="EventArgs"/> used whe a user left a channel.
 /// </summary>
-public class LeftChannelArgs : EventArgs
+public sealed class LeftChannelArgs : EventArgs
 {
     /// <summary>
     /// The username of the user that left the channel. All lower case.

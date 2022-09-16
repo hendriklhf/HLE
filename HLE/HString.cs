@@ -7,8 +7,8 @@ using System.Text;
 
 namespace HLE;
 
-[DebuggerDisplay("\"{GetString()}\"  Length = {Length}")]
-public class HString : IEnumerable<char>, ICloneable, IConvertible
+[DebuggerDisplay("\"{GetString()}\" Length = {Length}")]
+public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 {
     public char this[int idx]
     {
@@ -18,63 +18,66 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public char this[Index index] => GetString()[index];
 
-    public string this[Range r] => GetString()[r];
+    public string this[Range range]
+    {
+        get => GetString()[range];
+        set => SetRange(range, value);
+    }
 
-    public int Length => GetString().Length;
+    public int Length => _chars.Length;
+
+    public static HString Empty { get; } = new(string.Empty);
 
     private char[] _chars;
     private string? _string;
 
-    private HString(IEnumerable<char> chars)
+    private HString(IEnumerable<char>? chars)
     {
         _chars = chars switch
         {
             string s => s.ToCharArray(),
             HString h => (char[])h._chars.Clone(),
             char[] c => c,
-            _ => chars.ToArray()
+            not null => chars.ToArray(),
+            _ => Array.Empty<char>()
         };
     }
 
-    public string Replace(char oldValue, char newValue) => GetString().Replace(oldValue, newValue);
+    public HString Replace(char oldValue, char newValue) => GetString().Replace(oldValue, newValue);
 
-    public string Replace(char oldValue, string newValue) => GetString().Replace(oldValue.ToString(), newValue);
+    public HString Replace(char oldValue, string newValue) => GetString().Replace(oldValue.ToString(), newValue);
 
-    public string Replace(string oldValue, char newValue) => GetString().Replace(oldValue, newValue.ToString());
+    public HString Replace(string oldValue, char newValue) => GetString().Replace(oldValue, newValue.ToString());
 
-    public string Replace(string oldValue, string newValue) => GetString().Replace(oldValue, newValue);
+    public HString Replace(string oldValue, string newValue) => GetString().Replace(oldValue, newValue);
 
-    public string Remove(char value) => GetString().Replace(value.ToString(), string.Empty);
-
-    public string Remove(string value) => GetString().Replace(value, string.Empty);
-
-    public string Insert(int startIdx, string value) => GetString().Insert(startIdx, value);
+    public HString Insert(int startIdx, string value) => GetString().Insert(startIdx, value);
 
     public bool Contains(char value) => _chars.Contains(value);
 
     public bool Contains(string value) => GetString().Contains(value);
 
-    public string[] Split(char separator = ' ') => GetString().Split(separator);
+    public HString[] Split(char separator = ' ') => GetString().Split(separator).Select(s => new HString(s)).ToArray();
 
-    public string[] Split(string separator) => GetString().Split(separator);
+    public HString[] Split(string separator) => GetString().Split(separator).Select(s => new HString(s)).ToArray();
 
-    public string[] Split(int charCount, bool onlySplitOnWhitespace = false) => GetString().Split(charCount, onlySplitOnWhitespace).ToArray();
+    public HString[] Split(int charCount, bool onlySplitOnWhitespace = false) => GetString().Split(charCount, onlySplitOnWhitespace).Select(s => new HString(s)).ToArray();
 
-    public string Trim() => GetString().Trim();
+    public HString Trim() => GetString().Trim();
 
-    public string TrimAll() => GetString().TrimAll();
+    public HString TrimAll() => GetString().TrimAll();
 
     public bool StartsWith(char value) => GetString().StartsWith(value);
 
-    public bool StartsWith(string value) => GetString().StartsWith(value);
+    public bool StartsWith(string value) => GetString().StartsWith(value, StringComparison.CurrentCulture);
 
     public bool EndsWith(char value) => GetString().EndsWith(value);
 
     public bool EndsWith(string value) => GetString().EndsWith(value);
 
-    public string ToLower() => GetString().ToLower();
+    public HString ToLower() => GetString().ToLower();
 
-    public string ToUpper() => GetString().ToUpper();
+    public HString ToUpper() => GetString().ToUpper();
 
     public char[] ToCharArray() => (char[])_chars.Clone();
 
@@ -82,14 +85,12 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
     {
         if (idx < 0)
         {
-            throw new IndexOutOfRangeException($"Index {idx} can't be negative.");
+            throw new IndexOutOfRangeException($"Array index {idx} can't be negative.");
         }
 
         if (idx >= _chars.Length)
         {
-            char[] arr = new char[idx + 1];
-            Array.Copy(_chars, arr, _chars.Length);
-            _chars = arr;
+            Array.Resize(ref _chars, idx + 1);
         }
 
         _chars[idx] = c;
@@ -117,12 +118,35 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
         return _string;
     }
 
-    public static implicit operator string(HString hString)
+    private void SetRange(Range range, string value)
     {
-        return hString.GetString();
+        int start = range.Start.Value;
+        int end = range.End.IsFromEnd ? _chars.Length - range.End.Value - 1 : range.End.Value;
+
+        if (start > end)
+        {
+            throw new InvalidOperationException($"The starting index can't be larger than the ending index.");
+        }
+
+        if (end - start + 1 != value.Length)
+        {
+            throw new InvalidOperationException($"Parameter {nameof(range)} and {nameof(value)} need to have the same length.");
+        }
+
+        for (int i = start; i <= end; i++)
+        {
+            _chars[i] = value[i - start];
+        }
+
+        _string = null;
     }
 
-    public static implicit operator HString(string str)
+    public static implicit operator string(HString? h)
+    {
+        return h?.GetString() ?? string.Empty;
+    }
+
+    public static implicit operator HString(string? str)
     {
         return new(str);
     }
@@ -135,7 +159,7 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
         });
     }
 
-    public static implicit operator HString(char[] chars)
+    public static implicit operator HString(char[]? chars)
     {
         return new(chars);
     }
@@ -189,52 +213,56 @@ public class HString : IEnumerable<char>, ICloneable, IConvertible
         return new(left.GetString() + right.GetString());
     }
 
-    public static HString operator *(HString left, int count)
+    public static HString operator *(HString h, int count)
     {
         switch (count)
         {
-            case <= 1:
+            case <= 0:
             {
-                return left;
+                return Empty;
+            }
+            case 1:
+            {
+                return h;
             }
             case 2:
             {
-                return new HString(left + left);
+                return new(h + h);
             }
             default:
             {
                 StringBuilder builder = new();
-                string value = left.GetString();
+                string value = h.GetString();
                 for (int i = 0; i < count; i++)
                 {
                     builder.Append(value);
                 }
 
-                return new HString(builder.ToString());
+                return new(builder.ToString());
             }
         }
     }
 
-    public static HString operator ++(HString left)
+    public static HString operator ++(HString h)
     {
-        for (int i = 0; i < left.Length; i++)
+        for (int i = 0; i < h.Length; i++)
         {
-            left._chars[i]++;
+            h._chars[i]++;
         }
 
-        left._string = null;
-        return left;
+        h._string = null;
+        return h;
     }
 
-    public static HString operator --(HString left)
+    public static HString operator --(HString h)
     {
-        for (int i = 0; i < left.Length; i++)
+        for (int i = 0; i < h.Length; i++)
         {
-            left._chars[i]--;
+            h._chars[i]--;
         }
 
-        left._string = null;
-        return left;
+        h._string = null;
+        return h;
     }
 
     public override bool Equals(object? obj)

@@ -10,7 +10,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// Provides a Twitch IRC server connection via a <see cref="TcpClient"/>.
 /// </summary>
-public class TcpIrcClient : IrcClient
+public sealed class TcpIrcClient : IrcClient
 {
     /// <summary>
     /// Indicates whether the client is connected or not.

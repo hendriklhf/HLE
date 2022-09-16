@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using HLE.Collections;
 using HLE.Http;
 
@@ -11,7 +10,7 @@ namespace HLE.Emojis;
 /// <summary>
 /// The generator I used to create the Emoji file containing every Emoji.
 /// </summary>
-public class EmojiFileGenerator
+public sealed class EmojiFileGenerator
 {
     public string NamespaceName { get; set; }
 
@@ -21,19 +20,20 @@ public class EmojiFileGenerator
 
     private readonly (string Original, string Replacement)[] _illegalWords =
     {
-        ("100", "OneHundred"),
+        ("100", "Hundred"),
         ("+1", "ThumbUp"),
         ("-1", "ThumbDown"),
         ("T-rex", "TRex"),
-        ("1stPlaceMedal", "FirstPlaceMedal"),
-        ("2ndPlaceMedal", "SecondPlaceMedal"),
-        ("3rdPlaceMedal", "ThirdPlaceMedal"),
+        ("1st_place_medal", "FirstPlaceMedal"),
+        ("2nd_place_medal", "SecondPlaceMedal"),
+        ("3rd_place_medal", "ThirdPlaceMedal"),
         ("8ball", "EightBall"),
-        ("Non-potableWater", "NonPotableWater"),
+        ("Non-potable_water", "NonPotableWater"),
         ("1234", "OneTwoThreeFour")
     };
 
     private JsonElement? _emojiData;
+    private readonly HString _newLine = Environment.NewLine;
 
     public EmojiFileGenerator(string namespaceName, char indentationChar = ' ', int indentationSize = 4)
     {
@@ -43,62 +43,65 @@ public class EmojiFileGenerator
     }
 
     /// <summary>
-    /// Generates the Emoji file in the given <see cref="FilePath"/> and with a given namespace <see cref="NamespaceName"/>.
+    /// Generates the Emoji file.
+    /// <returns>The source code of the file. Null, if the creation was unsuccessful, due to e.g. not being able to retrieve the emoji data.</returns>
     /// </summary>
-    public string Generate()
+    public string? Generate()
     {
         if (!_emojiData.HasValue)
         {
             HttpGet request = new("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
+            if (!request.IsValidJsonData)
+            {
+                return null;
+            }
+
             _emojiData = request.Data;
         }
 
         StringBuilder builder = new();
-        builder.Append($"#pragma warning disable 1591{Environment.NewLine}{Environment.NewLine}");
-        builder.Append($"namespace {NamespaceName}{Environment.NewLine}{{{Environment.NewLine}");
-        builder.Append($"{new string(IndentationChar, IndentationSize)}/// <summary>{Environment.NewLine}");
-        builder.Append($"{new string(IndentationChar, IndentationSize)}/// A class that contains every existing emoji. ({DateTime.Now:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
-        builder.Append($"{new string(IndentationChar, IndentationSize)}/// </summary>{Environment.NewLine}");
-        builder.Append($"{new string(IndentationChar, IndentationSize)}public static class Emoji{Environment.NewLine}{new string(IndentationChar, IndentationSize)}{{{Environment.NewLine}");
+        builder.Append($"#pragma warning disable 1591{_newLine}");
+        builder.Append($"// ReSharper disable UnusedMember.Global{_newLine}");
+        builder.Append($"// ReSharper disable InconsistentNaming{_newLine}");
+        builder.Append(_newLine);
+        builder.Append($"namespace {NamespaceName};{_newLine * 2}");
+        builder.Append($"/// <summary>{Environment.NewLine}");
+        builder.Append($"///     A class that contains (almost) every existing emoji. ({DateTime.UtcNow:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
+        builder.Append($"/// </summary>{Environment.NewLine}");
+        builder.Append($"public static class Emoji{Environment.NewLine}{{{Environment.NewLine}");
         for (int i = 0; i < _emojiData.Value.GetArrayLength(); i++)
         {
-            string? name = _emojiData.Value[i].GetProperty("aliases")[0].GetString();
-            if (name is null)
-            {
-                continue;
-            }
-
-            name = char.ToUpper(name[0]) + name[1..];
+            HString name = _emojiData.Value[i].GetProperty("aliases")[0].GetString();
+            name[0] = char.ToUpper(name[0]);
             string? emoji = _emojiData.Value[i].GetProperty("emoji").GetString();
             if (emoji is null)
             {
                 continue;
             }
 
-            builder.Append($"{new string(IndentationChar, IndentationSize << 1)}public const string {name} = \"{emoji}\";{Environment.NewLine}");
+            (string Original, string Replacement) illegalWord = _illegalWords.FirstOrDefault(iw => iw.Original == name.ToString());
+            if (illegalWord != default)
+            {
+                name = illegalWord.Replacement;
+            }
+
+            builder.Append($"{new(IndentationChar, IndentationSize)}public const string {name} = \"{emoji}\";{Environment.NewLine}");
         }
 
-        builder.Append($"{new string(IndentationChar, IndentationSize)}}}{Environment.NewLine}}}");
-        char[] charList = builder.ToString().ToCharArray();
-        for (int i = 0; i < charList.Length; i++)
+        builder.Append('}');
+        char[] chars = builder.ToString().ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
         {
-            if (charList[i] != '_')
+            if (chars[i] != '_')
             {
                 continue;
             }
 
-            charList[i + 1] = char.ToUpper(charList[i + 1]);
+            chars[i + 1] = char.ToUpper(chars[i + 1]);
         }
 
-        builder = new(charList.Where(c => c != '_').ConcatToString());
+        builder = new(chars.Where(c => c != '_').ConcatToString());
         builder.Append(Environment.NewLine);
-        string result = builder.ToString();
-        _illegalWords.ForEach(w =>
-        {
-            string pattern = $@"\s{Regex.Escape(w.Original)}\s";
-            string replacement = $" {w.Replacement} ";
-            result = Regex.Replace(result, pattern, replacement);
-        });
-        return result;
+        return builder.ToString();
     }
 }

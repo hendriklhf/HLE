@@ -7,7 +7,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// A class that handles incoming IRC messages.
 /// </summary>
-public class IrcHandler
+public sealed class IrcHandler
 {
     #region Events
 

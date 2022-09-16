@@ -8,7 +8,7 @@ namespace HLE.Twitch;
 /// <see cref="UseSSL"/> = false<br/>
 /// <see cref="IsVerifiedBot"/> = false<br/>
 /// </summary>
-public class ClientOptions
+public sealed class ClientOptions
 {
     /// <summary>
     /// The client type. Can be either a websocket or TCP connection.

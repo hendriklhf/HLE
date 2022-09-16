@@ -8,7 +8,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// Provides a Twitch IRC server connection via a <see cref="ClientWebSocket"/>.
 /// </summary>
-public class WebSocketClient : IrcClient
+public sealed class WebSocketClient : IrcClient
 {
     /// <summary>
     /// Indicates whether the client is connected or not.

@@ -10,16 +10,9 @@ namespace HLE;
 /// </summary>
 public static class Random
 {
-    /// <summary>
-    /// Returns a random <see cref="char"/> out of all basic latin characters.
-    /// </summary>
-    /// <returns>A basic Latin character.</returns>
-    public static char Char()
-    {
-        return CharCollection.BasicLatinChars.Random();
-    }
+    private static readonly System.Random _random = new();
 
-    public static char Char(ushort min, ushort max)
+    public static char Char(ushort min = 33, ushort max = 126)
     {
         return (char)UShort(min, max);
     }
@@ -36,7 +29,7 @@ public static class Random
             max++;
         }
 
-        return (byte)new System.Random().Next(min, max);
+        return (byte)_random.Next(min, max);
     }
 
     public static sbyte SByte(sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
@@ -51,7 +44,7 @@ public static class Random
             max++;
         }
 
-        return (sbyte)new System.Random().Next(min, max);
+        return (sbyte)_random.Next(min, max);
     }
 
     public static short Short(short min = short.MinValue, short max = short.MaxValue)
@@ -66,7 +59,7 @@ public static class Random
             max++;
         }
 
-        return (short)new System.Random().Next(min, max);
+        return (short)_random.Next(min, max);
     }
 
     public static ushort UShort(ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
@@ -81,7 +74,7 @@ public static class Random
             max++;
         }
 
-        return (ushort)new System.Random().Next(min, max);
+        return (ushort)_random.Next(min, max);
     }
 
     /// <summary>
@@ -103,7 +96,7 @@ public static class Random
             max++;
         }
 
-        return new System.Random().Next(min, max);
+        return _random.Next(min, max);
     }
 
     public static uint UInt(uint min = uint.MinValue, uint max = uint.MaxValue)
@@ -118,7 +111,7 @@ public static class Random
             max++;
         }
 
-        return (uint)new System.Random().NextInt64(min, max);
+        return (uint)_random.NextInt64(min, max);
     }
 
     public static long Long(long min = long.MinValue, long max = long.MaxValue)
@@ -133,22 +126,22 @@ public static class Random
             max++;
         }
 
-        return new System.Random().NextInt64(min, max);
+        return _random.NextInt64(min, max);
     }
 
     public static double Double()
     {
-        return new System.Random().NextDouble();
+        return _random.NextDouble();
     }
 
     public static float Float()
     {
-        return new System.Random().NextSingle();
+        return _random.NextSingle();
     }
 
     /// <summary>
     /// Returns a <see cref="string"/> of the given <paramref name="length"/> filled with basic Latin characters.<br />
-    /// Calls <see cref="Char()"/> to fill the result string.
+    /// Calls <see cref="Char"/> to fill the result string.
     /// </summary>
     /// <param name="length">The <paramref name="length"/> of the <see cref="string"/>.</param>
     /// <returns>A string of the given <paramref name="length"/>.</returns>
@@ -175,7 +168,7 @@ public static class Random
             return string.Empty;
         }
 
-        ushort[] chars = NumberCollection.Create(minChar, maxChar).ToArray();
+        ushort[] chars = Enumerable.Range(minChar, maxChar - minChar).Select(s => (ushort)s).ToArray();
         StringBuilder builder = new();
         for (int i = 0; i < length; i++)
         {

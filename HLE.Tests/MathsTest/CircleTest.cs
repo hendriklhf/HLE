@@ -10,7 +10,7 @@ public class CircleTest
     [TestMethod]
     public void GeneralCircleTest()
     {
-        double radius = 2;
+        const double radius = 2;
         Circle circle = new(radius);
         Assert.AreEqual(12.566, Math.Round(circle.Area, 3));
         Assert.AreEqual(12.566, Math.Round(circle.Circumference, 3));

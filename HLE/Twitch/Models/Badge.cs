@@ -3,7 +3,7 @@
 /// <summary>
 /// A class that represent a badge of user.
 /// </summary>
-public class Badge
+public sealed class Badge
 {
     /// <summary>
     /// The name of the badge.
