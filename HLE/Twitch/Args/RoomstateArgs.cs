@@ -19,7 +19,7 @@ public sealed class RoomstateArgs : EventArgs
     /// Indicates whether emote-only mode is turned on or off.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.EmoteOnly))]
-    [IrcTagName("emote-only")]
+    [IrcTag("emote-only")]
     public bool EmoteOnly { get; init; }
 
     /// <summary>
@@ -27,21 +27,21 @@ public sealed class RoomstateArgs : EventArgs
     /// Value is "-1" if turned off, otherwise the value indicates the number of minutes a user has to follow the channel in order to be able to send messages.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.FollowersOnly))]
-    [IrcTagName("followers-only")]
+    [IrcTag("followers-only")]
     public int FollowersOnly { get; init; }
 
     /// <summary>
     /// Indicates whether R9K mode is turned on or off.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.R9K))]
-    [IrcTagName("r9k")]
+    [IrcTag("r9k")]
     public bool R9K { get; init; }
 
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.Id))]
-    [IrcTagName("room-id")]
+    [IrcTag("room-id")]
     public long ChannelId { get; init; }
 
     /// <summary>
@@ -55,19 +55,19 @@ public sealed class RoomstateArgs : EventArgs
     /// Value is "0" if turned off, otherwise the value indicates the number of seconds between each message a user can send.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.SlowMode))]
-    [IrcTagName("slow")]
+    [IrcTag("slow")]
     public int SlowMode { get; init; }
 
     /// <summary>
     /// Indicates whether subs-only mode is turned on or off.
     /// </summary>
     [ChannelPropName(nameof(Models.Channel.SubsOnly))]
-    [IrcTagName("subs-only")]
+    [IrcTag("subs-only")]
     public bool SubsOnly { get; init; }
 
     internal List<PropertyInfo> ChangedProperties { get; } = new();
 
-    private static PropertyInfo[] IrcProps { get; } = typeof(RoomstateArgs).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
+    private static PropertyInfo[] IrcProps { get; } = typeof(RoomstateArgs).GetProperties().Where(p => p.GetCustomAttribute<IrcTag>() is not null).ToArray();
 
     private static readonly MethodInfo[] _ircMethods = typeof(RoomstateArgs).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
@@ -84,8 +84,8 @@ public sealed class RoomstateArgs : EventArgs
 
         foreach (PropertyInfo prop in IrcProps)
         {
-            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>()!;
-            if (!tagDic.TryGetValue(attr.Value, out string? value))
+            IrcTag attr = prop.GetCustomAttribute<IrcTag>()!;
+            if (!tagDic.TryGetValue(attr.Name, out string? value))
             {
                 continue;
             }

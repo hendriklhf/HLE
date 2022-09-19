@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
@@ -14,79 +15,80 @@ namespace HLE.Twitch.Models;
 /// </summary>
 [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
 [SuppressMessage("ReSharper", "UnusedMember.Local")]
+[DebuggerDisplay("<#{Channel}> {Username}: {Message}")]
 public sealed class ChatMessage
 {
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
     /// </summary>
-    [IrcTagName("badge-info")]
+    [IrcTag("badge-info")]
     public Dictionary<string, int> BadgeInfo { get; init; } = new();
 
     /// <summary>
     /// Holds all the badges the user has.
     /// </summary>
-    [IrcTagName("badges")]
+    [IrcTag("badges")]
     public Badge[] Badges { get; init; } = Array.Empty<Badge>();
 
     /// <summary>
     /// The color of the user's name in a Twitch chat overlay.
     /// </summary>
-    [IrcTagName("color")]
+    [IrcTag("color")]
     public Color Color { get; init; }
 
     /// <summary>
     /// The display name of the user with the preferred casing.
     /// </summary>
-    [IrcTagName("display-name")]
+    [IrcTag("display-name")]
     public string DisplayName { get; init; } = string.Empty;
 
     /// <summary>
     /// Indicates whether the message is the first message the user has sent in this channel or not.
     /// </summary>
-    [IrcTagName("first-msg")]
+    [IrcTag("first-msg")]
     public bool IsFirstMessage { get; init; }
 
     /// <summary>
     /// The unique message id.
     /// </summary>
-    [IrcTagName("id")]
+    [IrcTag("id")]
     public Guid Id { get; init; }
 
     /// <summary>
     /// Indicates whether the user is a moderator or not.
     /// </summary>
-    [IrcTagName("mod")]
+    [IrcTag("mod")]
     public bool IsModerator { get; init; }
 
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
-    [IrcTagName("room-id")]
+    [IrcTag("room-id")]
     public long ChannelId { get; init; }
 
     /// <summary>
     /// Indicates whether the user is a subscriber or not.
     /// The subscription age can be obtained from <see cref="Badges"/> and <see cref="BadgeInfo"/>.
     /// </summary>
-    [IrcTagName("subscriber")]
+    [IrcTag("subscriber")]
     public bool IsSubscriber { get; init; }
 
     /// <summary>
     /// The unix timestamp in milliseconds of the moment the message has been sent.
     /// </summary>
-    [IrcTagName("tmi-sent-ts")]
+    [IrcTag("tmi-sent-ts")]
     public long TmiSentTs { get; init; }
 
     /// <summary>
     /// Indicates whether the user is subscribing to Twitch Turbo or not.
     /// </summary>
-    [IrcTagName("turbo")]
+    [IrcTag("turbo")]
     public bool IsTurboUser { get; init; }
 
     /// <summary>
     /// The user id of the user who sent the message.
     /// </summary>
-    [IrcTagName("user-id")]
+    [IrcTag("user-id")]
     public long UserId { get; init; }
 
     /// <summary>
@@ -114,13 +116,14 @@ public sealed class ChatMessage
     /// </summary>
     public string RawIrcMessage { get; init; }
 
-    private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTagName>() is not null).ToArray();
+    private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTag>() is not null).ToArray();
     private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
-    private static readonly Regex _endingNumbersPattern = new(@"-?\d+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
-    private static readonly Regex _endingWordPattern = new(@"\w+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _endingNumbersPattern = new(@"-?\d+$", RegexOptions.Compiled);
+    private static readonly Regex _endingWordPattern = new(@"\w+$", RegexOptions.Compiled);
 
     private const string _actionPrefix = ":\u0001ACTION";
+    private const string _nameWithSpaceEnding = "\\s";
 
     /// <summary>
     /// The default constructor of <see cref="ChatMessage"/>.
@@ -135,8 +138,8 @@ public sealed class ChatMessage
 
         foreach (PropertyInfo prop in _ircProps)
         {
-            IrcTagName attr = prop.GetCustomAttribute<IrcTagName>()!;
-            if (!tagDic.TryGetValue(attr.Value, out string? value))
+            IrcTag attr = prop.GetCustomAttribute<IrcTag>()!;
+            if (!tagDic.TryGetValue(attr.Name, out string? value))
             {
                 continue;
             }
@@ -179,14 +182,12 @@ public sealed class ChatMessage
         return IsAction ? ircMessage[(split[..5].Sum(s => s.Length) + 5)..^1] : ircMessage[(split[..4].Sum(s => s.Length) + 5)..];
     }
 
-    [MsgPropName(nameof(BadgeInfo))]
     private Dictionary<string, int> GetBadgeInfo(string value)
     {
         return string.IsNullOrEmpty(value) ? new() : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => int.Parse(s[1]));
     }
 
-    [MsgPropName(nameof(Badges))]
-    private Badge[] GetBadges(string value)
+    private static Badge[] GetBadges(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -201,48 +202,40 @@ public sealed class ChatMessage
         }).ToArray();
     }
 
-    [MsgPropName(nameof(Color))]
-    private Color GetColor(string value)
+    private static Color GetColor(string value)
     {
         if (string.IsNullOrEmpty(value))
         {
             return Color.Empty;
         }
 
-        int[] rgb = value[1..].Split(2).Select(e => Convert.ToInt32(e, 16)).ToArray();
-        return Color.FromArgb(rgb[0], rgb[1], rgb[2]);
+        byte r = Convert.ToByte(value[1..2], 16);
+        byte g = Convert.ToByte(value[3..4], 16);
+        byte b = Convert.ToByte(value[5..6], 16);
+        return Color.FromArgb(r, g, b);
     }
 
-    [MsgPropName(nameof(DisplayName))]
-    private string GetDisplayName(string value)
+    private static string GetDisplayName(string value)
     {
         string displayName = _endingWordPattern.Match(value).Value;
-        return displayName.EndsWith(@"\s") ? displayName[..^2] : displayName;
+        return displayName.EndsWith(_nameWithSpaceEnding) ? displayName[..^2] : displayName;
     }
 
-    [MsgPropName(nameof(IsFirstMessage))]
-    private bool GetIsFirstMsg(string value) => value[^1] == '1';
+    private static bool GetIsFirstMsg(string value) => value[^1] == '1';
 
-    [MsgPropName(nameof(Id))]
-    private Guid GetId(string value) => Guid.Parse(value);
+    private static Guid GetId(string value) => Guid.Parse(value);
 
-    [MsgPropName(nameof(IsModerator))]
-    private bool GetIsModerator(string value) => value[^1] == '1';
+    private static bool GetIsModerator(string value) => value[^1] == '1';
 
-    [MsgPropName(nameof(ChannelId))]
-    private long GetChannelId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+    private static long GetChannelId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
-    [MsgPropName(nameof(IsSubscriber))]
-    private bool GetIsSubscriber(string value) => value[^1] == '1';
+    private static bool GetIsSubscriber(string value) => value[^1] == '1';
 
-    [MsgPropName(nameof(TmiSentTs))]
-    private long GetTmiSentTs(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+    private static long GetTmiSentTs(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
-    [MsgPropName(nameof(IsTurboUser))]
-    private bool GetIsTurboUser(string value) => value[^1] == '1';
+    private static bool GetIsTurboUser(string value) => value[^1] == '1';
 
-    [MsgPropName(nameof(UserId))]
-    private long GetUserId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+    private static long GetUserId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
     public override string ToString()
     {

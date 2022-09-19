@@ -3,7 +3,6 @@ using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using HLE.Collections;
 
 namespace HLE.Twitch;
 
@@ -40,7 +39,7 @@ public sealed class TcpIrcClient : IrcClient
         char[] chars = message.ToCharArray();
         await _writer.WriteLineAsync(chars, _token);
         await _writer.FlushAsync();
-        InvokeDataSent(this, chars.ConcatToString());
+        InvokeDataSent(this, message);
     }
 
     private protected override void StartListening()
@@ -50,7 +49,7 @@ public sealed class TcpIrcClient : IrcClient
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
                 string? message = await _reader.ReadLineAsync();
-                if (message is null)
+                if (string.IsNullOrEmpty(message))
                 {
                     continue;
                 }
@@ -70,18 +69,19 @@ public sealed class TcpIrcClient : IrcClient
     private protected override async Task ConnectClient()
     {
         await _tcpClient.ConnectAsync(_url.Url, _url.Port, _token);
-        if (UseSSL)
+        Stream stream = UseSSL switch
         {
-            SslStream sslStream = new(_tcpClient.GetStream(), false);
+            true => new SslStream(_tcpClient.GetStream(), false),
+            _ => _tcpClient.GetStream()
+        };
+
+        if (stream is SslStream sslStream)
+        {
             await sslStream.AuthenticateAsClientAsync(_url.Url);
-            _reader = new(sslStream);
-            _writer = new(sslStream);
         }
-        else
-        {
-            _reader = new(_tcpClient.GetStream());
-            _writer = new(_tcpClient.GetStream());
-        }
+
+        _reader = new(stream);
+        _writer = new(stream);
     }
 
     private protected override Task DisconnectClient(string closeMessage)

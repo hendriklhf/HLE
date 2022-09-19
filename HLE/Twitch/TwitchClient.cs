@@ -137,7 +137,7 @@ public sealed class TwitchClient
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
     public TwitchClient(string username, string oAuthToken, ClientOptions? options = null)
     {
-        Username = FormatChannel(username)[1..];
+        Username = FormatChannel(username, false);
         oAuthToken = ValidateOAuthToken(oAuthToken);
         options ??= new();
         _client = ClientType switch
@@ -379,19 +379,23 @@ public sealed class TwitchClient
         }
     }
 
-    private static string FormatChannel(string channel)
+    private static string FormatChannel(string channel, bool withHashtag = true)
     {
         if (!_channelPattern.IsMatch(channel))
         {
             throw new FormatException("The channel name is in an invalid format.");
         }
 
-        return (channel.StartsWith('#') ? channel : $"#{channel}").ToLower();
+        return withHashtag switch
+        {
+            true => channel.StartsWith('#') ? channel.ToLower() : '#' + channel.ToLower(),
+            _ => channel.StartsWith('#') ? channel[1..].ToLower() : channel.ToLower()
+        };
     }
 
-    private static IEnumerable<string> FormatChannels(IEnumerable<string> channels)
+    private static IEnumerable<string> FormatChannels(IEnumerable<string> channels, bool withHashtag = true)
     {
-        return channels.Select(FormatChannel);
+        return channels.Select(c => FormatChannel(c, withHashtag));
     }
 
     private static string ValidateOAuthToken(string oAuthToken)
