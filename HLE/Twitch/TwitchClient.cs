@@ -99,6 +99,7 @@ public sealed class TwitchClient
     private readonly List<string> _ircChannels = new();
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private const char _channelPrefix = '#';
 
     /// <summary>
     /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.
@@ -388,8 +389,8 @@ public sealed class TwitchClient
 
         return withHashtag switch
         {
-            true => channel.StartsWith('#') ? channel.ToLower() : '#' + channel.ToLower(),
-            _ => channel.StartsWith('#') ? channel[1..].ToLower() : channel.ToLower()
+            true => channel[0] == _channelPrefix ? channel.ToLower() : _channelPrefix + channel.ToLower(),
+            _ => channel[0] == _channelPrefix ? channel[1..].ToLower() : channel.ToLower()
         };
     }
 
@@ -400,8 +401,8 @@ public sealed class TwitchClient
 
     private static string ValidateOAuthToken(string oAuthToken)
     {
-        Regex oAuthPattern = new(@"^oauth:[a-z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-        Regex oAuthPatternNoPrefix = new(@"^[a-z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+        Regex oAuthPattern = new(@"^oauth:[a-zA-Z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+        Regex oAuthPatternNoPrefix = new(@"^[a-zA-Z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
         if (oAuthPattern.IsMatch(oAuthToken))
         {

@@ -10,8 +10,6 @@ namespace HLE;
 /// </summary>
 public static class Random
 {
-    private static readonly System.Random _random = new();
-
     public static char Char(ushort min = 33, ushort max = 126)
     {
         return (char)UShort(min, max);
@@ -29,7 +27,7 @@ public static class Random
             max++;
         }
 
-        return (byte)_random.Next(min, max);
+        return (byte)new System.Random().Next(min, max);
     }
 
     public static sbyte SByte(sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
@@ -44,7 +42,7 @@ public static class Random
             max++;
         }
 
-        return (sbyte)_random.Next(min, max);
+        return (sbyte)new System.Random().Next(min, max);
     }
 
     public static short Short(short min = short.MinValue, short max = short.MaxValue)
@@ -59,7 +57,7 @@ public static class Random
             max++;
         }
 
-        return (short)_random.Next(min, max);
+        return (short)new System.Random().Next(min, max);
     }
 
     public static ushort UShort(ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
@@ -74,7 +72,7 @@ public static class Random
             max++;
         }
 
-        return (ushort)_random.Next(min, max);
+        return (ushort)new System.Random().Next(min, max);
     }
 
     /// <summary>
@@ -96,7 +94,7 @@ public static class Random
             max++;
         }
 
-        return _random.Next(min, max);
+        return new System.Random().Next(min, max);
     }
 
     public static uint UInt(uint min = uint.MinValue, uint max = uint.MaxValue)
@@ -111,7 +109,7 @@ public static class Random
             max++;
         }
 
-        return (uint)_random.NextInt64(min, max);
+        return (uint)new System.Random().NextInt64(min, max);
     }
 
     public static long Long(long min = long.MinValue, long max = long.MaxValue)
@@ -126,17 +124,17 @@ public static class Random
             max++;
         }
 
-        return _random.NextInt64(min, max);
+        return new System.Random().NextInt64(min, max);
     }
 
     public static double Double()
     {
-        return _random.NextDouble();
+        return new System.Random().NextDouble();
     }
 
     public static float Float()
     {
-        return _random.NextSingle();
+        return new System.Random().NextSingle();
     }
 
     /// <summary>

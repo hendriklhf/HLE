@@ -16,7 +16,11 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         set => SetChar(idx, value);
     }
 
-    public char this[Index index] => GetString()[index];
+    public char this[Index index]
+    {
+        get => GetString()[index];
+        set => SetIndex(index, value);
+    }
 
     public string this[Range range]
     {
@@ -31,7 +35,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
     private char[] _chars;
     private string? _string;
 
-    private HString(IEnumerable<char>? chars)
+    public HString(IEnumerable<char>? chars)
     {
         _chars = chars switch
         {
@@ -118,6 +122,13 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         return _string;
     }
 
+    public void SetIndex(Index index, char value)
+    {
+        int idx = index.IsFromEnd ? _chars.Length - index.Value - 1 : index.Value;
+        this[idx] = value;
+        _string = null;
+    }
+
     private void SetRange(Range range, string value)
     {
         int start = range.Start.Value;
@@ -125,17 +136,18 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
         if (start > end)
         {
-            throw new InvalidOperationException($"The starting index can't be larger than the ending index.");
+            throw new InvalidOperationException("The starting index can't be larger than the ending index.");
         }
 
-        if (end - start + 1 != value.Length)
+        int rangeLength = end - start + 1;
+        if (rangeLength != value.Length)
         {
-            throw new InvalidOperationException($"Parameter {nameof(range)} and {nameof(value)} need to have the same length.");
+            throw new InvalidOperationException($"Parameter {nameof(range)} and {nameof(value)} need to have the same length. Length of {nameof(range)} is {rangeLength} and length of {nameof(value)} is {value.Length}");
         }
 
         for (int i = start; i <= end; i++)
         {
-            _chars[i] = value[i - start];
+            this[i] = value[i - start];
         }
 
         _string = null;
@@ -181,18 +193,6 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
     }
 
     public static bool operator !=(HString left, string right)
-    {
-        // ReSharper disable once SuspiciousTypeConversion.Global
-        return !left.Equals(right);
-    }
-
-    public static bool operator ==(HString left, char right)
-    {
-        // ReSharper disable once SuspiciousTypeConversion.Global
-        return left.Equals(right);
-    }
-
-    public static bool operator !=(HString left, char right)
     {
         // ReSharper disable once SuspiciousTypeConversion.Global
         return !left.Equals(right);

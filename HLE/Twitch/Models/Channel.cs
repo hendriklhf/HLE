@@ -11,6 +11,7 @@ namespace HLE.Twitch.Models;
 /// A class that represents a channel with all its room states.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
+[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
 public sealed class Channel
 {
     /// <summary>

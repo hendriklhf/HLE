@@ -17,7 +17,7 @@ public static class ChatterinoHelper
     /// <returns>A <see cref="List{String}"/> of all channels.</returns>
     /// <exception cref="JsonException">Will be thrown if the JSON settings file is not of the expected format.</exception>
     [SupportedOSPlatform("windows")]
-    public static IEnumerable<string> GetChannels()
+    public static string[] GetChannels()
     {
         List<string> result = new();
 
@@ -55,6 +55,6 @@ public static class ChatterinoHelper
             GetChannelsFromSplits(splits);
         }
 
-        return result;
+        return result.ToArray();
     }
 }

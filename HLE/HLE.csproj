@@ -15,9 +15,10 @@
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
-    <Version>2.0.2</Version>
-    <PackageVersion>2.0.2</PackageVersion>
-    <AssemblyVersion>2.0.2</AssemblyVersion>
+    <Version>2.0.3</Version>
+    <PackageVersion>2.0.3</PackageVersion>
+    <AssemblyVersion>2.0.3</AssemblyVersion>
+    <PackageIcon>Resources\Okayge.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

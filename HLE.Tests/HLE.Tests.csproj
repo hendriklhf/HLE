@@ -2,9 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -17,6 +15,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HLE\HLE.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ResourcesTests\Resource1" />
+    <EmbeddedResource Include="ResourcesTests\Resource2" />
+    <EmbeddedResource Include="ResourcesTests\Resource3" />
   </ItemGroup>
 
 </Project>

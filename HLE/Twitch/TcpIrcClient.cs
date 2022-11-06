@@ -69,15 +69,16 @@ public sealed class TcpIrcClient : IrcClient
     private protected override async Task ConnectClient()
     {
         await _tcpClient.ConnectAsync(_url.Url, _url.Port, _token);
-        Stream stream = UseSSL switch
+        Stream stream;
+        if (UseSSL)
         {
-            true => new SslStream(_tcpClient.GetStream(), false),
-            _ => _tcpClient.GetStream()
-        };
-
-        if (stream is SslStream sslStream)
-        {
+            SslStream sslStream = new(_tcpClient.GetStream(), false);
             await sslStream.AuthenticateAsClientAsync(_url.Url);
+            stream = sslStream;
+        }
+        else
+        {
+            stream = _tcpClient.GetStream();
         }
 
         _reader = new(stream);

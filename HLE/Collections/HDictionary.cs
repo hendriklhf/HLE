@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -56,16 +57,12 @@ public sealed class HDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, T
     {
         if (value is null)
         {
-            return;
+            throw new InvalidOperationException($"{nameof(value)} is null. You can't add null to the dictionary.");
         }
 
-        if (_dictionary.ContainsKey(key))
+        if (!_dictionary.TryAdd(key, value))
         {
             _dictionary[key] = value;
-        }
-        else
-        {
-            _dictionary.Add(key, value);
         }
     }
 
