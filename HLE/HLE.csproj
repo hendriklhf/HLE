@@ -15,9 +15,9 @@
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
-    <Version>2.0.3</Version>
-    <PackageVersion>2.0.3</PackageVersion>
-    <AssemblyVersion>2.0.3</AssemblyVersion>
+    <Version>2.0.4</Version>
+    <PackageVersion>2.0.4</PackageVersion>
+    <AssemblyVersion>2.0.4</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -30,5 +30,5 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>;NU1605</WarningsAsErrors>
   </PropertyGroup>
-  
+
 </Project>
