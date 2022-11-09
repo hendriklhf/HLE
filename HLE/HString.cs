@@ -47,6 +47,11 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         };
     }
 
+    public HString(Span<char> span)
+    {
+        _chars = span.ToArray();
+    }
+
     public HString Replace(char oldValue, char newValue) => GetString().Replace(oldValue, newValue);
 
     public HString Replace(char oldValue, string newValue) => GetString().Replace(oldValue.ToString(), newValue);
@@ -162,12 +167,12 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         return new(new[]
         {
             c
-        });
+        }.AsSpan());
     }
 
     public static implicit operator HString(char[]? chars)
     {
-        return new(chars);
+        return new(chars?.AsEnumerable());
     }
 
     public static bool operator ==(HString left, HString right)
@@ -225,14 +230,17 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
             }
             default:
             {
-                StringBuilder builder = new();
+                Span<char> span = stackalloc char[h.Length * count];
                 string value = h.GetString();
                 for (int i = 0; i < count; i++)
                 {
-                    builder.Append(value);
+                    for (int j = i * h.Length; j < value.Length; j++)
+                    {
+                        span[j] = value[j];
+                    }
                 }
 
-                return new(builder.ToString());
+                return new(span);
             }
         }
     }

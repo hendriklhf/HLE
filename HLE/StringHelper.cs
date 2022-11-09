@@ -157,7 +157,7 @@ public static class StringHelper
         string? num = number.ToString();
         if (num is null)
         {
-            throw new ArgumentNullException($"The conversion of {nameof(number)} to string return null.");
+            throw new ArgumentNullException($"The conversion of {nameof(number)} to string returned null.");
         }
 
         if (num.Length < 4)
@@ -165,12 +165,44 @@ public static class StringHelper
             return num;
         }
 
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
+        int dotCount = num.Length % 3 == 0 ? num.Length / 3 - 1 : num.Length / 3;
+        int total = num.Length + dotCount;
+        Span<char> span = stackalloc char[total];
+        int start = num.Length % 3;
+        if (start == 0)
         {
-            num = num.Insert(i, c);
+            start += 3;
         }
 
-        return num;
+        int nextDot = start;
+        for (int i = 0; i < total; i++)
+        {
+            if (i == nextDot)
+            {
+                span[i] = kchar;
+                nextDot += 4;
+            }
+            else
+            {
+                span[i] = num[i - (nextDot - start >> 2)];
+            }
+        }
+
+        return new(span);
+    }
+
+    public static int[] IndicesOf(this string str, char c)
+    {
+        Span<int> indices = stackalloc int[str.Length];
+        int count = 0;
+        for (int i = 0; i < str.Length; i++)
+        {
+            if (str[i] == c)
+            {
+                indices[count++] = i;
+            }
+        }
+
+        return indices[..count].ToArray();
     }
 }

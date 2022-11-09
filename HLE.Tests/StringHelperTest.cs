@@ -23,4 +23,27 @@ public class StringHelperTest
         string[] split = _str.Split(60, true).ToArray();
         Assert.AreEqual(5, split.Length);
     }
+
+    [TestMethod]
+    public void IndicesOfTest()
+    {
+        const string str = "test string";
+        int[] indices = str.IndicesOf('s');
+        Assert.IsTrue(indices is [2, 5]);
+    }
+
+    [TestMethod]
+    public void InsertKDotsTest()
+    {
+        const int number1 = 1234567890;
+        Assert.AreEqual("1.234.567.890", number1.InsertKDots());
+        const int number2 = 123456789;
+        Assert.AreEqual("123.456.789", number2.InsertKDots());
+        const int number3 = 12345678;
+        Assert.AreEqual("12.345.678", number3.InsertKDots());
+        const int number4 = 1234567;
+        Assert.AreEqual("1.234.567", number4.InsertKDots());
+        const int number5 = 123;
+        Assert.AreEqual("123", number5.InsertKDot());
+    }
 }

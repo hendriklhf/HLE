@@ -240,15 +240,10 @@ public class CollectionHelperTest
     [TestMethod]
     public void RandomWordTest()
     {
-        char[] arr =
-        {
-            'A',
-            'B',
-            'C'
-        };
-
-        string word = arr.RandomString(5);
-        Assert.AreEqual(5, word.Length);
+        const int stringLength = 50;
+        char[] arr = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
+        string word = arr.RandomString(stringLength);
+        Assert.AreEqual(stringLength, word.Length);
         Assert.IsTrue(word.All(c => arr.Contains(c)));
     }
 
@@ -316,5 +311,13 @@ public class CollectionHelperTest
         Assert.AreEqual(101, items.Count);
         Assert.AreEqual(0, items[0]);
         Assert.AreEqual(100, items[100]);
+    }
+
+    [TestMethod]
+    public void IndicesOfTest()
+    {
+        const string str = "test string";
+        int[] indices = str.IndicesOf(c => c is 's').ToArray();
+        Assert.IsTrue(indices is [2, 5]);
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace HLE.Collections;
 
@@ -182,28 +181,29 @@ public static class CollectionHelper
     public static string RandomString(this IEnumerable<char> collection, int wordLength)
     {
         char[] arr = collection.ToArray();
-        StringBuilder builder = new();
+        Span<char> span = stackalloc char[wordLength];
         for (int i = 0; i < wordLength; i++)
         {
-            builder.Append(arr.Random());
+            span[i] = arr.Random();
         }
 
-        return builder.ToString();
+        return new(span);
     }
 
     public static IEnumerable<int> IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
     {
-        List<int> indices = new();
         T[] arr = collection.ToArray();
+        Span<int> indices = stackalloc int[arr.Length];
+        int count = 0;
         for (int i = 0; i < arr.Length; i++)
         {
             if (condition(arr[i]))
             {
-                indices.Add(i);
+                indices[count++] = i;
             }
         }
 
-        return indices;
+        return indices[..count].ToArray();
     }
 
     public static bool ContentEquals<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
