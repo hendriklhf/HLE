@@ -113,13 +113,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     private string GetString()
     {
-        if (_string is not null)
-        {
-            return _string;
-        }
-
-        _string = string.Concat(_chars);
-        return _string;
+        return _string ??= string.Concat(_chars);
     }
 
     public void SetIndex(Index index, char value)
@@ -280,7 +274,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public override string ToString() => GetString();
 
-    public object Clone() => new HString((char[])_chars.Clone());
+    public object Clone() => new HString(this);
 
     public IEnumerator<char> GetEnumerator() => _chars.AsEnumerable().GetEnumerator();
 

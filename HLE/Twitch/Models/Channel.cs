@@ -51,21 +51,26 @@ public sealed class Channel
     /// </summary>
     public bool SubsOnly { get; private set; }
 
+    private static readonly PropertyInfo[] _properties = typeof(Channel).GetProperties();
+
     internal Channel(RoomstateArgs args)
     {
         Name = args.Channel;
         Id = args.ChannelId;
-        Update(args);
+        EmoteOnly = args.EmoteOnly;
+        FollowersOnly = args.FollowersOnly;
+        R9K = args.R9K;
+        SlowMode = args.SlowMode;
+        SubsOnly = args.SubsOnly;
     }
 
     internal void Update(RoomstateArgs args)
     {
-        PropertyInfo[] props = typeof(Channel).GetProperties();
         foreach (PropertyInfo pi in args.ChangedProperties)
         {
             ChannelPropName? propNameAttr = pi.GetCustomAttribute<ChannelPropName>();
             string propName = propNameAttr?.Value ?? throw new ArgumentNullException(nameof(propNameAttr));
-            PropertyInfo prop = props.FirstOrDefault(p => p.Name == propName) ?? throw new ArgumentNullException(nameof(prop));
+            PropertyInfo prop = _properties.FirstOrDefault(p => p.Name == propName) ?? throw new ArgumentNullException(nameof(prop));
             prop.SetValue(this, pi.GetValue(args));
         }
     }

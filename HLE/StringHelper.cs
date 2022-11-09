@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -11,7 +12,7 @@ namespace HLE;
 /// </summary>
 public static class StringHelper
 {
-    private static readonly Regex _multipleSpacesPattern = new(@"\s+", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _multipleSpacesPattern = new(@"\s{2,}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
     /// <summary>
     /// Is invisible in Twitch chat.
@@ -151,132 +152,14 @@ public static class StringHelper
         return builder;
     }
 
-    public static string InsertKDots(this byte number, char kchar = '.')
+    public static string InsertKDots<T>(this T number, char kchar = '.') where T : INumber<T>
     {
-        string num = number.ToString();
-        if (num.Length < 4)
+        string? num = number.ToString();
+        if (num is null)
         {
-            return num;
+            throw new ArgumentNullException($"The conversion of {nameof(number)} to string return null.");
         }
 
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return num;
-    }
-
-    public static string InsertKDots(this sbyte number, char kchar = '.')
-    {
-        bool negative = number < 0;
-        string num = negative ? number.ToString()[1..] : number.ToString();
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return negative ? '-' + num : num;
-    }
-
-    public static string InsertKDots(this short number, char kchar = '.')
-    {
-        bool negative = number < 0;
-        string num = negative ? number.ToString()[1..] : number.ToString();
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return negative ? '-' + num : num;
-    }
-
-    public static string InsertKDots(this ushort number, char kchar = '.')
-    {
-        string num = number.ToString();
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return num;
-    }
-
-    public static string InsertKDots(this int number, char kchar = '.')
-    {
-        bool negative = number < 0;
-        string num = negative ? number.ToString()[1..] : number.ToString();
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return negative ? '-' + num : num;
-    }
-
-    public static string InsertKDots(this uint number, char kchar = '.')
-    {
-        string num = number.ToString();
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return num;
-    }
-
-    public static string InsertKDots(this long number, char kchar = '.')
-    {
-        bool negative = number < 0;
-        string num = negative ? number.ToString()[1..] : number.ToString();
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        string c = kchar.ToString();
-        for (int i = num.Length - 3; i > 0; i -= 3)
-        {
-            num = num.Insert(i, c);
-        }
-
-        return negative ? '-' + num : num;
-    }
-
-    public static string InsertKDots(this ulong number, char kchar = '.')
-    {
-        string num = number.ToString();
         if (num.Length < 4)
         {
             return num;

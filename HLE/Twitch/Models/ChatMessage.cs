@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -117,7 +118,7 @@ public sealed class ChatMessage
     public string RawIrcMessage { get; init; }
 
     private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTag>() is not null).ToArray();
-    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
+    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
 
     private static readonly Regex _endingNumbersPattern = new(@"-?\d+$", RegexOptions.Compiled);
     private static readonly Regex _endingWordPattern = new(@"\w+$", RegexOptions.Compiled);
@@ -182,11 +183,13 @@ public sealed class ChatMessage
         return IsAction ? ircMessage[(split[..5].Sum(s => s.Length) + 5)..^1] : ircMessage[(split[..4].Sum(s => s.Length) + 5)..];
     }
 
-    private Dictionary<string, int> GetBadgeInfo(string value)
+    [MsgPropName(nameof(BadgeInfo))]
+    private static Dictionary<string, int> GetBadgeInfo(string value)
     {
         return string.IsNullOrEmpty(value) ? new() : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => int.Parse(s[1]));
     }
 
+    [MsgPropName(nameof(Badges))]
     private static Badge[] GetBadges(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -202,6 +205,7 @@ public sealed class ChatMessage
         }).ToArray();
     }
 
+    [MsgPropName(nameof(Color))]
     private static Color GetColor(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -209,32 +213,42 @@ public sealed class ChatMessage
             return Color.Empty;
         }
 
-        byte r = Convert.ToByte(value[1..2], 16);
-        byte g = Convert.ToByte(value[3..4], 16);
-        byte b = Convert.ToByte(value[5..6], 16);
+        ReadOnlySpan<char> color = value;
+        byte r = byte.Parse(color[1..3], NumberStyles.HexNumber);
+        byte g = byte.Parse(color[3..5], NumberStyles.HexNumber);
+        byte b = byte.Parse(color[5..7], NumberStyles.HexNumber);
         return Color.FromArgb(r, g, b);
     }
 
+    [MsgPropName(nameof(DisplayName))]
     private static string GetDisplayName(string value)
     {
         string displayName = _endingWordPattern.Match(value).Value;
         return displayName.EndsWith(_nameWithSpaceEnding) ? displayName[..^2] : displayName;
     }
 
+    [MsgPropName(nameof(IsFirstMessage))]
     private static bool GetIsFirstMsg(string value) => value[^1] == '1';
 
+    [MsgPropName(nameof(Id))]
     private static Guid GetId(string value) => Guid.Parse(value);
 
+    [MsgPropName(nameof(IsModerator))]
     private static bool GetIsModerator(string value) => value[^1] == '1';
 
+    [MsgPropName(nameof(ChannelId))]
     private static long GetChannelId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
+    [MsgPropName(nameof(IsSubscriber))]
     private static bool GetIsSubscriber(string value) => value[^1] == '1';
 
+    [MsgPropName(nameof(TmiSentTs))]
     private static long GetTmiSentTs(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
+    [MsgPropName(nameof(IsTurboUser))]
     private static bool GetIsTurboUser(string value) => value[^1] == '1';
 
+    [MsgPropName(nameof(UserId))]
     private static long GetUserId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
 
     public override string ToString()

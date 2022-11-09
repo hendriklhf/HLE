@@ -18,7 +18,6 @@
     <Version>2.0.3</Version>
     <PackageVersion>2.0.3</PackageVersion>
     <AssemblyVersion>2.0.3</AssemblyVersion>
-    <PackageIcon>Resources\Okayge.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

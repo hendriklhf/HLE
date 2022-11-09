@@ -308,9 +308,10 @@ public sealed class TwitchClient
     /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
     /// </summary>
     /// <param name="channels">The channels</param>
-    public void LeaveChannels(params string[] channels)
+    public void LeaveChannels(IEnumerable<string> channels)
     {
-        foreach (string channel in channels)
+        string[] channelArr = channels.ToArray();
+        foreach (string channel in channelArr)
         {
             LeaveChannel(channel);
         }
@@ -349,7 +350,6 @@ public sealed class TwitchClient
         }
 
         _client.Disconnect();
-        OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
     private void IrcClient_OnDataReceived(object? sender, string message)

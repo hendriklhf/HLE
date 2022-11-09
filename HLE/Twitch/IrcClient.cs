@@ -75,6 +75,11 @@ public abstract class IrcClient
         _url = GetUrl();
     }
 
+    ~IrcClient()
+    {
+        _tokenSource.Dispose();
+    }
+
     /// <summary>
     /// Connects the client to the Twitch IRC server.
     /// </summary>

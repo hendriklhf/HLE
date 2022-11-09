@@ -29,6 +29,13 @@ public sealed class TcpIrcClient : IrcClient
     {
     }
 
+    ~TcpIrcClient()
+    {
+        _reader?.Dispose();
+        _writer?.Dispose();
+        _tcpClient.Dispose();
+    }
+
     private protected override async Task Send(string message)
     {
         if (_writer is null)

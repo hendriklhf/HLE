@@ -60,7 +60,7 @@ public sealed class UnitPrefix
     /// <summary>
     /// The representation of no unit prefix.
     /// </summary>
-    public static UnitPrefix Null { get; } = new("", "", 1e0);
+    public static UnitPrefix Null { get; } = new(string.Empty, string.Empty, 1e0);
 
     /// <summary>
     /// The representation of the unit prefix Deci.

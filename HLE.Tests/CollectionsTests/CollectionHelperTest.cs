@@ -136,7 +136,7 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
-    public void SelectEachTest()
+    public void SelectManyTest()
     {
         int[][] arrArr =
         {
@@ -249,6 +249,7 @@ public class CollectionHelperTest
 
         string word = arr.RandomString(5);
         Assert.AreEqual(5, word.Length);
+        Assert.IsTrue(word.All(c => arr.Contains(c)));
     }
 
     [TestMethod]
@@ -268,6 +269,8 @@ public class CollectionHelperTest
             3
         };
         Assert.IsTrue(arr1.ContentEquals(arr2));
+        arr2[1] = 1;
+        Assert.IsFalse(arr1.ContentEquals(arr2));
 
         string s1 = "hello";
         const string s2 = "hello";
@@ -275,14 +278,6 @@ public class CollectionHelperTest
 
         s1 = "hallo";
         Assert.IsFalse(s1.ContentEquals(s2));
-    }
-
-    [TestMethod]
-    public void CreateArrayTest()
-    {
-        int[] arr = CollectionHelper.CreateArray(50, -1);
-        Assert.IsTrue(arr.Length == 50);
-        Assert.IsTrue(arr.All(a => a == -1));
     }
 
     [TestMethod]
@@ -297,7 +292,29 @@ public class CollectionHelperTest
             'o'
         };
 
-        arr = arr.ForEachByRange((0, 2, _ => 'x'), (2, 4, _ => 'y')).ToArray();
+        arr = arr.ForEachByRange((..2, _ => 'x'), (2..4, _ => 'y')).ToArray();
         Assert.AreEqual("xxyyy", arr.ConcatToString());
+    }
+
+    [TestMethod]
+    public void RandomizeTest()
+    {
+        int[] arr = Enumerable.Range(0, 50).Select(_ => Random.Int()).ToArray();
+        int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize().ToArray()).ToArray();
+        Assert.IsTrue(arrArr.Count(a => a.ContentEquals(arr)) <= 1);
+    }
+
+    [TestMethod]
+    public void RangeEnumeratorTest()
+    {
+        List<int> items = new();
+        foreach (int i in ..100)
+        {
+            items.Add(i);
+        }
+
+        Assert.AreEqual(101, items.Count);
+        Assert.AreEqual(0, items[0]);
+        Assert.AreEqual(100, items[100]);
     }
 }

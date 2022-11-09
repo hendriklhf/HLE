@@ -26,6 +26,11 @@ public sealed class WebSocketClient : IrcClient
     {
     }
 
+    ~WebSocketClient()
+    {
+        _webSocket.Dispose();
+    }
+
     private protected override async Task Send(string message)
     {
         byte[] bytes = Encoding.UTF8.GetBytes(message);
@@ -46,7 +51,7 @@ public sealed class WebSocketClient : IrcClient
                     continue;
                 }
 
-                string message = Encoding.UTF8.GetString(buffer[..result.Count].ToArray());
+                string message = Encoding.UTF8.GetString(buffer[..(result.Count - 1)].ToArray());
                 string[] messages = message.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
                 foreach (string m in messages)
                 {

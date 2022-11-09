@@ -152,7 +152,7 @@ public static class CollectionHelper
 
         List<T[]> result = new();
         T[] arr = collection.ToArray();
-        int[] idc = arr.IndecesOf(IsSeparator).ToArray();
+        int[] idc = arr.IndicesOf(IsSeparator).ToArray();
 
         int start = 0;
         foreach (int i in idc)
@@ -191,19 +191,19 @@ public static class CollectionHelper
         return builder.ToString();
     }
 
-    public static IEnumerable<int> IndecesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
+    public static IEnumerable<int> IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
     {
-        List<int> indeces = new();
+        List<int> indices = new();
         T[] arr = collection.ToArray();
         for (int i = 0; i < arr.Length; i++)
         {
             if (condition(arr[i]))
             {
-                indeces.Add(i);
+                indices.Add(i);
             }
         }
 
-        return indeces;
+        return indices;
     }
 
     public static bool ContentEquals<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
@@ -232,19 +232,14 @@ public static class CollectionHelper
         return true;
     }
 
-    public static T?[] CreateArray<T>(int length, T? defaultValue = default)
-    {
-        T?[] arr = new T[length];
-        Array.Fill(arr, defaultValue);
-        return arr;
-    }
-
-    public static IEnumerable<T> ForEachByRange<T>(this IEnumerable<T> collection, params (int Begin, int End, Action<T> Action)[] operations)
+    public static IEnumerable<T> ForEachByRange<T>(this IEnumerable<T> collection, params (Range Range, Action<T> Action)[] operations)
     {
         T[] arr = collection.ToArray();
         foreach (var op in operations)
         {
-            for (int i = op.Begin; i <= op.End; i++)
+            int start = op.Range.Start.Value;
+            int end = op.Range.End.IsFromEnd ? arr.Length - op.Range.End.Value - 1 : op.Range.End.Value;
+            for (int i = start; i <= end; i++)
             {
                 op.Action(arr[i]);
             }
@@ -253,12 +248,14 @@ public static class CollectionHelper
         return arr;
     }
 
-    public static IEnumerable<T> ForEachByRange<T>(this IEnumerable<T> collection, params (int Begin, int End, Func<T, T> Func)[] operations)
+    public static IEnumerable<T> ForEachByRange<T>(this IEnumerable<T> collection, params (Range Range, Func<T, T> Func)[] operations)
     {
         T[] arr = collection.ToArray();
         foreach (var op in operations)
         {
-            for (int i = op.Begin; i <= op.End; i++)
+            int start = op.Range.Start.Value;
+            int end = op.Range.End.IsFromEnd ? arr.Length - op.Range.End.Value - 1 : op.Range.End.Value;
+            for (int i = start; i <= end; i++)
             {
                 arr[i] = op.Func(arr[i]);
             }
@@ -271,4 +268,23 @@ public static class CollectionHelper
     {
         return collection.ToDictionary(i => i.Key, i => i.Value);
     }
+
+    public static IEnumerable<T> Randomize<T>(this IEnumerable<T> collection)
+    {
+        T[] arr = collection.ToArray();
+        if (arr.Length == 0)
+        {
+            return arr;
+        }
+
+        for (int i = 0; i < arr.Length; i++)
+        {
+            int randomIdx = HLE.Random.Int(0, arr.Length - 1);
+            (arr[i], arr[randomIdx]) = (arr[randomIdx], arr[i]);
+        }
+
+        return arr;
+    }
+
+    public static RangeEnumerator GetEnumerator(this Range range) => new(range);
 }
