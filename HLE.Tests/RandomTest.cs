@@ -44,12 +44,12 @@ public class RandomTest
     [TestMethod]
     public void StringTest()
     {
-        const byte strLength = 50;
+        const byte strLength = 100;
         const byte min = 33;
         const byte max = 126;
         for (int i = 0; i < 100_000; i++)
         {
-            string s = Random.String(strLength, min, max);
+            string s = Random.String(strLength);
             Assert.AreEqual(strLength, s.Length);
             Assert.IsTrue(s.All(c => min <= c && c <= max));
         }

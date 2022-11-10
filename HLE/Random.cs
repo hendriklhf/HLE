@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Text;
 using HLE.Collections;
 
 namespace HLE;
@@ -10,7 +8,10 @@ namespace HLE;
 /// </summary>
 public static class Random
 {
-    public static char Char(ushort min = 33, ushort max = 126)
+    private const ushort _minLatinChar = 33;
+    private const ushort _maxLatinChar = 126;
+
+    public static char Char(ushort min = _minLatinChar, ushort max = _maxLatinChar)
     {
         return (char)UShort(min, max);
     }
@@ -137,43 +138,27 @@ public static class Random
         return new System.Random().NextSingle();
     }
 
-    /// <summary>
-    /// Returns a <see cref="string"/> of the given <paramref name="length"/> filled with basic Latin characters.<br />
-    /// Calls <see cref="Char"/> to fill the result string.
-    /// </summary>
-    /// <param name="length">The <paramref name="length"/> of the <see cref="string"/>.</param>
-    /// <returns>A string of the given <paramref name="length"/>.</returns>
-    public static string String(int length = 10)
+    public static string String(int length, ushort minChar = _minLatinChar, ushort maxChar = _maxLatinChar)
     {
         if (length <= 0)
         {
             return string.Empty;
         }
 
-        StringBuilder builder = new();
+        ushort count = (ushort)(maxChar - minChar);
+        Span<char> chars = stackalloc char[count];
+        for (int i = 0; i < count; i++)
+        {
+            chars[i] = (char)(i + minChar);
+        }
+
+        Span<char> result = stackalloc char[length];
         for (int i = 0; i < length; i++)
         {
-            builder.Append(Char());
+            result[i] = chars.Random();
         }
 
-        return builder.ToString();
-    }
-
-    public static string String(int length, ushort minChar, ushort maxChar)
-    {
-        if (length <= 0)
-        {
-            return string.Empty;
-        }
-
-        ushort[] chars = Enumerable.Range(minChar, maxChar - minChar).Select(s => (ushort)s).ToArray();
-        StringBuilder builder = new();
-        for (int i = 0; i < length; i++)
-        {
-            builder.Append((char)chars.Random());
-        }
-
-        return builder.ToString();
+        return new(result);
     }
 
     public static bool Bool()

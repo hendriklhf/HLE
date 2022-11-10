@@ -67,6 +67,16 @@ public static class CollectionHelper
         return arr.Length == 0 ? default : arr[HLE.Random.Int(0, arr.Length - 1)];
     }
 
+    public static T? Random<T>(this Span<T> collection)
+    {
+        return collection.Length == 0 ? default : collection[HLE.Random.Int(0, collection.Length - 1)];
+    }
+
+    public static T? Random<T>(this ReadOnlySpan<T> collection)
+    {
+        return collection.Length == 0 ? default : collection[HLE.Random.Int(0, collection.Length - 1)];
+    }
+
     /// <summary>
     /// Concatenates every element of the <paramref name="collection"/> separated by the <paramref name="separator"/>.
     /// </summary>

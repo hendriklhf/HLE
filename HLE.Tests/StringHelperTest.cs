@@ -44,6 +44,6 @@ public class StringHelperTest
         const int number4 = 1234567;
         Assert.AreEqual("1.234.567", number4.InsertKDots());
         const int number5 = 123;
-        Assert.AreEqual("123", number5.InsertKDot());
+        Assert.AreEqual("123", number5.InsertKDots());
     }
 }
