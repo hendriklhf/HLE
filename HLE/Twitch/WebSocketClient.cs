@@ -45,7 +45,7 @@ public sealed class WebSocketClient : IrcClient
         {
             while (!_token.IsCancellationRequested && IsConnected)
             {
-                Memory<byte> buffer = new(new byte[2048]);
+                Memory<byte> buffer = new(new byte[1024]);
                 ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
                 if (result.Count == 0)
                 {
