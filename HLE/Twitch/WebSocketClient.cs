@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,7 +52,8 @@ public sealed class WebSocketClient : IrcClient
                     continue;
                 }
 
-                string message = Encoding.UTF8.GetString(buffer[..(result.Count - 1)].ToArray());
+                ReadOnlySequence<byte> sequence = new(buffer[..(result.Count - 1)]);
+                string message = Encoding.UTF8.GetString(sequence);
                 string[] messages = message.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
                 foreach (string m in messages)
                 {
