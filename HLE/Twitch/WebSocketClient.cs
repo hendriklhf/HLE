@@ -52,7 +52,7 @@ public sealed class WebSocketClient : IrcClient
                     continue;
                 }
 
-                ReadOnlySequence<byte> sequence = new(buffer[..(result.Count - 1)]);
+                ReadOnlySequence<byte> sequence = new(buffer[..(result.Count - 2)]);
                 string message = Encoding.UTF8.GetString(sequence);
                 string[] messages = message.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
                 foreach (string m in messages)
