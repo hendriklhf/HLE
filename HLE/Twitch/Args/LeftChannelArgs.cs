@@ -25,7 +25,8 @@ public sealed class LeftChannelArgs : EventArgs
     public LeftChannelArgs(string ircMessage, string[]? split = null)
     {
         split ??= ircMessage.Split();
-        Username = split[0].TakeBetween(':', '!');
+        int idxExcl = split[0].IndexOf('!');
+        Username = split[0][1..idxExcl];
         Channel = split[2][1..];
     }
 }

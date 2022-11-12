@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -8,23 +9,6 @@ namespace HLE.Tests.CollectionsTests;
 [TestClass]
 public class CollectionHelperTest
 {
-    [TestMethod]
-    public void RandomTest()
-    {
-        string[] arr =
-        {
-            "1",
-            "2",
-            "3",
-            "4",
-            "5"
-        };
-        for (int i = 0; i <= 50; i++)
-        {
-            Assert.IsTrue(arr.Contains(arr.Random()));
-        }
-    }
-
     [TestMethod]
     public void ForEachTest()
     {
@@ -39,18 +23,11 @@ public class CollectionHelperTest
         arr.ForEach(_ => idx++);
         Assert.AreEqual(arraySize, idx);
         Assert.AreEqual(0, arr[0]);
+        Assert.AreEqual(arraySize - 1, arr[^1]);
 
         for (int i = 0; i < arr.Length; i++)
         {
-            switch (i)
-            {
-                case 0:
-                    Assert.AreEqual(default, arr[i]);
-                    break;
-                default:
-                    Assert.AreNotEqual(default, arr[i]);
-                    break;
-            }
+            Assert.AreEqual(i, arr[i]);
         }
     }
 
@@ -73,6 +50,17 @@ public class CollectionHelperTest
         // ReSharper disable once CollectionNeverUpdated.Local
         List<int> listEmpty = new();
         Assert.IsTrue(listEmpty.IsNullOrEmpty());
+    }
+
+    [TestMethod]
+    public void RandomTest()
+    {
+        const int arrLength = 10;
+        string[] arr = TestHelper.CreateStringArray(arrLength, 10);
+        for (int i = 0; i < 1000; i++)
+        {
+            Assert.IsTrue(arr.Contains(arr.Random()));
+        }
     }
 
     [TestMethod]
@@ -101,21 +89,6 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
-    public void SwapTest()
-    {
-        int[] arr =
-        {
-            1,
-            2,
-            3
-        };
-
-        arr = arr.Swap(0, 2).ToArray();
-        Assert.AreEqual(1, arr[2]);
-        Assert.AreEqual(3, arr[0]);
-    }
-
-    [TestMethod]
     public void ReplaceTest()
     {
         int[] arr =
@@ -131,7 +104,7 @@ public class CollectionHelperTest
             3,
             3
         };
-        arr = arr.Replace(i => i == 2, 4).ToArray();
+        arr = arr.Replace(i => i == 2, 4);
         Assert.AreEqual(5, arr.Count(i => i == 4));
     }
 
@@ -166,7 +139,7 @@ public class CollectionHelperTest
             }
         };
 
-        int[] arr = arrArr.SelectMany().ToArray();
+        int[] arr = arrArr.SelectMany();
         Assert.AreEqual(15, arr.Length);
         for (int i = 0; i < arr.Length; i++)
         {
@@ -199,7 +172,7 @@ public class CollectionHelperTest
             "."
         };
 
-        var split = arr.Split(".").ToArray();
+        var split = arr.Split(".");
         Assert.AreEqual(4, split.Length);
         byte[] lengths =
         {
@@ -238,13 +211,21 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
-    public void RandomWordTest()
+    public void RandomStringTest()
     {
         const int stringLength = 50;
         char[] arr = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
         string word = arr.RandomString(stringLength);
         Assert.AreEqual(stringLength, word.Length);
         Assert.IsTrue(word.All(c => arr.Contains(c)));
+    }
+
+    [TestMethod]
+    public void IndicesOfTest()
+    {
+        const string str = "test string";
+        int[] indices = str.IndicesOf(c => c is 's');
+        Assert.IsTrue(indices is [2, 5]);
     }
 
     [TestMethod]
@@ -276,48 +257,72 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
+    public void ForEachByRangeFuncTest()
+    {
+        char[] arr = "hello".ToCharArray();
+
+        arr = arr.ForEachByRange((..2, _ => 'x'), (2..4, _ => 'y'));
+        Assert.AreEqual("xxyyo", arr.ConcatToString());
+    }
+
+    [TestMethod]
     public void ForEachByRangeActionTest()
     {
-        char[] arr =
-        {
-            'h',
-            'e',
-            'l',
-            'l',
-            'o'
-        };
-
-        arr = arr.ForEachByRange((..2, _ => 'x'), (2..4, _ => 'y')).ToArray();
-        Assert.AreEqual("xxyyy", arr.ConcatToString());
+        char[] arr = "hello".ToCharArray();
+        List<char> list = new();
+        void Action(char c) => list.Add(c);
+        arr.ForEachByRange((2..4, Action), (..2, Action));
+        Assert.AreEqual(4, list.Count);
+        Assert.IsTrue(list is ['l', 'l', 'h', 'e']);
     }
 
     [TestMethod]
     public void RandomizeTest()
     {
-        int[] arr = Enumerable.Range(0, 50).Select(_ => Random.Int()).ToArray();
-        int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize().ToArray()).ToArray();
-        Assert.IsTrue(arrArr.Count(a => a.ContentEquals(arr)) <= 1);
+        int[] arr = TestHelper.CreateIntArray(50);
+        int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize()).ToArray();
+        int count = arrArr.Count(a => arr.ContentEquals(a));
+        Console.WriteLine($"Content was equal {count.InsertKDots()} times.");
+        Assert.IsTrue(count <= 1);
     }
 
     [TestMethod]
     public void RangeEnumeratorTest()
     {
-        List<int> items = new();
-        foreach (int i in ..100)
+        List<int> items = new(101);
+        Range r = ..100;
+        foreach (int i in r)
         {
             items.Add(i);
         }
 
         Assert.AreEqual(101, items.Count);
         Assert.AreEqual(0, items[0]);
-        Assert.AreEqual(100, items[100]);
-    }
+        Assert.AreEqual(100, items[^1]);
 
-    [TestMethod]
-    public void IndicesOfTest()
-    {
-        const string str = "test string";
-        int[] indices = str.IndicesOf(c => c is 's').ToArray();
-        Assert.IsTrue(indices is [2, 5]);
+        items.Clear();
+        r = 50..100;
+        foreach (int i in r)
+        {
+            items.Add(i);
+        }
+
+        Assert.AreEqual(51, items.Count);
+        Assert.AreEqual(50, items[0]);
+        Assert.AreEqual(100, items[^1]);
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+        {
+            foreach (int _ in ..^100)
+            {
+            }
+        });
+
+        Assert.ThrowsException<InvalidOperationException>(() =>
+        {
+            foreach (int _ in 50..)
+            {
+            }
+        });
     }
 }

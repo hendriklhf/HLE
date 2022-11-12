@@ -40,7 +40,7 @@ public static class StringHelper
         return str.Replace(s, string.Empty);
     }
 
-    public static IEnumerable<string> Split(this string str, int charCount, bool onlySplitOnWhitespace = false)
+    public static string[] Split(this string str, int charCount, bool onlySplitOnWhitespace = false)
     {
         str = str.TrimAll();
         if (str.Length <= charCount)
@@ -61,7 +61,7 @@ public static class StringHelper
             }
 
             result.Add(str);
-            return result;
+            return result.ToArray();
         }
 
         string[] split = str.Split();
@@ -98,38 +98,7 @@ public static class StringHelper
             }
         }
 
-        return list.Select(l => string.Join(' ', l));
-    }
-
-    public static string TakeBetween(this string str, char firstChar, char secondChar)
-    {
-        int firstIdx = str.IndexOf(firstChar);
-        int secondIdx = str.IndexOf(secondChar, firstIdx + 1);
-        Range range;
-        switch (firstIdx)
-        {
-            case -1 when secondIdx == -1:
-                range = Range.All;
-                break;
-            case -1:
-                range = ..secondIdx;
-                break;
-            default:
-            {
-                if (secondIdx == -1)
-                {
-                    range = (firstIdx + 1)..;
-                }
-                else
-                {
-                    range = (firstIdx + 1)..secondIdx;
-                }
-
-                break;
-            }
-        }
-
-        return str[range];
+        return list.Select(l => string.Join(' ', l)).ToArray();
     }
 
     /// <summary>
@@ -198,6 +167,21 @@ public static class StringHelper
         for (int i = 0; i < str.Length; i++)
         {
             if (str[i] == c)
+            {
+                indices[count++] = i;
+            }
+        }
+
+        return indices[..count].ToArray();
+    }
+
+    public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
+    {
+        Span<int> indices = stackalloc int[span.Length];
+        int count = 0;
+        for (int i = 0; i < span.Length; i++)
+        {
+            if (span[i] == c)
             {
                 indices[count++] = i;
             }

@@ -67,11 +67,8 @@ public class HStringTest
     public void IndecesOfTest()
     {
         HString s = _testString;
-        int[] indeces = s.IndicesOf(c => c == 'l').ToArray();
-        Assert.AreEqual(3, indeces.Length);
-        Assert.AreEqual(2, indeces[0]);
-        Assert.AreEqual(3, indeces[1]);
-        Assert.AreEqual(9, indeces[2]);
+        int[] indices = s.IndicesOf(c => c == 'l').ToArray();
+        Assert.IsTrue(indices is [2, 3, 9]);
     }
 
     [TestMethod]
