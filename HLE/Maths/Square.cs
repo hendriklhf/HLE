@@ -5,27 +5,27 @@ namespace HLE.Maths;
 /// <summary>
 /// A class to do calculations with a square.
 /// </summary>
-public class Square : IShape
+public readonly struct Square : IShape
 {
     /// <summary>
     /// The side length of the square.
     /// </summary>
-    public double SideLength { get; set; }
+    public double SideLength { get; }
 
     /// <summary>
     /// The area of the square.
     /// </summary>
-    public double Area => SideLength * SideLength;
+    public double Area { get; }
 
     /// <summary>
     /// The circumference of the square.
     /// </summary>
-    public double Circumference => 4 * SideLength;
+    public double Circumference { get; }
 
     /// <summary>
     /// The length of the diagonal line of the square.
     /// </summary>
-    public double Diagonal => Math.Sqrt(2 * Math.Pow(SideLength, 2));
+    public double Diagonal { get; }
 
     /// <summary>
     /// The default constructor of <see cref="Square"/>.
@@ -34,5 +34,8 @@ public class Square : IShape
     public Square(double sideLength)
     {
         SideLength = sideLength;
+        Area = SideLength * SideLength;
+        Circumference = 4 * SideLength;
+        Diagonal = Math.Sqrt(2 * Math.Pow(SideLength, 2));
     }
 }

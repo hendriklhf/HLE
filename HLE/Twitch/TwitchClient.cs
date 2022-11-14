@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HLE.Collections;
-using HLE.Twitch.Args;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -106,10 +105,9 @@ public sealed class TwitchClient
     /// Connects with the username "justinfan123".
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// </summary>
-    public TwitchClient(ClientOptions? options = null)
+    public TwitchClient(ClientOptions options = default)
     {
         Username = "justinfan123";
-        options ??= new();
         ClientType = options.ClientType;
         UseSSL = options.UseSSL;
         _client = ClientType switch
@@ -136,11 +134,10 @@ public sealed class TwitchClient
     /// <param name="oAuthToken">The OAuth token of the client</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
-    public TwitchClient(string username, string oAuthToken, ClientOptions? options = null)
+    public TwitchClient(string username, string oAuthToken, ClientOptions options = default)
     {
         Username = FormatChannel(username, false);
         oAuthToken = ValidateOAuthToken(oAuthToken);
-        options ??= new();
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketClient(Username, oAuthToken)

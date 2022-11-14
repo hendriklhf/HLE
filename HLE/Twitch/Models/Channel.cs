@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using HLE.Twitch.Args;
 using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;

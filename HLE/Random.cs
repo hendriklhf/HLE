@@ -174,6 +174,16 @@ public static class Random
         };
     }
 
+    public static bool StrongBool()
+    {
+        return StrongSByte() switch
+        {
+            > 0 => true,
+            < 0 => false,
+            _ => StrongBool()
+        };
+    }
+
     public static byte StrongByte()
     {
         Span<byte> bytes = stackalloc byte[sizeof(byte)];
@@ -228,5 +238,56 @@ public static class Random
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
         _strong.GetBytes(bytes);
         return BitConverter.ToUInt64(bytes);
+    }
+
+    public static Int128 StrongInt128()
+    {
+        Int128 low = StrongLong();
+        Int128 high = StrongLong();
+        Int128 result = high << 64 | low;
+        return result;
+    }
+
+    public static UInt128 StringUInt128()
+    {
+        UInt128 low = StrongULong();
+        UInt128 high = StrongULong();
+        UInt128 result = high << 64 | low;
+        return result;
+    }
+
+    public static float StrongFloat()
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(float)];
+        _strong.GetBytes(bytes);
+        return BitConverter.ToSingle(bytes);
+    }
+
+    public static double StrongDouble()
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(double)];
+        _strong.GetBytes(bytes);
+        return BitConverter.ToDouble(bytes);
+    }
+
+    public static char StrongChar()
+    {
+        return (char)StrongUShort();
+    }
+
+    public static string StrongString(int length)
+    {
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+
+        Span<char> result = stackalloc char[length];
+        for (int i = 0; i < length; i++)
+        {
+            result[i] = StrongChar();
+        }
+
+        return new(result);
     }
 }

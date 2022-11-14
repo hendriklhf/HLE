@@ -5,32 +5,32 @@ namespace HLE.Maths;
 /// <summary>
 /// A class to do calculations with a rectangle.
 /// </summary>
-public class Rectangle : IShape
+public readonly struct Rectangle : IShape
 {
     /// <summary>
     /// The width of the rectangle.
     /// </summary>
-    public double Width { get; set; }
+    public double Width { get; }
 
     /// <summary>
     /// The height of the rectangle.
     /// </summary>
-    public double Height { get; set; }
+    public double Height { get; }
 
     /// <summary>
     /// The length of the diagonal line of the rectangle.
     /// </summary>
-    public double Diagonals => Math.Sqrt(Math.Pow(Width, 2) + Math.Pow(Height, 2));
+    public double Diagonals { get; }
 
     /// <summary>
     /// The area of the rectangle.
     /// </summary>
-    public double Area => Width * Height;
+    public double Area { get; }
 
     /// <summary>
     /// The circumference of the rectangle.
     /// </summary>
-    public double Circumference => 2 * (Width + Height);
+    public double Circumference { get; }
 
     /// <summary>
     /// The default constructor of <see cref="Rectangle"/>.
@@ -41,5 +41,8 @@ public class Rectangle : IShape
     {
         Width = width;
         Height = height;
+        Diagonals = Math.Sqrt(Math.Pow(Width, 2) + Math.Pow(Height, 2));
+        Area = Width * Height;
+        Circumference = 2 * (Width + Height);
     }
 }

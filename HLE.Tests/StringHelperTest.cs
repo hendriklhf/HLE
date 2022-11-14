@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests;
@@ -45,5 +46,17 @@ public class StringHelperTest
         Assert.AreEqual("1.234.567", number4.InsertKDots());
         const int number5 = 123;
         Assert.AreEqual("123", number5.InsertKDots());
+    }
+
+    [TestMethod]
+    public void GetRangesOfSplitTest()
+    {
+        ReadOnlySpan<char> str = "hello world  test";
+        var ranges = str.GetRangesOfSplit();
+        Assert.IsTrue(ranges is [_, _, _, _]);
+        Assert.AreEqual("hello", str[ranges[0]].ToString());
+        Assert.AreEqual("world", str[ranges[1]].ToString());
+        Assert.AreEqual(string.Empty, str[ranges[2]].ToString());
+        Assert.AreEqual("test", str[ranges[3]].ToString());
     }
 }

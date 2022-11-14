@@ -1,5 +1,4 @@
 ﻿using System;
-using HLE.Twitch.Args;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -57,7 +56,7 @@ public sealed class IrcHandler
             {
                 if (split[2] == _ircCmds[2])
                 {
-                    OnChatMessageReceived?.Invoke(this, new(ircMessage, split));
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage));
                 }
                 else if (split[1] == _ircCmds[0])
                 {

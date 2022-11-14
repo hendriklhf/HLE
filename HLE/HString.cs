@@ -39,7 +39,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         _chars = chars switch
         {
             string s => s.ToCharArray(),
-            HString h => (char[])h._chars.Clone(),
+            HString h => CopyCharArray(h._chars),
             char[] c => c,
             not null => chars.ToArray(),
             _ => Array.Empty<char>()
@@ -49,6 +49,13 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
     public HString(Span<char> span)
     {
         _chars = span.ToArray();
+    }
+
+    private static char[] CopyCharArray(in char[] array)
+    {
+        char[] copy = new char[array.Length];
+        Array.Copy(array, copy, array.Length);
+        return copy;
     }
 
     public HString Replace(char oldValue, char newValue) => GetString().Replace(oldValue, newValue);
@@ -87,7 +94,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public HString ToUpper() => GetString().ToUpper();
 
-    public char[] ToCharArray() => (char[])_chars.Clone();
+    public char[] ToCharArray() => CopyCharArray(_chars);
 
     private void SetChar(int idx, char c)
     {

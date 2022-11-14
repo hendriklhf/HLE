@@ -1,7 +1,7 @@
 ﻿namespace HLE.Maths;
 
 /// <summary>
-/// An abstract class for shape objects.
+/// An interface for mathematical shape objects.
 /// </summary>
 public interface IShape
 {

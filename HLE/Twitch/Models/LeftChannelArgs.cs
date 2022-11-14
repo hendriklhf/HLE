@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HLE.Twitch.Args;
+namespace HLE.Twitch.Models;
 
 /// <summary>
 /// <see cref="EventArgs"/> used whe a user left a channel.

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using HLE.Twitch.Attributes;
 
-namespace HLE.Twitch.Args;
+namespace HLE.Twitch.Models;
 
 /// <summary>
 /// <see cref="EventArgs"/> used when the state of a chat room changed.

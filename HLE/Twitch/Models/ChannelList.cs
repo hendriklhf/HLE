@@ -2,10 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using HLE.Twitch.Args;
-using HLE.Twitch.Models;
 
-namespace HLE.Twitch;
+namespace HLE.Twitch.Models;
 
 /// <summary>
 /// A class that represents a list of channels the client is connected to.

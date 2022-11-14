@@ -5,27 +5,27 @@ namespace HLE.Maths;
 /// <summary>
 /// A class to do calculations with a circle.
 /// </summary>
-public class Circle : IShape
+public readonly struct Circle : IShape
 {
     /// <summary>
     /// The radius of the circle.
     /// </summary>
-    public double Radius { get; set; }
+    public double Radius { get; }
 
     /// <summary>
     /// The diameter of the circle.
     /// </summary>
-    public double Diameter => 2 * Radius;
+    public double Diameter { get; }
 
     /// <summary>
     /// The area of the circle.
     /// </summary>
-    public double Area => Math.PI * Math.Pow(Radius, 2);
+    public double Area { get; }
 
     /// <summary>
     /// The circumference of the circle.
     /// </summary>
-    public double Circumference => Diameter * Math.PI;
+    public double Circumference { get; }
 
     /// <summary>
     /// The default constructor of <see cref="Circle"/>.
@@ -34,5 +34,8 @@ public class Circle : IShape
     public Circle(double radius)
     {
         Radius = radius;
+        Diameter = 2 * Radius;
+        Area = Math.PI * Math.Pow(Radius, 2);
+        Circumference = Diameter * Math.PI;
     }
 }

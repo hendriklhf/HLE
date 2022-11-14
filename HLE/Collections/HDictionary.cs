@@ -13,6 +13,7 @@ namespace HLE.Collections;
 /// </summary>
 /// <typeparam name="TKey">The key.</typeparam>
 /// <typeparam name="TValue">The value.</typeparam>
+// ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 public sealed class HDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>> where TKey : notnull where TValue : class
 {

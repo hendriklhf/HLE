@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HLE.Twitch.Args;
+namespace HLE.Twitch.Models;
 
 internal sealed class PingArgs : EventArgs
 {

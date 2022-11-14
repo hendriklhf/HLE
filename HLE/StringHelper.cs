@@ -189,4 +189,20 @@ public static class StringHelper
 
         return indices[..count].ToArray();
     }
+
+    public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char c = ' ')
+    {
+        int[] indices = span.IndicesOf(c);
+        Span<Range> ranges = stackalloc Range[indices.Length + 1];
+        int start = 0;
+        for (int i = 0; i < indices.Length; i++)
+        {
+            int idx = indices[i];
+            ranges[i] = start..idx;
+            start = idx + 1;
+        }
+
+        ranges[^1] = (indices[^1] + 1)..;
+        return ranges.ToArray();
+    }
 }

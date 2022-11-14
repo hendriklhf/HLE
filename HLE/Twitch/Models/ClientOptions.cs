@@ -1,6 +1,4 @@
-﻿using HLE.Twitch.Models;
-
-namespace HLE.Twitch;
+﻿namespace HLE.Twitch.Models;
 
 /// <summary>
 /// Options for <see cref="TwitchClient"/>. By default:<br/>
@@ -8,21 +6,28 @@ namespace HLE.Twitch;
 /// <see cref="UseSSL"/> = false<br/>
 /// <see cref="IsVerifiedBot"/> = false<br/>
 /// </summary>
-public sealed class ClientOptions
+public readonly struct ClientOptions
 {
     /// <summary>
     /// The client type. Can be either a websocket or TCP connection.
     /// </summary>
-    public ClientType ClientType { get; set; } = ClientType.WebSocket;
+    public ClientType ClientType { get; init; } = ClientType.WebSocket;
 
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; set; } = false;
+    public bool UseSSL { get; init; } = false;
 
     /// <summary>
     /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.
     /// </summary>
-    public bool IsVerifiedBot { get; set; } = false;
+    public bool IsVerifiedBot { get; init; } = false;
+
+    public ClientOptions(ClientType type, bool useSsl, bool isVerifiedBot)
+    {
+        ClientType = type;
+        UseSSL = useSsl;
+        IsVerifiedBot = isVerifiedBot;
+    }
 }
