@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;
 
@@ -22,74 +19,62 @@ public sealed class ChatMessage
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
     /// </summary>
-    [IrcTag("badge-info")]
-    public Dictionary<string, int> BadgeInfo { get; init; } = new();
+    public ReadOnlyDictionary<string, int> BadgeInfo { get; init; } = _emptyDictionary;
 
     /// <summary>
     /// Holds all the badges the user has.
     /// </summary>
-    [IrcTag("badges")]
     public Badge[] Badges { get; init; } = Array.Empty<Badge>();
 
     /// <summary>
     /// The color of the user's name in a Twitch chat overlay.
     /// </summary>
-    [IrcTag("color")]
     public Color Color { get; init; }
 
     /// <summary>
     /// The display name of the user with the preferred casing.
     /// </summary>
-    [IrcTag("display-name")]
     public string DisplayName { get; init; } = string.Empty;
 
     /// <summary>
     /// Indicates whether the message is the first message the user has sent in this channel or not.
     /// </summary>
-    [IrcTag("first-msg")]
     public bool IsFirstMessage { get; init; }
 
     /// <summary>
     /// The unique message id.
     /// </summary>
-    [IrcTag("id")]
     public Guid Id { get; init; }
 
     /// <summary>
     /// Indicates whether the user is a moderator or not.
     /// </summary>
-    [IrcTag("mod")]
     public bool IsModerator { get; init; }
 
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
-    [IrcTag("room-id")]
     public long ChannelId { get; init; }
 
     /// <summary>
     /// Indicates whether the user is a subscriber or not.
     /// The subscription age can be obtained from <see cref="Badges"/> and <see cref="BadgeInfo"/>.
     /// </summary>
-    [IrcTag("subscriber")]
     public bool IsSubscriber { get; init; }
 
     /// <summary>
     /// The unix timestamp in milliseconds of the moment the message has been sent.
     /// </summary>
-    [IrcTag("tmi-sent-ts")]
     public long TmiSentTs { get; init; }
 
     /// <summary>
     /// Indicates whether the user is subscribing to Twitch Turbo or not.
     /// </summary>
-    [IrcTag("turbo")]
     public bool IsTurboUser { get; init; }
 
     /// <summary>
     /// The user id of the user who sent the message.
     /// </summary>
-    [IrcTag("user-id")]
     public long UserId { get; init; }
 
     /// <summary>
@@ -117,52 +102,94 @@ public sealed class ChatMessage
     /// </summary>
     public string RawIrcMessage { get; init; }
 
-    private static readonly PropertyInfo[] _ircProps = typeof(ChatMessage).GetProperties().Where(p => p.GetCustomAttribute<IrcTag>() is not null).ToArray();
-    private static readonly MethodInfo[] _ircMethods = typeof(ChatMessage).GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(m => m.GetCustomAttribute<MsgPropName>() is not null).ToArray();
-
-    private static readonly Regex _endingNumbersPattern = new(@"-?\d+$", RegexOptions.Compiled);
-    private static readonly Regex _endingWordPattern = new(@"\w+$", RegexOptions.Compiled);
+    private static readonly ReadOnlyDictionary<string, int> _emptyDictionary = new(new Dictionary<string, int>());
 
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
 
+    private const string _badgeInfoTag = "badge-info";
+    private const string _badgesTag = "badges";
+    private const string _colorTag = "color";
+    private const string _displayNameTag = "display-name";
+    private const string _firstMsgTag = "first-mgs";
+    private const string _idTag = "id";
+    private const string _modTag = "mod";
+    private const string _roomIdTag = "room-id";
+    private const string _subscriberTag = "subscriber";
+    private const string _tmiSentTsTag = "tmi-sent-ts";
+    private const string _turboTag = "turbo";
+    private const string _userIdTag = "user-id";
+
     /// <summary>
-    /// The default constructor of <see cref="ChatMessage"/>.
+    /// The default constructor of <see cref="ChatMessage"/>. This will parse the given IRC message.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    /// /// <param name="split">The IRC message split on whitespaces. Optional if a split has been done prior to calling this method.</param>
-    public ChatMessage(string ircMessage, string[]? split = null)
+    public ChatMessage(string ircMessage)
     {
-        split ??= ircMessage.Split();
-        string[] privmsgSplit = split[0][1..].Split(';').ToArray();
-        Dictionary<string, string> tagDic = privmsgSplit.Select(s => s.Split('=')).ToDictionary(sp => sp[0], sp => sp[1]);
-
-        foreach (PropertyInfo prop in _ircProps)
+        ReadOnlySpan<char> ircSpan = ircMessage;
+        Range[] ircRanges = ircSpan.GetRangesOfSplit();
+        ReadOnlySpan<char> tagsSpan = ircSpan[ircRanges[0]][1..];
+        Range[] tagsRanges = tagsSpan.GetRangesOfSplit(';');
+        foreach (Range r in tagsRanges)
         {
-            IrcTag attr = prop.GetCustomAttribute<IrcTag>()!;
-            if (!tagDic.TryGetValue(attr.Name, out string? value))
+            ReadOnlySpan<char> tag = tagsSpan[r];
+            Range[] tagRanges = tag.GetRangesOfSplit('=');
+            ReadOnlySpan<char> key = tag[tagRanges[0]];
+            ReadOnlySpan<char> value = tag[tagRanges[1]];
+            if (key.SequenceEqual(_badgeInfoTag))
             {
-                continue;
+                BadgeInfo = GetBadgeInfo(value);
             }
-
-            MethodInfo method = _ircMethods.First(m => m.GetCustomAttribute<MsgPropName>()!.Value == prop.Name);
-            object? result = method.Invoke(this, new object[]
+            else if (key.SequenceEqual(_badgesTag))
             {
-                value
-            });
-
-            if (result is null)
-            {
-                continue;
+                Badges = GetBadges(value);
             }
-
-            prop.SetValue(this, result);
+            else if (key.SequenceEqual(_colorTag))
+            {
+                Color = GetColor(value);
+            }
+            else if (key.SequenceEqual(_displayNameTag))
+            {
+                DisplayName = GetDisplayName(value);
+            }
+            else if (key.SequenceEqual(_firstMsgTag))
+            {
+                IsFirstMessage = GetIsFirstMsg(value);
+            }
+            else if (key.SequenceEqual(_idTag))
+            {
+                Id = GetId(value);
+            }
+            else if (key.SequenceEqual(_modTag))
+            {
+                IsModerator = GetIsModerator(value);
+            }
+            else if (key.SequenceEqual(_roomIdTag))
+            {
+                ChannelId = GetChannelId(value);
+            }
+            else if (key.SequenceEqual(_subscriberTag))
+            {
+                IsSubscriber = GetIsSubscriber(value);
+            }
+            else if (key.SequenceEqual(_tmiSentTsTag))
+            {
+                TmiSentTs = GetTmiSentTs(value);
+            }
+            else if (key.SequenceEqual(_turboTag))
+            {
+                IsTurboUser = GetIsTurboUser(value);
+            }
+            else if (key.SequenceEqual(_userIdTag))
+            {
+                UserId = GetUserId(value);
+            }
         }
 
-        IsAction = split[4] == _actionPrefix;
-        Username = string.IsNullOrEmpty(DisplayName) ? string.Empty : DisplayName.ToLower();
-        Channel = split[3][1..];
-        Message = GetMessage(ircMessage, split);
+        IsAction = ircSpan[ircRanges[4]].SequenceEqual(_actionPrefix);
+        Username = DisplayName.ToLower();
+        Channel = new(ircSpan[ircRanges[3]][1..]);
+        Message = GetMessage(ircSpan);
         RawIrcMessage = ircMessage;
     }
 
@@ -178,78 +205,86 @@ public sealed class ChatMessage
         RawIrcMessage = string.Empty;
     }
 
-    private string GetMessage(string ircMessage, string[] split)
+    private string GetMessage(ReadOnlySpan<char> ircSpan)
     {
-        return IsAction ? ircMessage[(split[..5].Sum(s => s.Length) + 5)..^1] : ircMessage[(split[..4].Sum(s => s.Length) + 5)..];
+        return new(IsAction ? ircSpan[(ircSpan.IndexOf('\u0001') + 5)..^1] : ircSpan[(ircSpan.GetRangesOfSplit()[3].End.Value + 2)..]);
     }
 
-    [MsgPropName(nameof(BadgeInfo))]
-    private static Dictionary<string, int> GetBadgeInfo(string value)
+    private static ReadOnlyDictionary<string, int> GetBadgeInfo(ReadOnlySpan<char> value)
     {
-        return string.IsNullOrEmpty(value) ? new() : value.Split(',').Select(s => s.Split('/')).ToDictionary(s => s[0], s => int.Parse(s[1]));
+        if (value.IsEmpty)
+        {
+            return _emptyDictionary;
+        }
+
+        Dictionary<string, int> result = new();
+        Range[] ranges = value.GetRangesOfSplit(',');
+        foreach (Range r in ranges)
+        {
+            ReadOnlySpan<char> info = value[r];
+            Range[] infoRanges = info.GetRangesOfSplit('/');
+            string key = new(info[infoRanges[0]]);
+            int val = int.Parse(info[infoRanges[1]]);
+            result.Add(key, val);
+        }
+
+        return new(result);
     }
 
-    [MsgPropName(nameof(Badges))]
-    private static Badge[] GetBadges(string value)
+    private static Badge[] GetBadges(ReadOnlySpan<char> value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value.IsEmpty)
         {
             return Array.Empty<Badge>();
         }
 
-        string[] badges = value.Split(',');
-        return badges.Select(b =>
+        Range[] badgesRanges = value.GetRangesOfSplit(',');
+        Badge[] result = new Badge[badgesRanges.Length];
+        for (int i = 0; i < result.Length; i++)
         {
-            string[] bSplit = b.Split('/');
-            return new Badge(bSplit[0], int.Parse(bSplit[1]));
-        }).ToArray();
+            ReadOnlySpan<char> info = value[badgesRanges[i]];
+            Range[] infoRanges = info.GetRangesOfSplit('/');
+            string name = new(info[infoRanges[0]]);
+            int level = int.Parse(info[infoRanges[1]]);
+            result[i] = new(name, level);
+        }
+
+        return result;
     }
 
-    [MsgPropName(nameof(Color))]
-    private static Color GetColor(string value)
+    private static Color GetColor(ReadOnlySpan<char> value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value.IsEmpty)
         {
             return Color.Empty;
         }
 
-        ReadOnlySpan<char> color = value;
-        byte r = byte.Parse(color[1..3], NumberStyles.HexNumber);
-        byte g = byte.Parse(color[3..5], NumberStyles.HexNumber);
-        byte b = byte.Parse(color[5..7], NumberStyles.HexNumber);
+        byte r = byte.Parse(value[1..3], NumberStyles.HexNumber);
+        byte g = byte.Parse(value[3..5], NumberStyles.HexNumber);
+        byte b = byte.Parse(value[5..7], NumberStyles.HexNumber);
         return Color.FromArgb(r, g, b);
     }
 
-    [MsgPropName(nameof(DisplayName))]
-    private static string GetDisplayName(string value)
+    private static string GetDisplayName(ReadOnlySpan<char> value)
     {
-        string displayName = _endingWordPattern.Match(value).Value;
-        return displayName.EndsWith(_nameWithSpaceEnding) ? displayName[..^2] : displayName;
+        return new(value.EndsWith(_nameWithSpaceEnding) ? value[..^2] : value);
     }
 
-    [MsgPropName(nameof(IsFirstMessage))]
-    private static bool GetIsFirstMsg(string value) => value[^1] == '1';
+    private static bool GetIsFirstMsg(ReadOnlySpan<char> value) => value[^1] == '1';
 
-    [MsgPropName(nameof(Id))]
-    private static Guid GetId(string value) => Guid.Parse(value);
+    private static Guid GetId(ReadOnlySpan<char> value) => Guid.Parse(value);
 
-    [MsgPropName(nameof(IsModerator))]
-    private static bool GetIsModerator(string value) => value[^1] == '1';
+    private static bool GetIsModerator(ReadOnlySpan<char> value) => value[^1] == '1';
 
-    [MsgPropName(nameof(ChannelId))]
-    private static long GetChannelId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value);
 
-    [MsgPropName(nameof(IsSubscriber))]
-    private static bool GetIsSubscriber(string value) => value[^1] == '1';
+    private static bool GetIsSubscriber(ReadOnlySpan<char> value) => value[^1] == '1';
 
-    [MsgPropName(nameof(TmiSentTs))]
-    private static long GetTmiSentTs(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+    private static long GetTmiSentTs(ReadOnlySpan<char> value) => long.Parse(value);
 
-    [MsgPropName(nameof(IsTurboUser))]
-    private static bool GetIsTurboUser(string value) => value[^1] == '1';
+    private static bool GetIsTurboUser(ReadOnlySpan<char> value) => value[^1] == '1';
 
-    [MsgPropName(nameof(UserId))]
-    private static long GetUserId(string value) => long.Parse(_endingNumbersPattern.Match(value).Value);
+    private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value);
 
     public override string ToString()
     {
