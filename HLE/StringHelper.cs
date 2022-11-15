@@ -162,29 +162,21 @@ public static class StringHelper
 
     public static int[] IndicesOf(this string str, char c)
     {
-        Span<int> indices = stackalloc int[str.Length];
-        int count = 0;
-        for (int i = 0; i < str.Length; i++)
-        {
-            if (str[i] == c)
-            {
-                indices[count++] = i;
-            }
-        }
-
-        return indices[..count].ToArray();
+        ReadOnlySpan<char> span = str;
+        return span.IndicesOf(c);
     }
 
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
         Span<int> indices = stackalloc int[span.Length];
         int count = 0;
-        for (int i = 0; i < span.Length; i++)
+        int idx = span.IndexOf(c);
+        int totalIdx = idx;
+        while (idx != -1)
         {
-            if (span[i] == c)
-            {
-                indices[count++] = i;
-            }
+            indices[count++] = totalIdx;
+            idx = span[++totalIdx..].IndexOf(c);
+            totalIdx += idx;
         }
 
         return indices[..count].ToArray();
