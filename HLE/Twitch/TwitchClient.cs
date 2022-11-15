@@ -377,18 +377,42 @@ public sealed class TwitchClient
         }
     }
 
-    private static string FormatChannel(string channel, bool withHashtag = true)
+    private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)
     {
         if (!_channelPattern.IsMatch(channel))
         {
             throw new FormatException("The channel name is in an invalid format.");
         }
 
-        return withHashtag switch
+        if (withHashtag)
         {
-            true => channel[0] == _channelPrefix ? channel.ToLower() : _channelPrefix + channel.ToLower(),
-            _ => channel[0] == _channelPrefix ? channel[1..].ToLower() : channel.ToLower()
-        };
+            if (channel[0] == _channelPrefix)
+            {
+                Span<char> result = stackalloc char[channel.Length];
+                channel.ToLower(result, default);
+                return new(result);
+            }
+            else
+            {
+                Span<char> result = stackalloc char[channel.Length + 1];
+                result[0] = _channelPrefix;
+                channel.ToLower(result, default);
+                return new(result);
+            }
+        }
+
+        if (channel[0] == _channelPrefix)
+        {
+            Span<char> result = stackalloc char[channel.Length - 1];
+            channel[1..].ToLower(result, default);
+            return new(result);
+        }
+        else
+        {
+            Span<char> result = stackalloc char[channel.Length];
+            channel.ToLower(result, default);
+            return new(result);
+        }
     }
 
     private static IEnumerable<string> FormatChannels(IEnumerable<string> channels, bool withHashtag = true)

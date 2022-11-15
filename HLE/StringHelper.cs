@@ -121,7 +121,7 @@ public static class StringHelper
         return builder;
     }
 
-    public static string InsertKDots<T>(this T number, char kchar = '.') where T : INumber<T>
+    public static string InsertKDots<T>(this T number, char kchar = '.') where T : IBinaryInteger<T>
     {
         string? num = number.ToString();
         if (num is null)

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
 
@@ -11,8 +10,6 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// A class that represents a chat message.
 /// </summary>
-[SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
-[SuppressMessage("ReSharper", "UnusedMember.Local")]
 [DebuggerDisplay("<#{Channel}> {Username}: {Message}")]
 public sealed class ChatMessage
 {
@@ -124,11 +121,10 @@ public sealed class ChatMessage
     /// The default constructor of <see cref="ChatMessage"/>. This will parse the given IRC message.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public ChatMessage(string ircMessage)
+    public ChatMessage(ReadOnlySpan<char> ircMessage)
     {
-        ReadOnlySpan<char> ircSpan = ircMessage;
-        Range[] ircRanges = ircSpan.GetRangesOfSplit();
-        ReadOnlySpan<char> tagsSpan = ircSpan[ircRanges[0]][1..];
+        Range[] ircRanges = ircMessage.GetRangesOfSplit();
+        ReadOnlySpan<char> tagsSpan = ircMessage[ircRanges[0]][1..];
         Range[] tagsRanges = tagsSpan.GetRangesOfSplit(';');
         foreach (Range r in tagsRanges)
         {
@@ -186,11 +182,11 @@ public sealed class ChatMessage
             }
         }
 
-        IsAction = ircSpan[ircRanges[4]].SequenceEqual(_actionPrefix);
+        IsAction = ircMessage[ircRanges[4]].SequenceEqual(_actionPrefix);
         Username = DisplayName.ToLower();
-        Channel = new(ircSpan[ircRanges[3]][1..]);
-        Message = GetMessage(ircSpan);
-        RawIrcMessage = ircMessage;
+        Channel = new(ircMessage[ircRanges[3]][1..]);
+        Message = GetMessage(ircMessage);
+        RawIrcMessage = new(ircMessage);
     }
 
     /// <summary>
@@ -217,8 +213,8 @@ public sealed class ChatMessage
             return _emptyDictionary;
         }
 
-        Dictionary<string, int> result = new();
         Range[] ranges = value.GetRangesOfSplit(',');
+        Dictionary<string, int> result = new(ranges.Length);
         foreach (Range r in ranges)
         {
             ReadOnlySpan<char> info = value[r];

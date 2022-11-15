@@ -2,6 +2,6 @@
 
 public enum ClientType : byte
 {
-    Tcp,
-    WebSocket
+    WebSocket,
+    Tcp
 }
