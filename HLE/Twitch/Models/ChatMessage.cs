@@ -207,7 +207,7 @@ public sealed class ChatMessage
 
     private string GetMessage(ReadOnlySpan<char> ircSpan)
     {
-        return new(IsAction ? ircSpan[(ircSpan.IndexOf('\u0001') + 5)..^1] : ircSpan[(ircSpan.GetRangesOfSplit()[3].End.Value + 2)..]);
+        return new(IsAction ? ircSpan[(ircSpan.IndexOf('\u0001') + 8)..^1] : ircSpan[(ircSpan.GetRangesOfSplit()[3].End.Value + 2)..]);
     }
 
     private static ReadOnlyDictionary<string, int> GetBadgeInfo(ReadOnlySpan<char> value)
