@@ -47,35 +47,36 @@ public sealed class IrcHandler
     /// Handles the incoming messages.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public void Handle(string ircMessage)
+    public void Handle(ReadOnlySpan<char> ircMessage)
     {
-        string[] split = ircMessage.Split();
-        switch (split.Length)
+        Range[] ircRanges = ircMessage.GetRangesOfSplit();
+        switch (ircRanges.Length)
         {
             case >= 3:
             {
-                if (split[2] == _ircCmds[2])
+                if (ircMessage[ircRanges[2]].SequenceEqual(_ircCmds[2]))
                 {
-                    OnChatMessageReceived?.Invoke(this, new(ircMessage));
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (split[1] == _ircCmds[0])
+                else if (ircMessage[ircRanges[1]].SequenceEqual(_ircCmds[0]))
                 {
-                    OnJoinedChannel?.Invoke(this, new(ircMessage, split));
+                    OnJoinedChannel?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (split[1] == _ircCmds[4])
+                else if (ircMessage[ircRanges[1]].SequenceEqual(_ircCmds[4]))
                 {
-                    OnLeftChannel?.Invoke(this, new(ircMessage, split));
+                    OnLeftChannel?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (split[2] == _ircCmds[1])
+                else if (ircMessage[ircRanges[2]].SequenceEqual(_ircCmds[1]))
                 {
-                    OnRoomstateReceived?.Invoke(this, new(ircMessage, split));
+                    OnRoomstateReceived?.Invoke(this, new(ircMessage, ircRanges));
                 }
 
                 break;
             }
-            case >= 1 when split[0] == _ircCmds[3]:
+            case >= 1 when ircMessage[ircRanges[0]].SequenceEqual(_ircCmds[3]):
             {
-                OnPingReceived?.Invoke(this, new(ircMessage[6..]));
+                //OnPingReceived?.Invoke(this, new(ircMessage[6..]));
+                OnPingReceived?.Invoke(this, new(""));
                 break;
             }
         }

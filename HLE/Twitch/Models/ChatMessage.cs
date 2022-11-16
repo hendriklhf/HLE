@@ -121,14 +121,15 @@ public sealed class ChatMessage
     /// The default constructor of <see cref="ChatMessage"/>. This will parse the given IRC message.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    public ChatMessage(ReadOnlySpan<char> ircMessage)
+    /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
+    public ChatMessage(ReadOnlySpan<char> ircMessage, Range[]? ircRanges = null)
     {
-        Range[] ircRanges = ircMessage.GetRangesOfSplit();
-        ReadOnlySpan<char> tagsSpan = ircMessage[ircRanges[0]][1..];
-        Range[] tagsRanges = tagsSpan.GetRangesOfSplit(';');
+        ircRanges ??= ircMessage.GetRangesOfSplit();
+        ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
+        Range[] tagsRanges = tags.GetRangesOfSplit(';');
         foreach (Range r in tagsRanges)
         {
-            ReadOnlySpan<char> tag = tagsSpan[r];
+            ReadOnlySpan<char> tag = tags[r];
             Range[] tagRanges = tag.GetRangesOfSplit('=');
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using HLE.Collections;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -84,7 +83,7 @@ public sealed class TwitchClient
     /// <summary>
     /// Is invoked if data is received from the chat server.
     /// </summary>
-    public event EventHandler<string>? OnDataReceived;
+    public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
 
     /// <summary>
     /// Is invoked if data is sent to the chat server.
@@ -258,12 +257,7 @@ public sealed class TwitchClient
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(params string[] channels)
     {
-        channels = FormatChannels(channels).ToArray();
-        _ircChannels.AddRange(channels);
-        if (IsConnected)
-        {
-            channels.ForEach(_client.JoinChannel);
-        }
+        JoinChannels(channels.AsEnumerable());
     }
 
     /// <summary>
@@ -273,11 +267,16 @@ public sealed class TwitchClient
     /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(IEnumerable<string> channels)
     {
-        string[] chnls = FormatChannels(channels).ToArray();
-        _ircChannels.AddRange(chnls);
-        if (IsConnected)
+        string[] channelArray = FormatChannels(channels).ToArray();
+        _ircChannels.AddRange(channelArray);
+        if (!IsConnected)
         {
-            chnls.ForEach(_client.JoinChannel);
+            return;
+        }
+
+        foreach (string channel in channelArray)
+        {
+            _client.JoinChannel(channel);
         }
     }
 
@@ -307,15 +306,15 @@ public sealed class TwitchClient
     /// <param name="channels">The channels</param>
     public void LeaveChannels(IEnumerable<string> channels)
     {
-        string[] channelArr = channels.ToArray();
-        foreach (string channel in channelArr)
+        string[] channelArray = channels.ToArray();
+        foreach (string channel in channelArray)
         {
             LeaveChannel(channel);
         }
     }
 
     /// <summary>
-    /// If the client is not connected, clears the channel list, otherwise leaves all channels.
+    /// If the client is not connected, clears the channel list, otherwise also leaves all channels.
     /// </summary>
     public void LeaveChannels()
     {
@@ -347,17 +346,18 @@ public sealed class TwitchClient
         }
 
         _client.Disconnect();
+        Channels.Clear();
     }
 
-    private void IrcClient_OnDataReceived(object? sender, string message)
+    private void IrcClient_OnDataReceived(object? sender, ReadOnlyMemory<char> data)
     {
-        _ircHandler.Handle(message);
-        OnDataReceived?.Invoke(this, message);
+        _ircHandler.Handle(data.Span);
+        OnDataReceived?.Invoke(this, data);
     }
 
-    private void IrcClient_OnDataSent(object? sender, string message)
+    private void IrcClient_OnDataSent(object? sender, string data)
     {
-        OnDataSent?.Invoke(this, message);
+        OnDataSent?.Invoke(this, data);
     }
 
     private void IrcHandler_OnRoomstateReceived(object? sender, RoomstateArgs e)
@@ -381,7 +381,7 @@ public sealed class TwitchClient
     {
         if (!_channelPattern.IsMatch(channel))
         {
-            throw new FormatException("The channel name is in an invalid format.");
+            throw new FormatException($"The channel name (\"{channel}\") is in an invalid format.");
         }
 
         if (withHashtag)

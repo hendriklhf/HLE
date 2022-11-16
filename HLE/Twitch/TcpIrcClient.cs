@@ -55,12 +55,9 @@ public sealed class TcpIrcClient : IrcClient
         {
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
-                string? message = await _reader.ReadLineAsync();
-                if (string.IsNullOrEmpty(message))
-                {
-                    continue;
-                }
-
+                Memory<char> buffer = new char[1024]; // is this enough?
+                int count = await _reader.ReadAsync(buffer, _token);
+                ReadOnlyMemory<char> message = buffer[..count];
                 InvokeDataReceived(this, message);
             }
         }

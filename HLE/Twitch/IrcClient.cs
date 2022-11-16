@@ -50,7 +50,7 @@ public abstract class IrcClient
     /// <summary>
     /// Is invoked if the client receives data.
     /// </summary>
-    public event EventHandler<string>? OnDataReceived;
+    public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
 
     /// <summary>
     /// Is invoked if the client sends data.
@@ -200,9 +200,9 @@ public abstract class IrcClient
         }
     }
 
-    private protected void InvokeDataReceived(IrcClient sender, string message)
+    private protected void InvokeDataReceived(IrcClient sender, ReadOnlyMemory<char> data)
     {
-        OnDataReceived?.Invoke(sender, message);
+        OnDataReceived?.Invoke(sender, data);
     }
 
     private protected void InvokeDataSent(IrcClient sender, string message)

@@ -1,27 +1,21 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using HLE.Twitch.Attributes;
 
 namespace HLE.Twitch.Models;
 
 /// <summary>
 /// A class that represents a channel with all its room states.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
 public sealed class Channel
 {
     /// <summary>
     /// The username of the channel owner. All lower case.
     /// </summary>
-    public string Name { get; private set; }
+    public string Name { get; }
 
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
-    public long Id { get; private set; }
+    public long Id { get; }
 
     /// <summary>
     /// Indicates whether emote-only mode is turned on or off.
@@ -50,7 +44,7 @@ public sealed class Channel
     /// </summary>
     public bool SubsOnly { get; private set; }
 
-    private static readonly PropertyInfo[] _properties = typeof(Channel).GetProperties();
+    private static readonly ChangedRoomstates[] _changedRoomstates = Enum.GetValues<ChangedRoomstates>();
 
     internal Channel(RoomstateArgs args)
     {
@@ -65,12 +59,33 @@ public sealed class Channel
 
     internal void Update(RoomstateArgs args)
     {
-        foreach (PropertyInfo pi in args.ChangedProperties)
+        foreach (ChangedRoomstates rs in _changedRoomstates)
         {
-            ChannelPropName? propNameAttr = pi.GetCustomAttribute<ChannelPropName>();
-            string propName = propNameAttr?.Value ?? throw new ArgumentNullException(nameof(propNameAttr));
-            PropertyInfo prop = _properties.FirstOrDefault(p => p.Name == propName) ?? throw new ArgumentNullException(nameof(prop));
-            prop.SetValue(this, pi.GetValue(args));
+            if (!args.ChangedStates.HasFlag(rs))
+            {
+                continue;
+            }
+
+            switch (rs)
+            {
+                case ChangedRoomstates.EmoteOnly:
+                    EmoteOnly = args.EmoteOnly;
+                    break;
+                case ChangedRoomstates.FollowersOnly:
+                    FollowersOnly = args.FollowersOnly;
+                    break;
+                case ChangedRoomstates.R9K:
+                    R9K = args.R9K;
+                    break;
+                case ChangedRoomstates.SlowMode:
+                    SlowMode = args.SlowMode;
+                    break;
+                case ChangedRoomstates.SubsOnly:
+                    SubsOnly = args.SubsOnly;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +16,8 @@ public sealed class WebSocketClient : IrcClient
     public override bool IsConnected => _webSocket.State is WebSocketState.Open && !_token.IsCancellationRequested;
 
     private readonly ClientWebSocket _webSocket = new();
+
+    private const string _newLine = "\r\n";
 
     /// <summary>
     /// The default constructor of <see cref="WebSocketClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
@@ -45,19 +46,20 @@ public sealed class WebSocketClient : IrcClient
         {
             while (!_token.IsCancellationRequested && IsConnected)
             {
-                Memory<byte> buffer = new(new byte[1024]);
+                Memory<byte> buffer = new byte[1024];
                 ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
                 if (result.Count == 0)
                 {
                     continue;
                 }
 
-                ReadOnlySequence<byte> sequence = new(buffer[..(result.Count - 2)]);
-                string message = Encoding.UTF8.GetString(sequence);
-                string[] messages = message.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
-                foreach (string m in messages)
+                ReadOnlyMemory<byte> bytes = buffer[..(result.Count - 2)];
+                Memory<char> chars = new char[bytes.Length];
+                int count = Encoding.UTF8.GetChars(bytes.Span, chars.Span);
+                Range[] charsRanges = ((ReadOnlySpan<char>)chars[..count].Span).GetRangesOfSplit(_newLine);
+                foreach (Range r in charsRanges)
                 {
-                    InvokeDataReceived(this, m);
+                    InvokeDataReceived(this, chars[r]);
                 }
             }
         }

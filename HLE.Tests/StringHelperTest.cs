@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests;
@@ -49,7 +50,15 @@ public class StringHelperTest
     }
 
     [TestMethod]
-    public void GetRangesOfSplitTest()
+    public void IndicesOfSpan_CharSeparator_Test()
+    {
+        ReadOnlySpan<char> str = "hello world  test";
+        var indices = str.IndicesOf(' ');
+        Assert.IsTrue(indices is [5, 11, 12]);
+    }
+
+    [TestMethod]
+    public void GetRangesOfSplit_CharSeparator_Test()
     {
         ReadOnlySpan<char> str = "hello world  test";
         var ranges = str.GetRangesOfSplit();
@@ -58,5 +67,37 @@ public class StringHelperTest
         Assert.AreEqual("world", str[ranges[1]].ToString());
         Assert.AreEqual(string.Empty, str[ranges[2]].ToString());
         Assert.AreEqual("test", str[ranges[3]].ToString());
+
+        const string s = "this is a message";
+        str = s;
+        ranges = str.GetRangesOfSplit('\n');
+        Assert.IsTrue(ranges is [_]);
+        Assert.AreEqual(s, str[ranges[0]].ToString());
+    }
+
+    [TestMethod]
+    public void IndicesOfSpan_StringSeparator_Test()
+    {
+        ReadOnlySpan<char> str = "hello    world  test";
+        var indices = str.IndicesOf("  ");
+        Assert.IsTrue(indices is [5, 7, 14]);
+    }
+
+    [TestMethod]
+    public void GetRangesOfSplit_StringSeparator_Test()
+    {
+        ReadOnlySpan<char> str = "hello    world  test";
+        var ranges = str.GetRangesOfSplit("  ");
+        Assert.IsTrue(ranges is [_, _, _, _]);
+        Assert.AreEqual("hello", str[ranges[0]].ToString());
+        Assert.AreEqual(string.Empty, str[ranges[1]].ToString());
+        Assert.AreEqual("world", str[ranges[2]].ToString());
+        Assert.AreEqual("test", str[ranges[3]].ToString());
+
+        const string s = "this is a message";
+        str = s;
+        ranges = str.GetRangesOfSplit("\r\n");
+        Assert.IsTrue(ranges is [_]);
+        Assert.AreEqual(s, str[ranges[0]].ToString());
     }
 }

@@ -182,9 +182,34 @@ public static class StringHelper
         return indices[..count].ToArray();
     }
 
-    public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char c = ' ')
+    public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
-        int[] indices = span.IndicesOf(c);
+        Span<int> indices = stackalloc int[span.Length];
+        int count = 0;
+        int idx = span.IndexOf(s);
+        int totalIdx = idx;
+        while (idx != -1)
+        {
+            indices[count++] = totalIdx;
+            totalIdx += s.Length;
+            idx = span[totalIdx..].IndexOf(s);
+            totalIdx += idx;
+        }
+
+        return indices[..count].ToArray();
+    }
+
+    public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char separator = ' ')
+    {
+        int[] indices = span.IndicesOf(separator);
+        if (indices.Length == 0)
+        {
+            return new[]
+            {
+                ..
+            };
+        }
+
         Span<Range> ranges = stackalloc Range[indices.Length + 1];
         int start = 0;
         for (int i = 0; i < indices.Length; i++)
@@ -195,6 +220,30 @@ public static class StringHelper
         }
 
         ranges[^1] = (indices[^1] + 1)..;
+        return ranges.ToArray();
+    }
+
+    public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator)
+    {
+        int[] indices = span.IndicesOf(separator);
+        if (indices.Length == 0)
+        {
+            return new[]
+            {
+                ..
+            };
+        }
+
+        Span<Range> ranges = stackalloc Range[indices.Length + 1];
+        int start = 0;
+        for (int i = 0; i < indices.Length; i++)
+        {
+            int idx = indices[i];
+            ranges[i] = start..idx;
+            start = idx + separator.Length;
+        }
+
+        ranges[^1] = (indices[^1] + separator.Length)..;
         return ranges.ToArray();
     }
 }
