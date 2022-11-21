@@ -75,8 +75,7 @@ public sealed class IrcHandler
             }
             case >= 1 when ircMessage[ircRanges[0]].SequenceEqual(_ircCmds[3]):
             {
-                //OnPingReceived?.Invoke(this, new(ircMessage[6..]));
-                OnPingReceived?.Invoke(this, new(""));
+                OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;
             }
         }

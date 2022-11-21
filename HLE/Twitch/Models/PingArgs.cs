@@ -6,8 +6,8 @@ internal sealed class PingArgs : EventArgs
 {
     internal string Message { get; }
 
-    internal PingArgs(string message)
+    internal PingArgs(ReadOnlySpan<char> message)
     {
-        Message = message;
+        Message = new(message);
     }
 }
