@@ -293,7 +293,7 @@ public sealed class TwitchClient
 
         channel = FormatChannel(channel);
         _ircChannels.Remove(channel);
-        Channels.Remove(channel[1..]);
+        Channels.Remove(channel);
         if (IsConnected)
         {
             _client.LeaveChannel(channel);
@@ -313,16 +313,16 @@ public sealed class TwitchClient
         }
     }
 
+    public void LeaveChannels(params string[] channels)
+    {
+        LeaveChannels(channels.AsEnumerable());
+    }
+
     /// <summary>
     /// If the client is not connected, clears the channel list, otherwise also leaves all channels.
     /// </summary>
     public void LeaveChannels()
     {
-        if (_ircChannels.Count == 0)
-        {
-            return;
-        }
-
         if (IsConnected)
         {
             foreach (string channel in _ircChannels)

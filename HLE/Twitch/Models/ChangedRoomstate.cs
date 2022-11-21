@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Models;
 
 [Flags]
-public enum ChangedRoomstates : byte
+public enum ChangedRoomstate : byte
 {
     EmoteOnly = 1,
     FollowersOnly = 2,

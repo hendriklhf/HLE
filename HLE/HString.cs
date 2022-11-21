@@ -27,7 +27,11 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         set => SetRange(range, value);
     }
 
-    public int Length => _chars.Length;
+    public int Length
+    {
+        get => _chars.Length;
+        set => Array.Resize(ref _chars, value);
+    }
 
     public static HString Empty { get; } = new(string.Empty);
 
@@ -51,7 +55,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         _chars = span.ToArray();
     }
 
-    private static char[] CopyCharArray(in char[] array)
+    private static char[] CopyCharArray(char[] array)
     {
         char[] copy = new char[array.Length];
         Array.Copy(array, copy, array.Length);
@@ -103,9 +107,9 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
             throw new IndexOutOfRangeException($"Array index {idx} can't be negative.");
         }
 
-        if (idx >= _chars.Length)
+        if (idx >= Length)
         {
-            Array.Resize(ref _chars, idx + 1);
+            Length = idx + 1;
         }
 
         _chars[idx] = c;
@@ -114,9 +118,9 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     private char GetChar(int idx)
     {
-        if (idx < 0 || idx >= _chars.Length)
+        if (idx < 0 || idx >= Length)
         {
-            throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has only a length of {_chars.Length}.");
+            throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has only a length of {Length}.");
         }
 
         return _chars[idx];
@@ -124,12 +128,12 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     private string GetString()
     {
-        return _string ??= string.Concat(_chars);
+        return _string ??= new(_chars);
     }
 
     public void SetIndex(Index index, char value)
     {
-        int idx = index.IsFromEnd ? _chars.Length - index.Value - 1 : index.Value;
+        int idx = index.IsFromEnd ? Length - index.Value - 1 : index.Value;
         this[idx] = value;
         _string = null;
     }
@@ -137,7 +141,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
     private void SetRange(Range range, string value)
     {
         int start = range.Start.Value;
-        int end = range.End.IsFromEnd ? _chars.Length - range.End.Value - 1 : range.End.Value;
+        int end = range.End.IsFromEnd ? Length - range.End.Value - 1 : range.End.Value;
 
         if (start > end)
         {

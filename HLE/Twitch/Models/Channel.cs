@@ -34,7 +34,7 @@ public sealed class Channel
     public bool R9K { get; private set; }
 
     /// <summary>
-    /// Indicates whether slow mode os turned on or off.
+    /// Indicates whether slow mode is turned on or off.
     /// Value is "-1" if turned off, otherwise the value indicates the number of seconds between each message a user can send.
     /// </summary>
     public int SlowMode { get; private set; }
@@ -44,7 +44,7 @@ public sealed class Channel
     /// </summary>
     public bool SubsOnly { get; private set; }
 
-    private static readonly ChangedRoomstates[] _changedRoomstates = Enum.GetValues<ChangedRoomstates>();
+    private static readonly ChangedRoomstate[] _changedRoomstates = Enum.GetValues<ChangedRoomstate>();
 
     internal Channel(RoomstateArgs args)
     {
@@ -59,7 +59,7 @@ public sealed class Channel
 
     internal void Update(RoomstateArgs args)
     {
-        foreach (ChangedRoomstates rs in _changedRoomstates)
+        foreach (ChangedRoomstate rs in _changedRoomstates)
         {
             if (!args.ChangedStates.HasFlag(rs))
             {
@@ -68,19 +68,19 @@ public sealed class Channel
 
             switch (rs)
             {
-                case ChangedRoomstates.EmoteOnly:
+                case ChangedRoomstate.EmoteOnly:
                     EmoteOnly = args.EmoteOnly;
                     break;
-                case ChangedRoomstates.FollowersOnly:
+                case ChangedRoomstate.FollowersOnly:
                     FollowersOnly = args.FollowersOnly;
                     break;
-                case ChangedRoomstates.R9K:
+                case ChangedRoomstate.R9K:
                     R9K = args.R9K;
                     break;
-                case ChangedRoomstates.SlowMode:
+                case ChangedRoomstate.SlowMode:
                     SlowMode = args.SlowMode;
                     break;
-                case ChangedRoomstates.SubsOnly:
+                case ChangedRoomstate.SubsOnly:
                     SubsOnly = args.SubsOnly;
                     break;
                 default:

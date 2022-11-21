@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using HLE.Collections;
 
@@ -170,7 +171,8 @@ public static class Random
         return Byte(0, 1) switch
         {
             0 => false,
-            _ => true
+            1 => true,
+            _ => throw new UnreachableException()
         };
     }
 
@@ -178,9 +180,8 @@ public static class Random
     {
         return StrongSByte() switch
         {
-            > 0 => true,
-            < 0 => false,
-            _ => StrongBool()
+            >= 0 => true,
+            < 0 => false
         };
     }
 
@@ -248,7 +249,7 @@ public static class Random
         return result;
     }
 
-    public static UInt128 StringUInt128()
+    public static UInt128 StrongUInt128()
     {
         UInt128 low = StrongULong();
         UInt128 high = StrongULong();

@@ -17,7 +17,7 @@ public sealed class RoomstateArgs : EventArgs
     /// Indicates whether followers-only mode is turned on or off.
     /// Value is "-1" if turned off, otherwise the value indicates the number of minutes a user has to follow the channel in order to be able to send messages.
     /// </summary>
-    public int FollowersOnly { get; init; }
+    public int FollowersOnly { get; init; } = -1;
 
     /// <summary>
     /// Indicates whether R9K mode is turned on or off.
@@ -35,7 +35,7 @@ public sealed class RoomstateArgs : EventArgs
     public string Channel { get; }
 
     /// <summary>
-    /// Indicates whether slow mode os turned on or off.
+    /// Indicates whether slow mode is turned on or off.
     /// Value is "0" if turned off, otherwise the value indicates the number of seconds between each message a user can send.
     /// </summary>
     public int SlowMode { get; init; }
@@ -45,7 +45,7 @@ public sealed class RoomstateArgs : EventArgs
     /// </summary>
     public bool SubsOnly { get; init; }
 
-    internal ChangedRoomstates ChangedStates { get; } = 0;
+    internal ChangedRoomstate ChangedStates { get; } = 0;
 
     private const string _emoteOnlyTag = "emote-only";
     private const string _followersOnlyTag = "followers-only";
@@ -73,17 +73,17 @@ public sealed class RoomstateArgs : EventArgs
             if (key.SequenceEqual(_emoteOnlyTag))
             {
                 EmoteOnly = GetEmoteOnly(value);
-                ChangedStates |= ChangedRoomstates.EmoteOnly;
+                ChangedStates |= ChangedRoomstate.EmoteOnly;
             }
             else if (key.SequenceEqual(_followersOnlyTag))
             {
                 FollowersOnly = GetFollowersOnly(value);
-                ChangedStates |= ChangedRoomstates.FollowersOnly;
+                ChangedStates |= ChangedRoomstate.FollowersOnly;
             }
             else if (key.SequenceEqual(_r9KTag))
             {
                 R9K = GetR9K(value);
-                ChangedStates |= ChangedRoomstates.R9K;
+                ChangedStates |= ChangedRoomstate.R9K;
             }
             else if (key.SequenceEqual(_roomIdTag))
             {
@@ -92,12 +92,12 @@ public sealed class RoomstateArgs : EventArgs
             else if (key.SequenceEqual(_slowModeTag))
             {
                 SlowMode = GetSlowMode(value);
-                ChangedStates |= ChangedRoomstates.SlowMode;
+                ChangedStates |= ChangedRoomstate.SlowMode;
             }
             else if (key.SequenceEqual(_subsOnlyTag))
             {
                 SubsOnly = GetSubsOnly(value);
-                ChangedStates |= ChangedRoomstates.SubsOnly;
+                ChangedStates |= ChangedRoomstate.SubsOnly;
             }
         }
 

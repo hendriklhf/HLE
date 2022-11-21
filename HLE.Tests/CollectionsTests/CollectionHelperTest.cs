@@ -282,7 +282,7 @@ public class CollectionHelperTest
         int[] arr = TestHelper.CreateIntArray(50);
         int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize()).ToArray();
         int count = arrArr.Count(a => arr.ContentEquals(a));
-        Console.WriteLine($"Content was equal {count.InsertKDots()} times.");
+        Console.WriteLine($"Content was equal {NumberHelper.InsertKDots(count)} times.");
         Assert.IsTrue(count <= 1);
     }
 

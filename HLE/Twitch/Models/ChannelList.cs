@@ -38,15 +38,13 @@ public sealed class ChannelList : IEnumerable<Channel>
         }
     }
 
-    internal void Remove(string name)
+    internal void Remove(ReadOnlySpan<char> name)
     {
-        Channel? channel = this.FirstOrDefault(c => string.Equals(name, c.Name, StringComparison.OrdinalIgnoreCase));
-        if (channel is null)
+        Channel? channel = Get(name);
+        if (channel is not null)
         {
-            return;
+            _channels.Remove(channel);
         }
-
-        _channels.Remove(channel);
     }
 
     internal void Remove(long id)
@@ -70,9 +68,22 @@ public sealed class ChannelList : IEnumerable<Channel>
         return this.FirstOrDefault(c => c.Id == id);
     }
 
-    private Channel? Get(string name)
+    private Channel? Get(ReadOnlySpan<char> name)
     {
-        return this.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (name[0] == '#')
+        {
+            name = name[1..];
+        }
+
+        foreach (Channel channel in _channels)
+        {
+            if (name.Equals(channel.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return channel;
+            }
+        }
+
+        return null;
     }
 
     public IEnumerator<Channel> GetEnumerator()

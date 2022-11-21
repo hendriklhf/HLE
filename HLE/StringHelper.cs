@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -119,45 +118,6 @@ public static class StringHelper
         }
 
         return builder;
-    }
-
-    public static string InsertKDots<T>(this T number, char kchar = '.') where T : IBinaryInteger<T>
-    {
-        string? num = number.ToString();
-        if (num is null)
-        {
-            throw new ArgumentNullException($"The conversion of {nameof(number)} to string returned null.");
-        }
-
-        if (num.Length < 4)
-        {
-            return num;
-        }
-
-        int dotCount = num.Length % 3 == 0 ? num.Length / 3 - 1 : num.Length / 3;
-        int total = num.Length + dotCount;
-        Span<char> span = stackalloc char[total];
-        int start = num.Length % 3;
-        if (start == 0)
-        {
-            start += 3;
-        }
-
-        int nextDot = start;
-        for (int i = 0; i < total; i++)
-        {
-            if (i == nextDot)
-            {
-                span[i] = kchar;
-                nextDot += 4;
-            }
-            else
-            {
-                span[i] = num[i - (nextDot - start >> 2)];
-            }
-        }
-
-        return new(span);
     }
 
     public static int[] IndicesOf(this string str, char c)
