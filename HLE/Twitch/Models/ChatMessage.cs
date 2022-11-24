@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -120,16 +120,18 @@ public sealed class ChatMessage
     /// <summary>
     /// The default constructor of <see cref="ChatMessage"/>. This will parse the given IRC message.
     /// </summary>
-    /// <param name="ircMessage">The IRC message.</param>
-    /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
-    public ChatMessage(ReadOnlySpan<char> ircMessage, Range[]? ircRanges = null)
+    /// <param name="ircMessage">The IRC message as a <see cref="ReadOnlySpan{Char}"/>.</param>
+    /// <param name="rawIrcMessage">The IRC message as a <see cref="String"/>. If passed, avoids the conversion of <paramref name="ircMessage"/> to a <see cref="String"/>, and therefore a <see cref="String"/> allocation.</param>
+    /// <param name="ircRanges">Ranges that represent the <paramref name="ircMessage"/> split on whitespaces.</param>
+    public ChatMessage(ReadOnlySpan<char> ircMessage, string? rawIrcMessage = null, Range[]? ircRanges = null)
     {
         ircRanges ??= ircMessage.GetRangesOfSplit();
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        Range[] tagsRanges = tags.GetRangesOfSplit(';');
-        foreach (Range r in tagsRanges)
+        Span<Range> tagsRanges = tags.GetRangesOfSplit(';');
+        int tagsRangesLength = tagsRanges.Length;
+        for (int i = 0; i < tagsRangesLength; i++)
         {
-            ReadOnlySpan<char> tag = tags[r];
+            ReadOnlySpan<char> tag = tags[tagsRanges[i]];
             Range[] tagRanges = tag.GetRangesOfSplit('=');
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];
@@ -186,14 +188,13 @@ public sealed class ChatMessage
         IsAction = ircMessage[ircRanges[4]].SequenceEqual(_actionPrefix);
         Username = DisplayName.ToLower();
         Channel = new(ircMessage[ircRanges[3]][1..]);
-        Message = GetMessage(ircMessage);
-        RawIrcMessage = new(ircMessage);
+        Message = GetMessage(ircMessage, ircRanges);
+        RawIrcMessage = rawIrcMessage ?? new(ircMessage);
     }
 
     /// <summary>
     /// An empty constructor. Can be used to set properties on initialization.
     /// </summary>
-    // ReSharper disable once UnusedMember.Global
     public ChatMessage()
     {
         Username = string.Empty;
@@ -202,9 +203,9 @@ public sealed class ChatMessage
         RawIrcMessage = string.Empty;
     }
 
-    private string GetMessage(ReadOnlySpan<char> ircSpan)
+    private string GetMessage(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
-        return new(IsAction ? ircSpan[(ircSpan.IndexOf('\u0001') + 8)..^1] : ircSpan[(ircSpan.GetRangesOfSplit()[3].End.Value + 2)..]);
+        return new(IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(ircRanges[3].End.Value + 2)..]);
     }
 
     private static ReadOnlyDictionary<string, int> GetBadgeInfo(ReadOnlySpan<char> value)
@@ -214,12 +215,12 @@ public sealed class ChatMessage
             return _emptyDictionary;
         }
 
-        Range[] ranges = value.GetRangesOfSplit(',');
+        Span<Range> ranges = value.GetRangesOfSplit(',');
         Dictionary<string, int> result = new(ranges.Length);
-        foreach (Range r in ranges)
+        for (int i = 0; i < ranges.Length; i++)
         {
-            ReadOnlySpan<char> info = value[r];
-            Range[] infoRanges = info.GetRangesOfSplit('/');
+            ReadOnlySpan<char> info = value[ranges[i]];
+            Span<Range> infoRanges = info.GetRangesOfSplit('/');
             string key = new(info[infoRanges[0]]);
             int val = int.Parse(info[infoRanges[1]]);
             result.Add(key, val);
@@ -235,12 +236,12 @@ public sealed class ChatMessage
             return Array.Empty<Badge>();
         }
 
-        Range[] badgesRanges = value.GetRangesOfSplit(',');
+        Span<Range> badgesRanges = value.GetRangesOfSplit(',');
         Badge[] result = new Badge[badgesRanges.Length];
         for (int i = 0; i < result.Length; i++)
         {
             ReadOnlySpan<char> info = value[badgesRanges[i]];
-            Range[] infoRanges = info.GetRangesOfSplit('/');
+            Span<Range> infoRanges = info.GetRangesOfSplit('/');
             string name = new(info[infoRanges[0]]);
             int level = int.Parse(info[infoRanges[1]]);
             result[i] = new(name, level);
