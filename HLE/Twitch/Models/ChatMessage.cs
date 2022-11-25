@@ -127,12 +127,12 @@ public sealed class ChatMessage
     {
         ircRanges ??= ircMessage.GetRangesOfSplit();
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        Span<Range> tagsRanges = tags.GetRangesOfSplit(';');
+        ReadOnlySpan<Range> tagsRanges = tags.GetRangesOfSplit(';');
         int tagsRangesLength = tagsRanges.Length;
         for (int i = 0; i < tagsRangesLength; i++)
         {
             ReadOnlySpan<char> tag = tags[tagsRanges[i]];
-            Range[] tagRanges = tag.GetRangesOfSplit('=');
+            ReadOnlySpan<Range> tagRanges = tag.GetRangesOfSplit('=');
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];
             if (key.SequenceEqual(_badgeInfoTag))
@@ -203,7 +203,7 @@ public sealed class ChatMessage
         RawIrcMessage = string.Empty;
     }
 
-    private string GetMessage(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
+    private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<Range> ircRanges)
     {
         return new(IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(ircRanges[3].End.Value + 2)..]);
     }
@@ -215,12 +215,12 @@ public sealed class ChatMessage
             return _emptyDictionary;
         }
 
-        Span<Range> ranges = value.GetRangesOfSplit(',');
+        ReadOnlySpan<Range> ranges = value.GetRangesOfSplit(',');
         Dictionary<string, int> result = new(ranges.Length);
         for (int i = 0; i < ranges.Length; i++)
         {
             ReadOnlySpan<char> info = value[ranges[i]];
-            Span<Range> infoRanges = info.GetRangesOfSplit('/');
+            ReadOnlySpan<Range> infoRanges = info.GetRangesOfSplit('/');
             string key = new(info[infoRanges[0]]);
             int val = int.Parse(info[infoRanges[1]]);
             result.Add(key, val);
@@ -236,12 +236,12 @@ public sealed class ChatMessage
             return Array.Empty<Badge>();
         }
 
-        Span<Range> badgesRanges = value.GetRangesOfSplit(',');
+        ReadOnlySpan<Range> badgesRanges = value.GetRangesOfSplit(',');
         Badge[] result = new Badge[badgesRanges.Length];
         for (int i = 0; i < result.Length; i++)
         {
             ReadOnlySpan<char> info = value[badgesRanges[i]];
-            Span<Range> infoRanges = info.GetRangesOfSplit('/');
+            ReadOnlySpan<Range> infoRanges = info.GetRangesOfSplit('/');
             string name = new(info[infoRanges[0]]);
             int level = int.Parse(info[infoRanges[1]]);
             result[i] = new(name, level);
@@ -268,19 +268,19 @@ public sealed class ChatMessage
         return new(value.EndsWith(_nameWithSpaceEnding) ? value[..^2] : value);
     }
 
-    private static bool GetIsFirstMsg(ReadOnlySpan<char> value) => value[^1] == '1';
+    private static bool GetIsFirstMsg(ReadOnlySpan<char> value) => value[0] == '1';
 
     private static Guid GetId(ReadOnlySpan<char> value) => Guid.Parse(value);
 
-    private static bool GetIsModerator(ReadOnlySpan<char> value) => value[^1] == '1';
+    private static bool GetIsModerator(ReadOnlySpan<char> value) => value[0] == '1';
 
     private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value);
 
-    private static bool GetIsSubscriber(ReadOnlySpan<char> value) => value[^1] == '1';
+    private static bool GetIsSubscriber(ReadOnlySpan<char> value) => value[0] == '1';
 
     private static long GetTmiSentTs(ReadOnlySpan<char> value) => long.Parse(value);
 
-    private static bool GetIsTurboUser(ReadOnlySpan<char> value) => value[^1] == '1';
+    private static bool GetIsTurboUser(ReadOnlySpan<char> value) => value[0] == '1';
 
     private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value);
 
