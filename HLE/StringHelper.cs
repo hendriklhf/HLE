@@ -94,22 +94,25 @@ public static class StringHelper
 
                 result[resultLength++] = new(part);
             }
-            else if (bufferLength > 0 && bufferLength + part.Length + 1 > charCount) // buffer is not empty and part doesn't fit in buffer
+            else // part fits into buffer
             {
-                result[resultLength++] = new(buffer[..bufferLength]);
-                part.CopyTo(buffer);
-                bufferLength = part.Length;
-            }
-            else if (bufferLength > 0 && bufferLength + part.Length + 1 <= charCount) // buffer is not empty and part fits into buffer
-            {
-                buffer[bufferLength++] = ' ';
-                part.CopyTo(buffer[bufferLength..]);
-                bufferLength += part.Length;
-            }
-            else if (bufferLength == 0) // buffer is empty and part fits into buffer
-            {
-                part.CopyTo(buffer);
-                bufferLength = part.Length;
+                switch (bufferLength)
+                {
+                    case > 0 when bufferLength + part.Length + 1 > charCount: // buffer is not empty and part doesn't fit in buffer
+                        result[resultLength++] = new(buffer[..bufferLength]);
+                        part.CopyTo(buffer);
+                        bufferLength = part.Length;
+                        break;
+                    case > 0 when bufferLength + part.Length + 1 <= charCount: // buffer is not empty and part fits into buffer
+                        buffer[bufferLength++] = ' ';
+                        part.CopyTo(buffer[bufferLength..]);
+                        bufferLength += part.Length;
+                        break;
+                    case 0: // buffer is empty and part fits into buffer
+                        part.CopyTo(buffer);
+                        bufferLength = part.Length;
+                        break;
+                }
             }
         }
 
