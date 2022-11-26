@@ -62,15 +62,17 @@ public sealed class Channel
 
     internal void Update(RoomstateArgs args)
     {
-        foreach (ChangedRoomstate rs in _roomstates)
+        ReadOnlySpan<ChangedRoomstate> roomstates = _roomstates;
+        for (int i = 0; i < roomstates.Length; i++)
         {
-            bool roomstateChanged = args.ChangedStates.HasFlag(rs);
+            ChangedRoomstate roomstate = roomstates[i];
+            bool roomstateChanged = args.ChangedStates.HasFlag(roomstate);
             if (!roomstateChanged)
             {
                 continue;
             }
 
-            switch (rs)
+            switch (roomstate)
             {
                 case ChangedRoomstate.EmoteOnly:
                     EmoteOnly = args.EmoteOnly;

@@ -65,10 +65,10 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     private Channel? Get(long id)
     {
-        Span<Channel> channelSpan = CollectionsMarshal.AsSpan(_channels);
-        for (int i = 0; i < channelSpan.Length; i++)
+        ReadOnlySpan<Channel> channels = CollectionsMarshal.AsSpan(_channels);
+        for (int i = 0; i < channels.Length; i++)
         {
-            Channel channel = channelSpan[i];
+            Channel channel = channels[i];
             if (channel.Id == id)
             {
                 return channel;
@@ -85,7 +85,7 @@ public sealed class ChannelList : IEnumerable<Channel>
             name = name[1..];
         }
 
-        Span<Channel> channelSpan = CollectionsMarshal.AsSpan(_channels);
+        ReadOnlySpan<Channel> channelSpan = CollectionsMarshal.AsSpan(_channels);
         for (int i = 0; i < channelSpan.Length; i++)
         {
             Channel channel = channelSpan[i];

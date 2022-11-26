@@ -267,9 +267,10 @@ public sealed class TwitchClient
     /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(IEnumerable<string> channels)
     {
-        foreach (string channel in channels.ToArray())
+        ReadOnlySpan<string> channelSpan = channels.ToArray();
+        for (int i = 0; i < channelSpan.Length; i++)
         {
-            JoinChannel(channel);
+            JoinChannel(channelSpan[i]);
         }
     }
 
@@ -299,10 +300,10 @@ public sealed class TwitchClient
     /// <param name="channels">The channels</param>
     public void LeaveChannels(IEnumerable<string> channels)
     {
-        string[] channelArray = channels.ToArray();
-        foreach (string channel in channelArray)
+        ReadOnlySpan<string> channelSpan = channels.ToArray();
+        for (int i = 0; i < channelSpan.Length; i++)
         {
-            LeaveChannel(channel);
+            LeaveChannel(channelSpan[i]);
         }
     }
 

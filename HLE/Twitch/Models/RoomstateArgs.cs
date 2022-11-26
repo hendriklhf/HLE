@@ -63,11 +63,11 @@ public sealed class RoomstateArgs : EventArgs
     {
         ircRanges ??= ircMessage.GetRangesOfSplit();
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        Range[] tagsRanges = tags.GetRangesOfSplit(';');
-        foreach (Range r in tagsRanges)
+        ReadOnlySpan<Range> tagsRanges = tags.GetRangesOfSplit(';');
+        for (int i = 0; i < tagsRanges.Length; i++)
         {
-            ReadOnlySpan<char> tag = tags[r];
-            Range[] tagRanges = tag.GetRangesOfSplit('=');
+            ReadOnlySpan<char> tag = tags[tagsRanges[i]];
+            ReadOnlySpan<Range> tagRanges = tag.GetRangesOfSplit('=');
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];
             if (key.SequenceEqual(_emoteOnlyTag))

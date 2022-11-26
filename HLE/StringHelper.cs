@@ -152,35 +152,35 @@ public static class StringHelper
 
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
-        Span<int> indices = stackalloc int[span.Length];
-        int count = 0;
+        Span<int> indices = stackalloc int[span.CharCount(c)];
+        int indicesLength = 0;
         int idx = span.IndexOf(c);
         int totalIdx = idx;
         while (idx != -1)
         {
-            indices[count++] = totalIdx;
+            indices[indicesLength++] = totalIdx;
             idx = span[++totalIdx..].IndexOf(c);
             totalIdx += idx;
         }
 
-        return indices[..count].ToArray();
+        return indices[..indicesLength].ToArray();
     }
 
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
         Span<int> indices = stackalloc int[span.Length];
-        int count = 0;
+        int indicesLength = 0;
         int idx = span.IndexOf(s);
         int totalIdx = idx;
         while (idx != -1)
         {
-            indices[count++] = totalIdx;
+            indices[indicesLength++] = totalIdx;
             totalIdx += s.Length;
             idx = span[totalIdx..].IndexOf(s);
             totalIdx += idx;
         }
 
-        return indices[..count].ToArray();
+        return indices[..indicesLength].ToArray();
     }
 
     public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char separator = ' ')
@@ -259,42 +259,66 @@ public static class StringHelper
     public static void ToLower(string str)
     {
         Span<char> span = str.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        int spanLength = span.Length;
+        for (int i = 0; i < spanLength; i++)
         {
-            span[i] = char.ToLower(span[i]);
+            ref char c = ref span[i];
+            if (!char.IsLower(c))
+            {
+                c = char.ToLower(c);
+            }
         }
     }
 
     public static void ToLower(string str, CultureInfo cultureInfo)
     {
         Span<char> span = str.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        int spanLength = span.Length;
+        for (int i = 0; i < spanLength; i++)
         {
-            span[i] = char.ToLower(span[i], cultureInfo);
+            ref char c = ref span[i];
+            if (!char.IsLower(c))
+            {
+                c = char.ToLower(c, cultureInfo);
+            }
         }
     }
 
     public static void ToUpper(string str)
     {
         Span<char> span = str.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        int spanLength = span.Length;
+        for (int i = 0; i < spanLength; i++)
         {
-            span[i] = char.ToUpper(span[i]);
+            ref char c = ref span[i];
+            if (!char.IsUpper(c))
+            {
+                c = char.ToUpper(c);
+            }
         }
     }
 
     public static void ToUpper(string str, CultureInfo cultureInfo)
     {
         Span<char> span = str.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        int spanLength = span.Length;
+        for (int i = 0; i < spanLength; i++)
         {
-            span[i] = char.ToUpper(span[i], cultureInfo);
+            ref char c = ref span[i];
+            if (!char.IsUpper(c))
+            {
+                c = char.ToUpper(c, cultureInfo);
+            }
         }
     }
 
     public static int CharCount(this string str, char c)
     {
-        ReadOnlySpan<char> span = str;
+        return CharCount((ReadOnlySpan<char>)str, c);
+    }
+
+    public static int CharCount(this ReadOnlySpan<char> span, char c)
+    {
         int spanLength = span.Length;
         int charCount = 0;
         for (int i = 0; i < spanLength; i++)
