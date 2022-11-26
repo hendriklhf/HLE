@@ -4,10 +4,12 @@ namespace HLE;
 
 public static class NumberHelper
 {
+#pragma warning disable IDE0060
     public static string InsertKDots(byte number, char kchar = '.')
     {
         return number.ToString();
     }
+#pragma warning restore IDE0060
 
     public static byte GetNumberLength(byte number)
     {
@@ -55,10 +57,12 @@ public static class NumberHelper
         return digits.ToArray();
     }
 
+#pragma warning disable IDE0060
     public static string InsertKDots(sbyte number, char kchar = '.')
     {
         return number.ToString();
     }
+#pragma warning restore IDE0060
 
     public static byte GetNumberLength(sbyte number)
     {

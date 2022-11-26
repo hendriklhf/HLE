@@ -12,17 +12,30 @@ public class StringHelperTest
     private static string Str(int count) => new('*', count);
 
     [TestMethod]
-    public void SplitTest()
+    public void PartTest()
     {
-        string[] split = _str.Split(30).ToArray();
-        Assert.AreEqual(8, split.Length);
+        const byte charCount = 30;
+        string[] part = _str.Part(charCount).ToArray();
+        Assert.AreEqual(8, part.Length);
+        Assert.IsTrue(part[..^1].All(p => p.Length == charCount));
+        Assert.IsTrue(part[^1].Length <= charCount);
     }
 
     [TestMethod]
-    public void SplitTestOnWhitespace()
+    public void PartTestOnWhitespace()
     {
-        string[] split = _str.Split(60, true).ToArray();
-        Assert.AreEqual(5, split.Length);
+        const byte charCount = 60;
+        string[] part = _str.Part(charCount, ' ').ToArray();
+        Assert.AreEqual(4, part.Length);
+        Assert.IsTrue(part.All(p =>
+        {
+            if (p.Contains(' '))
+            {
+                return p.Split()[0].Length <= charCount;
+            }
+
+            return true;
+        }));
     }
 
     [TestMethod]
@@ -83,5 +96,39 @@ public class StringHelperTest
         ranges = str.GetRangesOfSplit("\r\n");
         Assert.IsTrue(ranges is [_]);
         Assert.AreEqual(s, str[ranges[0]].ToString());
+    }
+
+    [TestMethod]
+    public void AsSpanTest()
+    {
+        const string str = "hello";
+        Span<char> span = str.AsSpan();
+        span[0] = 'H';
+        Assert.IsTrue(char.IsUpper(str[0]));
+        Assert.AreEqual("Hello", str);
+    }
+
+    [TestMethod]
+    public void ToLowerTest()
+    {
+        const string str = "HELLO";
+        StringHelper.ToLower(str);
+        Assert.AreEqual("hello", str);
+    }
+
+    [TestMethod]
+    public void ToUpperTest()
+    {
+        const string str = "hello";
+        StringHelper.ToUpper(str);
+        Assert.AreEqual("HELLO", str);
+    }
+
+    [TestMethod]
+    public void CharCountTest()
+    {
+        const string str = "hello";
+        int count = str.CharCount('l');
+        Assert.AreEqual(2, count);
     }
 }

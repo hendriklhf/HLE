@@ -56,7 +56,7 @@ public sealed class IrcHandler
             {
                 if (ircMessage[ircRanges[2]].SequenceEqual(_ircCmds[2]))
                 {
-                    OnChatMessageReceived?.Invoke(this, new(ircMessage, ircRanges));
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage, ircRanges: ircRanges));
                 }
                 else if (ircMessage[ircRanges[1]].SequenceEqual(_ircCmds[0]))
                 {

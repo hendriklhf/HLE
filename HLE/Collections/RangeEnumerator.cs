@@ -21,7 +21,6 @@ public ref struct RangeEnumerator
 
     public bool MoveNext()
     {
-        Current++;
-        return Current <= _end;
+        return ++Current <= _end;
     }
 }

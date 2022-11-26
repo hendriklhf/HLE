@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Models;
 
@@ -26,7 +26,7 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     internal void Update(RoomstateArgs args)
     {
-        Channel? channel = this.FirstOrDefault(c => c.Id == args.ChannelId);
+        Channel? channel = Get(args.ChannelId);
         if (channel is null)
         {
             channel = new(args);
@@ -49,7 +49,7 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     internal void Remove(long id)
     {
-        Channel? channel = this.FirstOrDefault(c => id == c.Id);
+        Channel? channel = Get(id);
         if (channel is null)
         {
             return;
@@ -65,7 +65,17 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     private Channel? Get(long id)
     {
-        return this.FirstOrDefault(c => c.Id == id);
+        Span<Channel> channelSpan = CollectionsMarshal.AsSpan(_channels);
+        for (int i = 0; i < channelSpan.Length; i++)
+        {
+            Channel channel = channelSpan[i];
+            if (channel.Id == id)
+            {
+                return channel;
+            }
+        }
+
+        return null;
     }
 
     private Channel? Get(ReadOnlySpan<char> name)
@@ -75,8 +85,10 @@ public sealed class ChannelList : IEnumerable<Channel>
             name = name[1..];
         }
 
-        foreach (Channel channel in _channels)
+        Span<Channel> channelSpan = CollectionsMarshal.AsSpan(_channels);
+        for (int i = 0; i < channelSpan.Length; i++)
         {
+            Channel channel = channelSpan[i];
             if (name.Equals(channel.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return channel;

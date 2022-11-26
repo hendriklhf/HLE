@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,7 +8,7 @@ namespace HLE.Twitch;
 
 /// <summary>
 /// A class that represents a Twitch chat client. The client type can be changed by setting the <see cref="ClientType"/> property.
-/// By default uses the <see cref="WebSocketClient"/> to connect to the chat server.
+/// By default uses the <see cref="WebSocketIrcClient"/> to connect to the chat server.
 /// </summary>
 public sealed class TwitchClient
 {
@@ -83,7 +83,7 @@ public sealed class TwitchClient
     /// <summary>
     /// Is invoked if data is received from the chat server.
     /// </summary>
-    public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
+    public event EventHandler<string>? OnDataReceived;
 
     /// <summary>
     /// Is invoked if data is sent to the chat server.
@@ -111,7 +111,7 @@ public sealed class TwitchClient
         UseSSL = options.UseSSL;
         _client = ClientType switch
         {
-            ClientType.WebSocket => new WebSocketClient(Username)
+            ClientType.WebSocket => new WebSocketIrcClient(Username)
             {
                 UseSSL = UseSSL
             },
@@ -139,7 +139,7 @@ public sealed class TwitchClient
         oAuthToken = ValidateOAuthToken(oAuthToken);
         _client = ClientType switch
         {
-            ClientType.WebSocket => new WebSocketClient(Username, oAuthToken)
+            ClientType.WebSocket => new WebSocketIrcClient(Username, oAuthToken)
             {
                 UseSSL = UseSSL,
                 IsVerifiedBot = options.IsVerifiedBot
@@ -160,10 +160,10 @@ public sealed class TwitchClient
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
         _client.OnDisconnected += (_, e) => OnDisconnected?.Invoke(this, e);
         _client.OnDataReceived += IrcClient_OnDataReceived;
-        _client.OnDataSent += IrcClient_OnDataSent;
+        _client.OnDataSent += (_, e) => OnDataSent?.Invoke(this, e);
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
+        _ircHandler.OnRoomstateReceived += (_, e) => Channels.Update(e);
         _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += (_, e) => SendRaw($"PONG :{e.Message}");
@@ -199,13 +199,13 @@ public sealed class TwitchClient
     /// <param name="message">The message that will be sent</param>
     public void Send(long channelId, string message)
     {
-        string? channel = Channels.FirstOrDefault(c => c.Id == channelId)?.Name;
+        string? channel = Channels[channelId]?.PrefixedName;
         if (channel is null)
         {
             return;
         }
 
-        Send($"#{channel}", message);
+        Send(channel, message);
     }
 
     /// <summary>
@@ -267,16 +267,9 @@ public sealed class TwitchClient
     /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public void JoinChannels(IEnumerable<string> channels)
     {
-        string[] channelArray = FormatChannels(channels).ToArray();
-        _ircChannels.AddRange(channelArray);
-        if (!IsConnected)
+        foreach (string channel in channels.ToArray())
         {
-            return;
-        }
-
-        foreach (string channel in channelArray)
-        {
-            _client.JoinChannel(channel);
+            JoinChannel(channel);
         }
     }
 
@@ -352,28 +345,18 @@ public sealed class TwitchClient
     private void IrcClient_OnDataReceived(object? sender, ReadOnlyMemory<char> data)
     {
         _ircHandler.Handle(data.Span);
-        OnDataReceived?.Invoke(this, data);
+        OnDataReceived?.Invoke(this, new(data.Span));
     }
 
-    private void IrcClient_OnDataSent(object? sender, string data)
+    private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage msg)
     {
-        OnDataSent?.Invoke(this, data);
-    }
-
-    private void IrcHandler_OnRoomstateReceived(object? sender, RoomstateArgs e)
-    {
-        Channels.Update(e);
-    }
-
-    private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage e)
-    {
-        if (e.Username == Username)
+        if (msg.Username == Username)
         {
-            OnChatMessageSent?.Invoke(this, e);
+            OnChatMessageSent?.Invoke(this, msg);
         }
         else
         {
-            OnChatMessageReceived?.Invoke(this, e);
+            OnChatMessageReceived?.Invoke(this, msg);
         }
     }
 
@@ -396,7 +379,7 @@ public sealed class TwitchClient
             {
                 Span<char> result = stackalloc char[channel.Length + 1];
                 result[0] = _channelPrefix;
-                channel.ToLower(result, default);
+                channel.ToLower(result[1..], default);
                 return new(result);
             }
         }

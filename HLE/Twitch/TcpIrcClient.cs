@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -43,21 +43,31 @@ public sealed class TcpIrcClient : IrcClient
             throw new ArgumentNullException(nameof(_writer));
         }
 
-        char[] chars = message.ToCharArray();
-        await _writer.WriteLineAsync(chars, _token);
+        ReadOnlyMemory<char> chars = message.ToCharArray();
+        await Send(chars);
+    }
+
+    private protected override async Task Send(ReadOnlyMemory<char> message)
+    {
+        if (_writer is null)
+        {
+            throw new ArgumentNullException(nameof(_writer));
+        }
+
+        await _writer.WriteLineAsync(message, _token);
         await _writer.FlushAsync();
-        InvokeDataSent(this, message);
+        InvokeDataSent(this, message.Span);
     }
 
     private protected override void StartListening()
     {
         async Task StartListeningLocal()
         {
+            Memory<char> buffer = new char[1024];
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
-                Memory<char> buffer = new char[1024]; // is this enough?
                 int count = await _reader.ReadAsync(buffer, _token);
-                ReadOnlyMemory<char> message = buffer[..count];
+                ReadOnlyMemory<char> message = buffer[..(count - 2)];
                 InvokeDataReceived(this, message);
             }
         }
@@ -73,16 +83,12 @@ public sealed class TcpIrcClient : IrcClient
     private protected override async Task ConnectClient()
     {
         await _tcpClient.ConnectAsync(_url.Url, _url.Port, _token);
-        Stream stream;
+        Stream stream = _tcpClient.GetStream();
         if (UseSSL)
         {
-            SslStream sslStream = new(_tcpClient.GetStream(), false);
+            SslStream sslStream = new(stream, false);
             await sslStream.AuthenticateAsClientAsync(_url.Url);
             stream = sslStream;
-        }
-        else
-        {
-            stream = _tcpClient.GetStream();
         }
 
         _reader = new(stream);
@@ -97,6 +103,6 @@ public sealed class TcpIrcClient : IrcClient
 
     private protected override (string Url, int Port) GetUrl()
     {
-        return UseSSL ? ("irc.chat.twitch.tv", 6697) : ("irc.chat.twitch.tv", 6667);
+        return UseSSL ? ("irc.chat.twitch.tv", 443) : ("irc.chat.twitch.tv", 80);
     }
 }

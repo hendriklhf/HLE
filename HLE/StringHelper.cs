@@ -1,6 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -28,6 +29,8 @@ public static class StringHelper
     /// </summary>
     public const string AntipingChar = "\uDB40\uDC00";
 
+    public static string Whitespace { get; } = " ";
+
     /// <summary>
     /// Removes the given <see cref="string"/> <paramref name="s"/> from the input <see cref="string"/> <paramref name="str"/>.
     /// </summary>
@@ -39,10 +42,10 @@ public static class StringHelper
         return str.Replace(s, string.Empty);
     }
 
-    public static string[] Split(this string str, int charCount, bool onlySplitOnWhitespace = false)
+    public static string[] Part(this string str, int charCount)
     {
-        str = str.TrimAll();
-        if (str.Length <= charCount)
+        ReadOnlySpan<char> span = str;
+        if (span.Length <= charCount)
         {
             return new[]
             {
@@ -50,54 +53,72 @@ public static class StringHelper
             };
         }
 
-        if (!onlySplitOnWhitespace)
+        Span<string> result = new string[span.Length / charCount + 1];
+        int resultLength = 0;
+        while (span.Length > charCount)
         {
-            List<string> result = new();
-            while (str.Length > charCount)
-            {
-                result.Add(str[..charCount]);
-                str = str[charCount..];
-            }
-
-            result.Add(str);
-            return result.ToArray();
+            result[resultLength++] = new(span[..charCount]);
+            span = span[charCount..];
         }
 
-        string[] split = str.Split();
-        List<List<string>> list = new();
-        int listIdx = 0;
-        int sum = 0;
-        foreach (string s in split)
+        result[resultLength++] = new(span);
+        return result[..resultLength].ToArray();
+    }
+
+    public static string[] Part(this string str, int charCount, char separator)
+    {
+        ReadOnlySpan<char> span = str;
+        if (span.Length <= charCount)
         {
-            if (list.Count < listIdx + 1)
+            return new[]
             {
-                list.Add(new());
-            }
+                str
+            };
+        }
 
-            bool exceedsMaxCharCount = sum + list[listIdx].Count + s.Length > charCount;
-            if (!exceedsMaxCharCount)
+        ReadOnlySpan<Range> ranges = span.GetRangesOfSplit(separator);
+        Span<string> result = new string[ranges.Length];
+        Span<char> buffer = stackalloc char[charCount];
+        int resultLength = 0;
+        int bufferLength = 0;
+        for (int i = 0; i < ranges.Length; i++)
+        {
+            ReadOnlySpan<char> part = span[ranges[i]];
+            if (part.Length >= charCount) // part doesn't fit into buffer, even if buffer is empty
             {
-                list[listIdx].Add(s);
-                sum += s.Length;
-            }
-            else
-            {
-                if (sum == 0)
+                if (bufferLength > 0) // if buffer isn't empty, write buffer into result
                 {
-                    list[listIdx].Add(s);
-                }
-                else
-                {
-                    list.Add(new());
-                    list[++listIdx].Add(s);
+                    result[resultLength++] = new(buffer[..bufferLength]);
+                    bufferLength = 0;
                 }
 
-                listIdx++;
-                sum = 0;
+                result[resultLength++] = new(part);
+            }
+            else if (bufferLength > 0 && bufferLength + part.Length + 1 > charCount) // buffer is not empty and part doesn't fit in buffer
+            {
+                result[resultLength++] = new(buffer[..bufferLength]);
+                part.CopyTo(buffer);
+                bufferLength = part.Length;
+            }
+            else if (bufferLength > 0 && bufferLength + part.Length + 1 <= charCount) // buffer is not empty and part fits into buffer
+            {
+                buffer[bufferLength++] = ' ';
+                part.CopyTo(buffer[bufferLength..]);
+                bufferLength += part.Length;
+            }
+            else if (bufferLength == 0) // buffer is empty and part fits into buffer
+            {
+                part.CopyTo(buffer);
+                bufferLength = part.Length;
             }
         }
 
-        return list.Select(l => string.Join(' ', l)).ToArray();
+        if (bufferLength > 0) // if buffer isn't empty in the end, write buffer to result
+        {
+            result[resultLength++] = new(buffer[..bufferLength]);
+        }
+
+        return result[..resultLength].ToArray();
     }
 
     /// <summary>
@@ -107,7 +128,7 @@ public static class StringHelper
     /// <returns>A trimmed <see cref="string"/>.</returns>
     public static string TrimAll(this string str)
     {
-        return _multipleSpacesPattern.Replace(str.Trim(), " ");
+        return _multipleSpacesPattern.Replace(str.Trim(), Whitespace);
     }
 
     public static StringBuilder Append(this StringBuilder builder, params string[] strings)
@@ -205,5 +226,82 @@ public static class StringHelper
 
         ranges[^1] = (indices[^1] + separator.Length)..;
         return ranges.ToArray();
+    }
+
+    public static unsafe Span<char> AsSpan(this string? str)
+    {
+        if (str is null)
+        {
+            return Span<char>.Empty;
+        }
+
+        ReadOnlySpan<char> span = str;
+        ref char firstChar = ref MemoryMarshal.GetReference(span);
+        char* pointer = (char*)Unsafe.AsPointer(ref firstChar);
+        return new(pointer, str.Length);
+    }
+
+    public static unsafe Span<char> AsSpan(this ReadOnlySpan<char> span)
+    {
+        if (span.Length == 0)
+        {
+            return Span<char>.Empty;
+        }
+
+        ref char firstChar = ref MemoryMarshal.GetReference(span);
+        char* pointer = (char*)Unsafe.AsPointer(ref firstChar);
+        return new(pointer, span.Length);
+    }
+
+    public static void ToLower(string str)
+    {
+        Span<char> span = str.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = char.ToLower(span[i]);
+        }
+    }
+
+    public static void ToLower(string str, CultureInfo cultureInfo)
+    {
+        Span<char> span = str.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = char.ToLower(span[i], cultureInfo);
+        }
+    }
+
+    public static void ToUpper(string str)
+    {
+        Span<char> span = str.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = char.ToUpper(span[i]);
+        }
+    }
+
+    public static void ToUpper(string str, CultureInfo cultureInfo)
+    {
+        Span<char> span = str.AsSpan();
+        for (int i = 0; i < span.Length; i++)
+        {
+            span[i] = char.ToUpper(span[i], cultureInfo);
+        }
+    }
+
+    public static int CharCount(this string str, char c)
+    {
+        ReadOnlySpan<char> span = str;
+        int spanLength = span.Length;
+        int charCount = 0;
+        for (int i = 0; i < spanLength; i++)
+        {
+            if (span[i] == c)
+            {
+                charCount++;
+            }
+        }
+
+        return charCount;
     }
 }

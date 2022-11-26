@@ -9,7 +9,6 @@ namespace HLE.Tests;
 public class HStringTest
 {
     private const string _testString = "Hello World!";
-    private const char _testChar = 'C';
 
     [DataRow(0)]
     [DataRow(5)]
@@ -24,7 +23,6 @@ public class HStringTest
     [DataRow(1, 'h')]
     [DataRow(6, 'w')]
     [DataRow(10, 't')]
-    [DataRow(100, 'x')]
     [TestMethod]
     public void SetIndexerIntTest(int idx, char c)
     {
@@ -41,7 +39,7 @@ public class HStringTest
     }
 
     [TestMethod]
-    public void IndexerRangeTest()
+    public void IndexerGetRangeTest()
     {
         Range[] ranges =
         {
@@ -52,8 +50,17 @@ public class HStringTest
         foreach (Range r in ranges)
         {
             HString s = _testString;
-            Assert.AreEqual(_testString[r], s[r]);
+            Assert.AreEqual(_testString[r], new(s[r]));
         }
+    }
+
+    [TestMethod]
+    public void IndexerSetRangeTest()
+    {
+        HString str = "hello";
+        Range r = 1..3;
+        str[r] = "xx";
+        Assert.AreEqual("hxxlo", str.ToString());
     }
 
     [TestMethod]
@@ -78,8 +85,6 @@ public class HStringTest
         HString t = _testString;
         Assert.IsTrue(s == _testString);
         Assert.IsTrue(s == t);
-        s = _testChar;
-        Assert.IsTrue(s == _testChar);
     }
 
     [TestMethod]

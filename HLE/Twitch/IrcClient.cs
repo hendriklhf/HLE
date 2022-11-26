@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -57,8 +57,8 @@ public abstract class IrcClient
     /// </summary>
     public event EventHandler<string>? OnDataSent;
 
-    private protected readonly CancellationTokenSource _tokenSource = new();
-    private protected readonly CancellationToken _token;
+    private protected CancellationTokenSource _tokenSource = new();
+    private protected CancellationToken _token;
     private protected readonly (string Url, int Port) _url;
 
     /// <summary>
@@ -168,6 +168,7 @@ public abstract class IrcClient
         }
 
         Task.Run(DisconnectLocal, _token).Wait(_token);
+        CancelToken();
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
@@ -200,17 +201,32 @@ public abstract class IrcClient
         }
     }
 
+    private void CancelToken()
+    {
+        _tokenSource.Cancel();
+        _tokenSource.Dispose();
+        _tokenSource = new();
+        _token = _tokenSource.Token;
+    }
+
     private protected void InvokeDataReceived(IrcClient sender, ReadOnlyMemory<char> data)
     {
         OnDataReceived?.Invoke(sender, data);
     }
 
-    private protected void InvokeDataSent(IrcClient sender, string message)
+    private protected void InvokeDataSent(IrcClient sender, string data)
     {
-        OnDataSent?.Invoke(sender, message);
+        OnDataSent?.Invoke(sender, data);
+    }
+
+    private protected void InvokeDataSent(IrcClient sender, ReadOnlySpan<char> data)
+    {
+        OnDataSent?.Invoke(sender, new(data));
     }
 
     private protected abstract Task Send(string message);
+
+    private protected abstract Task Send(ReadOnlyMemory<char> message);
 
     private protected abstract void StartListening();
 

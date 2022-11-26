@@ -2,11 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace HLE;
 
-[DebuggerDisplay("\"{GetString()}\" Length = {Length}")]
+[DebuggerDisplay("\"{_string}\" Length = {Length}")]
 public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 {
     public char this[int idx]
@@ -17,128 +16,116 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public char this[Index index]
     {
-        get => GetString()[index];
+        get => AsSpan()[index];
         set => SetIndex(index, value);
     }
 
-    public string this[Range range]
+    public ReadOnlySpan<char> this[Range range]
     {
-        get => GetString()[range];
+        get => AsSpan()[range];
         set => SetRange(range, value);
     }
 
-    public int Length
-    {
-        get => _chars.Length;
-        set => Array.Resize(ref _chars, value);
-    }
+    public int Length => _string.Length;
 
     public static HString Empty { get; } = new(string.Empty);
 
-    private char[] _chars;
-    private string? _string;
+    private readonly string _string;
 
-    public HString(IEnumerable<char>? chars)
+    public HString(char[]? chars)
     {
-        _chars = chars switch
+        _string = new(chars ?? Array.Empty<char>());
+    }
+
+    public HString(HString? hString)
+    {
+        _string = new(hString?._string ?? string.Empty);
+    }
+
+    public HString(string? str)
+    {
+        _string = new(str ?? string.Empty);
+    }
+
+    public HString(ReadOnlySpan<char> span)
+    {
+        _string = new(span);
+    }
+
+    public ReadOnlySpan<char> AsSpan() => _string;
+
+    public bool Contains(char value) => AsSpan().Contains(value);
+
+    public bool Contains(string value, StringComparison comparisonType = default) => AsSpan().Contains(value, comparisonType);
+
+    public HString[] Split(char separator = ' ')
+    {
+        ReadOnlySpan<char> span = _string;
+        Range[] ranges = span.GetRangesOfSplit(separator);
+        HString[] result = new HString[ranges.Length];
+        for (int i = 0; i < ranges.Length; i++)
         {
-            string s => s.ToCharArray(),
-            HString h => CopyCharArray(h._chars),
-            char[] c => c,
-            not null => chars.ToArray(),
-            _ => Array.Empty<char>()
-        };
-    }
-
-    public HString(Span<char> span)
-    {
-        _chars = span.ToArray();
-    }
-
-    private static char[] CopyCharArray(char[] array)
-    {
-        char[] copy = new char[array.Length];
-        Array.Copy(array, copy, array.Length);
-        return copy;
-    }
-
-    public HString Replace(char oldValue, char newValue) => GetString().Replace(oldValue, newValue);
-
-    public HString Replace(char oldValue, string newValue) => GetString().Replace(oldValue.ToString(), newValue);
-
-    public HString Replace(string oldValue, char newValue) => GetString().Replace(oldValue, newValue.ToString());
-
-    public HString Replace(string oldValue, string newValue) => GetString().Replace(oldValue, newValue);
-
-    public HString Insert(int startIdx, string value) => GetString().Insert(startIdx, value);
-
-    public bool Contains(char value) => _chars.Contains(value);
-
-    public bool Contains(string value) => GetString().Contains(value);
-
-    public HString[] Split(char separator = ' ') => GetString().Split(separator).Select(s => new HString(s)).ToArray();
-
-    public HString[] Split(string separator) => GetString().Split(separator).Select(s => new HString(s)).ToArray();
-
-    public HString[] Split(int charCount, bool onlySplitOnWhitespace = false) => GetString().Split(charCount, onlySplitOnWhitespace).Select(s => new HString(s)).ToArray();
-
-    public HString Trim() => GetString().Trim();
-
-    public HString TrimAll() => GetString().TrimAll();
-
-    public bool StartsWith(char value) => GetString().StartsWith(value);
-
-    public bool StartsWith(string value) => GetString().StartsWith(value, StringComparison.CurrentCulture);
-
-    public bool EndsWith(char value) => GetString().EndsWith(value);
-
-    public bool EndsWith(string value) => GetString().EndsWith(value);
-
-    public HString ToLower() => GetString().ToLower();
-
-    public HString ToUpper() => GetString().ToUpper();
-
-    public char[] ToCharArray() => CopyCharArray(_chars);
-
-    private void SetChar(int idx, char c)
-    {
-        if (idx < 0)
-        {
-            throw new IndexOutOfRangeException($"Array index {idx} can't be negative.");
+            result[i] = new(span[ranges[i]]);
         }
 
-        if (idx >= Length)
+        return result;
+    }
+
+    public HString[] Split(ReadOnlySpan<char> separator)
+    {
+        ReadOnlySpan<char> span = _string;
+        Range[] ranges = span.GetRangesOfSplit(separator);
+        HString[] result = new HString[ranges.Length];
+        for (int i = 0; i < ranges.Length; i++)
         {
-            Length = idx + 1;
+            result[i] = new(span[ranges[i]]);
         }
 
-        _chars[idx] = c;
-        _string = null;
+        return result;
+    }
+
+    public bool StartsWith(char value) => AsSpan()[0] == value;
+
+    public bool StartsWith(string value) => AsSpan().StartsWith(value);
+
+    public bool EndsWith(char value) => AsSpan()[^1] == value;
+
+    public bool EndsWith(string value) => AsSpan().EndsWith(value);
+
+    public HString ToLower() => _string.ToLower();
+
+    public HString ToUpper() => _string.ToUpper();
+
+    public char[] ToCharArray() => _string.ToCharArray();
+
+    private void SetChar(int idx, char value)
+    {
+        if (idx < 0 || idx >= _string.Length)
+        {
+            throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has a length of {Length}.");
+        }
+
+        Span<char> span = _string.AsSpan();
+        span[idx] = value;
     }
 
     private char GetChar(int idx)
     {
         if (idx < 0 || idx >= Length)
         {
-            throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has only a length of {Length}.");
+            throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has a length of {Length}.");
         }
 
-        return _chars[idx];
+        return AsSpan()[idx];
     }
 
-    private string GetString()
-    {
-        return _string ??= new(_chars);
-    }
-
-    public void SetIndex(Index index, char value)
+    private void SetIndex(Index index, char value)
     {
         int idx = index.IsFromEnd ? Length - index.Value - 1 : index.Value;
-        this[idx] = value;
-        _string = null;
+        SetChar(idx, value);
     }
 
-    private void SetRange(Range range, string value)
+    private void SetRange(Range range, ReadOnlySpan<char> value)
     {
         int start = range.Start.Value;
         int end = range.End.IsFromEnd ? Length - range.End.Value - 1 : range.End.Value;
@@ -148,23 +135,21 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
             throw new InvalidOperationException("The starting index can't be larger than the ending index.");
         }
 
-        int rangeLength = end - start + 1;
+        int rangeLength = end - start;
         if (rangeLength != value.Length)
         {
             throw new InvalidOperationException($"Parameter {nameof(range)} and {nameof(value)} need to have the same length. Length of {nameof(range)} is {rangeLength} and length of {nameof(value)} is {value.Length}");
         }
 
-        for (int i = start; i <= end; i++)
+        for (int i = start; i < end; i++)
         {
-            this[i] = value[i - start];
+            SetChar(i, value[i - start]);
         }
-
-        _string = null;
     }
 
     public static implicit operator string(HString? h)
     {
-        return h?.GetString() ?? string.Empty;
+        return h?._string ?? string.Empty;
     }
 
     public static implicit operator HString(string? str)
@@ -172,58 +157,58 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
         return new(str);
     }
 
-    public static implicit operator HString(char c)
-    {
-        return new(new[]
-        {
-            c
-        }.AsSpan());
-    }
-
     public static implicit operator HString(char[]? chars)
     {
-        return new(chars?.AsEnumerable());
+        return new(chars);
     }
 
-    public static bool operator ==(HString left, HString right)
+    public static implicit operator ReadOnlySpan<char>(HString? h)
     {
-        return left.Equals(right);
+        return h?._string;
     }
 
-    public static bool operator !=(HString left, HString right)
+    public static bool operator ==(HString? left, HString? right)
     {
-        return !left.Equals(right);
+        return string.Equals(left, right);
     }
 
-    public static bool operator ==(HString left, string right)
+    public static bool operator !=(HString? left, HString? right)
     {
-        // ReSharper disable once SuspiciousTypeConversion.Global
-        return left.Equals(right);
+        return !(left == right);
     }
 
-    public static bool operator !=(HString left, string right)
+    public static bool operator ==(HString? left, string? right)
     {
-        // ReSharper disable once SuspiciousTypeConversion.Global
-        return !left.Equals(right);
+        return string.Equals(left, right);
     }
 
-    public static HString operator +(HString left, string right)
+    public static bool operator !=(HString? left, string? right)
     {
-        return new(left.GetString() + right);
+        return !(left == right);
     }
 
-    public static HString operator +(HString left, char right)
+    public static HString operator +(HString? left, string? right)
     {
-        return new(left.GetString() + right);
+        return new(left?._string + right);
     }
 
-    public static HString operator +(HString left, HString right)
+    public static HString operator +(HString? left, char right)
     {
-        return new(left.GetString() + right.GetString());
+        return new(left?._string + right);
     }
 
-    public static HString operator *(HString h, int count)
+    public static HString operator +(HString? left, HString? right)
     {
+        return new(left?._string + right?._string);
+    }
+
+    public static HString operator *(HString? h, int count)
+    {
+        if (h is null)
+        {
+            return Empty;
+        }
+
         switch (count)
         {
             case <= 0:
@@ -240,95 +225,92 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
             }
             default:
             {
-                Span<char> span = stackalloc char[h.Length * count];
-                string value = h.GetString();
+                Span<char> result = stackalloc char[h.Length * count];
+                ReadOnlySpan<char> span = h._string;
                 for (int i = 0; i < count; i++)
                 {
-                    for (int j = i * h.Length; j < value.Length; j++)
+                    for (int j = i * h.Length; j < span.Length; j++)
                     {
-                        span[j] = value[j];
+                        result[j] = span[j];
                     }
                 }
 
-                return new(span);
+                return new(result);
             }
         }
     }
 
     public static HString operator ++(HString h)
     {
+        Span<char> span = h._string.AsSpan();
         for (int i = 0; i < h.Length; i++)
         {
-            h._chars[i]++;
+            span[i]++;
         }
 
-        h._string = null;
         return h;
     }
 
     public static HString operator --(HString h)
     {
+        Span<char> span = h._string.AsSpan();
         for (int i = 0; i < h.Length; i++)
         {
-            h._chars[i]--;
+            span[i]--;
         }
 
-        h._string = null;
         return h;
     }
 
-    public override bool Equals(object? obj)
-    {
-        return obj switch
+    public override bool Equals(object? obj) =>
+        obj switch
         {
-            HString h => GetString() == h.GetString(),
-            string s => GetString() == s,
-            char c => GetString().Length == 1 && GetString()[0] == c,
+            HString h => string.Equals(h._string, _string),
+            string s => string.Equals(s, _string),
             _ => false
         };
-    }
 
-    public override int GetHashCode() => GetString().GetHashCode();
+    public override int GetHashCode() => _string.GetHashCode();
 
-    public override string ToString() => GetString();
+    public override string ToString() => _string;
 
     public object Clone() => new HString(this);
 
-    public IEnumerator<char> GetEnumerator() => _chars.AsEnumerable().GetEnumerator();
+    public IEnumerator<char> GetEnumerator() => _string.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public TypeCode GetTypeCode() => TypeCode.String;
 
-    public bool ToBoolean(IFormatProvider? provider) => Convert.ToBoolean(GetString(), provider);
+    public bool ToBoolean(IFormatProvider? provider) => Convert.ToBoolean(_string, provider);
 
-    public byte ToByte(IFormatProvider? provider) => Convert.ToByte(GetString(), provider);
+    public byte ToByte(IFormatProvider? provider) => Convert.ToByte(_string, provider);
 
-    public char ToChar(IFormatProvider? provider) => Convert.ToChar(GetString(), provider);
+    public char ToChar(IFormatProvider? provider) => Convert.ToChar(_string, provider);
 
-    public DateTime ToDateTime(IFormatProvider? provider) => Convert.ToDateTime(GetString(), provider);
+    public DateTime ToDateTime(IFormatProvider? provider) => Convert.ToDateTime(_string, provider);
 
-    public decimal ToDecimal(IFormatProvider? provider) => Convert.ToDecimal(GetString(), provider);
+    public decimal ToDecimal(IFormatProvider? provider) => Convert.ToDecimal(_string, provider);
 
-    public double ToDouble(IFormatProvider? provider) => Convert.ToDouble(GetString(), provider);
+    public double ToDouble(IFormatProvider? provider) => Convert.ToDouble(_string, provider);
 
-    public short ToInt16(IFormatProvider? provider) => Convert.ToInt16(GetString(), provider);
+    public short ToInt16(IFormatProvider? provider) => Convert.ToInt16(_string, provider);
 
-    public int ToInt32(IFormatProvider? provider) => Convert.ToInt32(GetString(), provider);
+    public int ToInt32(IFormatProvider? provider) => Convert.ToInt32(_string, provider);
 
-    public long ToInt64(IFormatProvider? provider) => Convert.ToInt64(GetString(), provider);
+    public long ToInt64(IFormatProvider? provider) => Convert.ToInt64(_string, provider);
 
-    public sbyte ToSByte(IFormatProvider? provider) => Convert.ToSByte(GetString(), provider);
+    public sbyte ToSByte(IFormatProvider? provider) => Convert.ToSByte(_string, provider);
 
-    public float ToSingle(IFormatProvider? provider) => Convert.ToSingle(GetString(), provider);
+    public float ToSingle(IFormatProvider? provider) => Convert.ToSingle(_string, provider);
 
-    public string ToString(IFormatProvider? provider) => GetString();
+    public string ToString(IFormatProvider? provider) => _string;
 
-    public object ToType(Type conversionType, IFormatProvider? provider) => Convert.ChangeType(GetString(), conversionType, provider);
+    public object ToType(Type conversionType, IFormatProvider? provider) => Convert.ChangeType(_string, conversionType, provider);
 
-    public ushort ToUInt16(IFormatProvider? provider) => Convert.ToUInt16(GetString(), provider);
+    public ushort ToUInt16(IFormatProvider? provider) => Convert.ToUInt16(_string, provider);
 
-    public uint ToUInt32(IFormatProvider? provider) => Convert.ToUInt32(GetString(), provider);
+    public uint ToUInt32(IFormatProvider? provider) => Convert.ToUInt32(_string, provider);
 
-    public ulong ToUInt64(IFormatProvider? provider) => Convert.ToUInt64(GetString(), provider);
+    public ulong ToUInt64(IFormatProvider? provider) => Convert.ToUInt64(_string, provider);
 }

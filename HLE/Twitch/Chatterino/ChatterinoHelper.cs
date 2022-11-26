@@ -19,40 +19,46 @@ public static class ChatterinoHelper
     [SupportedOSPlatform("windows")]
     public static string[] GetChannels()
     {
-        List<string> result = new();
+        const string dataProperty = "data";
+        const string typeProperty = "type";
+        const string twitchProperty = "twitch";
+        const string nameProperty = "name";
+        const string itemsProperty = "items";
+        const string splits2Property = "splits2";
 
-        void GetChannelsFromSplits(JsonElement splits)
+        static void GetChannelsFromSplits(JsonElement splits, List<string> channels)
         {
-            if (splits.TryGetProperty("data", out JsonElement data))
+            if (splits.TryGetProperty(dataProperty, out JsonElement data))
             {
-                if (data.GetProperty("type").GetString() != "twitch")
+                if (data.GetProperty(typeProperty).GetString() != twitchProperty)
                 {
                     return;
                 }
 
-                string channel = data.GetProperty("name").GetString()?.ToLower() ??
-                    throw new JsonException("Property \"name\" does not exist. This method might not work anymore due to changes in the Chatterino settings format.");
-                if (!result.Contains(channel))
+                string channel = data.GetProperty(nameProperty).GetString()?.ToLower() ??
+                    throw new JsonException($"Property \"{nameProperty}\" does not exist. This method might not work anymore due to changes in the Chatterino settings format.");
+                if (!channels.Contains(channel))
                 {
-                    result.Add(channel);
+                    channels.Add(channel);
                 }
             }
             else
             {
-                JsonElement items = splits.GetProperty("items");
+                JsonElement items = splits.GetProperty(itemsProperty);
                 for (int i = 0; i < items.GetArrayLength(); i++)
                 {
-                    GetChannelsFromSplits(items[i]);
+                    GetChannelsFromSplits(items[i], channels);
                 }
             }
         }
 
+        List<string> result = new();
         string windowLayoutPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Chatterino2\Settings\window-layout.json";
         JsonElement chatterinoTabs = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(windowLayoutPath)).GetProperty("windows")[0].GetProperty("tabs");
         for (int i = 0; i < chatterinoTabs.GetArrayLength(); i++)
         {
-            JsonElement splits = chatterinoTabs[i].GetProperty("splits2");
-            GetChannelsFromSplits(splits);
+            JsonElement splits = chatterinoTabs[i].GetProperty(splits2Property);
+            GetChannelsFromSplits(splits, result);
         }
 
         return result.ToArray();

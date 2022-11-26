@@ -12,6 +12,8 @@ public sealed class Channel
     /// </summary>
     public string Name { get; }
 
+    internal string PrefixedName { get; }
+
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
@@ -44,11 +46,12 @@ public sealed class Channel
     /// </summary>
     public bool SubsOnly { get; private set; }
 
-    private static readonly ChangedRoomstate[] _changedRoomstates = Enum.GetValues<ChangedRoomstate>();
+    private static readonly ChangedRoomstate[] _roomstates = Enum.GetValues<ChangedRoomstate>();
 
     internal Channel(RoomstateArgs args)
     {
         Name = args.Channel;
+        PrefixedName = $"#{Name}";
         Id = args.ChannelId;
         EmoteOnly = args.EmoteOnly;
         FollowersOnly = args.FollowersOnly;
@@ -59,9 +62,10 @@ public sealed class Channel
 
     internal void Update(RoomstateArgs args)
     {
-        foreach (ChangedRoomstate rs in _changedRoomstates)
+        foreach (ChangedRoomstate rs in _roomstates)
         {
-            if (!args.ChangedStates.HasFlag(rs))
+            bool roomstateChanged = args.ChangedStates.HasFlag(rs);
+            if (!roomstateChanged)
             {
                 continue;
             }
