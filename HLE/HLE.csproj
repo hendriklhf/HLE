@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -14,10 +16,9 @@
     <OutputType>Library</OutputType>
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
-    <Nullable>enable</Nullable>
-    <Version>2.0.4</Version>
-    <PackageVersion>2.0.4</PackageVersion>
-    <AssemblyVersion>2.0.4</AssemblyVersion>
+    <Version>2.0.5</Version>
+    <PackageVersion>2.0.5</PackageVersion>
+    <AssemblyVersion>2.0.5</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
