@@ -104,7 +104,7 @@ public static class StringHelper
                         bufferLength = part.Length;
                         break;
                     case > 0 when bufferLength + part.Length + 1 <= charCount: // buffer is not empty and part fits into buffer
-                        buffer[bufferLength++] = ' ';
+                        buffer[bufferLength++] = separator;
                         part.CopyTo(buffer[bufferLength..]);
                         bufferLength += part.Length;
                         break;
@@ -231,20 +231,13 @@ public static class StringHelper
         return ranges.ToArray();
     }
 
-    public static unsafe Span<char> AsSpan(this string? str)
+    public static Span<char> AsMutableSpan(this string? str)
     {
-        if (str is null)
-        {
-            return Span<char>.Empty;
-        }
-
         ReadOnlySpan<char> span = str;
-        ref char firstChar = ref MemoryMarshal.GetReference(span);
-        char* pointer = (char*)Unsafe.AsPointer(ref firstChar);
-        return new(pointer, str.Length);
+        return span.AsMutableSpan();
     }
 
-    public static unsafe Span<char> AsSpan(this ReadOnlySpan<char> span)
+    public static unsafe Span<char> AsMutableSpan(this ReadOnlySpan<char> span)
     {
         if (span.Length == 0)
         {
@@ -256,13 +249,18 @@ public static class StringHelper
         return new(pointer, span.Length);
     }
 
-    public static void ToLower(string str)
+    public static void ToLower(string? str)
     {
-        Span<char> span = str.AsSpan();
+        ToLower((ReadOnlySpan<char>)str);
+    }
+
+    public static void ToLower(ReadOnlySpan<char> span)
+    {
+        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref span[i];
+            ref char c = ref mutSpan[i];
             if (!char.IsLower(c))
             {
                 c = char.ToLower(c);
@@ -270,13 +268,18 @@ public static class StringHelper
         }
     }
 
-    public static void ToLower(string str, CultureInfo cultureInfo)
+    public static void ToLower(string? str, CultureInfo cultureInfo)
     {
-        Span<char> span = str.AsSpan();
+        ToLower((ReadOnlySpan<char>)str, cultureInfo);
+    }
+
+    public static void ToLower(ReadOnlySpan<char> span, CultureInfo cultureInfo)
+    {
+        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref span[i];
+            ref char c = ref mutSpan[i];
             if (!char.IsLower(c))
             {
                 c = char.ToLower(c, cultureInfo);
@@ -284,13 +287,18 @@ public static class StringHelper
         }
     }
 
-    public static void ToUpper(string str)
+    public static void ToUpper(string? str)
     {
-        Span<char> span = str.AsSpan();
+        ToUpper((ReadOnlySpan<char>)str);
+    }
+
+    public static void ToUpper(ReadOnlySpan<char> span)
+    {
+        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref span[i];
+            ref char c = ref mutSpan[i];
             if (!char.IsUpper(c))
             {
                 c = char.ToUpper(c);
@@ -298,13 +306,18 @@ public static class StringHelper
         }
     }
 
-    public static void ToUpper(string str, CultureInfo cultureInfo)
+    public static void ToUpper(string? str, CultureInfo cultureInfo)
     {
-        Span<char> span = str.AsSpan();
+        ToUpper((ReadOnlySpan<char>)str, cultureInfo);
+    }
+
+    public static void ToUpper(ReadOnlySpan<char> span, CultureInfo cultureInfo)
+    {
+        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref span[i];
+            ref char c = ref mutSpan[i];
             if (!char.IsUpper(c))
             {
                 c = char.ToUpper(c, cultureInfo);

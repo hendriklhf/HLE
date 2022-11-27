@@ -97,7 +97,7 @@ public sealed class EmojiFileGenerator
                 continue;
             }
 
-            Span<char> nameSpan = name.AsSpan();
+            Span<char> nameSpan = name.AsMutableSpan();
             nameSpan[0] = char.ToUpper(nameSpan[0]);
             string? emoji = _emojiData.Value[i].GetProperty("emoji").GetString();
             if (emoji is null)
@@ -115,7 +115,7 @@ public sealed class EmojiFileGenerator
 
         builder.Append('}');
         string content = builder.ToString();
-        Span<char> chars = content.AsSpan();
+        Span<char> chars = content.AsMutableSpan();
         int charsLength = chars.Length;
         Span<char> result = stackalloc char[content.Length + _newLine.Length];
         int resultLength = 0;
@@ -170,7 +170,7 @@ public sealed class EmojiFileGenerator
                 continue;
             }
 
-            Span<char> nameSpan = name.AsSpan();
+            Span<char> nameSpan = name.AsMutableSpan();
             nameSpan[0] = char.ToUpper(nameSpan[0]);
             string? emoji = _emojiData.Value[i].GetProperty("emoji").GetString();
             if (emoji is null)
@@ -188,7 +188,7 @@ public sealed class EmojiFileGenerator
 
         builder.Append('}');
         string content = builder.ToString();
-        Span<char> chars = content.AsSpan();
+        Span<char> chars = content.AsMutableSpan();
         int charsLength = chars.Length;
         Span<char> result = stackalloc char[content.Length + _newLine.Length];
         int resultLength = 0;

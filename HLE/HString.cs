@@ -105,7 +105,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
             throw new IndexOutOfRangeException($"Out of range for index {idx}. Array has a length of {Length}.");
         }
 
-        Span<char> span = _string.AsSpan();
+        Span<char> span = _string.AsMutableSpan();
         span[idx] = value;
     }
 
@@ -242,7 +242,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public static HString operator ++(HString h)
     {
-        Span<char> span = h._string.AsSpan();
+        Span<char> span = h._string.AsMutableSpan();
         for (int i = 0; i < h.Length; i++)
         {
             span[i]++;
@@ -253,7 +253,7 @@ public sealed class HString : IEnumerable<char>, ICloneable, IConvertible
 
     public static HString operator --(HString h)
     {
-        Span<char> span = h._string.AsSpan();
+        Span<char> span = h._string.AsMutableSpan();
         for (int i = 0; i < h.Length; i++)
         {
             span[i]--;
