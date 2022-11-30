@@ -214,6 +214,7 @@ public static class StringHelper
     {
         Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
+        indices = indices[..indicesLength];
         Span<Range> ranges = stackalloc Range[indicesLength + 1];
         int rangesLength = GetRangesOfSplit(span, separator, ranges, indices);
         return ranges[..rangesLength].ToArray();
