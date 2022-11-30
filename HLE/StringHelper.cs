@@ -155,7 +155,7 @@ public static class StringHelper
 
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
-        Span<int> indices = stackalloc int[span.CharCount(c)];
+        Span<int> indices = stackalloc int[span.Length];
         int length = IndicesOf(span, c, indices);
         return indices[..length].ToArray();
     }
@@ -212,7 +212,7 @@ public static class StringHelper
 
     public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char separator = ' ')
     {
-        Span<int> indices = stackalloc int[span.CharCount(separator)];
+        Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         Span<Range> ranges = stackalloc Range[indicesLength + 1];
         int rangesLength = GetRangesOfSplit(span, separator, ranges, indices);
@@ -221,7 +221,7 @@ public static class StringHelper
 
     internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges)
     {
-        Span<int> indices = stackalloc int[span.CharCount(separator)];
+        Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         return GetRangesOfSplit(span, separator, ranges, indices);
