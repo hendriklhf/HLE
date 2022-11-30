@@ -76,7 +76,10 @@ public static class StringHelper
             };
         }
 
-        ReadOnlySpan<Range> ranges = span.GetRangesOfSplit(separator);
+        Span<Range> ranges = stackalloc Range[span.Length];
+        int rangesLength = GetRangesOfSplit(span, separator, ranges);
+        ranges = ranges[..rangesLength];
+
         Span<string> result = new string[ranges.Length];
         Span<char> buffer = stackalloc char[charCount];
         int resultLength = 0;
@@ -147,12 +150,18 @@ public static class StringHelper
     public static int[] IndicesOf(this string str, char c)
     {
         ReadOnlySpan<char> span = str;
-        return span.IndicesOf(c);
+        return IndicesOf(span, c);
     }
 
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
         Span<int> indices = stackalloc int[span.CharCount(c)];
+        int length = IndicesOf(span, c, indices);
+        return indices[..length].ToArray();
+    }
+
+    internal static int IndicesOf(this ReadOnlySpan<char> span, char c, Span<int> indices)
+    {
         int indicesLength = 0;
         int idx = span.IndexOf(c);
         int totalIdx = idx;
@@ -163,12 +172,24 @@ public static class StringHelper
             totalIdx += idx;
         }
 
-        return indices[..indicesLength].ToArray();
+        return indicesLength;
+    }
+
+    public static int[] IndicesOf(this string str, ReadOnlySpan<char> s)
+    {
+        ReadOnlySpan<char> span = str;
+        return IndicesOf(span, s);
     }
 
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
         Span<int> indices = stackalloc int[span.Length];
+        int length = IndicesOf(span, s, indices);
+        return indices[..length].ToArray();
+    }
+
+    internal static int IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s, Span<int> indices)
+    {
         int indicesLength = 0;
         int idx = span.IndexOf(s);
         int totalIdx = idx;
@@ -180,61 +201,100 @@ public static class StringHelper
             totalIdx += idx;
         }
 
-        return indices[..indicesLength].ToArray();
+        return indicesLength;
+    }
+
+    public static Range[] GetRangesOfSplit(this string str, char separator = ' ')
+    {
+        ReadOnlySpan<char> span = str;
+        return GetRangesOfSplit(span, separator);
     }
 
     public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char separator = ' ')
     {
-        int[] indices = span.IndicesOf(separator);
-        if (indices.Length == 0)
+        Span<int> indices = stackalloc int[span.CharCount(separator)];
+        int indicesLength = IndicesOf(span, separator, indices);
+        Span<Range> ranges = stackalloc Range[indicesLength + 1];
+        int rangesLength = GetRangesOfSplit(span, separator, ranges, indices);
+        return ranges[..rangesLength].ToArray();
+    }
+
+    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges)
+    {
+        Span<int> indices = stackalloc int[span.CharCount(separator)];
+        int indicesLength = IndicesOf(span, separator, indices);
+        indices = indices[..indicesLength];
+        return GetRangesOfSplit(span, separator, ranges, indices);
+    }
+
+    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges, Span<int> indices)
+    {
+        if (ranges.Length == 1)
         {
-            return new[]
-            {
-                ..
-            };
+            ranges[0] = ..;
+            return 1;
         }
 
-        Span<Range> ranges = stackalloc Range[indices.Length + 1];
         int start = 0;
-        for (int i = 0; i < indices.Length; i++)
+        int length = 0;
+        while (length < indices.Length)
         {
-            int idx = indices[i];
-            ranges[i] = start..idx;
+            int idx = indices[length];
+            ranges[length++] = start..idx;
             start = idx + 1;
         }
 
-        ranges[^1] = (indices[^1] + 1)..;
-        return ranges.ToArray();
+        ranges[length++] = (indices[^1] + 1)..;
+        return length;
+    }
+
+    public static Range[] GetRangesOfSplit(this string str, ReadOnlySpan<char> separator)
+    {
+        ReadOnlySpan<char> span = str;
+        return GetRangesOfSplit(span, separator);
     }
 
     public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator)
     {
-        int[] indices = span.IndicesOf(separator);
-        if (indices.Length == 0)
+        Span<Range> ranges = stackalloc Range[span.Length];
+        int rangesLength = GetRangesOfSplit(span, separator, ranges);
+        return ranges[..rangesLength].ToArray();
+    }
+
+    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges)
+    {
+        Span<int> indices = stackalloc int[span.Length];
+        int indicesLength = IndicesOf(span, separator, indices);
+        indices = indices[..indicesLength];
+        ranges = ranges[..(indicesLength + 1)];
+        return GetRangesOfSplit(span, separator, ranges, indices);
+    }
+
+    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges, Span<int> indices)
+    {
+        if (ranges.Length == 1)
         {
-            return new[]
-            {
-                ..
-            };
+            ranges[0] = ..;
+            return 1;
         }
 
-        Span<Range> ranges = stackalloc Range[indices.Length + 1];
         int start = 0;
-        for (int i = 0; i < indices.Length; i++)
+        int length = 0;
+        while (length < indices.Length)
         {
-            int idx = indices[i];
-            ranges[i] = start..idx;
+            int idx = indices[length];
+            ranges[length++] = start..idx;
             start = idx + separator.Length;
         }
 
-        ranges[^1] = (indices[^1] + separator.Length)..;
-        return ranges.ToArray();
+        ranges[length++] = (indices[^1] + separator.Length)..;
+        return length;
     }
 
     public static Span<char> AsMutableSpan(this string? str)
     {
         ReadOnlySpan<char> span = str;
-        return span.AsMutableSpan();
+        return AsMutableSpan(span);
     }
 
     public static unsafe Span<char> AsMutableSpan(this ReadOnlySpan<char> span)
@@ -260,10 +320,9 @@ public static class StringHelper
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref mutSpan[i];
-            if (!char.IsLower(c))
+            if (!char.IsLower(mutSpan[i]))
             {
-                c = char.ToLower(c);
+                mutSpan[i] = char.ToLower(mutSpan[i]);
             }
         }
     }
@@ -298,10 +357,9 @@ public static class StringHelper
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref mutSpan[i];
-            if (!char.IsUpper(c))
+            if (!char.IsUpper(mutSpan[i]))
             {
-                c = char.ToUpper(c);
+                mutSpan[i] = char.ToUpper(mutSpan[i]);
             }
         }
     }
@@ -317,10 +375,9 @@ public static class StringHelper
         int spanLength = span.Length;
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref mutSpan[i];
-            if (!char.IsUpper(c))
+            if (!char.IsUpper(mutSpan[i]))
             {
-                c = char.ToUpper(c, cultureInfo);
+                mutSpan[i] = char.ToUpper(mutSpan[i], cultureInfo);
             }
         }
     }

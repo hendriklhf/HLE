@@ -49,14 +49,16 @@ public sealed class IrcHandler
     /// <param name="ircMessage">The IRC message.</param>
     public void Handle(ReadOnlySpan<char> ircMessage)
     {
-        Range[] ircRanges = ircMessage.GetRangesOfSplit();
-        switch (ircRanges.Length)
+        Span<Range> ircRanges = stackalloc Range[ircMessage.Length];
+        int ircRangesLength = ircMessage.GetRangesOfSplit(' ', ircRanges);
+        ircRanges = ircRanges[..ircRangesLength];
+        switch (ircRangesLength)
         {
             case >= 3:
             {
                 if (ircMessage[ircRanges[2]].SequenceEqual(_ircCmds[2]))
                 {
-                    OnChatMessageReceived?.Invoke(this, new(ircMessage, ircRanges: ircRanges));
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage));
                 }
                 else if (ircMessage[ircRanges[1]].SequenceEqual(_ircCmds[0]))
                 {

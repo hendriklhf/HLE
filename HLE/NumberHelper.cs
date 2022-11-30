@@ -17,44 +17,52 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
     }
 
-    public static char[] NumberToCharArray(byte number)
+    public static char[] NumberToChars(byte number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[..length].ToArray();
+    }
+
+    internal static int NumberToChars(byte number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(byte number)
+    public static byte[] NumberToDigits(byte number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(byte number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
 #pragma warning disable IDE0060
@@ -70,46 +78,54 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
     }
 
-    public static char[] NumberToCharArray(sbyte number)
+    public static char[] NumberToChars(sbyte number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[length..].ToArray();
+    }
+
+    internal static int NumberToChars(sbyte number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(sbyte number)
+    public static byte[] NumberToDigits(sbyte number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(sbyte number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static string InsertKDots(short number, char kchar = '.')
@@ -121,15 +137,10 @@ public static class NumberHelper
         }
 
         bool isNegative = number < 0;
-        // int to char span, copied from ToCharArray in order to keep the chars on the stack
         number = Math.Abs(number);
         Span<char> chars = stackalloc char[numberLength];
-        for (int i = chars.Length - 1; number > 0; i--)
-        {
-            chars[i] = DigitToChar((byte)(number % 10));
-            number /= 10;
-        }
-        // end of copied code
+        int charsLength = NumberToChars(number, chars);
+        chars = chars[..charsLength];
 
         int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
         int total = isNegative ? numberLength + dotCount + 1 : numberLength + dotCount;
@@ -168,46 +179,54 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
     }
 
-    public static char[] NumberToCharArray(short number)
+    public static char[] NumberToChars(short number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[length..].ToArray();
+    }
+
+    internal static int NumberToChars(short number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(short number)
+    public static byte[] NumberToDigits(short number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(short number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static string InsertKDots(ushort number, char kchar = '.')
@@ -218,14 +237,9 @@ public static class NumberHelper
             return number.ToString();
         }
 
-        // int to char span, copied from ToCharArray in order to keep the chars on the stack
         Span<char> chars = stackalloc char[numberLength];
-        for (int i = chars.Length - 1; number > 0; i--)
-        {
-            chars[i] = DigitToChar((byte)(number % 10));
-            number /= 10;
-        }
-        // end of copied code
+        int charsLength = NumberToChars(number, chars);
+        chars = chars[..charsLength];
 
         int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
         int total = numberLength + dotCount;
@@ -259,44 +273,52 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
     }
 
-    public static char[] NumberToCharArray(ushort number)
+    public static char[] NumberToChars(ushort number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[..length].ToArray();
+    }
+
+    internal static int NumberToChars(ushort number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(ushort number)
+    public static byte[] NumberToDigits(ushort number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(ushort number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static string InsertKDots(int number, char kchar = '.')
@@ -308,15 +330,10 @@ public static class NumberHelper
         }
 
         bool isNegative = number < 0;
-        // int to char span, copied from ToCharArray in order to keep the chars on the stack
         number = Math.Abs(number);
         Span<char> chars = stackalloc char[numberLength];
-        for (int i = chars.Length - 1; number > 0; i--)
-        {
-            chars[i] = DigitToChar((byte)(number % 10));
-            number /= 10;
-        }
-        // end of copied code
+        int charsLength = NumberToChars(number, chars);
+        chars = chars[..charsLength];
 
         int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
         int total = isNegative ? numberLength + dotCount + 1 : numberLength + dotCount;
@@ -355,46 +372,54 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
     }
 
-    public static char[] NumberToCharArray(int number)
+    public static char[] NumberToChars(int number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[..length].ToArray();
+    }
+
+    internal static int NumberToChars(int number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(int number)
+    public static byte[] NumberToDigits(int number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(int number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static string InsertKDots(uint number, char kchar = '.')
@@ -405,14 +430,9 @@ public static class NumberHelper
             return number.ToString();
         }
 
-        // int to char span, copied from ToCharArray in order to keep the chars on the stack
         Span<char> chars = stackalloc char[numberLength];
-        for (int i = chars.Length - 1; number > 0; i--)
-        {
-            chars[i] = DigitToChar((byte)(number % 10));
-            number /= 10;
-        }
-        // end of copied code
+        int charsLength = NumberToChars(number, chars);
+        chars = chars[..charsLength];
 
         int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
         int total = numberLength + dotCount;
@@ -446,44 +466,52 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
     }
 
-    public static char[] NumberToCharArray(uint number)
+    public static char[] NumberToChars(uint number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[..length].ToArray();
+    }
+
+    internal static int NumberToChars(uint number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(uint number)
+    public static byte[] NumberToDigits(uint number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(uint number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static string InsertKDots(long number, char kchar = '.')
@@ -495,15 +523,10 @@ public static class NumberHelper
         }
 
         bool isNegative = number < 0;
-        // int to char span, copied from ToCharArray in order to keep the chars on the stack
         number = Math.Abs(number);
         Span<char> chars = stackalloc char[numberLength];
-        for (int i = chars.Length - 1; number > 0; i--)
-        {
-            chars[i] = DigitToChar((byte)(number % 10));
-            number /= 10;
-        }
-        // end of copied code
+        int charsLength = NumberToChars(number, chars);
+        chars = chars[..charsLength];
 
         int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
         int total = isNegative ? numberLength + dotCount + 1 : numberLength + dotCount;
@@ -542,46 +565,54 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
     }
 
-    public static char[] NumberToCharArray(long number)
+    public static char[] NumberToChars(long number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[length..].ToArray();
+    }
+
+    internal static int NumberToChars(long number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(long number)
+    public static byte[] NumberToDigits(long number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(long number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
         number = Math.Abs(number);
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static string InsertKDots(ulong number, char kchar = '.')
@@ -592,14 +623,9 @@ public static class NumberHelper
             return number.ToString();
         }
 
-        // int to char span, copied from ToCharArray in order to keep the chars on the stack
         Span<char> chars = stackalloc char[numberLength];
-        for (int i = chars.Length - 1; number > 0; i--)
-        {
-            chars[i] = DigitToChar((byte)(number % 10));
-            number /= 10;
-        }
-        // end of copied code
+        int charsLength = NumberToChars(number, chars);
+        chars = chars[..charsLength];
 
         int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
         int total = numberLength + dotCount;
@@ -633,44 +659,52 @@ public static class NumberHelper
         return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
     }
 
-    public static char[] NumberToCharArray(ulong number)
+    public static char[] NumberToChars(ulong number)
+    {
+        Span<char> chars = stackalloc char[GetNumberLength(number)];
+        int length = NumberToChars(number, chars);
+        return chars[..length].ToArray();
+    }
+
+    internal static int NumberToChars(ulong number, Span<char> chars)
     {
         if (number == 0)
         {
-            return new[]
-            {
-                '0'
-            };
+            chars[0] = '0';
+            return 1;
         }
 
-        Span<char> chars = stackalloc char[GetNumberLength(number)];
         for (int i = chars.Length - 1; number > 0; i--)
         {
             chars[i] = DigitToChar((byte)(number % 10));
             number /= 10;
         }
 
-        return chars.ToArray();
+        return chars.Length;
     }
 
-    public static byte[] NumberToDigitArray(ulong number)
+    public static byte[] NumberToDigits(ulong number)
+    {
+        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        int length = NumberToDigits(number, digits);
+        return digits[..length].ToArray();
+    }
+
+    internal static int NumberToDigits(ulong number, Span<byte> digits)
     {
         if (number == 0)
         {
-            return new byte[]
-            {
-                0
-            };
+            digits[0] = 0;
+            return 1;
         }
 
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
         for (int i = digits.Length - 1; number > 0; i--)
         {
             digits[i] = (byte)(number % 10);
             number /= 10;
         }
 
-        return digits.ToArray();
+        return digits.Length;
     }
 
     public static char DigitToChar(byte digit)

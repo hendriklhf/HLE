@@ -59,9 +59,8 @@ public sealed class RoomstateArgs : EventArgs
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
-    public RoomstateArgs(ReadOnlySpan<char> ircMessage, Range[]? ircRanges = null)
+    public RoomstateArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
-        ircRanges ??= ircMessage.GetRangesOfSplit();
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
         ReadOnlySpan<Range> tagsRanges = tags.GetRangesOfSplit(';');
         for (int i = 0; i < tagsRanges.Length; i++)

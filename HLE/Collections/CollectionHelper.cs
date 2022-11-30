@@ -228,7 +228,10 @@ public static class CollectionHelper
     {
         bool IsSeparator(T item) => item?.Equals(separator) == true;
 
-        Span<int> indices = span.IndicesOf(IsSeparator);
+        Span<int> indices = stackalloc int[span.Length];
+        int indicesLength = IndicesOf(span, IsSeparator, indices);
+        indices = indices[..indicesLength];
+
         List<T[]> result = new(indices.Length + 1);
         int start = 0;
         for (int i = 0; i < indices.Length; i++)
@@ -273,12 +276,18 @@ public static class CollectionHelper
     internal static string RandomString(this Span<char> span, int wordLength)
     {
         Span<char> result = stackalloc char[wordLength];
+        RandomString(span, wordLength, result);
+        return new(result);
+    }
+
+    internal static int RandomString(this Span<char> span, int wordLength, Span<char> randomString)
+    {
         for (int i = 0; i < wordLength; i++)
         {
-            result[i] = span.Random();
+            randomString[i] = span.Random();
         }
 
-        return new(result);
+        return randomString.Length;
     }
 
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
@@ -299,16 +308,22 @@ public static class CollectionHelper
     internal static int[] IndicesOf<T>(this Span<T> span, Func<T, bool> condition)
     {
         Span<int> indices = stackalloc int[span.Length];
-        int count = 0;
+        int length = IndicesOf(span, condition, indices);
+        return indices[..length].ToArray();
+    }
+
+    internal static int IndicesOf<T>(this Span<T> span, Func<T, bool> condition, Span<int> indices)
+    {
+        int length = 0;
         for (int i = 0; i < span.Length; i++)
         {
             if (condition(span[i]))
             {
-                indices[count++] = i;
+                indices[length++] = i;
             }
         }
 
-        return indices[..count].ToArray();
+        return length;
     }
 
     public static bool ContentEquals<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)

@@ -43,19 +43,19 @@ public class NumberHelperTest
     [TestMethod]
     public void NumberToCharArrayTest()
     {
-        Assert.IsTrue(NumberHelper.NumberToCharArray(1234567) is ['1', '2', '3', '4', '5', '6', '7']);
-        Assert.IsTrue(NumberHelper.NumberToCharArray(-1234567) is ['1', '2', '3', '4', '5', '6', '7']);
-        Assert.IsTrue(NumberHelper.NumberToCharArray(0) is ['0']);
-        Assert.IsTrue(NumberHelper.NumberToCharArray(1) is ['1']);
+        Assert.IsTrue(NumberHelper.NumberToChars(1234567) is ['1', '2', '3', '4', '5', '6', '7']);
+        Assert.IsTrue(NumberHelper.NumberToChars(-1234567) is ['1', '2', '3', '4', '5', '6', '7']);
+        Assert.IsTrue(NumberHelper.NumberToChars(0) is ['0']);
+        Assert.IsTrue(NumberHelper.NumberToChars(1) is ['1']);
     }
 
     [TestMethod]
     public void NumberToDigitArrayTest()
     {
-        Assert.IsTrue(NumberHelper.NumberToDigitArray(1234567) is [1, 2, 3, 4, 5, 6, 7]);
-        Assert.IsTrue(NumberHelper.NumberToDigitArray(-1234567) is [1, 2, 3, 4, 5, 6, 7]);
-        Assert.IsTrue(NumberHelper.NumberToDigitArray(0) is [0]);
-        Assert.IsTrue(NumberHelper.NumberToDigitArray(1) is [1]);
+        Assert.IsTrue(NumberHelper.NumberToDigits(1234567) is [1, 2, 3, 4, 5, 6, 7]);
+        Assert.IsTrue(NumberHelper.NumberToDigits(-1234567) is [1, 2, 3, 4, 5, 6, 7]);
+        Assert.IsTrue(NumberHelper.NumberToDigits(0) is [0]);
+        Assert.IsTrue(NumberHelper.NumberToDigits(1) is [1]);
     }
 
     [TestMethod]

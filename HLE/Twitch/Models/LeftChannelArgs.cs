@@ -22,9 +22,8 @@ public sealed class LeftChannelArgs : EventArgs
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
-    public LeftChannelArgs(ReadOnlySpan<char> ircMessage, Range[]? ircRanges = null)
+    public LeftChannelArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
-        ircRanges ??= ircMessage.GetRangesOfSplit();
         ReadOnlySpan<char> split0 = ircMessage[ircRanges[0]];
         int idxExcl = split0.IndexOf('!');
         Username = new(split0[1..idxExcl]);
