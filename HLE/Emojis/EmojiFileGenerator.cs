@@ -52,7 +52,6 @@ public sealed class EmojiFileGenerator
     };
 
     private JsonElement? _emojiData;
-    private readonly HString _newLine = Environment.NewLine;
 
     public EmojiFileGenerator(string namespaceName, char indentationChar = ' ', int indentationSize = 4)
     {
@@ -79,11 +78,11 @@ public sealed class EmojiFileGenerator
         }
 
         StringBuilder builder = new();
-        builder.Append($"#pragma warning disable 1591{_newLine}");
-        builder.Append($"// ReSharper disable UnusedMember.Global{_newLine}");
-        builder.Append($"// ReSharper disable InconsistentNaming{_newLine}");
-        builder.Append((string)_newLine);
-        builder.Append($"namespace {NamespaceName};{_newLine * 2}");
+        builder.Append($"#pragma warning disable 1591{Environment.NewLine}");
+        builder.Append($"// ReSharper disable UnusedMember.Global{Environment.NewLine}");
+        builder.Append($"// ReSharper disable InconsistentNaming{Environment.NewLine}");
+        builder.Append(Environment.NewLine);
+        builder.Append($"namespace {NamespaceName};{Environment.NewLine + Environment.NewLine}");
         builder.Append($"/// <summary>{Environment.NewLine}");
         builder.Append($"///     A class that contains (almost) every existing emoji. ({DateTime.UtcNow:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
         builder.Append($"/// </summary>{Environment.NewLine}");
@@ -117,7 +116,7 @@ public sealed class EmojiFileGenerator
         string content = builder.ToString();
         Span<char> chars = content.AsMutableSpan();
         int charsLength = chars.Length;
-        Span<char> result = stackalloc char[content.Length + _newLine.Length];
+        Span<char> result = stackalloc char[content.Length + Environment.NewLine.Length];
         int resultLength = 0;
         for (int i = 0; i < charsLength; i++)
         {
@@ -131,9 +130,9 @@ public sealed class EmojiFileGenerator
             chars[ip1] = char.ToUpper(chars[ip1]);
         }
 
-        for (int i = 0; i < _newLine.Length; i++)
+        for (int i = 0; i < Environment.NewLine.Length; i++)
         {
-            result[resultLength++] = _newLine[i];
+            result[resultLength++] = Environment.NewLine[i];
         }
 
         return new(result[..resultLength]);

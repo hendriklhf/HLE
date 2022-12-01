@@ -63,12 +63,25 @@ public sealed class TcpIrcClient : IrcClient
     {
         async Task StartListeningLocal()
         {
-            Memory<char> buffer = new char[1024];
+            Memory<char> buffer = new char[2048];
+            Memory<Range> rangeBuffer = new Range[256];
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
-                int count = await _reader.ReadAsync(buffer, _token);
-                ReadOnlyMemory<char> message = buffer[..(count - 2)];
-                InvokeDataReceived(this, message);
+                // TODO: go back to _reader.ReadAsync(...) so the string doesn't get allocated this early
+                string? line = await _reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                line.CopyTo(buffer.Span);
+                ReadOnlyMemory<char> message = buffer[..line.Length];
+                int rangesLength = message.Span.GetRangesOfSplit(_newLine, rangeBuffer.Span);
+                ReadOnlyMemory<Range> ranges = rangeBuffer[..rangesLength];
+                for (int i = 0; i < rangesLength; i++)
+                {
+                    InvokeDataReceived(this, message[ranges.Span[i]]);
+                }
             }
         }
 

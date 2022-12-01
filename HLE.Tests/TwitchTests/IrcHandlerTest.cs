@@ -30,8 +30,8 @@ public class IrcHandlerTest
             invoked = true;
             Assert.AreEqual(0, msg.BadgeInfo.Count);
             Assert.AreEqual(2, msg.Badges.Length);
-            Assert.AreEqual(1, msg.Badges[0].Level);
-            Assert.AreEqual(1, msg.Badges[1].Level);
+            Assert.AreEqual("1", msg.Badges[0].Level);
+            Assert.AreEqual("1", msg.Badges[1].Level);
             Assert.AreEqual(0xC2, msg.Color.R);
             Assert.AreEqual(0x99, msg.Color.G);
             Assert.AreEqual(0x00, msg.Color.B);

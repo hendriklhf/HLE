@@ -16,7 +16,7 @@ public sealed class ChatMessage
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
     /// </summary>
-    public ReadOnlyDictionary<string, int> BadgeInfo { get; init; } = _emptyDictionary;
+    public ReadOnlyDictionary<string, string> BadgeInfo { get; init; } = _emptyDictionary;
 
     /// <summary>
     /// Holds all the badges the user has.
@@ -99,7 +99,7 @@ public sealed class ChatMessage
     /// </summary>
     public string RawIrcMessage { get; init; }
 
-    private static readonly ReadOnlyDictionary<string, int> _emptyDictionary = new(new Dictionary<string, int>());
+    private static readonly ReadOnlyDictionary<string, string> _emptyDictionary = new(new Dictionary<string, string>());
 
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
@@ -214,7 +214,7 @@ public sealed class ChatMessage
         return new(IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(ircRanges[3].End.Value + 2)..]);
     }
 
-    private static ReadOnlyDictionary<string, int> GetBadgeInfo(ReadOnlySpan<char> value)
+    private static ReadOnlyDictionary<string, string> GetBadgeInfo(ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
         {
@@ -223,7 +223,7 @@ public sealed class ChatMessage
 
         Span<Range> ranges = stackalloc Range[value.Length];
         int rangesLength = value.GetRangesOfSplit(',', ranges);
-        Dictionary<string, int> result = new(rangesLength);
+        Dictionary<string, string> result = new(rangesLength);
         for (int i = 0; i < rangesLength; i++)
         {
             ReadOnlySpan<char> info = value[ranges[i]];
@@ -232,7 +232,7 @@ public sealed class ChatMessage
             info.GetRangesOfSplit('/', infoRanges);
 
             string key = new(info[infoRanges[0]]);
-            int val = int.Parse(info[infoRanges[1]]);
+            string val = new(info[infoRanges[1]]);
             result.Add(key, val);
         }
 
@@ -258,7 +258,7 @@ public sealed class ChatMessage
             info.GetRangesOfSplit('/', infoRanges);
 
             string name = new(info[infoRanges[0]]);
-            int level = int.Parse(info[infoRanges[1]]);
+            string level = new(info[infoRanges[1]]);
             result[i] = new(name, level);
         }
 

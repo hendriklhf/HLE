@@ -13,16 +13,16 @@ public sealed class Badge
     /// <summary>
     /// The level of the badge.
     /// </summary>
-    public int Level { get; }
+    public string Level { get; }
 
     /// <summary>
     /// The default constructor of <see cref="Badge"/>.
     /// </summary>
     /// <param name="name">The name of the badge.</param>
-    /// <param name="lvl">The level of the badge.</param>
-    public Badge(string name, int lvl)
+    /// <param name="level">The level of the badge.</param>
+    public Badge(string name, string level)
     {
         Name = name;
-        Level = lvl;
+        Level = level;
     }
 }

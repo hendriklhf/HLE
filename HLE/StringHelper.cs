@@ -160,7 +160,7 @@ public static class StringHelper
         return indices[..length].ToArray();
     }
 
-    internal static int IndicesOf(this ReadOnlySpan<char> span, char c, Span<int> indices)
+    public static int IndicesOf(this ReadOnlySpan<char> span, char c, Span<int> indices)
     {
         int indicesLength = 0;
         int idx = span.IndexOf(c);
@@ -188,7 +188,7 @@ public static class StringHelper
         return indices[..length].ToArray();
     }
 
-    internal static int IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s, Span<int> indices)
+    public static int IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s, Span<int> indices)
     {
         int indicesLength = 0;
         int idx = span.IndexOf(s);
@@ -216,21 +216,22 @@ public static class StringHelper
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         Span<Range> ranges = stackalloc Range[indicesLength + 1];
-        int rangesLength = GetRangesOfSplit(span, separator, ranges, indices);
+        int rangesLength = GetRangesOfSplit(span, indices, ranges);
         return ranges[..rangesLength].ToArray();
     }
 
-    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges)
+    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges)
     {
         Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
-        return GetRangesOfSplit(span, separator, ranges, indices);
+        return GetRangesOfSplit(span, indices, ranges);
     }
 
-    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges, Span<int> indices)
+    // ReSharper disable once UnusedParameter.Global
+    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, Span<int> indices, Span<Range> ranges)
     {
-        if (ranges.Length == 1)
+        if (ranges.Length == 1 || indices.Length == 0)
         {
             ranges[0] = ..;
             return 1;
@@ -262,7 +263,7 @@ public static class StringHelper
         return ranges[..rangesLength].ToArray();
     }
 
-    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges)
+    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges)
     {
         Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
@@ -271,7 +272,8 @@ public static class StringHelper
         return GetRangesOfSplit(span, separator, ranges, indices);
     }
 
-    internal static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges, Span<int> indices)
+    // ReSharper disable once UnusedParameter.Global
+    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges, Span<int> indices)
     {
         if (ranges.Length == 1)
         {

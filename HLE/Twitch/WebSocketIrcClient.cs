@@ -18,8 +18,6 @@ public sealed class WebSocketIrcClient : IrcClient
 
     private readonly ClientWebSocket _webSocket = new();
 
-    private const string _newLine = "\r\n";
-
     /// <summary>
     /// The default constructor of <see cref="WebSocketIrcClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
     /// </summary>
@@ -54,7 +52,8 @@ public sealed class WebSocketIrcClient : IrcClient
         async Task StartListeningLocal()
         {
             Memory<byte> buffer = new byte[1024];
-            Memory<char> chars = new char[1024];
+            Memory<char> charBuffer = new char[1024];
+            Memory<Range> rangeBuffer = new Range[256];
             while (!_token.IsCancellationRequested && IsConnected)
             {
                 ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
@@ -64,11 +63,13 @@ public sealed class WebSocketIrcClient : IrcClient
                 }
 
                 ReadOnlyMemory<byte> bytes = buffer[..(result.Count - 2)];
-                int count = Encoding.UTF8.GetChars(bytes.Span, chars.Span);
-                ReadOnlyMemory<Range> charsRanges = ((ReadOnlySpan<char>)chars.Span[..count]).GetRangesOfSplit(_newLine);
-                for (int i = 0; i < charsRanges.Length; i++)
+                int count = Encoding.UTF8.GetChars(bytes.Span, charBuffer.Span);
+                ReadOnlyMemory<char> chars = charBuffer[..count];
+                int rangesLength = chars.Span.GetRangesOfSplit(_newLine, rangeBuffer.Span);
+                ReadOnlyMemory<Range> ranges = rangeBuffer[..rangesLength];
+                for (int i = 0; i < rangesLength; i++)
                 {
-                    InvokeDataReceived(this, chars[charsRanges.Span[i]]);
+                    InvokeDataReceived(this, chars[ranges.Span[i]]);
                 }
             }
         }

@@ -24,7 +24,7 @@ public static class NumberHelper
         return chars[..length].ToArray();
     }
 
-    internal static int NumberToChars(byte number, Span<char> chars)
+    public static int NumberToChars(byte number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -48,7 +48,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(byte number, Span<byte> digits)
+    public static int NumberToDigits(byte number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -85,7 +85,7 @@ public static class NumberHelper
         return chars[length..].ToArray();
     }
 
-    internal static int NumberToChars(sbyte number, Span<char> chars)
+    public static int NumberToChars(sbyte number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -110,7 +110,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(sbyte number, Span<byte> digits)
+    public static int NumberToDigits(sbyte number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -186,7 +186,7 @@ public static class NumberHelper
         return chars[length..].ToArray();
     }
 
-    internal static int NumberToChars(short number, Span<char> chars)
+    public static int NumberToChars(short number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -211,7 +211,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(short number, Span<byte> digits)
+    public static int NumberToDigits(short number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -280,7 +280,7 @@ public static class NumberHelper
         return chars[..length].ToArray();
     }
 
-    internal static int NumberToChars(ushort number, Span<char> chars)
+    public static int NumberToChars(ushort number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -304,7 +304,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(ushort number, Span<byte> digits)
+    public static int NumberToDigits(ushort number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -379,7 +379,7 @@ public static class NumberHelper
         return chars[..length].ToArray();
     }
 
-    internal static int NumberToChars(int number, Span<char> chars)
+    public static int NumberToChars(int number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -404,7 +404,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(int number, Span<byte> digits)
+    public static int NumberToDigits(int number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -473,7 +473,7 @@ public static class NumberHelper
         return chars[..length].ToArray();
     }
 
-    internal static int NumberToChars(uint number, Span<char> chars)
+    public static int NumberToChars(uint number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -497,7 +497,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(uint number, Span<byte> digits)
+    public static int NumberToDigits(uint number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -572,7 +572,7 @@ public static class NumberHelper
         return chars[length..].ToArray();
     }
 
-    internal static int NumberToChars(long number, Span<char> chars)
+    public static int NumberToChars(long number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -597,7 +597,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(long number, Span<byte> digits)
+    public static int NumberToDigits(long number, Span<byte> digits)
     {
         if (number == 0)
         {
@@ -666,7 +666,7 @@ public static class NumberHelper
         return chars[..length].ToArray();
     }
 
-    internal static int NumberToChars(ulong number, Span<char> chars)
+    public static int NumberToChars(ulong number, Span<char> chars)
     {
         if (number == 0)
         {
@@ -690,7 +690,7 @@ public static class NumberHelper
         return digits[..length].ToArray();
     }
 
-    internal static int NumberToDigits(ulong number, Span<byte> digits)
+    public static int NumberToDigits(ulong number, Span<byte> digits)
     {
         if (number == 0)
         {

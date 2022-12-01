@@ -61,6 +61,8 @@ public abstract class IrcClient
     private protected CancellationToken _token;
     private protected readonly (string Url, int Port) _url;
 
+    private protected const string _newLine = "\r\n";
+
     /// <summary>
     /// The default constructor of the base <see cref="IrcClient"/>.
     /// </summary>

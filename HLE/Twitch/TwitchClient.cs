@@ -119,7 +119,7 @@ public sealed class TwitchClient
             {
                 UseSSL = UseSSL
             },
-            _ => throw new InvalidOperationException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
+            _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
         IsAnonymousLogin = true;
 
@@ -149,7 +149,7 @@ public sealed class TwitchClient
                 UseSSL = UseSSL,
                 IsVerifiedBot = options.IsVerifiedBot
             },
-            _ => throw new InvalidOperationException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
+            _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
 
         SetEvents();
@@ -363,6 +363,13 @@ public sealed class TwitchClient
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)
     {
+        Span<char> result = stackalloc char[channel.Length + 1];
+        int length = FormatChannel(channel, withHashtag, result);
+        return new(result[..length]);
+    }
+
+    private static int FormatChannel(ReadOnlySpan<char> channel, bool withHashtag, Span<char> result)
+    {
         if (!_channelPattern.IsMatch(channel))
         {
             throw new FormatException($"The channel name (\"{channel}\") is in an invalid format.");
@@ -372,31 +379,23 @@ public sealed class TwitchClient
         {
             if (channel[0] == _channelPrefix)
             {
-                Span<char> result = stackalloc char[channel.Length];
                 channel.ToLower(result, default);
-                return new(result);
+                return channel.Length;
             }
-            else
-            {
-                Span<char> result = stackalloc char[channel.Length + 1];
-                result[0] = _channelPrefix;
-                channel.ToLower(result[1..], default);
-                return new(result);
-            }
+
+            result[0] = _channelPrefix;
+            channel.ToLower(result[1..], default);
+            return channel.Length + 1;
         }
 
         if (channel[0] == _channelPrefix)
         {
-            Span<char> result = stackalloc char[channel.Length - 1];
             channel[1..].ToLower(result, default);
-            return new(result);
+            return channel.Length - 1;
         }
-        else
-        {
-            Span<char> result = stackalloc char[channel.Length];
-            channel.ToLower(result, default);
-            return new(result);
-        }
+
+        channel.ToLower(result, default);
+        return channel.Length;
     }
 
     private static IEnumerable<string> FormatChannels(IEnumerable<string> channels, bool withHashtag = true)

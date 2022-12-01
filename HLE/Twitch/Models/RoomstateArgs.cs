@@ -62,11 +62,16 @@ public sealed class RoomstateArgs : EventArgs
     public RoomstateArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        ReadOnlySpan<Range> tagsRanges = tags.GetRangesOfSplit(';');
-        for (int i = 0; i < tagsRanges.Length; i++)
+        Span<Range> tagsRanges = stackalloc Range[tags.Length];
+        int tagsRangesLength = tags.GetRangesOfSplit(';', tagsRanges);
+        tagsRanges = tagsRanges[..tagsRangesLength];
+        for (int i = 0; i < tagsRangesLength; i++)
         {
             ReadOnlySpan<char> tag = tags[tagsRanges[i]];
-            ReadOnlySpan<Range> tagRanges = tag.GetRangesOfSplit('=');
+            // ReSharper disable once StackAllocInsideLoop
+            Span<Range> tagRanges = stackalloc Range[tag.Length];
+            int tagRangesLength = tag.GetRangesOfSplit('=', tagRanges);
+            tagRanges = tagRanges[..tagRangesLength];
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];
             if (key.SequenceEqual(_emoteOnlyTag))

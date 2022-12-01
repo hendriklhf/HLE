@@ -276,13 +276,13 @@ public static class CollectionHelper
     internal static string RandomString(this Span<char> span, int wordLength)
     {
         Span<char> result = stackalloc char[wordLength];
-        RandomString(span, wordLength, result);
+        RandomString(span, result);
         return new(result);
     }
 
-    internal static int RandomString(this Span<char> span, int wordLength, Span<char> randomString)
+    internal static int RandomString(this Span<char> span, Span<char> randomString)
     {
-        for (int i = 0; i < wordLength; i++)
+        for (int i = 0; i < randomString.Length; i++)
         {
             randomString[i] = span.Random();
         }
@@ -423,13 +423,7 @@ public static class CollectionHelper
     public static List<T> Randomize<T>(this List<T> list)
     {
         List<T> copy = new(list);
-        int maxIdx = copy.Count - 1;
-        for (int i = 0; i < copy.Count; i++)
-        {
-            int randomIdx = HLE.Random.Int(0, maxIdx);
-            (copy[i], copy[randomIdx]) = (copy[randomIdx], copy[i]);
-        }
-
+        CollectionsMarshal.AsSpan(copy).Randomize();
         return copy;
     }
 

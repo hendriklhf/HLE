@@ -68,8 +68,12 @@ public class StringHelperTest
         const string s = "this is a message";
         str = s;
         ranges = str.GetRangesOfSplit('\n');
-        Assert.IsTrue(ranges is [_]);
+        Assert.IsTrue(ranges is [..]);
         Assert.AreEqual(s, str[ranges[0]].ToString());
+
+        str = string.Empty;
+        ranges = str.GetRangesOfSplit();
+        Assert.IsTrue(ranges is [..]);
     }
 
     [TestMethod]
