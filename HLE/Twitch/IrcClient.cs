@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -60,6 +61,8 @@ public abstract class IrcClient
     private protected CancellationTokenSource _tokenSource = new();
     private protected CancellationToken _token;
     private protected readonly (string Url, int Port) _url;
+    private protected readonly ArrayPool<byte> _byteArrayPool = ArrayPool<byte>.Create();
+    private protected readonly ArrayPool<char> _charArrayPool = ArrayPool<char>.Create();
 
     private protected const string _newLine = "\r\n";
 
@@ -88,7 +91,7 @@ public abstract class IrcClient
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public void Connect(IEnumerable<string> channels)
     {
-        async Task ConnectLocal()
+        async ValueTask ConnectLocal()
         {
             await ConnectClient();
             OnConnected?.Invoke(this, EventArgs.Empty);
@@ -112,7 +115,12 @@ public abstract class IrcClient
     /// <param name="message">The IRC message.</param>
     public void SendRaw(string message)
     {
-        Send(message).Wait(_token);
+        async ValueTask SendLocal()
+        {
+            await Send(message);
+        }
+
+        Task.Run(SendLocal, _token).Wait(_token);
     }
 
     /// <summary>
@@ -122,7 +130,7 @@ public abstract class IrcClient
     /// <param name="message">The message that will be sent to the channel.</param>
     public void SendMessage(string channel, string message)
     {
-        async Task SendLocal()
+        async ValueTask SendLocal()
         {
             await Send($"PRIVMSG {channel} :{message}");
         }
@@ -136,7 +144,7 @@ public abstract class IrcClient
     /// <param name="channel">The channel the client will join.</param>
     public void JoinChannel(string channel)
     {
-        async Task JoinChannelLocal()
+        async ValueTask JoinChannelLocal()
         {
             await Send($"JOIN {channel}");
         }
@@ -150,7 +158,7 @@ public abstract class IrcClient
     /// <param name="channel">The channel the client will leave.</param>
     public void LeaveChannel(string channel)
     {
-        async Task LeaveChannelLocal()
+        async ValueTask LeaveChannelLocal()
         {
             await Send($"PART {channel}");
         }
@@ -164,17 +172,17 @@ public abstract class IrcClient
     /// <param name="closeMessage">A close message or reason.</param>
     public void Disconnect(string closeMessage = "Manually closed")
     {
-        async Task DisconnectLocal()
+        async ValueTask DisconnectLocal()
         {
             await DisconnectClient(closeMessage);
         }
 
         Task.Run(DisconnectLocal, _token).Wait(_token);
-        CancelToken();
+        RequestCancellation();
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
-    private async Task JoinChannels(IEnumerable<string> channels)
+    private async ValueTask JoinChannels(IEnumerable<string> channels)
     {
         string[] channelArr = channels.ToArray();
         if (channelArr.Length == 0)
@@ -203,7 +211,7 @@ public abstract class IrcClient
         }
     }
 
-    private void CancelToken()
+    private void RequestCancellation()
     {
         _tokenSource.Cancel();
         _tokenSource.Dispose();
@@ -226,15 +234,15 @@ public abstract class IrcClient
         OnDataSent?.Invoke(sender, new(data));
     }
 
-    private protected abstract Task Send(string message);
+    private protected abstract ValueTask Send(string message);
 
-    private protected abstract Task Send(ReadOnlyMemory<char> message);
+    private protected abstract ValueTask Send(ReadOnlyMemory<char> message);
 
     private protected abstract void StartListening();
 
-    private protected abstract Task ConnectClient();
+    private protected abstract ValueTask ConnectClient();
 
-    private protected abstract Task DisconnectClient(string closeMessage);
+    private protected abstract ValueTask DisconnectClient(string closeMessage);
 
     private protected abstract (string Url, int Port) GetUrl();
 }

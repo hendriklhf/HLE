@@ -56,26 +56,26 @@ public sealed class IrcHandler
         {
             case >= 3:
             {
-                if (ircMessage[ircRanges[2]].SequenceEqual(_ircCmds[2]))
+                if (ircMessage[ircRanges[2]].Equals(_ircCmds[2], StringComparison.Ordinal))
                 {
                     OnChatMessageReceived?.Invoke(this, new(ircMessage));
                 }
-                else if (ircMessage[ircRanges[1]].SequenceEqual(_ircCmds[0]))
+                else if (ircMessage[ircRanges[1]].Equals(_ircCmds[0], StringComparison.Ordinal))
                 {
                     OnJoinedChannel?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (ircMessage[ircRanges[1]].SequenceEqual(_ircCmds[4]))
+                else if (ircMessage[ircRanges[1]].Equals(_ircCmds[4], StringComparison.Ordinal))
                 {
                     OnLeftChannel?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (ircMessage[ircRanges[2]].SequenceEqual(_ircCmds[1]))
+                else if (ircMessage[ircRanges[2]].Equals(_ircCmds[1], StringComparison.Ordinal))
                 {
                     OnRoomstateReceived?.Invoke(this, new(ircMessage, ircRanges));
                 }
 
                 break;
             }
-            case >= 1 when ircMessage[ircRanges[0]].SequenceEqual(_ircCmds[3]):
+            case >= 1 when ircMessage[ircRanges[0]].Equals(_ircCmds[3], StringComparison.Ordinal):
             {
                 OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;

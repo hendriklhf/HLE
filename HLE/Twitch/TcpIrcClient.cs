@@ -36,18 +36,28 @@ public sealed class TcpIrcClient : IrcClient
         _tcpClient.Dispose();
     }
 
-    private protected override async Task Send(string message)
+    private protected override async ValueTask Send(string message)
     {
         if (_writer is null)
         {
             throw new ArgumentNullException(nameof(_writer));
         }
 
-        ReadOnlyMemory<char> chars = message.ToCharArray();
-        await Send(chars);
+        char[] rentedArray = _charArrayPool.Rent(1024);
+        try
+        {
+            Memory<char> chars = rentedArray;
+            message.CopyTo(chars.Span);
+            chars = chars[..message.Length];
+            await Send(chars);
+        }
+        finally
+        {
+            _charArrayPool.Return(rentedArray);
+        }
     }
 
-    private protected override async Task Send(ReadOnlyMemory<char> message)
+    private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
         if (_writer is null)
         {
@@ -61,21 +71,20 @@ public sealed class TcpIrcClient : IrcClient
 
     private protected override void StartListening()
     {
-        async Task StartListeningLocal()
+        async ValueTask StartListeningLocal()
         {
             Memory<char> buffer = new char[2048];
             Memory<Range> rangeBuffer = new Range[256];
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
-                // TODO: go back to _reader.ReadAsync(...) so the string doesn't get allocated this early
-                string? line = await _reader.ReadLineAsync();
-                if (string.IsNullOrWhiteSpace(line))
+                // this doesnt work :)
+                int charCount = await _reader.ReadAsync(buffer, _token);
+                if (charCount == 0)
                 {
                     continue;
                 }
 
-                line.CopyTo(buffer.Span);
-                ReadOnlyMemory<char> message = buffer[..line.Length];
+                ReadOnlyMemory<char> message = buffer[..charCount];
                 int rangesLength = message.Span.GetRangesOfSplit(_newLine, rangeBuffer.Span);
                 ReadOnlyMemory<Range> ranges = rangeBuffer[..rangesLength];
                 for (int i = 0; i < rangesLength; i++)
@@ -93,7 +102,7 @@ public sealed class TcpIrcClient : IrcClient
         Task.Run(StartListeningLocal, _token);
     }
 
-    private protected override async Task ConnectClient()
+    private protected override async ValueTask ConnectClient()
     {
         await _tcpClient.ConnectAsync(_url.Url, _url.Port, _token);
         Stream stream = _tcpClient.GetStream();
@@ -108,10 +117,10 @@ public sealed class TcpIrcClient : IrcClient
         _writer = new(stream);
     }
 
-    private protected override Task DisconnectClient(string closeMessage)
+    private protected override ValueTask DisconnectClient(string closeMessage)
     {
         _tcpClient.Close();
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private protected override (string Url, int Port) GetUrl()

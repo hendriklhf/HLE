@@ -69,36 +69,38 @@ public sealed class RoomstateArgs : EventArgs
         {
             ReadOnlySpan<char> tag = tags[tagsRanges[i]];
             // ReSharper disable once StackAllocInsideLoop
+#pragma warning disable CA2014
             Span<Range> tagRanges = stackalloc Range[tag.Length];
+#pragma warning restore CA2014
             int tagRangesLength = tag.GetRangesOfSplit('=', tagRanges);
             tagRanges = tagRanges[..tagRangesLength];
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];
-            if (key.SequenceEqual(_emoteOnlyTag))
+            if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))
             {
                 EmoteOnly = GetEmoteOnly(value);
                 ChangedStates |= ChangedRoomstate.EmoteOnly;
             }
-            else if (key.SequenceEqual(_followersOnlyTag))
+            else if (key.Equals(_followersOnlyTag, StringComparison.Ordinal))
             {
                 FollowersOnly = GetFollowersOnly(value);
                 ChangedStates |= ChangedRoomstate.FollowersOnly;
             }
-            else if (key.SequenceEqual(_r9KTag))
+            else if (key.Equals(_r9KTag, StringComparison.Ordinal))
             {
                 R9K = GetR9K(value);
                 ChangedStates |= ChangedRoomstate.R9K;
             }
-            else if (key.SequenceEqual(_roomIdTag))
+            else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
                 ChannelId = GetChannelId(value);
             }
-            else if (key.SequenceEqual(_slowModeTag))
+            else if (key.Equals(_slowModeTag, StringComparison.Ordinal))
             {
                 SlowMode = GetSlowMode(value);
                 ChangedStates |= ChangedRoomstate.SlowMode;
             }
-            else if (key.SequenceEqual(_subsOnlyTag))
+            else if (key.Equals(_subsOnlyTag, StringComparison.Ordinal))
             {
                 SubsOnly = GetSubsOnly(value);
                 ChangedStates |= ChangedRoomstate.SubsOnly;

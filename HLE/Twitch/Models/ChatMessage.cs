@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
 
@@ -11,6 +12,7 @@ namespace HLE.Twitch.Models;
 /// A class that represents a chat message.
 /// </summary>
 [DebuggerDisplay("<#{Channel}> {Username}: {Message}")]
+[SuppressMessage("Reliability", "CA2014:Do not use stackalloc in loops")]
 public sealed class ChatMessage
 {
     /// <summary>
@@ -108,7 +110,7 @@ public sealed class ChatMessage
     private const string _badgesTag = "badges";
     private const string _colorTag = "color";
     private const string _displayNameTag = "display-name";
-    private const string _firstMsgTag = "first-mgs";
+    private const string _firstMsgTag = "first-msg";
     private const string _idTag = "id";
     private const string _modTag = "mod";
     private const string _roomIdTag = "room-id";
@@ -141,51 +143,51 @@ public sealed class ChatMessage
 
             ReadOnlySpan<char> key = tag[tagRanges[0]];
             ReadOnlySpan<char> value = tag[tagRanges[1]];
-            if (key.SequenceEqual(_badgeInfoTag))
+            if (key.Equals(_badgeInfoTag, StringComparison.Ordinal))
             {
                 BadgeInfo = GetBadgeInfo(value);
             }
-            else if (key.SequenceEqual(_badgesTag))
+            else if (key.Equals(_badgesTag, StringComparison.Ordinal))
             {
                 Badges = GetBadges(value);
             }
-            else if (key.SequenceEqual(_colorTag))
+            else if (key.Equals(_colorTag, StringComparison.Ordinal))
             {
                 Color = GetColor(value);
             }
-            else if (key.SequenceEqual(_displayNameTag))
+            else if (key.Equals(_displayNameTag, StringComparison.Ordinal))
             {
                 DisplayName = GetDisplayName(value);
             }
-            else if (key.SequenceEqual(_firstMsgTag))
+            else if (key.Equals(_firstMsgTag, StringComparison.Ordinal))
             {
                 IsFirstMessage = GetIsFirstMsg(value);
             }
-            else if (key.SequenceEqual(_idTag))
+            else if (key.Equals(_idTag, StringComparison.Ordinal))
             {
                 Id = GetId(value);
             }
-            else if (key.SequenceEqual(_modTag))
+            else if (key.Equals(_modTag, StringComparison.Ordinal))
             {
                 IsModerator = GetIsModerator(value);
             }
-            else if (key.SequenceEqual(_roomIdTag))
+            else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
                 ChannelId = GetChannelId(value);
             }
-            else if (key.SequenceEqual(_subscriberTag))
+            else if (key.Equals(_subscriberTag, StringComparison.Ordinal))
             {
                 IsSubscriber = GetIsSubscriber(value);
             }
-            else if (key.SequenceEqual(_tmiSentTsTag))
+            else if (key.Equals(_tmiSentTsTag, StringComparison.Ordinal))
             {
                 TmiSentTs = GetTmiSentTs(value);
             }
-            else if (key.SequenceEqual(_turboTag))
+            else if (key.Equals(_turboTag, StringComparison.Ordinal))
             {
                 IsTurboUser = GetIsTurboUser(value);
             }
-            else if (key.SequenceEqual(_userIdTag))
+            else if (key.Equals(_userIdTag, StringComparison.Ordinal))
             {
                 UserId = GetUserId(value);
             }

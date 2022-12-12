@@ -236,7 +236,8 @@ public static class CollectionHelper
         int start = 0;
         for (int i = 0; i < indices.Length; i++)
         {
-            Span<T> split = span[start..indices[i]];
+            Range range = new(new(start), new(indices[i]));
+            Span<T> split = span[range];
             start = indices[i] + 1;
             if (split.Length > 0)
             {

@@ -168,7 +168,8 @@ public static class StringHelper
         while (idx != -1)
         {
             indices[indicesLength++] = totalIdx;
-            idx = span[++totalIdx..].IndexOf(c);
+            Range range = new(new(++totalIdx), new(0, true));
+            idx = span[range].IndexOf(c);
             totalIdx += idx;
         }
 
@@ -197,7 +198,8 @@ public static class StringHelper
         {
             indices[indicesLength++] = totalIdx;
             totalIdx += s.Length;
-            idx = span[totalIdx..].IndexOf(s);
+            Range range = new(new(totalIdx), new(0, true));
+            idx = span[range].IndexOf(s);
             totalIdx += idx;
         }
 
@@ -242,7 +244,7 @@ public static class StringHelper
         while (length < indices.Length)
         {
             int idx = indices[length];
-            ranges[length++] = start..idx;
+            ranges[length++] = new(new(start), new(idx));
             start = idx + 1;
         }
 
@@ -286,7 +288,7 @@ public static class StringHelper
         while (length < indices.Length)
         {
             int idx = indices[length];
-            ranges[length++] = start..idx;
+            ranges[length++] = new(new(start), new(idx));
             start = idx + separator.Length;
         }
 

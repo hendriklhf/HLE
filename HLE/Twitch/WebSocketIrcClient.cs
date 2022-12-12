@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,29 +31,48 @@ public sealed class WebSocketIrcClient : IrcClient
         _webSocket.Dispose();
     }
 
-    private protected override async Task Send(string message)
+    private protected override async ValueTask Send(string message)
     {
-        byte[] bytes = Encoding.UTF8.GetBytes(message);
-        await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
-        InvokeDataSent(this, message);
+        byte[] rentedArray = _byteArrayPool.Rent(1024);
+        try
+        {
+            Memory<byte> bytes = rentedArray;
+            int byteCount = Encoding.UTF8.GetBytes(message, bytes.Span);
+            bytes = bytes[..byteCount];
+            await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
+            InvokeDataSent(this, message);
+        }
+        finally
+        {
+            _byteArrayPool.Return(rentedArray);
+        }
     }
 
-    private protected override async Task Send(ReadOnlyMemory<char> message)
+    private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
-        ReadOnlySequence<char> sequence = new(message);
-        byte[] bytes = Encoding.UTF8.GetBytes(sequence);
-        await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
-        InvokeDataSent(this, message.Span);
+        byte[] rentedArray = _byteArrayPool.Rent(1024);
+        try
+        {
+            Memory<byte> bytes = rentedArray;
+            int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
+            bytes = bytes[..byteCount];
+            await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
+            InvokeDataSent(this, message.Span);
+        }
+        finally
+        {
+            _byteArrayPool.Return(rentedArray);
+        }
     }
 
     private protected override void StartListening()
     {
-        async Task StartListeningLocal()
+        async ValueTask StartListeningLocal()
         {
             Memory<byte> buffer = new byte[1024];
             Memory<char> charBuffer = new char[1024];
             Memory<Range> rangeBuffer = new Range[256];
-            while (!_token.IsCancellationRequested && IsConnected)
+            while (IsConnected && !_token.IsCancellationRequested)
             {
                 ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
                 if (result.Count == 0)
@@ -77,12 +95,12 @@ public sealed class WebSocketIrcClient : IrcClient
         Task.Run(StartListeningLocal, _token);
     }
 
-    private protected override async Task ConnectClient()
+    private protected override async ValueTask ConnectClient()
     {
         await _webSocket.ConnectAsync(new($"{_url.Url}:{_url.Port}"), _token);
     }
 
-    private protected override async Task DisconnectClient(string closeMessage)
+    private protected override async ValueTask DisconnectClient(string closeMessage)
     {
         await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _token);
     }

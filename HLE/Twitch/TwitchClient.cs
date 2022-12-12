@@ -398,11 +398,6 @@ public sealed class TwitchClient
         return channel.Length;
     }
 
-    private static IEnumerable<string> FormatChannels(IEnumerable<string> channels, bool withHashtag = true)
-    {
-        return channels.Select(c => FormatChannel(c, withHashtag));
-    }
-
     private static string ValidateOAuthToken(string oAuthToken)
     {
         Regex oAuthPattern = new(@"^oauth:[a-zA-Z0-9]{30}$", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
