@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using HLE.Http;
+using System.Threading.Tasks;
 
 namespace HLE.Emojis;
 
@@ -51,7 +52,11 @@ public sealed class EmojiFileGenerator
         }
     };
 
-    private JsonElement? _emojiData;
+    private byte[]? _emojiJsonBytes;
+
+    private const string _publicConstString = "public const string";
+    private const string _equalSignSpaceQuotation = "= \"";
+    private const string _quotationSemicolon = "\";";
 
     public EmojiFileGenerator(string namespaceName, char indentationChar = ' ', int indentationSize = 4)
     {
@@ -66,75 +71,105 @@ public sealed class EmojiFileGenerator
     /// </summary>
     public string? Generate()
     {
-        if (!_emojiData.HasValue)
+        if (_emojiJsonBytes is null)
         {
-            HttpGet request = new("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
-            if (!request.IsValidJsonData)
+            try
+            {
+                using HttpClient httpClient = new();
+                Task<byte[]> task = httpClient.GetByteArrayAsync("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
+                task.Wait();
+                byte[] bytes = task.Result;
+                _emojiJsonBytes = bytes;
+            }
+            catch (Exception)
             {
                 return null;
             }
-
-            _emojiData = request.Data;
         }
 
-        StringBuilder builder = new();
+        StringBuilder builder = new(stackalloc char[100000]);
         builder.Append($"#pragma warning disable 1591{Environment.NewLine}");
         builder.Append($"// ReSharper disable UnusedMember.Global{Environment.NewLine}");
         builder.Append($"// ReSharper disable InconsistentNaming{Environment.NewLine}");
         builder.Append(Environment.NewLine);
         builder.Append($"namespace {NamespaceName};{Environment.NewLine + Environment.NewLine}");
         builder.Append($"/// <summary>{Environment.NewLine}");
-        builder.Append($"///     A class that contains (almost) every existing emoji. ({DateTime.UtcNow:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
+        builder.Append($"///     A class that contains (almost) every existing emoji. (generated {DateTime.UtcNow:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
         builder.Append($"/// </summary>{Environment.NewLine}");
         builder.Append($"public static class Emoji{Environment.NewLine}{{{Environment.NewLine}");
-        int emojiLength = _emojiData.Value.GetArrayLength();
-        for (int i = 0; i < emojiLength; i++)
+
+        Span<char> indentation = stackalloc char[IndentationSize];
+        indentation.Fill(IndentationChar);
+
+        ReadOnlySpan<byte> emojiProperty = "emoji"u8;
+        ReadOnlySpan<byte> aliasesProperty = "aliases"u8;
+
+        JsonReaderOptions options = new()
         {
-            string? name = _emojiData.Value[i].GetProperty("aliases")[0].GetString();
-            if (name is null)
-            {
-                continue;
-            }
+            CommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true
+        };
+        Utf8JsonReader jsonReader = new(_emojiJsonBytes, options);
 
-            Span<char> nameSpan = name.AsMutableSpan();
-            nameSpan[0] = char.ToUpper(nameSpan[0]);
-            string? emoji = _emojiData.Value[i].GetProperty("emoji").GetString();
-            if (emoji is null)
-            {
-                continue;
-            }
+        Span<char> emoji = stackalloc char[100];
+        int emojiLength = 0;
+        Span<char> name = stackalloc char[100];
 
-            if (_illegalWords.TryGetValue(name, out string? replacement))
+        while (jsonReader.Read())
+        {
+            switch (jsonReader.TokenType)
             {
-                name = replacement;
-            }
+                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(emojiProperty):
+                    jsonReader.Read();
+                    ReadOnlySpan<byte> emojiBytes = jsonReader.ValueSpan;
+                    emojiLength = Encoding.UTF8.GetChars(emojiBytes, emoji);
+                    break;
+                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(aliasesProperty):
+                    jsonReader.Read();
+                    jsonReader.Read();
+                    ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
+                    int nameLength = Encoding.UTF8.GetChars(nameBytes, name);
+                    name[0] = char.ToUpper(name[0]);
+                    CheckForIllegalName(name, ref nameLength);
 
-            builder.Append($"{new(IndentationChar, IndentationSize)}public const string {name} = \"{emoji}\";{Environment.NewLine}");
+                    builder.Append(indentation, _publicConstString, StringHelper.Whitespace, name[..nameLength], StringHelper.Whitespace);
+                    builder.Append(_equalSignSpaceQuotation, emoji[..emojiLength], _quotationSemicolon, Environment.NewLine);
+                    break;
+                default:
+                    continue;
+            }
         }
 
         builder.Append('}');
-        string content = builder.ToString();
-        Span<char> chars = content.AsMutableSpan();
-        int charsLength = chars.Length;
-        Span<char> result = stackalloc char[content.Length + Environment.NewLine.Length];
-        int resultLength = 0;
-        for (int i = 0; i < charsLength; i++)
+        builder.Append(Environment.NewLine);
+        return builder.ToString();
+    }
+
+    private void CheckForIllegalName(Span<char> name, ref int nameLength)
+    {
+        ReadOnlySpan<char> readOnlyName = name[..nameLength];
+        foreach (var illegalWord in _illegalWords)
         {
-            if (chars[i] != '_')
+            if (!readOnlyName.Equals(illegalWord.Key, StringComparison.Ordinal))
             {
-                result[resultLength++] = chars[i];
                 continue;
             }
 
-            int ip1 = i + 1;
-            chars[ip1] = char.ToUpper(chars[ip1]);
+            illegalWord.Value.CopyTo(name);
+            nameLength = illegalWord.Value.Length;
+            return;
         }
 
-        for (int i = 0; i < Environment.NewLine.Length; i++)
+        for (int i = 0; i < nameLength; i++)
         {
-            result[resultLength++] = Environment.NewLine[i];
-        }
+            if (name[i] != '_')
+            {
+                continue;
+            }
 
-        return new(result[..resultLength]);
+            name[(i + 1)..nameLength].CopyTo(name[i..]);
+            nameLength--;
+            name[i] = char.ToUpper(name[i]);
+        }
     }
 }

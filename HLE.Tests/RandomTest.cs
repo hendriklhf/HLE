@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests;
@@ -234,28 +233,6 @@ public class RandomTest
         {
 #pragma warning disable CS0183
             Assert.IsTrue(Random.StrongULong() is ulong);
-#pragma warning restore CS0183
-        }
-    }
-
-    [TestMethod]
-    public void StrongInt128Test()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-#pragma warning disable CS0183
-            Assert.IsTrue(Random.StrongInt128() is Int128);
-#pragma warning restore CS0183
-        }
-    }
-
-    [TestMethod]
-    public void StrongUInt128Test()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-#pragma warning disable CS0183
-            Assert.IsTrue(Random.StrongUInt128() is UInt128);
 #pragma warning restore CS0183
         }
     }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Globalization;
 
@@ -11,8 +10,7 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// A class that represents a chat message.
 /// </summary>
-[DebuggerDisplay("<#{Channel}> {Username}: {Message}")]
-[SuppressMessage("Reliability", "CA2014:Do not use stackalloc in loops")]
+[DebuggerDisplay("{ToString()}")]
 public sealed class ChatMessage
 {
     /// <summary>
@@ -134,11 +132,10 @@ public sealed class ChatMessage
         Span<Range> tagsRanges = stackalloc Range[tags.Length];
         int tagsRangesLength = tags.GetRangesOfSplit(';', tagsRanges);
 
+        Span<Range> tagRanges = stackalloc Range[2];
         for (int i = 0; i < tagsRangesLength; i++)
         {
             ReadOnlySpan<char> tag = tags[tagsRanges[i]];
-            // ReSharper disable once StackAllocInsideLoop
-            Span<Range> tagRanges = stackalloc Range[2];
             tag.GetRangesOfSplit('=', tagRanges);
 
             ReadOnlySpan<char> key = tag[tagRanges[0]];
@@ -193,7 +190,7 @@ public sealed class ChatMessage
             }
         }
 
-        IsAction = ircMessage[ircRanges[4]].SequenceEqual(_actionPrefix);
+        IsAction = ircMessage[ircRanges[4]].Equals(_actionPrefix, StringComparison.Ordinal);
         Username = DisplayName.ToLower();
         Channel = new(ircMessage[ircRanges[3]][1..]);
         Message = GetMessage(ircMessage, ircRanges);
@@ -226,11 +223,10 @@ public sealed class ChatMessage
         Span<Range> ranges = stackalloc Range[value.Length];
         int rangesLength = value.GetRangesOfSplit(',', ranges);
         Dictionary<string, string> result = new(rangesLength);
+        Span<Range> infoRanges = stackalloc Range[2];
         for (int i = 0; i < rangesLength; i++)
         {
             ReadOnlySpan<char> info = value[ranges[i]];
-            // ReSharper disable once StackAllocInsideLoop
-            Span<Range> infoRanges = stackalloc Range[2];
             info.GetRangesOfSplit('/', infoRanges);
 
             string key = new(info[infoRanges[0]]);
@@ -243,7 +239,7 @@ public sealed class ChatMessage
 
     private static Badge[] GetBadges(ReadOnlySpan<char> value)
     {
-        if (value.IsEmpty)
+        if (value.Length == 0)
         {
             return Array.Empty<Badge>();
         }
@@ -252,11 +248,10 @@ public sealed class ChatMessage
         int badgesRangesLength = value.GetRangesOfSplit(',', badgesRanges);
         badgesRanges = badgesRanges[..badgesRangesLength];
         Badge[] result = new Badge[badgesRangesLength];
+        Span<Range> infoRanges = stackalloc Range[2];
         for (int i = 0; i < badgesRangesLength; i++)
         {
             ReadOnlySpan<char> info = value[badgesRanges[i]];
-            // ReSharper disable once StackAllocInsideLoop
-            Span<Range> infoRanges = stackalloc Range[2];
             info.GetRangesOfSplit('/', infoRanges);
 
             string name = new(info[infoRanges[0]]);

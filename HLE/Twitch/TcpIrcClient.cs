@@ -29,13 +29,6 @@ public sealed class TcpIrcClient : IrcClient
     {
     }
 
-    ~TcpIrcClient()
-    {
-        _reader?.Dispose();
-        _writer?.Dispose();
-        _tcpClient.Dispose();
-    }
-
     private protected override async ValueTask Send(string message)
     {
         if (_writer is null)
@@ -77,7 +70,7 @@ public sealed class TcpIrcClient : IrcClient
             Memory<Range> rangeBuffer = new Range[256];
             while (!_tokenSource.IsCancellationRequested && IsConnected)
             {
-                // this doesnt work :)
+                // TODO: this doesnt work :)
                 int charCount = await _reader.ReadAsync(buffer, _token);
                 if (charCount == 0)
                 {

@@ -241,22 +241,6 @@ public static class Random
         return BitConverter.ToUInt64(bytes);
     }
 
-    public static Int128 StrongInt128()
-    {
-        Int128 low = StrongLong();
-        Int128 high = StrongLong();
-        Int128 result = high << 64 | low;
-        return result;
-    }
-
-    public static UInt128 StrongUInt128()
-    {
-        UInt128 low = StrongULong();
-        UInt128 high = StrongULong();
-        UInt128 result = high << 64 | low;
-        return result;
-    }
-
     public static float StrongFloat()
     {
         Span<byte> bytes = stackalloc byte[sizeof(float)];

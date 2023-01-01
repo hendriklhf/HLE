@@ -80,11 +80,6 @@ public abstract class IrcClient
         _url = GetUrl();
     }
 
-    ~IrcClient()
-    {
-        _tokenSource.Dispose();
-    }
-
     /// <summary>
     /// Connects the client to the Twitch IRC server.
     /// </summary>
@@ -177,8 +172,8 @@ public abstract class IrcClient
             await DisconnectClient(closeMessage);
         }
 
-        Task.Run(DisconnectLocal, _token).Wait(_token);
         RequestCancellation();
+        Task.Run(DisconnectLocal, _token).Wait(_token);
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 

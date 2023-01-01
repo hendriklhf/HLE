@@ -26,11 +26,6 @@ public sealed class WebSocketIrcClient : IrcClient
     {
     }
 
-    ~WebSocketIrcClient()
-    {
-        _webSocket.Dispose();
-    }
-
     private protected override async ValueTask Send(string message)
     {
         byte[] rentedArray = _byteArrayPool.Rent(1024);
