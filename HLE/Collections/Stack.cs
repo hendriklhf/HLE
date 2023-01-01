@@ -21,6 +21,41 @@ public ref struct Stack<T>
 
     public readonly T Peek() => _stack[Count - 1];
 
+    public bool TryPush(T item)
+    {
+        if (Count >= Capacity)
+        {
+            return false;
+        }
+
+        Push(item);
+        return true;
+    }
+
+    public bool TryPop(out T? item)
+    {
+        if (Count <= 0)
+        {
+            item = default;
+            return false;
+        }
+
+        item = Pop();
+        return true;
+    }
+
+    public readonly bool TryPeek(out T? item)
+    {
+        if (Count <= 0)
+        {
+            item = default;
+            return false;
+        }
+
+        item = Peek();
+        return true;
+    }
+
     public void Clear() => Count = 0;
 
     public static implicit operator Stack<T>(Span<T> stack) => new(stack);
