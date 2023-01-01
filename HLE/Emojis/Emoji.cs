@@ -5,7 +5,7 @@
 namespace HLE.Emojis;
 
 /// <summary>
-///    A class that contains (almost) every existing emoji. (11.09.2022 19:21:13)
+///     A class that contains (almost) every existing emoji. (generated 01.01.2023 03:56:24)
 /// </summary>
 public static class Emoji
 {
@@ -19,6 +19,7 @@ public static class Emoji
     public const string Joy = "😂";
     public const string SlightlySmilingFace = "🙂";
     public const string UpsideDownFace = "🙃";
+    public const string MeltingFace = "🫠";
     public const string Wink = "😉";
     public const string Blush = "😊";
     public const string Innocent = "😇";
@@ -39,13 +40,17 @@ public static class Emoji
     public const string MoneyMouthFace = "🤑";
     public const string Hugs = "🤗";
     public const string HandOverMouth = "🤭";
+    public const string FaceWithOpenEyesAndHandOverMouth = "🫢";
+    public const string FaceWithPeekingEye = "🫣";
     public const string ShushingFace = "🤫";
     public const string Thinking = "🤔";
+    public const string SalutingFace = "🫡";
     public const string ZipperMouthFace = "🤐";
     public const string RaisedEyebrow = "🤨";
     public const string NeutralFace = "😐";
     public const string Expressionless = "😑";
     public const string NoMouth = "😶";
+    public const string DottedLineFace = "🫥";
     public const string FaceInClouds = "😶‍🌫️";
     public const string Smirk = "😏";
     public const string Unamused = "😒";
@@ -77,6 +82,7 @@ public static class Emoji
     public const string NerdFace = "🤓";
     public const string MonocleFace = "🧐";
     public const string Confused = "😕";
+    public const string FaceWithDiagonalMouth = "🫤";
     public const string Worried = "😟";
     public const string SlightlyFrowningFace = "🙁";
     public const string FrowningFace = "☹️";
@@ -85,6 +91,7 @@ public static class Emoji
     public const string Astonished = "😲";
     public const string Flushed = "😳";
     public const string PleadingFace = "🥺";
+    public const string FaceHoldingBackTears = "🥹";
     public const string Frowning = "😦";
     public const string Anguished = "😧";
     public const string Fearful = "😨";
@@ -170,11 +177,16 @@ public static class Emoji
     public const string RaisedHandWithFingersSplayed = "🖐️";
     public const string Hand = "✋";
     public const string VulcanSalute = "🖖";
+    public const string RightwardsHand = "🫱";
+    public const string LeftwardsHand = "🫲";
+    public const string PalmDownHand = "🫳";
+    public const string PalmUpHand = "🫴";
     public const string OkHand = "👌";
     public const string PinchedFingers = "🤌";
     public const string PinchingHand = "🤏";
     public const string V = "✌️";
     public const string CrossedFingers = "🤞";
+    public const string HandWithIndexFingerAndThumbCrossed = "🫰";
     public const string LoveYouGesture = "🤟";
     public const string Metal = "🤘";
     public const string CallMeHand = "🤙";
@@ -184,6 +196,7 @@ public static class Emoji
     public const string MiddleFinger = "🖕";
     public const string PointDown = "👇";
     public const string PointUp = "☝️";
+    public const string IndexPointingAtTheViewer = "🫵";
     public const string ThumbUp = "👍";
     public const string ThumbDown = "👎";
     public const string FistRaised = "✊";
@@ -192,6 +205,7 @@ public static class Emoji
     public const string FistRight = "🤜";
     public const string Clap = "👏";
     public const string RaisedHands = "🙌";
+    public const string HeartHands = "🫶";
     public const string OpenHands = "👐";
     public const string PalmsUpTogether = "🤲";
     public const string Handshake = "🤝";
@@ -216,6 +230,7 @@ public static class Emoji
     public const string Eye = "👁️";
     public const string Tongue = "👅";
     public const string Lips = "👄";
+    public const string BitingLip = "🫦";
     public const string Baby = "👶";
     public const string Child = "🧒";
     public const string Boy = "👦";
@@ -335,6 +350,7 @@ public static class Emoji
     public const string ConstructionWorker = "👷";
     public const string ConstructionWorkerMan = "👷‍♂️";
     public const string ConstructionWorkerWoman = "👷‍♀️";
+    public const string PersonWithCrown = "🫅";
     public const string Prince = "🤴";
     public const string Princess = "👸";
     public const string PersonWithTurban = "👳";
@@ -349,6 +365,8 @@ public static class Emoji
     public const string ManWithVeil = "👰‍♂️";
     public const string WomanWithVeil = "👰‍♀️";
     public const string PregnantWoman = "🤰";
+    public const string PregnantMan = "🫃";
+    public const string PregnantPerson = "🫄";
     public const string BreastFeeding = "🤱";
     public const string WomanFeedingBaby = "👩‍🍼";
     public const string ManFeedingBaby = "👨‍🍼";
@@ -384,6 +402,7 @@ public static class Emoji
     public const string Zombie = "🧟";
     public const string ZombieMan = "🧟‍♂️";
     public const string ZombieWoman = "🧟‍♀️";
+    public const string Troll = "🧌";
     public const string Massage = "💆";
     public const string MassageMan = "💆‍♂️";
     public const string MassageWoman = "💆‍♀️";
@@ -615,6 +634,7 @@ public static class Emoji
     public const string Shark = "🦈";
     public const string Octopus = "🐙";
     public const string Shell = "🐚";
+    public const string Coral = "🪸";
     public const string Snail = "🐌";
     public const string Butterfly = "🦋";
     public const string Bug = "🐛";
@@ -634,6 +654,7 @@ public static class Emoji
     public const string Bouquet = "💐";
     public const string CherryBlossom = "🌸";
     public const string WhiteFlower = "💮";
+    public const string Lotus = "🪷";
     public const string Rosette = "🏵️";
     public const string Rose = "🌹";
     public const string WiltedFlower = "🥀";
@@ -654,6 +675,8 @@ public static class Emoji
     public const string MapleLeaf = "🍁";
     public const string FallenLeaf = "🍂";
     public const string Leaves = "🍃";
+    public const string EmptyNest = "🪹";
+    public const string NestWithEggs = "🪺";
     public const string Grapes = "🍇";
     public const string Melon = "🍈";
     public const string Watermelon = "🍉";
@@ -687,6 +710,7 @@ public static class Emoji
     public const string Onion = "🧅";
     public const string Mushroom = "🍄";
     public const string Peanuts = "🥜";
+    public const string Beans = "🫘";
     public const string Chestnut = "🌰";
     public const string Bread = "🍞";
     public const string Croissant = "🥐";
@@ -772,6 +796,7 @@ public static class Emoji
     public const string Beers = "🍻";
     public const string ClinkingGlasses = "🥂";
     public const string TumblerGlass = "🥃";
+    public const string PouringLiquid = "🫗";
     public const string CupWithStraw = "🥤";
     public const string BubbleTea = "🧋";
     public const string BeverageBox = "🧃";
@@ -782,6 +807,7 @@ public static class Emoji
     public const string ForkAndKnife = "🍴";
     public const string Spoon = "🥄";
     public const string Hocho = "🔪";
+    public const string Jar = "🫙";
     public const string Amphora = "🏺";
     public const string EarthAfrica = "🌍";
     public const string EarthAmericas = "🌎";
@@ -844,6 +870,7 @@ public static class Emoji
     public const string BridgeAtNight = "🌉";
     public const string Hotsprings = "♨️";
     public const string CarouselHorse = "🎠";
+    public const string PlaygroundSlide = "🛝";
     public const string FerrisWheel = "🎡";
     public const string RollerCoaster = "🎢";
     public const string Barber = "💈";
@@ -892,12 +919,14 @@ public static class Emoji
     public const string RailwayTrack = "🛤️";
     public const string OilDrum = "🛢️";
     public const string Fuelpump = "⛽";
+    public const string Wheel = "🛞";
     public const string RotatingLight = "🚨";
     public const string TrafficLight = "🚥";
     public const string VerticalTrafficLight = "🚦";
     public const string StopSign = "🛑";
     public const string Construction = "🚧";
     public const string Anchor = "⚓";
+    public const string RingBuoy = "🛟";
     public const string Boat = "⛵";
     public const string Canoe = "🛶";
     public const string Speedboat = "🚤";
@@ -1059,6 +1088,7 @@ public static class Emoji
     public const string CrystalBall = "🔮";
     public const string MagicWand = "🪄";
     public const string NazarAmulet = "🧿";
+    public const string Hamsa = "🪬";
     public const string VideoGame = "🎮";
     public const string Joystick = "🕹️";
     public const string SlotMachine = "🎰";
@@ -1066,6 +1096,7 @@ public static class Emoji
     public const string Jigsaw = "🧩";
     public const string TeddyBear = "🧸";
     public const string Pinata = "🪅";
+    public const string MirrorBall = "🪩";
     public const string NestingDolls = "🪆";
     public const string Spades = "♠️";
     public const string Hearts = "♥️";
@@ -1161,6 +1192,7 @@ public static class Emoji
     public const string Pager = "📟";
     public const string Fax = "📠";
     public const string Battery = "🔋";
+    public const string LowBattery = "🪫";
     public const string ElectricPlug = "🔌";
     public const string Computer = "💻";
     public const string DesktopComputer = "🖥️";
@@ -1301,7 +1333,9 @@ public static class Emoji
     public const string DropOfBlood = "🩸";
     public const string Pill = "💊";
     public const string AdhesiveBandage = "🩹";
+    public const string Crutch = "🩼";
     public const string Stethoscope = "🩺";
+    public const string XRay = "🩻";
     public const string Door = "🚪";
     public const string Elevator = "🛗";
     public const string Mirror = "🪞";
@@ -1322,6 +1356,7 @@ public static class Emoji
     public const string RollOfPaper = "🧻";
     public const string Bucket = "🪣";
     public const string Soap = "🧼";
+    public const string Bubbles = "🫧";
     public const string Toothbrush = "🪥";
     public const string Sponge = "🧽";
     public const string FireExtinguisher = "🧯";
@@ -1332,6 +1367,7 @@ public static class Emoji
     public const string FuneralUrn = "⚱️";
     public const string Moyai = "🗿";
     public const string Placard = "🪧";
+    public const string IdentificationCard = "🪪";
     public const string Atm = "🏧";
     public const string PutLitterInItsPlace = "🚮";
     public const string PotableWater = "🚰";
@@ -1435,6 +1471,7 @@ public static class Emoji
     public const string HeavyPlusSign = "➕";
     public const string HeavyMinusSign = "➖";
     public const string HeavyDivisionSign = "➗";
+    public const string HeavyEqualsSign = "🟰";
     public const string Infinity = "♾️";
     public const string Bangbang = "‼️";
     public const string Interrobang = "⁉️";
