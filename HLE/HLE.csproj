@@ -16,9 +16,9 @@
     <OutputType>Library</OutputType>
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
-    <Version>2.0.6</Version>
-    <PackageVersion>2.0.6</PackageVersion>
-    <AssemblyVersion>2.0.6</AssemblyVersion>
+    <Version>2.0.7</Version>
+    <PackageVersion>2.0.7</PackageVersion>
+    <AssemblyVersion>2.0.7</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
