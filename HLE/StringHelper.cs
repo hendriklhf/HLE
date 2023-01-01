@@ -1,8 +1,8 @@
 using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace HLE;
@@ -20,16 +20,16 @@ public static class StringHelper
     public const char InvisibleChar = '\uFFFD';
 
     /// <summary>
-    /// Creates a invisible block in Twitch chat.
+    /// Creates an invisible block in Twitch chat.
     /// </summary>
     public const char InvisibleBlockChar = '\u2800';
 
     /// <summary>
-    /// Can be placed inside a username, which not mention the user.
+    /// Can be placed inside a username, which will not mention the user.
     /// </summary>
     public const string AntipingChar = "\uDB40\uDC00";
 
-    public static string Whitespace { get; } = " ";
+    public const string Whitespace = " ";
 
     /// <summary>
     /// Removes the given <see cref="string"/> <paramref name="s"/> from the input <see cref="string"/> <paramref name="str"/>.
@@ -37,11 +37,13 @@ public static class StringHelper
     /// <param name="str">The <see cref="string"/> from with the given <see cref="string"/> <paramref name="s"/> will be removed.</param>
     /// <param name="s">The <see cref="string"/> that will be removed from the input <see cref="string"/> <paramref name="str"/>.</param>
     /// <returns>Returns the <see cref="string"/> <paramref name="str"/> with the <paramref name="s"/> removed.</returns>
+    [Pure]
     public static string Remove(this string str, string s)
     {
         return str.Replace(s, string.Empty);
     }
 
+    [Pure]
     public static string[] Part(this string str, int charCount)
     {
         ReadOnlySpan<char> span = str;
@@ -65,6 +67,7 @@ public static class StringHelper
         return result[..resultLength].ToArray();
     }
 
+    [Pure]
     public static string[] Part(this string str, int charCount, char separator)
     {
         ReadOnlySpan<char> span = str;
@@ -89,7 +92,7 @@ public static class StringHelper
             ReadOnlySpan<char> part = span[ranges[i]];
             if (part.Length >= charCount) // part doesn't fit into buffer, even if buffer is empty
             {
-                if (bufferLength > 0) // if buffer isn't empty, write buffer into result
+                if (bufferLength > 0) // buffer isn't empty, write buffer into result
                 {
                     result[resultLength++] = new(buffer[..bufferLength]);
                     bufferLength = 0;
@@ -132,27 +135,19 @@ public static class StringHelper
     /// </summary>
     /// <param name="str">The <see cref="string"/> that will be trimmed.</param>
     /// <returns>A trimmed <see cref="string"/>.</returns>
+    [Pure]
     public static string TrimAll(this string str)
     {
         return _multipleSpacesPattern.Replace(str.Trim(), Whitespace);
     }
 
-    public static StringBuilder Append(this StringBuilder builder, params string[] strings)
-    {
-        foreach (string s in strings)
-        {
-            builder.Append(s);
-        }
-
-        return builder;
-    }
-
+    [Pure]
     public static int[] IndicesOf(this string str, char c)
     {
-        ReadOnlySpan<char> span = str;
-        return IndicesOf(span, c);
+        return IndicesOf((ReadOnlySpan<char>)str, c);
     }
 
+    [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
         Span<int> indices = stackalloc int[span.Length];
@@ -176,12 +171,13 @@ public static class StringHelper
         return indicesLength;
     }
 
+    [Pure]
     public static int[] IndicesOf(this string str, ReadOnlySpan<char> s)
     {
-        ReadOnlySpan<char> span = str;
-        return IndicesOf(span, s);
+        return IndicesOf((ReadOnlySpan<char>)str, s);
     }
 
+    [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
         Span<int> indices = stackalloc int[span.Length];
@@ -206,19 +202,30 @@ public static class StringHelper
         return indicesLength;
     }
 
+    [Pure]
     public static Range[] GetRangesOfSplit(this string str, char separator = ' ')
     {
-        ReadOnlySpan<char> span = str;
-        return GetRangesOfSplit(span, separator);
+        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator);
     }
 
+    public static int GetRangesOfSplit(this string str, char separator, Span<Range> ranges)
+    {
+        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator, ranges);
+    }
+
+    public static int GetRangesOfSplit(this string str, Span<Range> ranges, ReadOnlySpan<int> indices)
+    {
+        return GetRangesOfSplit((ReadOnlySpan<char>)str, ranges, indices);
+    }
+
+    [Pure]
     public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char separator = ' ')
     {
         Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         Span<Range> ranges = stackalloc Range[indicesLength + 1];
-        int rangesLength = GetRangesOfSplit(span, indices, ranges);
+        int rangesLength = GetRangesOfSplit(span, ranges, indices);
         return ranges[..rangesLength].ToArray();
     }
 
@@ -227,11 +234,11 @@ public static class StringHelper
         Span<int> indices = stackalloc int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
-        return GetRangesOfSplit(span, indices, ranges);
+        return GetRangesOfSplit(span, ranges, indices);
     }
 
     // ReSharper disable once UnusedParameter.Global
-    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, Span<int> indices, Span<Range> ranges)
+    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, Span<Range> ranges, ReadOnlySpan<int> indices)
     {
         if (ranges.Length == 1 || indices.Length == 0)
         {
@@ -252,12 +259,23 @@ public static class StringHelper
         return length;
     }
 
+    [Pure]
     public static Range[] GetRangesOfSplit(this string str, ReadOnlySpan<char> separator)
     {
-        ReadOnlySpan<char> span = str;
-        return GetRangesOfSplit(span, separator);
+        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator);
     }
 
+    public static int GetRangesOfSplit(this string str, ReadOnlySpan<char> separator, Span<Range> ranges)
+    {
+        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator, ranges);
+    }
+
+    public static int GetRangesOfSplit(this string str, ReadOnlySpan<char> separator, Span<Range> ranges, ReadOnlySpan<int> indices)
+    {
+        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator, ranges, indices);
+    }
+
+    [Pure]
     public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator)
     {
         Span<Range> ranges = stackalloc Range[span.Length];
@@ -274,8 +292,7 @@ public static class StringHelper
         return GetRangesOfSplit(span, separator, ranges, indices);
     }
 
-    // ReSharper disable once UnusedParameter.Global
-    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges, Span<int> indices)
+    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges, ReadOnlySpan<int> indices)
     {
         if (ranges.Length == 1)
         {
@@ -296,12 +313,13 @@ public static class StringHelper
         return length;
     }
 
+    [Pure]
     public static Span<char> AsMutableSpan(this string? str)
     {
-        ReadOnlySpan<char> span = str;
-        return AsMutableSpan(span);
+        return AsMutableSpan((ReadOnlySpan<char>)str);
     }
 
+    [Pure]
     public static unsafe Span<char> AsMutableSpan(this ReadOnlySpan<char> span)
     {
         if (span.Length == 0)
@@ -321,13 +339,20 @@ public static class StringHelper
 
     public static void ToLower(ReadOnlySpan<char> span)
     {
-        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return;
+        }
+
+        Span<char> mutSpan = span.AsMutableSpan();
+        ref char firstChar = ref mutSpan[0];
         for (int i = 0; i < spanLength; i++)
         {
-            if (!char.IsLower(mutSpan[i]))
+            ref char c = ref Unsafe.Add(ref firstChar, i);
+            if (!char.IsLower(c))
             {
-                mutSpan[i] = char.ToLower(mutSpan[i]);
+                c = char.ToLower(c);
             }
         }
     }
@@ -339,11 +364,17 @@ public static class StringHelper
 
     public static void ToLower(ReadOnlySpan<char> span, CultureInfo cultureInfo)
     {
-        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return;
+        }
+
+        Span<char> mutSpan = span.AsMutableSpan();
+        ref char firstChar = ref mutSpan[0];
         for (int i = 0; i < spanLength; i++)
         {
-            ref char c = ref mutSpan[i];
+            ref char c = ref Unsafe.Add(ref firstChar, i);
             if (!char.IsLower(c))
             {
                 c = char.ToLower(c, cultureInfo);
@@ -358,13 +389,20 @@ public static class StringHelper
 
     public static void ToUpper(ReadOnlySpan<char> span)
     {
-        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return;
+        }
+
+        Span<char> mutSpan = span.AsMutableSpan();
+        ref char firstChar = ref mutSpan[0];
         for (int i = 0; i < spanLength; i++)
         {
-            if (!char.IsUpper(mutSpan[i]))
+            ref char c = ref Unsafe.Add(ref firstChar, i);
+            if (!char.IsUpper(c))
             {
-                mutSpan[i] = char.ToUpper(mutSpan[i]);
+                c = char.ToUpper(c);
             }
         }
     }
@@ -376,34 +414,74 @@ public static class StringHelper
 
     public static void ToUpper(ReadOnlySpan<char> span, CultureInfo cultureInfo)
     {
-        Span<char> mutSpan = span.AsMutableSpan();
         int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return;
+        }
+
+        Span<char> mutSpan = span.AsMutableSpan();
+        ref char firstChar = ref mutSpan[0];
         for (int i = 0; i < spanLength; i++)
         {
-            if (!char.IsUpper(mutSpan[i]))
+            ref char c = ref Unsafe.Add(ref firstChar, i);
+            if (!char.IsUpper(c))
             {
-                mutSpan[i] = char.ToUpper(mutSpan[i], cultureInfo);
+                c = char.ToUpper(c, cultureInfo);
             }
         }
     }
 
+    [Pure]
     public static int CharCount(this string str, char c)
     {
         return CharCount((ReadOnlySpan<char>)str, c);
     }
 
+    [Pure]
     public static int CharCount(this ReadOnlySpan<char> span, char c)
     {
         int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return 0;
+        }
+
+        ref char firstChar = ref MemoryMarshal.GetReference(span);
         int charCount = 0;
         for (int i = 0; i < spanLength; i++)
         {
-            if (span[i] == c)
+            if (Unsafe.Add(ref firstChar, i) == c)
             {
                 charCount++;
             }
         }
 
         return charCount;
+    }
+
+    public static void Replace(string? str, char oldChar, char newChar)
+    {
+        Replace((ReadOnlySpan<char>)str, oldChar, newChar);
+    }
+
+    public static void Replace(ReadOnlySpan<char> span, char oldChar, char newChar)
+    {
+        if (span.Length == 0)
+        {
+            return;
+        }
+
+        Span<char> mutSpan = span.AsMutableSpan();
+        ref char firstChar = ref mutSpan[0];
+        int length = mutSpan.Length;
+        for (int i = 0; i < length; i++)
+        {
+            ref char c = ref Unsafe.Add(ref firstChar, i);
+            if (c == oldChar)
+            {
+                c = newChar;
+            }
+        }
     }
 }

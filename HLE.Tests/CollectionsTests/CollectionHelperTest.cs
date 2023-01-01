@@ -109,45 +109,6 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
-    public void SelectManyTest()
-    {
-        int[][] arrArr =
-        {
-            new[]
-            {
-                0,
-                1,
-                2,
-                3,
-                4
-            },
-            new[]
-            {
-                5,
-                6,
-                7,
-                8,
-                9
-            },
-            new[]
-            {
-                10,
-                11,
-                12,
-                13,
-                14
-            }
-        };
-
-        int[] arr = arrArr.SelectMany();
-        Assert.AreEqual(15, arr.Length);
-        for (int i = 0; i < arr.Length; i++)
-        {
-            Assert.AreEqual(i, arr[i]);
-        }
-    }
-
-    [TestMethod]
     public void SplitTest()
     {
         string[] arr =
@@ -185,29 +146,6 @@ public class CollectionHelperTest
         {
             Assert.AreEqual(lengths[i], split[i].Length);
         }
-    }
-
-    [TestMethod]
-    public void WherePTest()
-    {
-        static bool Longer3(string s) => s.Length > 3;
-        static bool Shorter5(string s) => s.Length < 5;
-
-        string[] arr =
-        {
-            "aaaaaaaa",
-            "aaa",
-            "aaaa",
-            "aaaaa",
-            "a",
-            "aaaa",
-            "aaaaaaaaa",
-            "aaaa"
-        };
-
-        arr = arr.WhereP(Longer3, Shorter5).ToArray();
-        Assert.AreEqual(3, arr.Length);
-        Assert.IsTrue(arr.All(s => s.Length == 4));
     }
 
     [TestMethod]
@@ -261,7 +199,7 @@ public class CollectionHelperTest
     {
         char[] arr = "hello".ToCharArray();
 
-        arr = arr.ForEachByRange((..2, _ => 'x'), (2..4, _ => 'y'));
+        arr = arr.ForRange((..2, _ => 'x'), (2..4, _ => 'y'));
         Assert.AreEqual("xxyyo", arr.ConcatToString());
     }
 
@@ -271,7 +209,7 @@ public class CollectionHelperTest
         char[] arr = "hello".ToCharArray();
         List<char> list = new();
         void Action(char c) => list.Add(c);
-        arr.ForEachByRange((2..4, Action), (..2, Action));
+        arr.ForRange((2..4, Action), (..2, Action));
         Assert.AreEqual(4, list.Count);
         Assert.IsTrue(list is ['l', 'l', 'h', 'e']);
     }
