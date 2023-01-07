@@ -64,9 +64,10 @@ public sealed class WebSocketIrcClient : IrcClient
     {
         async ValueTask StartListeningLocal()
         {
-            Memory<byte> buffer = new byte[1024];
-            Memory<char> charBuffer = new char[1024];
-            Memory<Range> rangeBuffer = new Range[256];
+            Memory<byte> buffer = new byte[2048];
+            Memory<char> charBuffer = new char[4096];
+            int charBufferLength = 0;
+            Memory<Range> rangeBuffer = new Range[512];
             while (IsConnected && !_token.IsCancellationRequested)
             {
                 ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
@@ -75,15 +76,35 @@ public sealed class WebSocketIrcClient : IrcClient
                     continue;
                 }
 
-                ReadOnlyMemory<byte> bytes = buffer[..(result.Count - 2)];
-                int count = Encoding.UTF8.GetChars(bytes.Span, charBuffer.Span);
-                ReadOnlyMemory<char> chars = charBuffer[..count];
+                int count = Encoding.UTF8.GetChars(buffer.Span[..result.Count], charBuffer.Span[charBufferLength..]);
+                ReadOnlyMemory<char> chars = charBuffer[..(count + charBufferLength)];
                 int rangesLength = chars.Span.GetRangesOfSplit(_newLine, rangeBuffer.Span);
-                ReadOnlyMemory<Range> ranges = rangeBuffer[..rangesLength];
+                bool isEndOfMessage = chars.Span[^2] == _newLine[0] && chars.Span[^1] == _newLine[1];
+                if (isEndOfMessage)
+                {
+                    for (int i = 0; i < rangesLength; i++)
+                    {
+                        InvokeDataReceived(this, chars[rangeBuffer.Span[i]]);
+                    }
+
+                    charBufferLength = 0;
+                    continue;
+                }
+
+                rangesLength--;
                 for (int i = 0; i < rangesLength; i++)
                 {
-                    InvokeDataReceived(this, chars[ranges.Span[i]]);
+                    InvokeDataReceived(this, chars[rangeBuffer.Span[i]]);
                 }
+
+                ReadOnlyMemory<char> lastPart = chars[rangeBuffer.Span[rangesLength]];
+                if (lastPart.Length < 3)
+                {
+                    continue;
+                }
+
+                lastPart.CopyTo(charBuffer);
+                charBufferLength = lastPart.Length;
             }
         }
 

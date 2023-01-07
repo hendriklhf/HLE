@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Models;
 
@@ -103,6 +105,7 @@ public sealed class ChatMessage
 
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
+    private const string _guidFormat = "D";
 
     private const string _badgeInfoTag = "badge-info";
     private const string _badgesTag = "badges";
@@ -125,8 +128,7 @@ public sealed class ChatMessage
     public ChatMessage(ReadOnlySpan<char> ircMessage, string? rawIrcMessage = null)
     {
         Span<Range> ircRanges = stackalloc Range[ircMessage.Length];
-        int ircRangesLength = ircMessage.GetRangesOfSplit(' ', ircRanges);
-        ircRanges = ircRanges[..ircRangesLength];
+        ircMessage.GetRangesOfSplit(' ', ircRanges);
 
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
         Span<Range> tagsRanges = stackalloc Range[tags.Length];
@@ -191,7 +193,7 @@ public sealed class ChatMessage
         }
 
         IsAction = ircMessage[ircRanges[4]].Equals(_actionPrefix, StringComparison.Ordinal);
-        Username = DisplayName.ToLower();
+        Username = DisplayName.ToLowerInvariant();
         Channel = new(ircMessage[ircRanges[3]][1..]);
         Message = GetMessage(ircMessage, ircRanges);
         RawIrcMessage = rawIrcMessage ?? new(ircMessage);
@@ -248,6 +250,7 @@ public sealed class ChatMessage
         int badgesRangesLength = value.GetRangesOfSplit(',', badgesRanges);
         badgesRanges = badgesRanges[..badgesRangesLength];
         Badge[] result = new Badge[badgesRangesLength];
+        ref Badge firstBadge = ref MemoryMarshal.GetArrayDataReference(result);
         Span<Range> infoRanges = stackalloc Range[2];
         for (int i = 0; i < badgesRangesLength; i++)
         {
@@ -256,7 +259,7 @@ public sealed class ChatMessage
 
             string name = new(info[infoRanges[0]]);
             string level = new(info[infoRanges[1]]);
-            result[i] = new(name, level);
+            Unsafe.Add(ref firstBadge, i) = new(name, level);
         }
 
         return result;
@@ -269,32 +272,32 @@ public sealed class ChatMessage
             return Color.Empty;
         }
 
-        byte r = byte.Parse(value[1..3], NumberStyles.HexNumber);
-        byte g = byte.Parse(value[3..5], NumberStyles.HexNumber);
-        byte b = byte.Parse(value[5..7], NumberStyles.HexNumber);
+        byte r = byte.Parse(value[1..3], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        byte g = byte.Parse(value[3..5], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+        byte b = byte.Parse(value[5..7], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         return Color.FromArgb(r, g, b);
     }
 
     private static string GetDisplayName(ReadOnlySpan<char> value)
     {
-        return new(value.EndsWith(_nameWithSpaceEnding) ? value[..^2] : value);
+        return new(value[^2] == _nameWithSpaceEnding[0] && value[^1] == _nameWithSpaceEnding[1] ? value[..^2] : value);
     }
 
     private static bool GetIsFirstMsg(ReadOnlySpan<char> value) => value[0] == '1';
 
-    private static Guid GetId(ReadOnlySpan<char> value) => Guid.Parse(value);
+    private static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, _guidFormat);
 
     private static bool GetIsModerator(ReadOnlySpan<char> value) => value[0] == '1';
 
-    private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     private static bool GetIsSubscriber(ReadOnlySpan<char> value) => value[0] == '1';
 
-    private static long GetTmiSentTs(ReadOnlySpan<char> value) => long.Parse(value);
+    private static long GetTmiSentTs(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     private static bool GetIsTurboUser(ReadOnlySpan<char> value) => value[0] == '1';
 
-    private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value);
+    private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     public override string ToString()
     {

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Models;
 
@@ -48,7 +50,7 @@ public sealed class Channel
 
     private static readonly ChangedRoomstate[] _roomstates = Enum.GetValues<ChangedRoomstate>();
 
-    internal Channel(RoomstateArgs args)
+    internal Channel(in RoomstateArgs args)
     {
         Name = args.Channel;
         PrefixedName = $"#{Name}";
@@ -60,13 +62,13 @@ public sealed class Channel
         SubsOnly = args.SubsOnly;
     }
 
-    internal void Update(RoomstateArgs args)
+    internal void Update(in RoomstateArgs args)
     {
-        ReadOnlySpan<ChangedRoomstate> roomstates = _roomstates;
-        for (int i = 0; i < roomstates.Length; i++)
+        ref ChangedRoomstate firstRoomstate = ref MemoryMarshal.GetArrayDataReference(_roomstates);
+        for (int i = 0; i < _roomstates.Length; i++)
         {
-            ChangedRoomstate roomstate = roomstates[i];
-            bool roomstateChanged = args.ChangedStates.HasFlag(roomstate);
+            ChangedRoomstate roomstate = Unsafe.Add(ref firstRoomstate, i);
+            bool roomstateChanged = (args.ChangedStates & roomstate) == roomstate;
             if (!roomstateChanged)
             {
                 continue;

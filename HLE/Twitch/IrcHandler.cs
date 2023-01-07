@@ -34,14 +34,11 @@ public sealed class IrcHandler
 
     #endregion Events
 
-    private readonly string[] _ircCmds =
-    {
-        "JOIN",
-        "ROOMSTATE",
-        "PRIVMSG",
-        "PING",
-        "PART"
-    };
+    private const string _joinCommand = "JOIN";
+    private const string _roomstateCommand = "ROOMSTATE";
+    private const string _privmsgCommand = "PRIVMSG";
+    private const string _pingCommand = "PING";
+    private const string _partCommand = "PART";
 
     /// <summary>
     /// Handles the incoming messages.
@@ -56,26 +53,26 @@ public sealed class IrcHandler
         {
             case >= 3:
             {
-                if (ircMessage[ircRanges[2]].Equals(_ircCmds[2], StringComparison.Ordinal))
+                if (ircMessage[ircRanges[2]].Equals(_privmsgCommand, StringComparison.Ordinal))
                 {
                     OnChatMessageReceived?.Invoke(this, new(ircMessage));
                 }
-                else if (ircMessage[ircRanges[1]].Equals(_ircCmds[0], StringComparison.Ordinal))
+                else if (ircMessage[ircRanges[1]].Equals(_joinCommand, StringComparison.Ordinal))
                 {
                     OnJoinedChannel?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (ircMessage[ircRanges[1]].Equals(_ircCmds[4], StringComparison.Ordinal))
+                else if (ircMessage[ircRanges[1]].Equals(_partCommand, StringComparison.Ordinal))
                 {
                     OnLeftChannel?.Invoke(this, new(ircMessage, ircRanges));
                 }
-                else if (ircMessage[ircRanges[2]].Equals(_ircCmds[1], StringComparison.Ordinal))
+                else if (ircMessage[ircRanges[2]].Equals(_roomstateCommand, StringComparison.Ordinal))
                 {
                     OnRoomstateReceived?.Invoke(this, new(ircMessage, ircRanges));
                 }
 
                 break;
             }
-            case >= 1 when ircMessage[ircRanges[0]].Equals(_ircCmds[3], StringComparison.Ordinal):
+            case >= 1 when ircMessage[ircRanges[0]].Equals(_pingCommand, StringComparison.Ordinal):
             {
                 OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;

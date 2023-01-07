@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -20,10 +21,10 @@ public sealed class ResourceReader
 
     private void ReadAllResources()
     {
-        string[] resourcePaths = _assembly.GetManifestResourceNames();
-        foreach (string path in resourcePaths)
+        Span<string> resourcePaths = _assembly.GetManifestResourceNames();
+        for (int i = 0; i < resourcePaths.Length; i++)
         {
-            _ = ReadResourceFromPath(path);
+            _ = ReadResourceFromPath(resourcePaths[i]);
         }
     }
 

@@ -58,7 +58,7 @@ public class StringHelperTest
     public void GetRangesOfSplit_CharSeparator_Test()
     {
         ReadOnlySpan<char> str = "hello world  test";
-        var ranges = str.GetRangesOfSplit();
+        Range[] ranges = str.GetRangesOfSplit();
         Assert.IsTrue(ranges is [_, _, _, _]);
         Assert.AreEqual("hello", str[ranges[0]].ToString());
         Assert.AreEqual("world", str[ranges[1]].ToString());
@@ -134,5 +134,29 @@ public class StringHelperTest
         const string str = "hello";
         int count = str.CharCount('l');
         Assert.AreEqual(2, count);
+    }
+
+    [TestMethod]
+    public void ReplaceTest()
+    {
+        string str = new("hello");
+        StringHelper.Replace(str, "h", "x");
+        Assert.AreEqual("xello", str);
+
+        str = new("hello");
+        StringHelper.Replace(str, "ll", "xx");
+        Assert.AreEqual("hexxo", str);
+
+        str = new("hello");
+        StringHelper.Replace(str, "llo", "xxx");
+        Assert.AreEqual("hexxx", str);
+
+        str = new("hello");
+        StringHelper.Replace(str, "hello", "xxxxx");
+        Assert.AreEqual("xxxxx", str);
+
+        str = "hello";
+        StringHelper.Replace(str, "xxxxx");
+        Assert.AreEqual("xxxxx", str);
     }
 }

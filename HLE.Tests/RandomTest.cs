@@ -1,6 +1,9 @@
 ﻿using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+#pragma warning disable CS8794
+#pragma warning disable CS0183
+
 namespace HLE.Tests;
 
 [TestClass]
@@ -21,9 +24,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS8794
             Assert.IsTrue(Random.Bool() is true or false);
-#pragma warning restore CS8794
         }
     }
 
@@ -44,9 +45,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.Byte() is byte);
-#pragma warning restore CS0183
         }
     }
 
@@ -55,9 +54,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.SByte() is sbyte);
-#pragma warning restore CS0183
         }
     }
 
@@ -66,9 +63,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.Short() is short);
-#pragma warning restore CS0183
         }
     }
 
@@ -77,9 +72,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.UShort() is ushort);
-#pragma warning restore CS0183
         }
     }
 
@@ -88,9 +81,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.Int() is int);
-#pragma warning restore CS0183
         }
     }
 
@@ -99,9 +90,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.UInt() is uint);
-#pragma warning restore CS0183
         }
     }
 
@@ -110,9 +99,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.Long() is long);
-#pragma warning restore CS0183
         }
     }
 
@@ -121,9 +108,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.Float() is float);
-#pragma warning restore CS0183
         }
     }
 
@@ -132,9 +117,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.Double() is double);
-#pragma warning restore CS0183
         }
     }
 
@@ -143,9 +126,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongBool() is bool);
-#pragma warning restore CS0183
         }
     }
 
@@ -154,9 +135,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongByte() is byte);
-#pragma warning restore CS0183
         }
     }
 
@@ -165,9 +144,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongSByte() is sbyte);
-#pragma warning restore CS0183
         }
     }
 
@@ -176,9 +153,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongShort() is short);
-#pragma warning restore CS0183
         }
     }
 
@@ -187,9 +162,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongUShort() is ushort);
-#pragma warning restore CS0183
         }
     }
 
@@ -198,9 +171,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongInt() is int);
-#pragma warning restore CS0183
         }
     }
 
@@ -209,9 +180,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongUInt() is uint);
-#pragma warning restore CS0183
         }
     }
 
@@ -220,9 +189,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongLong() is long);
-#pragma warning restore CS0183
         }
     }
 
@@ -231,9 +198,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongULong() is ulong);
-#pragma warning restore CS0183
         }
     }
 
@@ -242,9 +207,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongFloat() is float);
-#pragma warning restore CS0183
         }
     }
 
@@ -253,9 +216,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongDouble() is double);
-#pragma warning restore CS0183
         }
     }
 
@@ -264,9 +225,7 @@ public class RandomTest
     {
         for (int i = 0; i < 100_000; i++)
         {
-#pragma warning disable CS0183
             Assert.IsTrue(Random.StrongChar() is char);
-#pragma warning restore CS0183
         }
     }
 

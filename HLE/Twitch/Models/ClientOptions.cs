@@ -27,11 +27,4 @@ public readonly struct ClientOptions
     public ClientOptions()
     {
     }
-
-    public ClientOptions(ClientType type, bool useSsl, bool isVerifiedBot)
-    {
-        ClientType = type;
-        UseSSL = useSsl;
-        IsVerifiedBot = isVerifiedBot;
-    }
 }

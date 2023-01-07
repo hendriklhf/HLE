@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Models;
 
 /// <summary>
-/// <see cref="EventArgs"/> used whe a user left a channel.
+/// <see cref="EventArgs"/> used when a user left a channel.
 /// </summary>
 public sealed class LeftChannelArgs : EventArgs
 {

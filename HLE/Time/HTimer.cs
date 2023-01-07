@@ -61,6 +61,5 @@ public sealed class HTimer
 
         double result = _end - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         return result >= 0 ? result : 0;
-
     }
 }

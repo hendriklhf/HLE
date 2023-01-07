@@ -69,7 +69,7 @@ public sealed class EmojiFileGenerator
     /// Generates the Emoji file.
     /// <returns>The source code of the file. Null, if the creation was unsuccessful, due to e.g. not being able to retrieve the emoji data.</returns>
     /// </summary>
-    public string? Generate()
+    public unsafe string? Generate()
     {
         if (_emojiJsonBytes is null)
         {
@@ -78,8 +78,7 @@ public sealed class EmojiFileGenerator
                 using HttpClient httpClient = new();
                 Task<byte[]> task = httpClient.GetByteArrayAsync("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
                 task.Wait();
-                byte[] bytes = task.Result;
-                _emojiJsonBytes = bytes;
+                _emojiJsonBytes = task.Result;
             }
             catch (Exception)
             {
@@ -88,15 +87,14 @@ public sealed class EmojiFileGenerator
         }
 
         StringBuilder builder = new(stackalloc char[100000]);
-        builder.Append($"#pragma warning disable 1591{Environment.NewLine}");
-        builder.Append($"// ReSharper disable UnusedMember.Global{Environment.NewLine}");
-        builder.Append($"// ReSharper disable InconsistentNaming{Environment.NewLine}");
-        builder.Append(Environment.NewLine);
-        builder.Append($"namespace {NamespaceName};{Environment.NewLine + Environment.NewLine}");
-        builder.Append($"/// <summary>{Environment.NewLine}");
-        builder.Append($"///     A class that contains (almost) every existing emoji. (generated {DateTime.UtcNow:dd.MM.yyyy HH:mm:ss}){Environment.NewLine}");
-        builder.Append($"/// </summary>{Environment.NewLine}");
-        builder.Append($"public static class Emoji{Environment.NewLine}{{{Environment.NewLine}");
+        builder.Append("#pragma warning disable 1591", Environment.NewLine);
+        builder.Append("// ReSharper disable UnusedMember.Global", Environment.NewLine);
+        builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);
+        builder.Append("namsespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
+        builder.Append("/// <summary>", Environment.NewLine);
+        builder.Append("///     A class that contains (almost) every existing emoji. (generated ", DateTime.UtcNow.ToString("dd.MM.yyyy HH:mm:ss"), " UTC)", Environment.NewLine);
+        builder.Append("/// </summary>", Environment.NewLine);
+        builder.Append("public static class Emoji", Environment.NewLine, "{", Environment.NewLine);
 
         Span<char> indentation = stackalloc char[IndentationSize];
         indentation.Fill(IndentationChar);
@@ -130,7 +128,7 @@ public sealed class EmojiFileGenerator
                     ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
                     int nameLength = Encoding.UTF8.GetChars(nameBytes, name);
                     name[0] = char.ToUpper(name[0]);
-                    CheckForIllegalName(name, ref nameLength);
+                    CheckForIllegalName(name, &nameLength);
 
                     builder.Append(indentation, _publicConstString, StringHelper.Whitespace, name[..nameLength], StringHelper.Whitespace);
                     builder.Append(_equalSignSpaceQuotation, emoji[..emojiLength], _quotationSemicolon, Environment.NewLine);
@@ -145,9 +143,9 @@ public sealed class EmojiFileGenerator
         return builder.ToString();
     }
 
-    private void CheckForIllegalName(Span<char> name, ref int nameLength)
+    private unsafe void CheckForIllegalName(Span<char> name, int* nameLength)
     {
-        ReadOnlySpan<char> readOnlyName = name[..nameLength];
+        ReadOnlySpan<char> readOnlyName = name[..*nameLength];
         foreach (var illegalWord in _illegalWords)
         {
             if (!readOnlyName.Equals(illegalWord.Key, StringComparison.Ordinal))
@@ -156,19 +154,19 @@ public sealed class EmojiFileGenerator
             }
 
             illegalWord.Value.CopyTo(name);
-            nameLength = illegalWord.Value.Length;
+            *nameLength = illegalWord.Value.Length;
             return;
         }
 
-        for (int i = 0; i < nameLength; i++)
+        for (int i = 0; i < *nameLength; i++)
         {
             if (name[i] != '_')
             {
                 continue;
             }
 
-            name[(i + 1)..nameLength].CopyTo(name[i..]);
-            nameLength--;
+            name[(i + 1)..*nameLength].CopyTo(name[i..]);
+            *nameLength -= 1;
             name[i] = char.ToUpper(name[i]);
         }
     }

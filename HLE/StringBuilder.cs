@@ -30,14 +30,14 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span)
+    public void Append(scoped ReadOnlySpan<char> span)
     {
         span.CopyTo(_buffer[Length..]);
         Length += span.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2)
     {
         Append(span);
         span2.CopyTo(_buffer[Length..]);
@@ -45,7 +45,7 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3)
     {
         Append(span, span2);
         span3.CopyTo(_buffer[Length..]);
@@ -53,7 +53,7 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4)
     {
         Append(span, span2, span3);
         span4.CopyTo(_buffer[Length..]);
@@ -61,7 +61,7 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4, ReadOnlySpan<char> span5)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5)
     {
         Append(span, span2, span3, span4);
         span5.CopyTo(_buffer[Length..]);
@@ -69,7 +69,7 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4, ReadOnlySpan<char> span5, ReadOnlySpan<char> span6)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6)
     {
         Append(span, span2, span3, span4, span5);
         span6.CopyTo(_buffer[Length..]);
@@ -77,7 +77,8 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4, ReadOnlySpan<char> span5, ReadOnlySpan<char> span6, ReadOnlySpan<char> span7)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+        scoped ReadOnlySpan<char> span7)
     {
         Append(span, span2, span3, span4, span5, span6);
         span7.CopyTo(_buffer[Length..]);
@@ -85,7 +86,8 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4, ReadOnlySpan<char> span5, ReadOnlySpan<char> span6, ReadOnlySpan<char> span7, ReadOnlySpan<char> span8)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+        scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8)
     {
         Append(span, span2, span3, span4, span5, span6, span7);
         span8.CopyTo(_buffer[Length..]);
@@ -93,8 +95,8 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4, ReadOnlySpan<char> span5, ReadOnlySpan<char> span6, ReadOnlySpan<char> span7, ReadOnlySpan<char> span8,
-        ReadOnlySpan<char> span9)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+        scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8, scoped ReadOnlySpan<char> span9)
     {
         Append(span, span2, span3, span4, span5, span6, span7, span8);
         span9.CopyTo(_buffer[Length..]);
@@ -102,8 +104,8 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ReadOnlySpan<char> span, ReadOnlySpan<char> span2, ReadOnlySpan<char> span3, ReadOnlySpan<char> span4, ReadOnlySpan<char> span5, ReadOnlySpan<char> span6, ReadOnlySpan<char> span7, ReadOnlySpan<char> span8,
-        ReadOnlySpan<char> span9, ReadOnlySpan<char> span10)
+    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+        scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8, scoped ReadOnlySpan<char> span9, scoped ReadOnlySpan<char> span10)
     {
         Append(span, span2, span3, span4, span5, span6, span7, span8, span9);
         span10.CopyTo(_buffer[Length..]);

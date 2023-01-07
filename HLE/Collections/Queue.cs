@@ -13,6 +13,10 @@ public ref struct Queue<T>
     private int _enqueueIndex;
     private int _dequeueIndex;
 
+    public Queue()
+    {
+    }
+
     public Queue(Span<T> queue)
     {
         _queue = queue;

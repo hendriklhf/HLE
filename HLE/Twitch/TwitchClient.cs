@@ -7,8 +7,7 @@ using HLE.Twitch.Models;
 namespace HLE.Twitch;
 
 /// <summary>
-/// A class that represents a Twitch chat client. The client type can be changed by setting the <see cref="ClientType"/> property.
-/// By default uses the <see cref="WebSocketIrcClient"/> to connect to the chat server.
+/// A class that represents a Twitch chat client.
 /// </summary>
 public sealed class TwitchClient
 {
@@ -163,7 +162,7 @@ public sealed class TwitchClient
         _client.OnDataSent += (_, e) => OnDataSent?.Invoke(this, e);
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnRoomstateReceived += (_, e) => Channels.Update(e);
+        _ircHandler.OnRoomstateReceived += (_, e) => Channels.Update(in e);
         _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += (_, e) => SendRaw($"PONG :{e.Message}");

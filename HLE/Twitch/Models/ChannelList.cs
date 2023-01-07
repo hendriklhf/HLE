@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Models;
@@ -22,19 +23,21 @@ public sealed class ChannelList : IEnumerable<Channel>
     /// <param name="channel">The username of the channel owner.</param>
     public Channel? this[string channel] => Get(channel);
 
+    public ReadOnlySpan<Channel> Span => CollectionsMarshal.AsSpan(_channels);
+
     private readonly List<Channel> _channels = new();
 
-    internal void Update(RoomstateArgs args)
+    internal void Update(in RoomstateArgs args)
     {
         Channel? channel = Get(args.ChannelId);
         if (channel is null)
         {
-            channel = new(args);
+            channel = new(in args);
             _channels.Add(channel);
         }
         else
         {
-            channel.Update(args);
+            channel.Update(in args);
         }
     }
 
@@ -47,17 +50,6 @@ public sealed class ChannelList : IEnumerable<Channel>
         }
     }
 
-    internal void Remove(long id)
-    {
-        Channel? channel = Get(id);
-        if (channel is null)
-        {
-            return;
-        }
-
-        _channels.Remove(channel);
-    }
-
     internal void Clear()
     {
         _channels.Clear();
@@ -66,9 +58,11 @@ public sealed class ChannelList : IEnumerable<Channel>
     private Channel? Get(long id)
     {
         ReadOnlySpan<Channel> channels = CollectionsMarshal.AsSpan(_channels);
-        for (int i = 0; i < channels.Length; i++)
+        int channelsLength = channels.Length;
+        ref Channel firstChannel = ref MemoryMarshal.GetReference(channels);
+        for (int i = 0; i < channelsLength; i++)
         {
-            Channel channel = channels[i];
+            Channel channel = Unsafe.Add(ref firstChannel, i);
             if (channel.Id == id)
             {
                 return channel;
@@ -85,10 +79,12 @@ public sealed class ChannelList : IEnumerable<Channel>
             name = name[1..];
         }
 
-        ReadOnlySpan<Channel> channelSpan = CollectionsMarshal.AsSpan(_channels);
-        for (int i = 0; i < channelSpan.Length; i++)
+        ReadOnlySpan<Channel> channels = CollectionsMarshal.AsSpan(_channels);
+        int channelsLength = channels.Length;
+        ref Channel firstChannel = ref MemoryMarshal.GetReference(channels);
+        for (int i = 0; i < channelsLength; i++)
         {
-            Channel channel = channelSpan[i];
+            Channel channel = Unsafe.Add(ref firstChannel, i);
             if (name.Equals(channel.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return channel;

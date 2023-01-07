@@ -3,10 +3,10 @@
 namespace HLE.Twitch.Models;
 
 /// <summary>
-/// <see cref="EventArgs"/> used when the state of a chat room changed.
+/// Arguments used when the state of a chat room changed.
 /// For example if emote-only mode has been turned on.
 /// </summary>
-public sealed class RoomstateArgs : EventArgs
+public readonly struct RoomstateArgs
 {
     /// <summary>
     /// Indicates whether emote-only mode is turned on or off.
@@ -32,7 +32,7 @@ public sealed class RoomstateArgs : EventArgs
     /// <summary>
     /// The username of the channel owner.
     /// </summary>
-    public string Channel { get; }
+    public string Channel { get; init; }
 
     /// <summary>
     /// Indicates whether slow mode is turned on or off.

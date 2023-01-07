@@ -45,7 +45,7 @@ public static class CollectionHelper
             return;
         }
 
-        ref T firstItem = ref span[0];
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
             action(Unsafe.Add(ref firstItem, i));
@@ -84,7 +84,7 @@ public static class CollectionHelper
             return;
         }
 
-        ref T firstItem = ref span[0];
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
             action(Unsafe.Add(ref firstItem, i), i);
@@ -122,35 +122,35 @@ public static class CollectionHelper
     /// <param name="collection">The collection the random element will be taken from.</param>
     /// <returns>A random element or <see langword="null"/> if the <paramref name="collection"/> doesn't contain any elements.</returns>
     [Pure]
-    public static T? Random<T>(this IEnumerable<T> collection)
+    public static ref T? Random<T>(this IEnumerable<T> collection)
     {
-        return collection.ToArray().Random();
+        return ref collection.ToArray().Random();
     }
 
     [Pure]
-    public static T? Random<T>(this List<T> list)
+    public static ref T? Random<T>(this List<T> list)
     {
-        return CollectionsMarshal.AsSpan(list).Random();
+        return ref CollectionsMarshal.AsSpan(list).Random();
     }
 
     [Pure]
-    public static T? Random<T>(this T[] array)
+    public static ref T? Random<T>(this T[] array)
     {
-        return array.AsSpan().Random();
+        return ref array.AsSpan().Random();
     }
 
     [Pure]
-    public static T? Random<T>(this Span<T> span)
+    public static ref T? Random<T>(this Span<T> span)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
         {
-            return default;
+            return ref Unsafe.NullRef<T>()!;
         }
 
-        ref T firstItem = ref span[0];
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
         int randomIdx = HLE.Random.Int(0, spanLength - 1);
-        return Unsafe.Add(ref firstItem, randomIdx);
+        return ref Unsafe.Add(ref firstItem, randomIdx)!;
     }
 
     /// <summary>
@@ -242,8 +242,50 @@ public static class CollectionHelper
             return;
         }
 
-        ref T firstItem = ref span[0];
-        for (int i = 0; i < span.Length; i++)
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            ref T item = ref Unsafe.Add(ref firstItem, i);
+            if (condition(item))
+            {
+                item = replacement;
+            }
+        }
+    }
+
+    [Pure]
+    public static unsafe T[] Replace<T>(this IEnumerable<T> collection, delegate*<T, bool> condition, T replacement)
+    {
+        return collection.ToArray().Replace(condition, replacement);
+    }
+
+    [Pure]
+    public static unsafe List<T> Replace<T>(this List<T> list, delegate*<T, bool> condition, T replacement)
+    {
+        List<T> copy = new(list);
+        CollectionsMarshal.AsSpan(copy).Replace(condition, replacement);
+        return copy;
+    }
+
+    [Pure]
+    public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> condition, T replacement)
+    {
+        T[] copy = new T[array.Length];
+        Array.Copy(array, copy, array.Length);
+        copy.AsSpan().Replace(condition, replacement);
+        return copy;
+    }
+
+    public static unsafe void Replace<T>(this Span<T> span, delegate*<T, bool> condition, T replacement)
+    {
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return;
+        }
+
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
         {
             ref T item = ref Unsafe.Add(ref firstItem, i);
             if (condition(item))
@@ -279,10 +321,8 @@ public static class CollectionHelper
             return Array.Empty<T[]>();
         }
 
-        bool IsSeparator(T item) => item?.Equals(separator) == true;
-
         Span<int> indices = stackalloc int[span.Length];
-        int indicesLength = IndicesOf(span, IsSeparator, indices);
+        int indicesLength = IndicesOf(span, separator, indices);
         if (indicesLength == 0)
         {
             return new[]
@@ -291,28 +331,29 @@ public static class CollectionHelper
             };
         }
 
-        indices = indices[..indicesLength];
-
-        List<T[]> result = new(indices.Length + 1);
+        T[][] result = new T[indicesLength + 1][];
+        ref T[] firstResultValue = ref MemoryMarshal.GetArrayDataReference(result);
+        int resultLength = 0;
         int start = 0;
-        for (int i = 0; i < indices.Length; i++)
+        ref int firstIndex = ref MemoryMarshal.GetReference(indices);
+        for (int i = 0; i < indicesLength; i++)
         {
-            Range range = new(new(start), new(indices[i]));
-            Span<T> split = span[range];
-            start = indices[i] + 1;
+            int index = Unsafe.Add(ref firstIndex, i);
+            Span<T> split = span[start..index];
+            start = index + 1;
             if (split.Length > 0)
             {
-                result.Add(split.ToArray());
+                Unsafe.Add(ref firstResultValue, resultLength++) = split.ToArray();
             }
         }
 
-        Span<T> end = span[(indices[^1] + 1)..];
+        Span<T> end = span[(indices[indicesLength - 1] + 1)..];
         if (end.Length > 0)
         {
-            result.Add(end.ToArray());
+            Unsafe.Add(ref firstResultValue, resultLength) = end.ToArray();
         }
 
-        return result.ToArray();
+        return result[..resultLength];
     }
 
     [Pure]
@@ -344,9 +385,10 @@ public static class CollectionHelper
     public static void RandomString(this Span<char> span, Span<char> randomString)
     {
         int randomStringLength = randomString.Length;
+        ref char firstChar = ref MemoryMarshal.GetReference(randomString);
         for (int i = 0; i < randomStringLength; i++)
         {
-            randomString[i] = span.Random();
+            Unsafe.Add(ref firstChar, i) = span.Random();
         }
     }
 
@@ -379,9 +421,110 @@ public static class CollectionHelper
     public static int IndicesOf<T>(this Span<T> span, Func<T, bool> condition, Span<int> indices)
     {
         int length = 0;
-        for (int i = 0; i < span.Length; i++)
+        int spanLength = span.Length;
+        if (spanLength == 0)
         {
-            if (condition(span[i]))
+            return 0;
+        }
+
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            if (condition(Unsafe.Add(ref firstItem, i)))
+            {
+                indices[length++] = i;
+            }
+        }
+
+        return length;
+    }
+
+    [Pure]
+    public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> condition)
+    {
+        return collection.ToArray().IndicesOf(condition);
+    }
+
+    [Pure]
+    public static unsafe int[] IndicesOf<T>(this T[] array, delegate*<T, bool> condition)
+    {
+        return array.AsSpan().IndicesOf(condition);
+    }
+
+    [Pure]
+    public static unsafe int[] IndicesOf<T>(this List<T> list, delegate*<T, bool> condition)
+    {
+        return CollectionsMarshal.AsSpan(list).IndicesOf(condition);
+    }
+
+    [Pure]
+    public static unsafe int[] IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition)
+    {
+        Span<int> indices = stackalloc int[span.Length];
+        int length = IndicesOf(span, condition, indices);
+        return indices[..length].ToArray();
+    }
+
+    public static unsafe int IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition, Span<int> indices)
+    {
+        int length = 0;
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return 0;
+        }
+
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            if (condition(Unsafe.Add(ref firstItem, i)))
+            {
+                indices[length++] = i;
+            }
+        }
+
+        return length;
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item)
+    {
+        return collection.ToArray().IndicesOf(item);
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this T[] array, T item)
+    {
+        return array.AsSpan().IndicesOf(item);
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this List<T> list, T item)
+    {
+        return CollectionsMarshal.AsSpan(list).IndicesOf(item);
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this Span<T> span, T item)
+    {
+        Span<int> indices = stackalloc int[span.Length];
+        int length = IndicesOf(span, item, indices);
+        return indices[..length].ToArray();
+    }
+
+    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> indices)
+    {
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return 0;
+        }
+
+        int length = 0;
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            if (Unsafe.Add(ref firstItem, i)?.Equals(item) == true)
             {
                 indices[length++] = i;
             }
@@ -434,10 +577,10 @@ public static class CollectionHelper
     public static void ForRange<T>(this Span<T> span, params (Range Range, Action<T> Action)[] operations)
     {
         Span<(Range Range, Action<T> Action)> operationSpan = operations;
-        ref var firstOperation = ref operationSpan[0];
+        ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
         for (int i = 0; i < operationSpan.Length; i++)
         {
-            ref var op = ref Unsafe.Add(ref firstOperation, i);
+            var op = Unsafe.Add(ref firstOperation, i);
             int start = op.Range.Start.Value;
             int end = op.Range.End.IsFromEnd ? span.Length - op.Range.End.Value - 1 : op.Range.End.Value;
             for (int j = start; j < end; j++)
@@ -467,11 +610,11 @@ public static class CollectionHelper
     public static void ForRange<T>(this Span<T> span, params (Range Range, Func<T, T> Func)[] operations)
     {
         Span<(Range Range, Func<T, T> Func)> operationSpan = operations;
-        ref var firstOperation = ref operationSpan[0];
-        ref T firstItem = ref span[0];
+        ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < operationSpan.Length; i++)
         {
-            ref var op = ref Unsafe.Add(ref firstOperation, i);
+            var op = Unsafe.Add(ref firstOperation, i);
             int start = op.Range.Start.Value;
             int end = op.Range.End.IsFromEnd ? span.Length - op.Range.End.Value - 1 : op.Range.End.Value;
             for (int j = start; j < end; j++)
@@ -519,13 +662,49 @@ public static class CollectionHelper
         }
 
         int maxIdx = span.Length - 1;
-        ref T firstItem = ref span[0];
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < span.Length; i++)
         {
             int randomIdx = HLE.Random.Int(0, maxIdx);
             ref T item = ref Unsafe.Add(ref firstItem, i);
             (item, span[randomIdx]) = (span[randomIdx], item);
         }
+    }
+
+    [Pure]
+    public static T[] RandomCollection<T>(this IEnumerable<T> collection, int length)
+    {
+        return collection.ToArray().RandomCollection(length);
+    }
+
+    [Pure]
+    public static T[] RandomCollection<T>(this T[] array, int length)
+    {
+        return array.AsSpan().RandomCollection(length);
+    }
+
+    [Pure]
+    public static T[] RandomCollection<T>(this List<T> list, int length)
+    {
+        return CollectionsMarshal.AsSpan(list).RandomCollection(length);
+    }
+
+    [Pure]
+    public static T[] RandomCollection<T>(this Span<T> span, int length)
+    {
+        if (span.Length == 0)
+        {
+            return Array.Empty<T>();
+        }
+
+        T[] result = new T[length];
+        ref T firstItem = ref MemoryMarshal.GetArrayDataReference(result);
+        for (int i = 0; i < length; i++)
+        {
+            Unsafe.Add(ref firstItem, i) = span.Random()!;
+        }
+
+        return result;
     }
 
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);

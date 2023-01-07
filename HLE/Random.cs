@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using HLE.Collections;
 
@@ -176,6 +178,17 @@ public static class Random
         };
     }
 
+    public static unsafe T Struct<T>() where T : struct
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(T)];
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            bytes[i] = Byte();
+        }
+
+        return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
+    }
+
     public static bool StrongBool()
     {
         return StrongSByte() switch
@@ -203,56 +216,77 @@ public static class Random
     {
         Span<byte> bytes = stackalloc byte[sizeof(short)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToInt16(bytes);
+        return Unsafe.As<byte, short>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static ushort StrongUShort()
     {
         Span<byte> bytes = stackalloc byte[sizeof(ushort)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToUInt16(bytes);
+        return Unsafe.As<byte, ushort>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static int StrongInt()
     {
         Span<byte> bytes = stackalloc byte[sizeof(int)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToInt32(bytes);
+        return Unsafe.As<byte, int>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static uint StrongUInt()
     {
         Span<byte> bytes = stackalloc byte[sizeof(uint)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToUInt32(bytes);
+        return Unsafe.As<byte, uint>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static long StrongLong()
     {
         Span<byte> bytes = stackalloc byte[sizeof(long)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToInt64(bytes);
+        return Unsafe.As<byte, long>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static ulong StrongULong()
     {
         Span<byte> bytes = stackalloc byte[sizeof(ulong)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToUInt64(bytes);
+        return Unsafe.As<byte, ulong>(ref MemoryMarshal.GetReference(bytes));
+    }
+
+    public static unsafe Int128 StrongInt128()
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(Int128)];
+        _strong.GetBytes(bytes);
+        return Unsafe.As<byte, Int128>(ref MemoryMarshal.GetReference(bytes));
+    }
+
+    public static unsafe UInt128 StrongUInt128()
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(Int128)];
+        _strong.GetBytes(bytes);
+        return Unsafe.As<byte, UInt128>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static float StrongFloat()
     {
         Span<byte> bytes = stackalloc byte[sizeof(float)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToSingle(bytes);
+        return Unsafe.As<byte, float>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static double StrongDouble()
     {
         Span<byte> bytes = stackalloc byte[sizeof(double)];
         _strong.GetBytes(bytes);
-        return BitConverter.ToDouble(bytes);
+        return Unsafe.As<byte, double>(ref MemoryMarshal.GetReference(bytes));
+    }
+
+    public static decimal StrongDecimal()
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(decimal)];
+        _strong.GetBytes(bytes);
+        return Unsafe.As<byte, decimal>(ref MemoryMarshal.GetReference(bytes));
     }
 
     public static char StrongChar()
@@ -260,19 +294,28 @@ public static class Random
         return (char)StrongUShort();
     }
 
-    public static string StrongString(int length)
+    public static unsafe string StrongString(int length)
     {
         if (length <= 0)
         {
             return string.Empty;
         }
 
-        Span<char> result = stackalloc char[length];
-        for (int i = 0; i < length; i++)
-        {
-            result[i] = StrongChar();
-        }
+        Span<byte> bytes = stackalloc byte[length * sizeof(char)];
+        _strong.GetBytes(bytes);
+        return new((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bytes)), 0, length);
+    }
 
-        return new(result);
+    public static unsafe T StrongStruct<T>() where T : struct
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(T)];
+        _strong.GetBytes(bytes);
+        return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
+    }
+
+    public static unsafe void WriteStrong(void* pointer, int size)
+    {
+        Span<byte> bytes = new(pointer, size);
+        _strong.GetBytes(bytes);
     }
 }

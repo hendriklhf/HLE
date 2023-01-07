@@ -15,6 +15,12 @@ public ref struct Stack<T>
         _stack = stack;
     }
 
+    public Stack(Span<T> stack, int count)
+    {
+        _stack = stack;
+        Count = count;
+    }
+
     public void Push(T item) => _stack[Count++] = item;
 
     public T Pop() => _stack[--Count];
