@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 
@@ -10,13 +11,20 @@ public sealed class ResourceReader
     private readonly Assembly _assembly;
     private readonly Dictionary<string, string?> _resources = new();
 
-    public ResourceReader(Assembly assembly, bool readOnInit = true)
+    public ResourceReader(Assembly assembly, bool readAllResourcesOnInit = true)
     {
         _assembly = assembly;
-        if (readOnInit)
+        if (readAllResourcesOnInit)
         {
             ReadAllResources();
         }
+    }
+
+    [Pure]
+    public string? ReadResource(string resourceName)
+    {
+        string resourcePath = string.Join('.', _assembly.GetName().Name, resourceName);
+        return ReadResourceFromPath(resourcePath);
     }
 
     private void ReadAllResources()
@@ -26,12 +34,6 @@ public sealed class ResourceReader
         {
             _ = ReadResourceFromPath(resourcePaths[i]);
         }
-    }
-
-    public string? ReadResource(string resourceName)
-    {
-        string resourcePath = string.Join('.', _assembly.GetName().Name, resourceName);
-        return ReadResourceFromPath(resourcePath);
     }
 
     private string? ReadResourceFromPath(string resourcePath)

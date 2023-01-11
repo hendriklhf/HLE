@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace HLE;
@@ -184,10 +185,25 @@ public ref struct StringBuilder
         Length--;
     }
 
+    [Pure]
     public override string ToString()
     {
         return new(_buffer[..Length]);
     }
 
+    [Pure]
+    public bool Equals(StringBuilder builder, StringComparison comparisonType = default)
+    {
+        return ((ReadOnlySpan<char>)_buffer[..Length]).Equals(builder._buffer[..builder.Length], comparisonType);
+    }
+
+    [Pure]
+    public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType = default)
+    {
+        return ((ReadOnlySpan<char>)_buffer[..Length]).Equals(str, comparisonType);
+    }
+
     public static implicit operator StringBuilder(Span<char> buffer) => new(buffer);
+
+    public static implicit operator StringBuilder(char[] buffer) => new(buffer);
 }

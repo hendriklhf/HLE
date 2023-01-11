@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
 
@@ -54,6 +55,7 @@ public ref struct Queue<T>
         return _queue[_dequeueIndex++];
     }
 
+    [Pure]
     public readonly T Peek()
     {
         if (Count == 0)

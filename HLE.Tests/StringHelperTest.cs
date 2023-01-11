@@ -159,4 +159,13 @@ public class StringHelperTest
         StringHelper.Replace(str, "xxxxx");
         Assert.AreEqual("xxxxx", str);
     }
+
+    [TestMethod]
+    public void RegexEscapeTest()
+    {
+        const string str = "\\*+?|{[()^$. awdawdawdawd";
+        Span<char> buffer = stackalloc char[str.Length << 1];
+        int length = StringHelper.RegexEscape(str, buffer);
+        Assert.AreEqual(@"\\\*\+\?\|\{\[\(\)\^\$\.\sawdawdawdawd", new(buffer[..length]));
+    }
 }

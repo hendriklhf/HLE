@@ -203,7 +203,7 @@ public static class StringHelper
         {
             indices[indicesLength++] = totalIdx;
             totalIdx += s.Length;
-            idx = span[totalIdx..].IndexOf(s);
+            idx = span[totalIdx..].IndexOf(s, StringComparison.Ordinal);
             totalIdx += idx;
         }
 
@@ -249,7 +249,7 @@ public static class StringHelper
         return GetRangesOfSplit(ranges, indices);
     }
 
-    internal static int GetRangesOfSplit(Span<Range> ranges, ReadOnlySpan<int> indices)
+    public static int GetRangesOfSplit(Span<Range> ranges, ReadOnlySpan<int> indices)
     {
         switch (ranges.Length)
         {
@@ -312,30 +312,6 @@ public static class StringHelper
     }
 
     internal static int GetRangesOfSplit(int separatorLength, Span<Range> ranges, ReadOnlySpan<int> indices)
-    {
-        switch (ranges.Length)
-        {
-            case 0:
-                return 0;
-            case > 0 when indices.Length == 0:
-                ranges[0] = ..;
-                return 1;
-        }
-
-        int start = 0;
-        int rangesLength = 0;
-        while (rangesLength < indices.Length)
-        {
-            int end = indices[rangesLength];
-            ranges[rangesLength++] = start..end;
-            start = end + separatorLength;
-        }
-
-        ranges[rangesLength++] = (indices[^1] + separatorLength)..;
-        return rangesLength;
-    }
-
-    internal static int GetRangesOfSplit_new(int separatorLength, Span<Range> ranges, ReadOnlySpan<int> indices)
     {
         switch (ranges.Length)
         {
@@ -650,5 +626,41 @@ public static class StringHelper
         }
 
         newString.CopyTo(span.AsMutableSpan());
+    }
+
+    public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
+    {
+        StringBuilder builder = escapedInput;
+        int inputLength = input.Length;
+        ref char firstChar = ref MemoryMarshal.GetReference(input);
+        for (int i = 0; i < inputLength; i++)
+        {
+            char c = Unsafe.Add(ref firstChar, i);
+            switch (c)
+            {
+                case '\\':
+                case '*':
+                case '+':
+                case '?':
+                case '|':
+                case '{':
+                case '[':
+                case '(':
+                case ')':
+                case '^':
+                case '$':
+                case '.':
+                    builder.Append('\\', c);
+                    continue;
+                case ' ':
+                    builder.Append('\\', 's');
+                    continue;
+                default:
+                    builder.Append(c);
+                    break;
+            }
+        }
+
+        return builder.Length;
     }
 }

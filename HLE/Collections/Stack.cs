@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
 
@@ -25,6 +26,7 @@ public ref struct Stack<T>
 
     public T Pop() => _stack[--Count];
 
+    [Pure]
     public readonly T Peek() => _stack[Count - 1];
 
     public bool TryPush(T item)
@@ -65,4 +67,6 @@ public ref struct Stack<T>
     public void Clear() => Count = 0;
 
     public static implicit operator Stack<T>(Span<T> stack) => new(stack);
+
+    public static implicit operator Stack<T>(T[] stack) => new(stack);
 }

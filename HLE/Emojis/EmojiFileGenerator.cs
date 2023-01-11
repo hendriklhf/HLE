@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -69,6 +70,7 @@ public sealed class EmojiFileGenerator
     /// Generates the Emoji file.
     /// <returns>The source code of the file. Null, if the creation was unsuccessful, due to e.g. not being able to retrieve the emoji data.</returns>
     /// </summary>
+    [Pure]
     public unsafe string? Generate()
     {
         if (_emojiJsonBytes is null)
@@ -86,7 +88,7 @@ public sealed class EmojiFileGenerator
             }
         }
 
-        StringBuilder builder = new(stackalloc char[100000]);
+        StringBuilder builder = new(stackalloc char[_emojiJsonBytes.Length >> 2]);
         builder.Append("#pragma warning disable 1591", Environment.NewLine);
         builder.Append("// ReSharper disable UnusedMember.Global", Environment.NewLine);
         builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);

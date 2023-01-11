@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -98,19 +99,19 @@ public static class CollectionHelper
     /// <param name="collection">The checked collection.</param>
     /// <returns>True, if null or empty, false otherwise.</returns>
     [Pure]
-    public static bool IsNullOrEmpty<T>(this IEnumerable<T>? collection)
+    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? collection)
     {
         return collection is null || !collection.Any();
     }
 
     [Pure]
-    public static bool IsNullOrEmpty<T>(this List<T>? list)
+    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this List<T>? list)
     {
         return list is null or [];
     }
 
     [Pure]
-    public static bool IsNullOrEmpty<T>(this T[]? array)
+    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this T[]? array)
     {
         return array is null or [];
     }
@@ -122,9 +123,9 @@ public static class CollectionHelper
     /// <param name="collection">The collection the random element will be taken from.</param>
     /// <returns>A random element or <see langword="null"/> if the <paramref name="collection"/> doesn't contain any elements.</returns>
     [Pure]
-    public static ref T? Random<T>(this IEnumerable<T> collection)
+    public static T? Random<T>(this IEnumerable<T> collection)
     {
-        return ref collection.ToArray().Random();
+        return collection.ToArray().Random();
     }
 
     [Pure]
@@ -377,7 +378,7 @@ public static class CollectionHelper
     [Pure]
     public static string RandomString(this Span<char> span, int wordLength)
     {
-        Span<char> result = stackalloc char[wordLength];
+        Span<char> result = wordLength * sizeof(char) > 1_000_000 ? new char[wordLength] : stackalloc char[wordLength];
         RandomString(span, result);
         return new(result);
     }

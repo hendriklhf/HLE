@@ -313,9 +313,9 @@ public static class Random
         return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
     }
 
-    public static unsafe void WriteStrong(void* pointer, int size)
+    public static unsafe void WriteStrong(void* pointer, int byteCount)
     {
-        Span<byte> bytes = new(pointer, size);
+        Span<byte> bytes = new(pointer, byteCount);
         _strong.GetBytes(bytes);
     }
 }
