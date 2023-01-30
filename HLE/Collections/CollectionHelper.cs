@@ -22,23 +22,27 @@ public static class CollectionHelper
     [Pure]
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T> action)
     {
-        return collection.ToArray().ForEach(action);
+        return ForEach(collection.ToArray(), action);
     }
 
     public static List<T> ForEach<T>(this List<T> list, Action<T> action)
     {
-        CollectionsMarshal.AsSpan(list).ForEach(action);
+        ForEach(CollectionsMarshal.AsSpan(list), action);
         return list;
     }
 
     public static T[] ForEach<T>(this T[] array, Action<T> action)
     {
-        Span<T> span = array;
-        span.ForEach(action);
+        ForEach((ReadOnlySpan<T>)array, action);
         return array;
     }
 
     public static void ForEach<T>(this Span<T> span, Action<T> action)
+    {
+        ForEach((ReadOnlySpan<T>)span, action);
+    }
+
+    public static void ForEach<T>(this ReadOnlySpan<T> span, Action<T> action)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -62,22 +66,27 @@ public static class CollectionHelper
     /// <param name="action">The action that will be performed.</param>
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
     {
-        return collection.ToArray().ForEach(action);
+        return ForEach(collection.ToArray(), action);
     }
 
     public static List<T> ForEach<T>(this List<T> list, Action<T, int> action)
     {
-        CollectionsMarshal.AsSpan(list).ForEach(action);
+        ForEach(CollectionsMarshal.AsSpan(list), action);
         return list;
     }
 
     public static T[] ForEach<T>(this T[] array, Action<T, int> action)
     {
-        array.AsSpan().ForEach(action);
+        ForEach((ReadOnlySpan<T>)array, action);
         return array;
     }
 
     public static void ForEach<T>(this Span<T> span, Action<T, int> action)
+    {
+        ForEach((ReadOnlySpan<T>)span, action);
+    }
+
+    public static void ForEach<T>(this ReadOnlySpan<T> span, Action<T, int> action)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -125,23 +134,29 @@ public static class CollectionHelper
     [Pure]
     public static T? Random<T>(this IEnumerable<T> collection)
     {
-        return collection.ToArray().Random();
+        return Random(collection.ToArray());
     }
 
     [Pure]
     public static ref T? Random<T>(this List<T> list)
     {
-        return ref CollectionsMarshal.AsSpan(list).Random();
+        return ref Random(CollectionsMarshal.AsSpan(list));
     }
 
     [Pure]
     public static ref T? Random<T>(this T[] array)
     {
-        return ref array.AsSpan().Random();
+        return ref Random((ReadOnlySpan<T>)array);
     }
 
     [Pure]
     public static ref T? Random<T>(this Span<T> span)
+    {
+        return ref Random((ReadOnlySpan<T>)span);
+    }
+
+    [Pure]
+    public static ref T? Random<T>(this ReadOnlySpan<T> span)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -215,14 +230,16 @@ public static class CollectionHelper
     [Pure]
     public static T[] Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
     {
-        return collection.ToArray().Replace(condition, replacement);
+        T[] array = collection.ToArray();
+        Replace((Span<T>)array, condition, replacement);
+        return array;
     }
 
     [Pure]
     public static List<T> Replace<T>(this List<T> list, Func<T, bool> condition, T replacement)
     {
         List<T> copy = new(list);
-        CollectionsMarshal.AsSpan(copy).Replace(condition, replacement);
+        Replace(CollectionsMarshal.AsSpan(copy), condition, replacement);
         return copy;
     }
 
@@ -231,7 +248,7 @@ public static class CollectionHelper
     {
         T[] copy = new T[array.Length];
         Array.Copy(array, copy, array.Length);
-        copy.AsSpan().Replace(condition, replacement);
+        Replace((Span<T>)copy, condition, replacement);
         return copy;
     }
 
@@ -257,14 +274,16 @@ public static class CollectionHelper
     [Pure]
     public static unsafe T[] Replace<T>(this IEnumerable<T> collection, delegate*<T, bool> condition, T replacement)
     {
-        return collection.ToArray().Replace(condition, replacement);
+        T[] array = collection.ToArray();
+        Replace((Span<T>)array, condition, replacement);
+        return array;
     }
 
     [Pure]
     public static unsafe List<T> Replace<T>(this List<T> list, delegate*<T, bool> condition, T replacement)
     {
         List<T> copy = new(list);
-        CollectionsMarshal.AsSpan(copy).Replace(condition, replacement);
+        Replace(CollectionsMarshal.AsSpan(copy), condition, replacement);
         return copy;
     }
 
@@ -273,7 +292,7 @@ public static class CollectionHelper
     {
         T[] copy = new T[array.Length];
         Array.Copy(array, copy, array.Length);
-        copy.AsSpan().Replace(condition, replacement);
+        Replace((Span<T>)copy, condition, replacement);
         return copy;
     }
 
@@ -299,23 +318,29 @@ public static class CollectionHelper
     [Pure]
     public static T[][] Split<T>(this IEnumerable<T> collection, T separator)
     {
-        return collection.ToArray().Split(separator);
+        return Split(collection.ToArray(), separator);
     }
 
     [Pure]
     public static T[][] Split<T>(this List<T> list, T separator)
     {
-        return CollectionsMarshal.AsSpan(list).Split(separator);
+        return Split(CollectionsMarshal.AsSpan(list), separator);
     }
 
     [Pure]
     public static T[][] Split<T>(this T[] array, T separator)
     {
-        return array.AsSpan().Split(separator);
+        return Split((ReadOnlySpan<T>)array, separator);
     }
 
     [Pure]
     public static T[][] Split<T>(this Span<T> span, T separator)
+    {
+        return Split((ReadOnlySpan<T>)span, separator);
+    }
+
+    [Pure]
+    public static T[][] Split<T>(this ReadOnlySpan<T> span, T separator)
     {
         if (span.Length == 0)
         {
@@ -340,7 +365,7 @@ public static class CollectionHelper
         for (int i = 0; i < indicesLength; i++)
         {
             int index = Unsafe.Add(ref firstIndex, i);
-            Span<T> split = span[start..index];
+            ReadOnlySpan<T> split = span[start..index];
             start = index + 1;
             if (split.Length > 0)
             {
@@ -348,7 +373,7 @@ public static class CollectionHelper
             }
         }
 
-        Span<T> end = span[(indices[indicesLength - 1] + 1)..];
+        ReadOnlySpan<T> end = span[(indices[indicesLength - 1] + 1)..];
         if (end.Length > 0)
         {
             Unsafe.Add(ref firstResultValue, resultLength) = end.ToArray();
@@ -360,30 +385,42 @@ public static class CollectionHelper
     [Pure]
     public static string RandomString(this IEnumerable<char> collection, int wordLength)
     {
-        return collection.ToArray().RandomString(wordLength);
+        return RandomString(collection.ToArray(), wordLength);
     }
 
     [Pure]
     public static string RandomString(this List<char> list, int wordLength)
     {
-        return CollectionsMarshal.AsSpan(list).RandomString(wordLength);
+        return RandomString(CollectionsMarshal.AsSpan(list), wordLength);
     }
 
     [Pure]
     public static string RandomString(this char[] array, int wordLength)
     {
-        return array.AsSpan().RandomString(wordLength);
+        return RandomString((ReadOnlySpan<char>)array, wordLength);
     }
 
     [Pure]
     public static string RandomString(this Span<char> span, int wordLength)
     {
-        Span<char> result = wordLength * sizeof(char) > 1_000_000 ? new char[wordLength] : stackalloc char[wordLength];
+        return RandomString((ReadOnlySpan<char>)span, wordLength);
+    }
+
+    public static void RandomString(this Span<char> span, Span<char> randomString)
+    {
+        RandomString((ReadOnlySpan<char>)span, randomString);
+    }
+
+    [Pure]
+    public static string RandomString(this ReadOnlySpan<char> span, int wordLength)
+    {
+        int totalBytes = wordLength * sizeof(char);
+        Span<char> result = totalBytes > 500_000 ? new char[wordLength] : stackalloc char[wordLength];
         RandomString(span, result);
         return new(result);
     }
 
-    public static void RandomString(this Span<char> span, Span<char> randomString)
+    public static void RandomString(this ReadOnlySpan<char> span, Span<char> randomString)
     {
         int randomStringLength = randomString.Length;
         ref char firstChar = ref MemoryMarshal.GetReference(randomString);
@@ -396,30 +433,41 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
     {
-        return collection.ToArray().IndicesOf(condition);
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this T[] array, Func<T, bool> condition)
-    {
-        return array.AsSpan().IndicesOf(condition);
+        return IndicesOf(collection.ToArray(), condition);
     }
 
     [Pure]
     public static int[] IndicesOf<T>(this List<T> list, Func<T, bool> condition)
     {
-        return CollectionsMarshal.AsSpan(list).IndicesOf(condition);
+        return IndicesOf(CollectionsMarshal.AsSpan(list), condition);
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this T[] array, Func<T, bool> condition)
+    {
+        return IndicesOf((ReadOnlySpan<T>)array, condition);
     }
 
     [Pure]
     public static int[] IndicesOf<T>(this Span<T> span, Func<T, bool> condition)
+    {
+        return IndicesOf((ReadOnlySpan<T>)span, condition);
+    }
+
+    public static int IndicesOf<T>(this Span<T> span, Func<T, bool> condition, Span<int> indices)
+    {
+        return IndicesOf((ReadOnlySpan<T>)span, condition, indices);
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> condition)
     {
         Span<int> indices = stackalloc int[span.Length];
         int length = IndicesOf(span, condition, indices);
         return indices[..length].ToArray();
     }
 
-    public static int IndicesOf<T>(this Span<T> span, Func<T, bool> condition, Span<int> indices)
+    public static int IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> condition, Span<int> indices)
     {
         int length = 0;
         int spanLength = span.Length;
@@ -443,30 +491,41 @@ public static class CollectionHelper
     [Pure]
     public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> condition)
     {
-        return collection.ToArray().IndicesOf(condition);
-    }
-
-    [Pure]
-    public static unsafe int[] IndicesOf<T>(this T[] array, delegate*<T, bool> condition)
-    {
-        return array.AsSpan().IndicesOf(condition);
+        return IndicesOf(collection.ToArray(), condition);
     }
 
     [Pure]
     public static unsafe int[] IndicesOf<T>(this List<T> list, delegate*<T, bool> condition)
     {
-        return CollectionsMarshal.AsSpan(list).IndicesOf(condition);
+        return IndicesOf(CollectionsMarshal.AsSpan(list), condition);
+    }
+
+    [Pure]
+    public static unsafe int[] IndicesOf<T>(this T[] array, delegate*<T, bool> condition)
+    {
+        return IndicesOf((ReadOnlySpan<T>)array, condition);
     }
 
     [Pure]
     public static unsafe int[] IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition)
+    {
+        return IndicesOf((ReadOnlySpan<T>)span, condition);
+    }
+
+    public static unsafe int IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition, Span<int> indices)
+    {
+        return IndicesOf((ReadOnlySpan<T>)span, condition, indices);
+    }
+
+    [Pure]
+    public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition)
     {
         Span<int> indices = stackalloc int[span.Length];
         int length = IndicesOf(span, condition, indices);
         return indices[..length].ToArray();
     }
 
-    public static unsafe int IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition, Span<int> indices)
+    public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition, Span<int> indices)
     {
         int length = 0;
         int spanLength = span.Length;
@@ -494,26 +553,37 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this T[] array, T item)
-    {
-        return array.AsSpan().IndicesOf(item);
-    }
-
-    [Pure]
     public static int[] IndicesOf<T>(this List<T> list, T item)
     {
         return CollectionsMarshal.AsSpan(list).IndicesOf(item);
     }
 
     [Pure]
+    public static int[] IndicesOf<T>(this T[] array, T item)
+    {
+        return array.AsSpan().IndicesOf(item);
+    }
+
+    [Pure]
     public static int[] IndicesOf<T>(this Span<T> span, T item)
+    {
+        return IndicesOf((ReadOnlySpan<T>)span, item);
+    }
+
+    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> indices)
+    {
+        return IndicesOf((ReadOnlySpan<T>)span, item, indices);
+    }
+
+    [Pure]
+    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item)
     {
         Span<int> indices = stackalloc int[span.Length];
         int length = IndicesOf(span, item, indices);
         return indices[..length].ToArray();
     }
 
-    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> indices)
+    public static int IndicesOf<T>(this ReadOnlySpan<T> span, T item, Span<int> indices)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -537,45 +607,56 @@ public static class CollectionHelper
     [Pure]
     public static bool ContentEquals<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
     {
-        return collection.ToArray().ContentEquals(collection2.ToArray());
+        return ContentEquals(collection.ToArray(), collection2.ToArray());
     }
 
     [Pure]
     public static bool ContentEquals<T>(this List<T> list, List<T> list2)
     {
-        return CollectionsMarshal.AsSpan(list).ContentEquals(CollectionsMarshal.AsSpan(list2));
+        return ContentEquals(CollectionsMarshal.AsSpan(list), CollectionsMarshal.AsSpan(list2));
     }
 
     [Pure]
     public static bool ContentEquals<T>(this T[] array, T[] array2)
     {
-        return array.AsSpan().ContentEquals(array2.AsSpan());
+        return ContentEquals((ReadOnlySpan<T>)array, array2);
     }
 
     [Pure]
     public static bool ContentEquals<T>(this Span<T> span, Span<T> span2)
     {
+        return ContentEquals((ReadOnlySpan<T>)span, span2);
+    }
+
+    [Pure]
+    public static bool ContentEquals<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> span2)
+    {
         return span.SequenceEqual(span2);
     }
 
-    public static T[] ForRange<T>(this IEnumerable<T> collection, params (Range Range, Action<T> Action)[] operations)
+    public static T[] ForRanges<T>(this IEnumerable<T> collection, params (Range Range, Action<T> Action)[] operations)
     {
-        return collection.ToArray().ForRange(operations);
+        return ForRanges(collection.ToArray(), operations);
     }
 
-    public static List<T> ForRange<T>(this List<T> list, params (Range Range, Action<T> Action)[] operations)
+    public static List<T> ForRanges<T>(this List<T> list, params (Range Range, Action<T> Action)[] operations)
     {
-        CollectionsMarshal.AsSpan(list).ForRange(operations);
+        ForRanges(CollectionsMarshal.AsSpan(list), operations);
         return list;
     }
 
-    public static T[] ForRange<T>(this T[] array, params (Range Range, Action<T> Action)[] operations)
+    public static T[] ForRanges<T>(this T[] array, params (Range Range, Action<T> Action)[] operations)
     {
-        array.AsSpan().ForRange(operations);
+        ForRanges((ReadOnlySpan<T>)array, operations);
         return array;
     }
 
-    public static void ForRange<T>(this Span<T> span, params (Range Range, Action<T> Action)[] operations)
+    public static void ForRanges<T>(this Span<T> span, params (Range Range, Action<T> Action)[] operations)
+    {
+        ForRanges((ReadOnlySpan<T>)span, operations);
+    }
+
+    public static void ForRanges<T>(this ReadOnlySpan<T> span, params (Range Range, Action<T> Action)[] operations)
     {
         Span<(Range Range, Action<T> Action)> operationSpan = operations;
         ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
@@ -591,24 +672,24 @@ public static class CollectionHelper
         }
     }
 
-    public static T[] ForRange<T>(this IEnumerable<T> collection, params (Range Range, Func<T, T> Func)[] operations)
+    public static T[] ForRanges<T>(this IEnumerable<T> collection, params (Range Range, Func<T, T> Func)[] operations)
     {
-        return collection.ToArray().ForRange(operations);
+        return ForRanges(collection.ToArray(), operations);
     }
 
-    public static List<T> ForRange<T>(this List<T> list, params (Range Range, Func<T, T> Func)[] operations)
+    public static List<T> ForRanges<T>(this List<T> list, params (Range Range, Func<T, T> Func)[] operations)
     {
-        CollectionsMarshal.AsSpan(list).ForRange(operations);
+        ForRanges(CollectionsMarshal.AsSpan(list), operations);
         return list;
     }
 
-    public static T[] ForRange<T>(this T[] array, params (Range Range, Func<T, T> Func)[] operations)
+    public static T[] ForRanges<T>(this T[] array, params (Range Range, Func<T, T> Func)[] operations)
     {
-        array.AsSpan().ForRange(operations);
+        ForRanges((Span<T>)array, operations);
         return array;
     }
 
-    public static void ForRange<T>(this Span<T> span, params (Range Range, Func<T, T> Func)[] operations)
+    public static void ForRanges<T>(this Span<T> span, params (Range Range, Func<T, T> Func)[] operations)
     {
         Span<(Range Range, Func<T, T> Func)> operationSpan = operations;
         ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
@@ -635,14 +716,14 @@ public static class CollectionHelper
     [Pure]
     public static T[] Randomize<T>(this IEnumerable<T> collection)
     {
-        return collection.ToArray().Randomize();
+        return Randomize(collection.ToArray());
     }
 
     [Pure]
     public static List<T> Randomize<T>(this List<T> list)
     {
         List<T> copy = new(list);
-        CollectionsMarshal.AsSpan(copy).Randomize();
+        Randomize(CollectionsMarshal.AsSpan(copy));
         return copy;
     }
 
@@ -651,7 +732,7 @@ public static class CollectionHelper
     {
         T[] copy = new T[array.Length];
         Array.Copy(array, copy, array.Length);
-        copy.AsSpan().Randomize();
+        Randomize((Span<T>)copy);
         return copy;
     }
 
@@ -675,19 +756,19 @@ public static class CollectionHelper
     [Pure]
     public static T[] RandomCollection<T>(this IEnumerable<T> collection, int length)
     {
-        return collection.ToArray().RandomCollection(length);
+        return RandomCollection(collection.ToArray(), length);
     }
 
     [Pure]
     public static T[] RandomCollection<T>(this T[] array, int length)
     {
-        return array.AsSpan().RandomCollection(length);
+        return RandomCollection((Span<T>)array, length);
     }
 
     [Pure]
     public static T[] RandomCollection<T>(this List<T> list, int length)
     {
-        return CollectionsMarshal.AsSpan(list).RandomCollection(length);
+        return RandomCollection(CollectionsMarshal.AsSpan(list), length);
     }
 
     [Pure]
@@ -708,5 +789,18 @@ public static class CollectionHelper
         return result;
     }
 
+    [Pure]
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
+
+    [Pure]
+    public static unsafe Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
+    {
+        return *(Span<T>*)&span;
+    }
+
+    [Pure]
+    public static unsafe Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
+    {
+        return *(Memory<T>*)&memory;
+    }
 }

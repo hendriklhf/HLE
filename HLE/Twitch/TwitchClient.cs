@@ -136,6 +136,7 @@ public sealed class TwitchClient
     {
         Username = FormatChannel(username, false);
         oAuthToken = ValidateOAuthToken(oAuthToken);
+        ClientType = options.ClientType;
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketIrcClient(Username, oAuthToken)
@@ -344,8 +345,9 @@ public sealed class TwitchClient
 
     private void IrcClient_OnDataReceived(object? sender, ReadOnlyMemory<char> data)
     {
-        _ircHandler.Handle(data.Span);
-        OnDataReceived?.Invoke(this, new(data.Span));
+        ReadOnlySpan<char> dataSpan = data.Span;
+        _ircHandler.Handle(dataSpan);
+        OnDataReceived?.Invoke(this, new(dataSpan));
     }
 
     private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage msg)

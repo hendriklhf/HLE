@@ -71,7 +71,7 @@ public sealed class EmojiFileGenerator
     /// <returns>The source code of the file. Null, if the creation was unsuccessful, due to e.g. not being able to retrieve the emoji data.</returns>
     /// </summary>
     [Pure]
-    public unsafe string? Generate()
+    public string? Generate()
     {
         if (_emojiJsonBytes is null)
         {
@@ -94,7 +94,7 @@ public sealed class EmojiFileGenerator
         builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);
         builder.Append("namsespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
         builder.Append("/// <summary>", Environment.NewLine);
-        builder.Append("///     A class that contains (almost) every existing emoji. (generated ", DateTime.UtcNow.ToString("dd.MM.yyyy HH:mm:ss"), " UTC)", Environment.NewLine);
+        builder.Append("///     A class that contains (almost) every existing emoji. Generated ", DateTime.UtcNow.ToString("R"), " with the <see cref=\"", nameof(EmojiFileGenerator), "\"/>.", Environment.NewLine);
         builder.Append("/// </summary>", Environment.NewLine);
         builder.Append("public static class Emoji", Environment.NewLine, "{", Environment.NewLine);
 
@@ -130,7 +130,7 @@ public sealed class EmojiFileGenerator
                     ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
                     int nameLength = Encoding.UTF8.GetChars(nameBytes, name);
                     name[0] = char.ToUpper(name[0]);
-                    CheckForIllegalName(name, &nameLength);
+                    CheckForIllegalName(name, ref nameLength);
 
                     builder.Append(indentation, _publicConstString, StringHelper.Whitespace, name[..nameLength], StringHelper.Whitespace);
                     builder.Append(_equalSignSpaceQuotation, emoji[..emojiLength], _quotationSemicolon, Environment.NewLine);
@@ -145,9 +145,9 @@ public sealed class EmojiFileGenerator
         return builder.ToString();
     }
 
-    private unsafe void CheckForIllegalName(Span<char> name, int* nameLength)
+    private void CheckForIllegalName(Span<char> name, ref int nameLength)
     {
-        ReadOnlySpan<char> readOnlyName = name[..*nameLength];
+        ReadOnlySpan<char> readOnlyName = name[..nameLength];
         foreach (var illegalWord in _illegalWords)
         {
             if (!readOnlyName.Equals(illegalWord.Key, StringComparison.Ordinal))
@@ -156,19 +156,19 @@ public sealed class EmojiFileGenerator
             }
 
             illegalWord.Value.CopyTo(name);
-            *nameLength = illegalWord.Value.Length;
+            nameLength = illegalWord.Value.Length;
             return;
         }
 
-        for (int i = 0; i < *nameLength; i++)
+        for (int i = 0; i < nameLength; i++)
         {
             if (name[i] != '_')
             {
                 continue;
             }
 
-            name[(i + 1)..*nameLength].CopyTo(name[i..]);
-            *nameLength -= 1;
+            name[(i + 1)..nameLength].CopyTo(name[i..]);
+            nameLength -= 1;
             name[i] = char.ToUpper(name[i]);
         }
     }

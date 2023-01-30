@@ -5,11 +5,12 @@ namespace HLE.Collections;
 
 public ref struct Stack<T>
 {
-    public int Count { get; private set; }
+    public readonly int Count => _count;
 
     public readonly int Capacity => _stack.Length;
 
     private readonly Span<T> _stack = Span<T>.Empty;
+    private int _count;
 
     public Stack(Span<T> stack)
     {
@@ -19,19 +20,19 @@ public ref struct Stack<T>
     public Stack(Span<T> stack, int count)
     {
         _stack = stack;
-        Count = count;
+        _count = count;
     }
 
-    public void Push(T item) => _stack[Count++] = item;
+    public void Push(T item) => _stack[_count++] = item;
 
-    public T Pop() => _stack[--Count];
+    public T Pop() => _stack[--_count];
 
     [Pure]
-    public readonly T Peek() => _stack[Count - 1];
+    public readonly T Peek() => _stack[_count - 1];
 
     public bool TryPush(T item)
     {
-        if (Count >= Capacity)
+        if (_count >= Capacity)
         {
             return false;
         }
@@ -42,7 +43,7 @@ public ref struct Stack<T>
 
     public bool TryPop(out T? item)
     {
-        if (Count <= 0)
+        if (_count <= 0)
         {
             item = default;
             return false;
@@ -54,7 +55,7 @@ public ref struct Stack<T>
 
     public readonly bool TryPeek(out T? item)
     {
-        if (Count <= 0)
+        if (_count <= 0)
         {
             item = default;
             return false;
@@ -64,7 +65,7 @@ public ref struct Stack<T>
         return true;
     }
 
-    public void Clear() => Count = 0;
+    public void Clear() => _count = 0;
 
     public static implicit operator Stack<T>(Span<T> stack) => new(stack);
 

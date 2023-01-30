@@ -4,7 +4,7 @@
 /// A class in which contains all sorts of constants.<br />
 /// Source: <a href="https://en.wikipedia.org/wiki/List_of_physical_constants">List of physical constants</a>
 /// </summary>
-public static class Constant
+public static class MathConstant
 {
     /// <summary>
     /// The atomic mass constant in kg.
@@ -152,7 +152,7 @@ public static class Constant
     public const double MolarPlanckConstant = 3.990312712e-10;
 
     /// <summary>
-    /// The electron mass in kg.
+    /// The neutron mass in kg.
     /// </summary>
     public const double NeutronMass = 1.67492749804e-27;
 

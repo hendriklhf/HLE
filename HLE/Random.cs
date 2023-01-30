@@ -180,13 +180,31 @@ public static class Random
 
     public static unsafe T Struct<T>() where T : struct
     {
-        Span<byte> bytes = stackalloc byte[sizeof(T)];
-        for (int i = 0; i < bytes.Length; i++)
+        int sizeT = sizeof(T);
+        Span<byte> bytes = stackalloc byte[sizeT];
+        ref byte firstByte = ref MemoryMarshal.GetReference(bytes);
+        for (int i = 0; i < sizeT; i++)
+        {
+            Unsafe.Add(ref firstByte, i) = Byte();
+        }
+
+        return Unsafe.As<byte, T>(ref firstByte);
+    }
+
+    public static unsafe void Write<T>(T* destination, int elementCount)
+    {
+        Span<byte> bytes = new(destination, elementCount * sizeof(T));
+        int byteCount = bytes.Length;
+        for (int i = 0; i < byteCount; i++)
         {
             bytes[i] = Byte();
         }
+    }
 
-        return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
+    public static unsafe void Write<T>(ref T destination, int elementCount)
+    {
+        T* pointer = (T*)Unsafe.AsPointer(ref destination);
+        Write(pointer, elementCount);
     }
 
     public static bool StrongBool()
@@ -313,9 +331,15 @@ public static class Random
         return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
     }
 
-    public static unsafe void WriteStrong(void* pointer, int byteCount)
+    public static unsafe void WriteStrong<T>(T* destination, int elementCount)
     {
-        Span<byte> bytes = new(pointer, byteCount);
+        Span<byte> bytes = new(destination, elementCount * sizeof(T));
         _strong.GetBytes(bytes);
+    }
+
+    public static unsafe void WriteStrong<T>(ref T destination, int elementCount)
+    {
+        T* pointer = (T*)Unsafe.AsPointer(ref destination);
+        WriteStrong(pointer, elementCount);
     }
 }

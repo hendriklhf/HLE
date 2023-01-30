@@ -1,10 +1,10 @@
 using System;
 using System.Diagnostics.Contracts;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text.RegularExpressions;
+using HLE.Collections;
 
 namespace HLE;
 
@@ -343,118 +343,15 @@ public static class StringHelper
     [Pure]
     public static Span<char> AsMutableSpan(this string? str)
     {
-        return AsMutableSpan((ReadOnlySpan<char>)str);
+        return ((ReadOnlySpan<char>)str).AsMutableSpan();
     }
 
-    [Pure]
-    public static unsafe Span<char> AsMutableSpan(this ReadOnlySpan<char> span)
-    {
-        if (span.Length == 0)
-        {
-            return Span<char>.Empty;
-        }
-
-        ref char firstChar = ref MemoryMarshal.GetReference(span);
-        char* pointer = (char*)Unsafe.AsPointer(ref firstChar);
-        return new(pointer, span.Length);
-    }
-
-    public static void ToLower(string? str)
-    {
-        ToLower((ReadOnlySpan<char>)str);
-    }
-
-    public static unsafe void ToLower(ReadOnlySpan<char> span)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        char* chars = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
-        for (int i = 0; i < spanLength; i++)
-        {
-            char c = chars[i];
-            if (!char.IsLower(c))
-            {
-                chars[i] = char.ToLower(c);
-            }
-        }
-    }
-
-    public static void ToLower(string? str, CultureInfo cultureInfo)
-    {
-        ToLower((ReadOnlySpan<char>)str, cultureInfo);
-    }
-
-    public static unsafe void ToLower(ReadOnlySpan<char> span, CultureInfo cultureInfo)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        char* chars = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
-        for (int i = 0; i < spanLength; i++)
-        {
-            char c = chars[i];
-            if (!char.IsLower(c))
-            {
-                chars[i] = char.ToLower(c, cultureInfo);
-            }
-        }
-    }
-
-    public static void ToUpper(string? str)
-    {
-        ToUpper((ReadOnlySpan<char>)str);
-    }
-
-    public static unsafe void ToUpper(ReadOnlySpan<char> span)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        char* chars = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
-        for (int i = 0; i < spanLength; i++)
-        {
-            char c = chars[i];
-            if (!char.IsUpper(c))
-            {
-                chars[i] = char.ToUpper(c);
-            }
-        }
-    }
-
-    public static void ToUpper(string? str, CultureInfo cultureInfo)
-    {
-        ToUpper((ReadOnlySpan<char>)str, cultureInfo);
-    }
-
-    public static unsafe void ToUpper(ReadOnlySpan<char> span, CultureInfo cultureInfo)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        char* chars = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
-        for (int i = 0; i < spanLength; i++)
-        {
-            char c = chars[i];
-            if (!char.IsUpper(c))
-            {
-                chars[i] = char.ToUpper(c, cultureInfo);
-            }
-        }
-    }
-
+    /// <summary>
+    /// Vectorized char count.
+    /// </summary>
+    /// <param name="str">The string in which the char will be counted.</param>
+    /// <param name="c">The char that will be counted.</param>
+    /// <returns>The amount of the char <paramref name="c"/> in the string <paramref name="str"/>.</returns>
     [Pure]
     public static int CharCount(this string? str, char c)
     {
@@ -554,80 +451,6 @@ public static class StringHelper
         return result;
     }
 
-    public static void Replace(string? str, char oldChar, char newChar)
-    {
-        Replace((ReadOnlySpan<char>)str, oldChar, newChar);
-    }
-
-    public static unsafe void Replace(ReadOnlySpan<char> span, char oldChar, char newChar)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        char* chars = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
-        for (int i = 0; i < spanLength; i++)
-        {
-            if (chars[i] == oldChar)
-            {
-                chars[i] = newChar;
-            }
-        }
-    }
-
-    public static void Replace(string? str, ReadOnlySpan<char> oldString, ReadOnlySpan<char> newString)
-    {
-        Replace((ReadOnlySpan<char>)str, oldString, newString);
-    }
-
-    public static void Replace(ReadOnlySpan<char> span, ReadOnlySpan<char> oldString, ReadOnlySpan<char> newString)
-    {
-        if (span.Length == 0)
-        {
-            return;
-        }
-
-        if (newString.Length != oldString.Length || span.Length < oldString.Length || span.Length < newString.Length)
-        {
-            throw new InvalidOperationException($"{nameof(newString)} and {nameof(oldString)} have to have the same length and have to be of the same or a shorter length than {nameof(span)} in order to mutate the string.");
-        }
-
-        if (span.Length == newString.Length)
-        {
-            newString.CopyTo(span.AsMutableSpan());
-            return;
-        }
-
-        int replacementIndexOffset = newString.Length;
-        Span<char> mutSpan = span.AsMutableSpan();
-        int lastIndex = mutSpan.Length + 1;
-        for (int i = replacementIndexOffset; i < lastIndex; i++)
-        {
-            Span<char> spanToCompare = mutSpan[(i - replacementIndexOffset)..i];
-            if (((ReadOnlySpan<char>)spanToCompare).Equals(oldString, StringComparison.Ordinal))
-            {
-                newString.CopyTo(spanToCompare);
-            }
-        }
-    }
-
-    public static void Replace(string? str, ReadOnlySpan<char> newString)
-    {
-        Replace((ReadOnlySpan<char>)str, newString);
-    }
-
-    public static void Replace(ReadOnlySpan<char> span, ReadOnlySpan<char> newString)
-    {
-        if (span.Length != newString.Length)
-        {
-            throw new InvalidOperationException($"{nameof(span)} and {nameof(newString)} have to have the same length");
-        }
-
-        newString.CopyTo(span.AsMutableSpan());
-    }
-
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
     {
         StringBuilder builder = escapedInput;
@@ -662,5 +485,59 @@ public static class StringHelper
         }
 
         return builder.Length;
+    }
+
+    public static int Join(Span<string> strings, char separator, Span<char> result)
+    {
+        int length = 0;
+        int stringsLengthMinus1 = strings.Length - 1;
+        ref string firstString = ref MemoryMarshal.GetReference(strings);
+        for (int i = 0; i < stringsLengthMinus1; i++)
+        {
+            string str = Unsafe.Add(ref firstString, i);
+            str.CopyTo(result[length..]);
+            length += str.Length;
+            result[length++] = separator;
+        }
+
+        string lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        lastString.CopyTo(result[length..]);
+        length += lastString.Length;
+        return length;
+    }
+
+    public static int Join(Span<string> strings, ReadOnlySpan<char> separator, Span<char> result)
+    {
+        int length = 0;
+        int stringsLengthMinus1 = strings.Length - 1;
+        ref string firstString = ref MemoryMarshal.GetReference(strings);
+        for (int i = 0; i < stringsLengthMinus1; i++)
+        {
+            string str = Unsafe.Add(ref firstString, i);
+            str.CopyTo(result[length..]);
+            length += str.Length;
+            separator.CopyTo(result[length..]);
+            length += separator.Length;
+        }
+
+        string lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        lastString.CopyTo(result[length..]);
+        length += lastString.Length;
+        return length;
+    }
+
+    public static int Concat(Span<string> strings, Span<char> result)
+    {
+        int length = 0;
+        int stringsLength = strings.Length;
+        ref string firstString = ref MemoryMarshal.GetReference(strings);
+        for (int i = 0; i < stringsLength; i++)
+        {
+            string str = Unsafe.Add(ref firstString, i);
+            str.CopyTo(result[length..]);
+            length += str.Length;
+        }
+
+        return length;
     }
 }

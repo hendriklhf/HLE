@@ -233,7 +233,7 @@ public sealed class ChatMessage
 
             string key = new(info[infoRanges[0]]);
             string val = new(info[infoRanges[1]]);
-            result.Add(key, val);
+            CollectionsMarshal.GetValueRefOrAddDefault(result, key, out _) = val;
         }
 
         return new(result);
@@ -299,6 +299,10 @@ public sealed class ChatMessage
 
     private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// Returns the message in the following format: "&lt;#Channel&gt; Username: Message".
+    /// </summary>
+    /// <returns>The message in a readable format.</returns>
     public override string ToString()
     {
         return $"<#{Channel}> {Username}: {Message}";

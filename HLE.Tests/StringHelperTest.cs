@@ -113,51 +113,11 @@ public class StringHelperTest
     }
 
     [TestMethod]
-    public void ToLowerTest()
-    {
-        const string str = "HELLO";
-        StringHelper.ToLower(str);
-        Assert.AreEqual("hello", str);
-    }
-
-    [TestMethod]
-    public void ToUpperTest()
-    {
-        const string str = "hello";
-        StringHelper.ToUpper(str);
-        Assert.AreEqual("HELLO", str);
-    }
-
-    [TestMethod]
     public void CharCountTest()
     {
         const string str = "hello";
         int count = str.CharCount('l');
         Assert.AreEqual(2, count);
-    }
-
-    [TestMethod]
-    public void ReplaceTest()
-    {
-        string str = new("hello");
-        StringHelper.Replace(str, "h", "x");
-        Assert.AreEqual("xello", str);
-
-        str = new("hello");
-        StringHelper.Replace(str, "ll", "xx");
-        Assert.AreEqual("hexxo", str);
-
-        str = new("hello");
-        StringHelper.Replace(str, "llo", "xxx");
-        Assert.AreEqual("hexxx", str);
-
-        str = new("hello");
-        StringHelper.Replace(str, "hello", "xxxxx");
-        Assert.AreEqual("xxxxx", str);
-
-        str = "hello";
-        StringHelper.Replace(str, "xxxxx");
-        Assert.AreEqual("xxxxx", str);
     }
 
     [TestMethod]
@@ -167,5 +127,25 @@ public class StringHelperTest
         Span<char> buffer = stackalloc char[str.Length << 1];
         int length = StringHelper.RegexEscape(str, buffer);
         Assert.AreEqual(@"\\\*\+\?\|\{\[\(\)\^\$\.\sawdawdawdawd", new(buffer[..length]));
+    }
+
+    [TestMethod]
+    public void JoinTest()
+    {
+        string[] strings = { "h", "e", "l", "l", "o" };
+        Span<char> result = stackalloc char[30];
+        int length = StringHelper.Join(strings, ' ', result);
+        string str = new(result[..length]);
+        Assert.AreEqual("h e l l o", str);
+    }
+
+    [TestMethod]
+    public void ConcatTest()
+    {
+        string[] strings = { "h", "e", "l", "l", "o" };
+        Span<char> result = stackalloc char[30];
+        int length = StringHelper.Concat(strings, result);
+        string str = new(result[..length]);
+        Assert.AreEqual("hello", str);
     }
 }

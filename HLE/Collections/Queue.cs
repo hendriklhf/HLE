@@ -5,11 +5,12 @@ namespace HLE.Collections;
 
 public ref struct Queue<T>
 {
-    public int Count { get; private set; }
+    public readonly int Count => _count;
 
     public readonly int Capacity => _queue.Length;
 
     private readonly Span<T> _queue = Span<T>.Empty;
+    private int _count;
     private readonly int _lastIndex;
     private int _enqueueIndex;
     private int _dequeueIndex;
@@ -41,7 +42,7 @@ public ref struct Queue<T>
         }
 
         _queue[_enqueueIndex++] = item;
-        Count++;
+        _count++;
     }
 
     public T Dequeue()
@@ -51,14 +52,14 @@ public ref struct Queue<T>
             throw new InvalidOperationException("Queue is empty.");
         }
 
-        Count--;
+        _count--;
         return _queue[_dequeueIndex++];
     }
 
     [Pure]
     public readonly T Peek()
     {
-        if (Count == 0)
+        if (_count == 0)
         {
             throw new InvalidOperationException("Queue is empty.");
         }
@@ -68,7 +69,7 @@ public ref struct Queue<T>
 
     public bool TryEnqueue(T item)
     {
-        if (Count >= Capacity)
+        if (_count >= Capacity)
         {
             return false;
         }
@@ -79,7 +80,7 @@ public ref struct Queue<T>
 
     public bool TryDequeue(out T? item)
     {
-        if (Count <= 0)
+        if (_count <= 0)
         {
             item = default;
             return false;
@@ -91,7 +92,7 @@ public ref struct Queue<T>
 
     public readonly bool TryPeek(out T? item)
     {
-        if (Count <= 0)
+        if (_count <= 0)
         {
             item = default;
             return false;
@@ -103,7 +104,7 @@ public ref struct Queue<T>
 
     public void Clear()
     {
-        Count = 0;
+        _count = 0;
         _enqueueIndex = 0;
         _dequeueIndex = 0;
     }

@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Globalization;
 
 namespace HLE.Twitch.Models;
 
 /// <summary>
 /// Arguments used when the state of a chat room changed.
-/// For example if emote-only mode has been turned on.
+/// For example, if emote-only mode has been turned on.<br/>
+/// Since this struct has a instance size bigger than a reference size, it should always be passed by reference.
 /// </summary>
 public readonly struct RoomstateArgs
 {
@@ -112,13 +114,13 @@ public readonly struct RoomstateArgs
 
     private static bool GetEmoteOnly(ReadOnlySpan<char> value) => value[^1] == '1';
 
-    private static int GetFollowersOnly(ReadOnlySpan<char> value) => int.Parse(value);
+    private static int GetFollowersOnly(ReadOnlySpan<char> value) => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     private static bool GetR9K(ReadOnlySpan<char> value) => value[^1] == '1';
 
-    private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
-    private static int GetSlowMode(ReadOnlySpan<char> value) => int.Parse(value);
+    private static int GetSlowMode(ReadOnlySpan<char> value) => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[^1] == '1';
 }

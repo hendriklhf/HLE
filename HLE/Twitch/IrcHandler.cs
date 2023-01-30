@@ -52,7 +52,6 @@ public sealed class IrcHandler
         switch (ircRangesLength)
         {
             case >= 3:
-            {
                 if (ircMessage[ircRanges[2]].Equals(_privmsgCommand, StringComparison.Ordinal))
                 {
                     OnChatMessageReceived?.Invoke(this, new(ircMessage));
@@ -71,12 +70,9 @@ public sealed class IrcHandler
                 }
 
                 break;
-            }
             case >= 1 when ircMessage[ircRanges[0]].Equals(_pingCommand, StringComparison.Ordinal):
-            {
                 OnPingReceived?.Invoke(this, new(ircMessage[6..]));
                 break;
-            }
         }
     }
 }

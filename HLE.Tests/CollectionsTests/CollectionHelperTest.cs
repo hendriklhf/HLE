@@ -199,7 +199,7 @@ public class CollectionHelperTest
     {
         char[] arr = "hello".ToCharArray();
 
-        arr = arr.ForRange((..2, _ => 'x'), (2..4, _ => 'y'));
+        arr = arr.ForRanges((..2, _ => 'x'), (2..4, _ => 'y'));
         Assert.AreEqual("xxyyo", arr.ConcatToString());
     }
 
@@ -208,8 +208,10 @@ public class CollectionHelperTest
     {
         char[] arr = "hello".ToCharArray();
         List<char> list = new();
+
         void Action(char c) => list.Add(c);
-        arr.ForRange((2..4, Action), (..2, Action));
+
+        arr.ForRanges((2..4, Action), (..2, Action));
         Assert.AreEqual(4, list.Count);
         Assert.IsTrue(list is ['l', 'l', 'h', 'e']);
     }

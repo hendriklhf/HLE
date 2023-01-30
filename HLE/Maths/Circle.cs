@@ -34,8 +34,8 @@ public readonly struct Circle : IShape
     public Circle(double radius)
     {
         Radius = radius;
-        Diameter = 2 * Radius;
-        Area = Math.PI * Math.Pow(Radius, 2);
+        Diameter = 2 * radius;
+        Area = Math.PI * Math.Pow(radius, 2);
         Circumference = Diameter * Math.PI;
     }
 }
