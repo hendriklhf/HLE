@@ -179,13 +179,25 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
     }
 
+    /// <inheritdoc cref="Send(ReadOnlySpan{char},ReadOnlyMemory{char})"/>
+    public void Send(string channel, string message)
+    {
+        Send((ReadOnlySpan<char>)channel, message.AsMemory());
+    }
+
+    /// <inheritdoc cref="Send(ReadOnlySpan{char},ReadOnlyMemory{char})"/>
+    public void Send(string channel, ReadOnlyMemory<char> message)
+    {
+        Send((ReadOnlySpan<char>)channel, message);
+    }
+
     /// <summary>
     /// Sends a chat messages.
     /// </summary>
     /// <param name="channel">The username of the channel owner</param>
     /// <param name="message">The message that will be sent</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="channel"/> is in the wrong format.</exception>
-    public void Send(string channel, string message)
+    public void Send(ReadOnlySpan<char> channel, ReadOnlyMemory<char> message)
     {
         if (!IsConnected || IsAnonymousLogin)
         {
@@ -198,7 +210,13 @@ public sealed class TwitchClient : IDisposable
             return;
         }
 
-        _client.SendMessage(prefixedChannel, message);
+        _client.SendMessage(prefixedChannel.AsMemory(), message);
+    }
+
+    /// <inheritdoc cref="Send(long, ReadOnlyMemory{char})"/>
+    public void Send(long channelId, string message)
+    {
+        Send(channelId, message.AsMemory());
     }
 
     /// <summary>
@@ -206,7 +224,7 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     /// <param name="channelId">The user id of the channel owner</param>
     /// <param name="message">The message that will be sent</param>
-    public void Send(long channelId, string message)
+    public void Send(long channelId, ReadOnlyMemory<char> message)
     {
         if (!IsConnected || IsAnonymousLogin)
         {
@@ -219,14 +237,20 @@ public sealed class TwitchClient : IDisposable
             return;
         }
 
-        _client.SendMessage(prefixedChannel, message);
+        _client.SendMessage(prefixedChannel.AsMemory(), message);
+    }
+
+    /// <inheritdoc cref="SendRaw(ReadOnlyMemory{char})"/>
+    public void SendRaw(string rawMessage)
+    {
+        SendRaw(rawMessage.AsMemory());
     }
 
     /// <summary>
     /// Sends a raw message to the chat server.
     /// </summary>
     /// <param name="rawMessage">The raw message</param>
-    public void SendRaw(string rawMessage)
+    public void SendRaw(ReadOnlyMemory<char> rawMessage)
     {
         if (!IsConnected)
         {

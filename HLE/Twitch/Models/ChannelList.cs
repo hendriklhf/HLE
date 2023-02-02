@@ -17,6 +17,9 @@ public sealed class ChannelList : IEnumerable<Channel>
     /// <param name="channelId">The user id of the channel owner.</param>
     public Channel? this[long channelId] => Get(channelId);
 
+    /// <inheritdoc cref="this[ReadOnlySpan{char}]"/>
+    public Channel? this[string channel] => Get(channel);
+
     /// <summary>
     /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to channel.
     /// </summary>
