@@ -40,8 +40,7 @@ public sealed class WebSocketIrcClient : IrcClient
         {
             Memory<byte> bytes = rentedArray;
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
-            bytes = bytes[..byteCount];
-            await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
+            await _webSocket.SendAsync(bytes[..byteCount], WebSocketMessageType.Text, true, _token);
             InvokeDataSent(this, message);
         }
         finally

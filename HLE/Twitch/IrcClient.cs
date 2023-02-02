@@ -108,12 +108,12 @@ public abstract class IrcClient : IDisposable
     }
 
     /// <summary>
-    /// Connects the client to the Twitch IRC server.
+    /// Connects the client to the Twitch IRC server. This message will be exited after the client has joined all channels.
     /// </summary>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public void Connect(ReadOnlyMemory<string> channels)
     {
-        async ValueTask ConnectAsync()
+        async Task ConnectAsync()
         {
             char[] rentedArray = _charArrayPool.Rent(_capReqMessage.Length);
             try
@@ -152,7 +152,7 @@ public abstract class IrcClient : IDisposable
             }
         }
 
-        Task.Run(ConnectAsync, _token).Wait(_token);
+        ConnectAsync().Wait(_token);
     }
 
     /// <summary>
@@ -161,13 +161,13 @@ public abstract class IrcClient : IDisposable
     /// <param name="closeMessage">A close message or reason.</param>
     public void Disconnect(string closeMessage = "Manually closed")
     {
-        async ValueTask DisconnectAsync()
+        async Task DisconnectAsync()
         {
             await DisconnectClient(closeMessage);
         }
 
         RequestCancellation();
-        Task.Run(DisconnectAsync, _token).Wait(_token);
+        DisconnectAsync().Wait(_token);
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
@@ -194,7 +194,7 @@ public abstract class IrcClient : IDisposable
             await Send(rawMessage);
         }
 
-        Task.Run(SendAsync, _token).Wait(_token);
+        Task.Run(SendAsync, _token);
     }
 
     /// <inheritdoc cref="SendMessage(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -219,6 +219,7 @@ public abstract class IrcClient : IDisposable
                 _privMsgPrefix.CopyTo(buffer.Span);
                 int bufferLength = _privMsgPrefix.Length;
                 channel.CopyTo(buffer[bufferLength..]);
+                bufferLength += channel.Length;
                 buffer.Span[bufferLength++] = ' ';
                 buffer.Span[bufferLength++] = ':';
                 message.CopyTo(buffer[bufferLength..]);
@@ -231,14 +232,20 @@ public abstract class IrcClient : IDisposable
             }
         }
 
-        Task.Run(SendAsync, _token).Wait(_token);
+        Task.Run(SendAsync, _token);
+    }
+
+    /// <inheritdoc cref="JoinChannel(ReadOnlyMemory{char})"/>
+    public void JoinChannel(string channel)
+    {
+        JoinChannel(channel.AsMemory());
     }
 
     /// <summary>
     /// Joins one channel.
     /// </summary>
     /// <param name="channel">The channel the client will join.</param>
-    public void JoinChannel(string channel)
+    public void JoinChannel(ReadOnlyMemory<char> channel)
     {
         async ValueTask JoinChannelAsync()
         {
@@ -248,7 +255,7 @@ public abstract class IrcClient : IDisposable
                 Memory<char> buffer = rentedArray;
                 _joinPrefix.CopyTo(buffer.Span);
                 int bufferLength = _joinPrefix.Length;
-                channel.CopyTo(buffer.Span[bufferLength..]);
+                channel.CopyTo(buffer[bufferLength..]);
                 bufferLength += channel.Length;
                 await Send(buffer[..bufferLength]);
             }
@@ -258,14 +265,19 @@ public abstract class IrcClient : IDisposable
             }
         }
 
-        Task.Run(JoinChannelAsync, _token).Wait(_token);
+        Task.Run(JoinChannelAsync, _token);
+    }
+
+    public void LeaveChannel(string channel)
+    {
+        LeaveChannel(channel.AsMemory());
     }
 
     /// <summary>
     /// Leaves one channel.
     /// </summary>
     /// <param name="channel">The channel the client will leave.</param>
-    public void LeaveChannel(string channel)
+    public void LeaveChannel(ReadOnlyMemory<char> channel)
     {
         async ValueTask LeaveChannelAsync()
         {
@@ -275,7 +287,7 @@ public abstract class IrcClient : IDisposable
                 Memory<char> buffer = rentedArray;
                 _partPrefix.CopyTo(buffer.Span);
                 int bufferLength = _partPrefix.Length;
-                channel.CopyTo(buffer.Span[bufferLength..]);
+                channel.CopyTo(buffer[bufferLength..]);
                 bufferLength += channel.Length;
                 await Send(buffer[..bufferLength]);
             }
@@ -285,22 +297,22 @@ public abstract class IrcClient : IDisposable
             }
         }
 
-        Task.Run(LeaveChannelAsync, _token).Wait(_token);
+        Task.Run(LeaveChannelAsync, _token);
     }
 
     private async ValueTask JoinChannels(ReadOnlyMemory<string> channels)
     {
-        if (channels.Length == 0)
-        {
-            return;
-        }
-
-        int maxChannels = _isVerifiedBot ? 200 : 20;
-        const short period = 10000;
-
         char[] rentedArray = _charArrayPool.Rent(_joinPrefix.Length + 26);
         try
         {
+            if (channels.Length == 0)
+            {
+                return;
+            }
+
+            int maxChannels = _isVerifiedBot ? 200 : 20;
+            const short period = 10000;
+
             Memory<char> buffer = rentedArray;
             long start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             for (int i = 0; i < channels.Length; i++)

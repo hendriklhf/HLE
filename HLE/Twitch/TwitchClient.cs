@@ -78,11 +78,6 @@ public sealed class TwitchClient : IDisposable
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
 
     /// <summary>
-    /// Is invoked if the client sends a chat messages.
-    /// </summary>
-    public event EventHandler<ChatMessage>? OnChatMessageSent;
-
-    /// <summary>
     /// Is invoked if data is received from the chat server.
     /// </summary>
     public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
@@ -97,12 +92,14 @@ public sealed class TwitchClient : IDisposable
     private readonly IrcClient _client;
     private readonly IrcHandler _ircHandler = new();
     private readonly List<string> _ircChannels = new();
+    private readonly Memory<char> _pingResponseBuffer = new char[30];
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
     private static readonly Regex _anonymousLoginPattern = new(@"^justinfan\w+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
     private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';
+    private const string _pongPrefix = "PONG :";
 
     /// <summary>
     /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.
@@ -175,7 +172,7 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
-        _ircHandler.OnPingReceived += (_, e) => SendRaw("PONG :" + new string(e.Span));
+        _ircHandler.OnPingReceived += IrcHandler_OnPingReceived;
         _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
     }
 
@@ -199,15 +196,20 @@ public sealed class TwitchClient : IDisposable
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="channel"/> is in the wrong format.</exception>
     public void Send(ReadOnlySpan<char> channel, ReadOnlyMemory<char> message)
     {
-        if (!IsConnected || IsAnonymousLogin)
+        if (!IsConnected)
         {
-            return;
+            throw Exceptions.NotConnected;
+        }
+
+        if (IsAnonymousLogin)
+        {
+            throw Exceptions.AnonymousConnection;
         }
 
         string? prefixedChannel = Channels[channel]?.PrefixedName;
         if (prefixedChannel is null)
         {
-            return;
+            throw Exceptions.NotConnectedToTheSpecifiedChannel;
         }
 
         _client.SendMessage(prefixedChannel.AsMemory(), message);
@@ -226,15 +228,20 @@ public sealed class TwitchClient : IDisposable
     /// <param name="message">The message that will be sent</param>
     public void Send(long channelId, ReadOnlyMemory<char> message)
     {
-        if (!IsConnected || IsAnonymousLogin)
+        if (!IsConnected)
         {
-            return;
+            throw Exceptions.NotConnected;
+        }
+
+        if (IsAnonymousLogin)
+        {
+            throw Exceptions.AnonymousConnection;
         }
 
         string? prefixedChannel = Channels[channelId]?.PrefixedName;
         if (prefixedChannel is null)
         {
-            return;
+            throw Exceptions.NotConnectedToTheSpecifiedChannel;
         }
 
         _client.SendMessage(prefixedChannel.AsMemory(), message);
@@ -254,14 +261,14 @@ public sealed class TwitchClient : IDisposable
     {
         if (!IsConnected)
         {
-            return;
+            throw Exceptions.NotConnected;
         }
 
         _client.SendRaw(rawMessage);
     }
 
     /// <summary>
-    /// Connects the client to the chat server.
+    /// Connects the client to the chat server. This message will be exited after the client has joined all channels.
     /// </summary>
     public void Connect()
     {
@@ -354,7 +361,7 @@ public sealed class TwitchClient : IDisposable
     /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
     public void LeaveChannels(params string[] channels)
     {
-        LeaveChannels(channels.AsEnumerable());
+        LeaveChannels((ReadOnlySpan<string>)channels);
     }
 
     /// <summary>
@@ -376,10 +383,7 @@ public sealed class TwitchClient : IDisposable
     {
         if (IsConnected)
         {
-            foreach (string channel in _ircChannels)
-            {
-                LeaveChannel(channel);
-            }
+            LeaveChannels(_ircChannels);
         }
 
         Channels.Clear();
@@ -408,20 +412,22 @@ public sealed class TwitchClient : IDisposable
 
     private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage msg)
     {
-        if (msg.Username == Username)
-        {
-            OnChatMessageSent?.Invoke(this, msg);
-        }
-        else
-        {
-            OnChatMessageReceived?.Invoke(this, msg);
-        }
+        OnChatMessageReceived?.Invoke(this, msg);
     }
 
     private void IrcHandler_OnRoomstateReceived(object? sender, RoomstateArgs roomstateArgs)
     {
         Channels.Update(in roomstateArgs);
         OnRoomstateReceived?.Invoke(this, roomstateArgs);
+    }
+
+    private void IrcHandler_OnPingReceived(object? sender, ReadOnlyMemory<char> message)
+    {
+        ((ReadOnlySpan<char>)_pongPrefix).CopyTo(_pingResponseBuffer.Span);
+        int bufferLength = _pongPrefix.Length;
+        message.Span.CopyTo(_pingResponseBuffer.Span);
+        bufferLength += message.Length;
+        SendRaw(_pingResponseBuffer[..bufferLength]);
     }
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)

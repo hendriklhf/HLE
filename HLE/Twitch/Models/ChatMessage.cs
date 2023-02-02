@@ -128,14 +128,12 @@ public sealed class ChatMessage
         Span<Range> tagsRanges = stackalloc Range[tags.Length];
         int tagsRangesLength = tags.GetRangesOfSplit(';', tagsRanges);
 
-        Span<Range> tagRanges = stackalloc Range[2];
         for (int i = 0; i < tagsRangesLength; i++)
         {
             ReadOnlySpan<char> tag = tags[tagsRanges[i]];
-            tag.GetRangesOfSplit('=', tagRanges);
-
-            ReadOnlySpan<char> key = tag[tagRanges[0]];
-            ReadOnlySpan<char> value = tag[tagRanges[1]];
+            int equalSignIndex = tag.IndexOf('=');
+            ReadOnlySpan<char> key = tag[..equalSignIndex];
+            ReadOnlySpan<char> value = tag[(equalSignIndex + 1)..];
             if (key.Equals(_badgeInfoTag, StringComparison.Ordinal))
             {
                 BadgeInfo = GetBadgeInfo(value);

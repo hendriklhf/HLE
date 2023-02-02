@@ -19,7 +19,6 @@ public static class CollectionHelper
     /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
     /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
     /// <param name="action">The action that will be performed.</param>
-    [Pure]
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T> action)
     {
         return ForEach(collection.ToArray(), action);
