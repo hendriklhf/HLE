@@ -33,23 +33,7 @@ public sealed class TcpIrcClient : IrcClient
 
     private protected override async ValueTask Send(string message)
     {
-        if (_writer is null)
-        {
-            throw new ArgumentNullException(nameof(_writer));
-        }
-
-        char[] rentedArray = _charArrayPool.Rent(1024);
-        try
-        {
-            Memory<char> chars = rentedArray;
-            message.CopyTo(chars.Span);
-            chars = chars[..message.Length];
-            await Send(chars);
-        }
-        finally
-        {
-            _charArrayPool.Return(rentedArray);
-        }
+        await Send(message.AsMemory());
     }
 
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
@@ -59,7 +43,7 @@ public sealed class TcpIrcClient : IrcClient
             throw new ArgumentNullException(nameof(_writer));
         }
 
-        await _writer.WriteLineAsync(message, _token);
+        await _writer.WriteAsync(message, _token);
         await _writer.FlushAsync();
         InvokeDataSent(this, message);
     }

@@ -35,7 +35,7 @@ public sealed class WebSocketIrcClient : IrcClient
 
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
-        byte[] rentedArray = _byteArrayPool.Rent(2048);
+        byte[] rentedArray = _byteArrayPool.Rent(1200);
         try
         {
             Memory<byte> bytes = rentedArray;

@@ -146,6 +146,10 @@ public sealed class TwitchClient : IDisposable
         SetEvents();
     }
 
+    /// <summary>
+    /// The constructor for a chat client witch an already created <see cref="IrcClient"/>.
+    /// </summary>
+    /// <param name="ircClient">The IRC client.</param>
     public TwitchClient(IrcClient ircClient)
     {
         ClientType = ircClient switch
@@ -172,7 +176,7 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += (_, e) => SendRaw("PONG :" + new string(e.Span));
-        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemory());
+        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
     }
 
     /// <summary>
