@@ -53,7 +53,7 @@ public sealed class Channel
     internal Channel(in RoomstateArgs args)
     {
         Name = args.Channel;
-        PrefixedName = $"#{Name}";
+        PrefixedName = '#' + args.Channel;
         Id = args.ChannelId;
         EmoteOnly = args.EmoteOnly;
         FollowersOnly = args.FollowersOnly;

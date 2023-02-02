@@ -23,7 +23,7 @@ public sealed class ChatMessage
     /// <summary>
     /// Holds all the badges the user has.
     /// </summary>
-    public Badge[] Badges { get; init; } = Array.Empty<Badge>();
+    public ReadOnlySpan<Badge> Badges => _badges;
 
     /// <summary>
     /// The color of the user's name in a Twitch chat overlay.
@@ -96,10 +96,7 @@ public sealed class ChatMessage
     /// </summary>
     public string Message { get; init; }
 
-    /// <summary>
-    /// The raw IRC message.
-    /// </summary>
-    public string RawIrcMessage { get; init; }
+    private readonly Badge[] _badges = Array.Empty<Badge>();
 
     private static readonly ReadOnlyDictionary<string, string> _emptyDictionary = new(new Dictionary<string, string>());
 
@@ -124,12 +121,9 @@ public sealed class ChatMessage
     /// The default constructor of <see cref="ChatMessage"/>. This will parse the given IRC message.
     /// </summary>
     /// <param name="ircMessage">The IRC message as a <see cref="ReadOnlySpan{Char}"/>.</param>
-    /// <param name="rawIrcMessage">The IRC message as a <see cref="String"/>. If passed, avoids the conversion of <paramref name="ircMessage"/> to a <see cref="String"/>, and therefore a <see cref="String"/> allocation.</param>
-    public ChatMessage(ReadOnlySpan<char> ircMessage, string? rawIrcMessage = null)
+    /// <param name="ircRanges">The ranges of the split of <paramref name="ircMessage"/> on whitespaces.</param>
+    public ChatMessage(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
-        Span<Range> ircRanges = stackalloc Range[ircMessage.Length];
-        ircMessage.GetRangesOfSplit(' ', ircRanges);
-
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
         Span<Range> tagsRanges = stackalloc Range[tags.Length];
         int tagsRangesLength = tags.GetRangesOfSplit(';', tagsRanges);
@@ -148,7 +142,7 @@ public sealed class ChatMessage
             }
             else if (key.Equals(_badgesTag, StringComparison.Ordinal))
             {
-                Badges = GetBadges(value);
+                _badges = GetBadges(value);
             }
             else if (key.Equals(_colorTag, StringComparison.Ordinal))
             {
@@ -196,18 +190,6 @@ public sealed class ChatMessage
         Username = DisplayName.ToLowerInvariant();
         Channel = new(ircMessage[ircRanges[3]][1..]);
         Message = GetMessage(ircMessage, ircRanges);
-        RawIrcMessage = rawIrcMessage ?? new(ircMessage);
-    }
-
-    /// <summary>
-    /// An empty constructor. Can be used to set properties on initialization.
-    /// </summary>
-    public ChatMessage()
-    {
-        Username = string.Empty;
-        Channel = string.Empty;
-        Message = string.Empty;
-        RawIrcMessage = string.Empty;
     }
 
     private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<Range> ircRanges)

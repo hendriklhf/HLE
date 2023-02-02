@@ -32,6 +32,18 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe StringBuilder(char* pointer, int length)
+    {
+        _buffer = new(pointer, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe StringBuilder(ref char reference, int length)
+    {
+        _buffer = new((char*)Unsafe.AsPointer(ref reference), length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(scoped ReadOnlySpan<char> span)
     {
         span.CopyTo(_buffer[_length..]);

@@ -803,4 +803,31 @@ public static class CollectionHelper
     {
         return *(Memory<T>*)&memory;
     }
+
+    /// <summary>
+    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. ⚠️ Only works if the span's reference is the first element of an array. ⚠️ Otherwise this method is potentially dangerous. ⚠️
+    /// </summary>
+    /// <param name="span">The span that will be converted.</param>
+    /// <returns>A memory view over the span.</returns>
+    [Pure]
+    internal static unsafe Memory<T> AsMemory<T>(this Span<T> span)
+    {
+        Memory<T> result = default;
+        byte* spanPtr = (byte*)&span;
+        byte* memoryPtr = (byte*)&result;
+        nuint* memoryReference = (nuint*)memoryPtr;
+        int* memoryIndex = (int*)(memoryPtr + sizeof(nuint));
+        int* memoryLength = (int*)(memoryPtr + sizeof(nuint) + sizeof(int));
+
+        nuint reference = *(nuint*)spanPtr;
+        reference -= (nuint)(sizeof(nuint) << 1);
+        *memoryReference = reference;
+
+        *memoryIndex = 0;
+
+        int length = *(int*)(spanPtr + sizeof(nuint));
+        *memoryLength = length;
+
+        return result;
+    }
 }

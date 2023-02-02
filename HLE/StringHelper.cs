@@ -489,6 +489,11 @@ public static class StringHelper
 
     public static int Join(Span<string> strings, char separator, Span<char> result)
     {
+        return Join((ReadOnlySpan<string>)strings, separator, result);
+    }
+
+    public static int Join(ReadOnlySpan<string> strings, char separator, Span<char> result)
+    {
         int length = 0;
         int stringsLengthMinus1 = strings.Length - 1;
         ref string firstString = ref MemoryMarshal.GetReference(strings);
@@ -508,6 +513,11 @@ public static class StringHelper
 
     public static int Join(Span<string> strings, ReadOnlySpan<char> separator, Span<char> result)
     {
+        return Join((ReadOnlySpan<string>)strings, separator, result);
+    }
+
+    public static int Join(ReadOnlySpan<string> strings, ReadOnlySpan<char> separator, Span<char> result)
+    {
         int length = 0;
         int stringsLengthMinus1 = strings.Length - 1;
         ref string firstString = ref MemoryMarshal.GetReference(strings);
@@ -526,7 +536,57 @@ public static class StringHelper
         return length;
     }
 
+    public static int Join(Span<char> chars, char separator, Span<char> result)
+    {
+        return Join((ReadOnlySpan<char>)chars, separator, result);
+    }
+
+    public static int Join(ReadOnlySpan<char> chars, char separator, Span<char> result)
+    {
+        int length = 0;
+        int charsLengthMinus1 = chars.Length - 1;
+        ref char firstChar = ref MemoryMarshal.GetReference(chars);
+        for (int i = 0; i < charsLengthMinus1; i++)
+        {
+            char c = Unsafe.Add(ref firstChar, i);
+            result[length++] = c;
+            result[length++] = separator;
+        }
+
+        char lastChar = Unsafe.Add(ref firstChar, charsLengthMinus1);
+        result[length++] = lastChar;
+        return length;
+    }
+
+    public static int Join(Span<char> chars, ReadOnlySpan<char> separator, Span<char> result)
+    {
+        return Join((ReadOnlySpan<char>)chars, separator, result);
+    }
+
+    public static int Join(ReadOnlySpan<char> chars, ReadOnlySpan<char> separator, Span<char> result)
+    {
+        int length = 0;
+        int charsLengthMinus1 = chars.Length - 1;
+        ref char firstChar = ref MemoryMarshal.GetReference(chars);
+        for (int i = 0; i < charsLengthMinus1; i++)
+        {
+            char c = Unsafe.Add(ref firstChar, i);
+            result[length++] = c;
+            separator.CopyTo(result[length..]);
+            length += separator.Length;
+        }
+
+        char lastChar = Unsafe.Add(ref firstChar, charsLengthMinus1);
+        result[length++] = lastChar;
+        return length;
+    }
+
     public static int Concat(Span<string> strings, Span<char> result)
+    {
+        return Concat((ReadOnlySpan<string>)strings, result);
+    }
+
+    public static int Concat(ReadOnlySpan<string> strings, Span<char> result)
     {
         int length = 0;
         int stringsLength = strings.Length;

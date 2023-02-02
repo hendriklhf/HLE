@@ -40,7 +40,7 @@ public sealed class WebSocketIrcClient : IrcClient
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
             bytes = bytes[..byteCount];
             await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _token);
-            InvokeDataSent(this, message.Span);
+            InvokeDataSent(this, message);
         }
         finally
         {
@@ -72,7 +72,11 @@ public sealed class WebSocketIrcClient : IrcClient
                 {
                     for (int i = 0; i < rangesLength; i++)
                     {
-                        InvokeDataReceived(this, chars[rangeBuffer.Span[i]]);
+                        ReadOnlyMemory<char> charSpan = chars[rangeBuffer.Span[i]];
+                        if (charSpan.Length > 0)
+                        {
+                            InvokeDataReceived(this, charSpan.ToArray());
+                        }
                     }
 
                     charBufferLength = 0;
@@ -82,7 +86,11 @@ public sealed class WebSocketIrcClient : IrcClient
                 rangesLength--;
                 for (int i = 0; i < rangesLength; i++)
                 {
-                    InvokeDataReceived(this, chars[rangeBuffer.Span[i]]);
+                    ReadOnlyMemory<char> charSpan = chars[rangeBuffer.Span[i]];
+                    if (charSpan.Length > 0)
+                    {
+                        InvokeDataReceived(this, charSpan.ToArray());
+                    }
                 }
 
                 ReadOnlyMemory<char> lastPart = chars[rangeBuffer.Span[rangesLength]];
@@ -112,5 +120,11 @@ public sealed class WebSocketIrcClient : IrcClient
     private protected override (string Url, int Port) GetUrl()
     {
         return UseSSL ? ("wss://irc-ws.chat.twitch.tv", 443) : ("ws://irc-ws.chat.twitch.tv", 80);
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _webSocket.Dispose();
     }
 }

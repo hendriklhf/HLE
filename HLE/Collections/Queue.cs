@@ -47,7 +47,7 @@ public ref struct Queue<T>
 
     public T Dequeue()
     {
-        if (Count == 0)
+        if (_count == 0)
         {
             throw new InvalidOperationException("Queue is empty.");
         }

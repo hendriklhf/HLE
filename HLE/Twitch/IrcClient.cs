@@ -2,15 +2,17 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using HLE.Collections;
 
 namespace HLE.Twitch;
 
 /// <summary>
 /// The base class for IRC clients.
 /// </summary>
-public abstract class IrcClient
+public abstract class IrcClient : IDisposable
 {
     /// <summary>
     /// The username of the client.
@@ -56,7 +58,7 @@ public abstract class IrcClient
     /// <summary>
     /// Is invoked if the client sends data.
     /// </summary>
-    public event EventHandler<string>? OnDataSent;
+    public event EventHandler<ReadOnlyMemory<char>>? OnDataSent;
 
     private protected CancellationTokenSource _tokenSource = new();
     private protected CancellationToken _token;
@@ -76,7 +78,6 @@ public abstract class IrcClient
         Username = username;
         OAuthToken = oAuthToken;
         _token = _tokenSource.Token;
-        // ReSharper disable once VirtualMemberCallInConstructor
         _url = GetUrl();
     }
 
@@ -86,11 +87,36 @@ public abstract class IrcClient
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public void Connect(IEnumerable<string> channels)
     {
-        async ValueTask ConnectLocal()
+        Connect(channels.ToArray().AsMemory());
+    }
+
+    /// <summary>
+    /// Connects the client to the Twitch IRC server.
+    /// </summary>
+    /// <param name="channels">The collection of channels the client will join on connect.</param>
+    public void Connect(string[] channels)
+    {
+        Connect(channels.AsMemory());
+    }
+
+    /// <summary>
+    /// Connects the client to the Twitch IRC server.
+    /// </summary>
+    /// <param name="channels">The collection of channels the client will join on connect.</param>
+    public void Connect(List<string> channels)
+    {
+        Connect(CollectionsMarshal.AsSpan(channels).AsMemory());
+    }
+
+    /// <summary>
+    /// Connects the client to the Twitch IRC server.
+    /// </summary>
+    /// <param name="channels">The collection of channels the client will join on connect.</param>
+    public void Connect(ReadOnlyMemory<string> channels)
+    {
+        async ValueTask ConnectAsync()
         {
             await ConnectClient();
-            OnConnected?.Invoke(this, EventArgs.Empty);
-            StartListening();
             if (OAuthToken is not null)
             {
                 await Send($"PASS {OAuthToken}");
@@ -98,24 +124,48 @@ public abstract class IrcClient
 
             await Send($"NICK {Username}");
             await Send("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
+            OnConnected?.Invoke(this, EventArgs.Empty);
+            StartListening();
             await JoinChannels(channels);
         }
 
-        Task.Run(ConnectLocal, _token).Wait(_token);
+        Task.Run(ConnectAsync, _token).Wait(_token);
+    }
+
+    /// <summary>
+    /// Disconnects the client.
+    /// </summary>
+    /// <param name="closeMessage">A close message or reason.</param>
+    public void Disconnect(string closeMessage = "Manually closed")
+    {
+        async ValueTask DisconnectAsync()
+        {
+            await DisconnectClient(closeMessage);
+        }
+
+        RequestCancellation();
+        Task.Run(DisconnectAsync, _token).Wait(_token);
+        OnDisconnected?.Invoke(this, EventArgs.Empty);
+    }
+
+    internal void Reconnect(ReadOnlyMemory<string> channels)
+    {
+        Disconnect();
+        Connect(channels);
     }
 
     /// <summary>
     /// Sends a raw message to the Twitch IRC server.
     /// </summary>
-    /// <param name="message">The IRC message.</param>
-    public void SendRaw(string message)
+    /// <param name="rawMessage">The IRC message.</param>
+    public void SendRaw(string rawMessage)
     {
-        async ValueTask SendLocal()
+        async ValueTask SendAsync()
         {
-            await Send(message);
+            await Send(rawMessage);
         }
 
-        Task.Run(SendLocal, _token).Wait(_token);
+        Task.Run(SendAsync, _token).Wait(_token);
     }
 
     /// <summary>
@@ -125,12 +175,12 @@ public abstract class IrcClient
     /// <param name="message">The message that will be sent to the channel.</param>
     public void SendMessage(string channel, string message)
     {
-        async ValueTask SendLocal()
+        async ValueTask SendAsync()
         {
             await Send($"PRIVMSG {channel} :{message}");
         }
 
-        Task.Run(SendLocal, _token).Wait(_token);
+        Task.Run(SendAsync, _token).Wait(_token);
     }
 
     /// <summary>
@@ -139,12 +189,12 @@ public abstract class IrcClient
     /// <param name="channel">The channel the client will join.</param>
     public void JoinChannel(string channel)
     {
-        async ValueTask JoinChannelLocal()
+        async ValueTask JoinChannelAsync()
         {
             await Send($"JOIN {channel}");
         }
 
-        Task.Run(JoinChannelLocal, _token).Wait(_token);
+        Task.Run(JoinChannelAsync, _token).Wait(_token);
     }
 
     /// <summary>
@@ -153,43 +203,26 @@ public abstract class IrcClient
     /// <param name="channel">The channel the client will leave.</param>
     public void LeaveChannel(string channel)
     {
-        async ValueTask LeaveChannelLocal()
+        async ValueTask LeaveChannelAsync()
         {
-            await Send($"PART {channel}");
+            await Send("PART " + channel);
         }
 
-        Task.Run(LeaveChannelLocal, _token).Wait(_token);
+        Task.Run(LeaveChannelAsync, _token).Wait(_token);
     }
 
-    /// <summary>
-    /// Disconnects the client.
-    /// </summary>
-    /// <param name="closeMessage">A close message or reason.</param>
-    public void Disconnect(string closeMessage = "Manually closed")
+    private async ValueTask JoinChannels(ReadOnlyMemory<string> channels)
     {
-        async ValueTask DisconnectLocal()
-        {
-            await DisconnectClient(closeMessage);
-        }
-
-        RequestCancellation();
-        Task.Run(DisconnectLocal, _token).Wait(_token);
-        OnDisconnected?.Invoke(this, EventArgs.Empty);
-    }
-
-    private async ValueTask JoinChannels(IEnumerable<string> channels)
-    {
-        string[] channelArr = channels.ToArray();
-        if (channelArr.Length == 0)
+        if (channels.Length == 0)
         {
             return;
         }
 
         int maxChannels = IsVerifiedBot ? 200 : 20;
         const short period = 10000;
-        string[] joins = channelArr.Select(c => $"JOIN {c}").ToArray();
+
         long start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        for (int i = 0; i < joins.Length; i++)
+        for (int i = 0; i < channels.Length; i++)
         {
             if (i > 0 && i % maxChannels == 0)
             {
@@ -202,7 +235,7 @@ public abstract class IrcClient
                 start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
-            await Send(joins[i]);
+            await Send("JOIN " + channels.Span[i]);
         }
     }
 
@@ -221,12 +254,12 @@ public abstract class IrcClient
 
     private protected void InvokeDataSent(IrcClient sender, string data)
     {
-        OnDataSent?.Invoke(sender, data);
+        OnDataSent?.Invoke(sender, data.AsMemory());
     }
 
-    private protected void InvokeDataSent(IrcClient sender, ReadOnlySpan<char> data)
+    private protected void InvokeDataSent(IrcClient sender, ReadOnlyMemory<char> data)
     {
-        OnDataSent?.Invoke(sender, new(data));
+        OnDataSent?.Invoke(sender, data);
     }
 
     private protected abstract ValueTask Send(string message);
@@ -240,4 +273,10 @@ public abstract class IrcClient
     private protected abstract ValueTask DisconnectClient(string closeMessage);
 
     private protected abstract (string Url, int Port) GetUrl();
+
+    public virtual void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        _tokenSource.Dispose();
+    }
 }

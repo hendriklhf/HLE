@@ -59,7 +59,7 @@ public sealed class TcpIrcClient : IrcClient
 
         await _writer.WriteLineAsync(message, _token);
         await _writer.FlushAsync();
-        InvokeDataSent(this, message.Span);
+        InvokeDataSent(this, message);
     }
 
     private protected override void StartListening()
@@ -82,7 +82,7 @@ public sealed class TcpIrcClient : IrcClient
                 ReadOnlyMemory<Range> ranges = rangeBuffer[..rangesLength];
                 for (int i = 0; i < rangesLength; i++)
                 {
-                    InvokeDataReceived(this, message[ranges.Span[i]]);
+                    InvokeDataReceived(this, message[ranges.Span[i]].ToArray());
                 }
             }
         }
@@ -119,5 +119,13 @@ public sealed class TcpIrcClient : IrcClient
     private protected override (string Url, int Port) GetUrl()
     {
         return UseSSL ? ("irc.chat.twitch.tv", 443) : ("irc.chat.twitch.tv", 80);
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        _tcpClient.Dispose();
+        _reader?.Dispose();
+        _writer?.Dispose();
     }
 }

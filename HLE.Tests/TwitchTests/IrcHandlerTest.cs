@@ -47,7 +47,6 @@ public class IrcHandlerTest
             Assert.AreEqual("strbhlfe", msg.Username);
             Assert.AreEqual("lbnshlfe", msg.Channel);
             Assert.AreEqual("xd xd xd", msg.Message);
-            Assert.AreEqual(_messages[messageIdx], msg.RawIrcMessage);
         };
         _ircHandler.Handle(_messages[messageIdx]);
         Assert.IsTrue(invoked);
@@ -98,8 +97,8 @@ public class IrcHandlerTest
         _ircHandler.OnJoinedChannel += (_, jm) =>
         {
             invoked = true;
-            Assert.AreEqual("strbhlfe", jm.Username);
-            Assert.AreEqual("lbnshlfe", jm.Channel);
+            Assert.AreEqual("strbhlfe", new(jm.Username.Span));
+            Assert.AreEqual("lbnshlfe", new(jm.Channel.Span));
         };
         _ircHandler.Handle(_messages[3]);
         Assert.IsTrue(invoked);
@@ -112,8 +111,8 @@ public class IrcHandlerTest
         _ircHandler.OnLeftChannel += (_, pm) =>
         {
             invoked = true;
-            Assert.AreEqual("strbhlfe", pm.Username);
-            Assert.AreEqual("lbnshlfe", pm.Channel);
+            Assert.AreEqual("strbhlfe", new(pm.Username.Span));
+            Assert.AreEqual("lbnshlfe", new(pm.Channel.Span));
         };
         _ircHandler.Handle(_messages[4]);
         Assert.IsTrue(invoked);

@@ -20,10 +20,10 @@ public sealed class ChannelList : IEnumerable<Channel>
     /// <summary>
     /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to channel.
     /// </summary>
-    /// <param name="channel">The username of the channel owner.</param>
-    public Channel? this[string channel] => Get(channel);
+    /// <param name="channel">The channel name, with or without '#'.</param>
+    public Channel? this[ReadOnlySpan<char> channel] => Get(channel);
 
-    public ReadOnlySpan<Channel> Span => CollectionsMarshal.AsSpan(_channels);
+    public int Count => _channels.Count;
 
     private readonly List<Channel> _channels = new();
 

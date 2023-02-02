@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using HLE.Collections;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -9,7 +11,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// A class that represents a Twitch chat client.
 /// </summary>
-public sealed class TwitchClient
+public sealed class TwitchClient : IDisposable
 {
     /// <summary>
     /// The username of the client.
@@ -55,12 +57,12 @@ public sealed class TwitchClient
     public event EventHandler? OnDisconnected;
 
     /// <summary>
-    /// Is invoked if a user joins a channel. A user can be the client or any other user.
+    /// Is invoked if a user joins a channel.
     /// </summary>
     public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
 
     /// <summary>
-    /// Is invoked if a user leaves a channel. A user can be the client or any other user.
+    /// Is invoked if a user leaves a channel.
     /// </summary>
     public event EventHandler<LeftChannelArgs>? OnLeftChannel;
 
@@ -82,12 +84,12 @@ public sealed class TwitchClient
     /// <summary>
     /// Is invoked if data is received from the chat server.
     /// </summary>
-    public event EventHandler<string>? OnDataReceived;
+    public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
 
     /// <summary>
     /// Is invoked if data is sent to the chat server.
     /// </summary>
-    public event EventHandler<string>? OnDataSent;
+    public event EventHandler<ReadOnlyMemory<char>>? OnDataSent;
 
     #endregion Events
 
@@ -163,11 +165,12 @@ public sealed class TwitchClient
         _client.OnDataSent += (_, e) => OnDataSent?.Invoke(this, e);
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnRoomstateReceived += (_, e) => Channels.Update(in e);
-        _ircHandler.OnRoomstateReceived += (_, e) => OnRoomstateReceived?.Invoke(this, e);
-        _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
-        _ircHandler.OnPingReceived += (_, e) => SendRaw($"PONG :{e.Message}");
         _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
+        _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
+        _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
+        //_ircHandler.OnUserStateReceived += (_, _) =>
+        _ircHandler.OnPingReceived += (_, e) => SendRaw("PONG :" + new string(e.Span));
+        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemory());
     }
 
     /// <summary>
@@ -183,13 +186,13 @@ public sealed class TwitchClient
             return;
         }
 
-        channel = FormatChannel(channel);
-        if (!_ircChannels.Contains(channel))
+        string? prefixedChannel = Channels[channel]?.PrefixedName;
+        if (prefixedChannel is null)
         {
             return;
         }
 
-        _client.SendMessage(channel, message);
+        _client.SendMessage(prefixedChannel, message);
     }
 
     /// <summary>
@@ -199,27 +202,32 @@ public sealed class TwitchClient
     /// <param name="message">The message that will be sent</param>
     public void Send(long channelId, string message)
     {
-        string? channel = Channels[channelId]?.PrefixedName;
-        if (channel is null)
+        if (!IsConnected || IsAnonymousLogin)
         {
             return;
         }
 
-        Send(channel, message);
+        string? prefixedChannel = Channels[channelId]?.PrefixedName;
+        if (prefixedChannel is null)
+        {
+            return;
+        }
+
+        _client.SendMessage(prefixedChannel, message);
     }
 
     /// <summary>
     /// Sends a raw message to the chat server.
     /// </summary>
-    /// <param name="message">The raw message</param>
-    public void SendRaw(string message)
+    /// <param name="rawMessage">The raw message</param>
+    public void SendRaw(string rawMessage)
     {
         if (!IsConnected)
         {
             return;
         }
 
-        _client.SendRaw(message);
+        _client.SendRaw(rawMessage);
     }
 
     /// <summary>
@@ -345,9 +353,8 @@ public sealed class TwitchClient
 
     private void IrcClient_OnDataReceived(object? sender, ReadOnlyMemory<char> data)
     {
-        ReadOnlySpan<char> dataSpan = data.Span;
-        _ircHandler.Handle(dataSpan);
-        OnDataReceived?.Invoke(this, new(dataSpan));
+        _ircHandler.Handle(data);
+        OnDataReceived?.Invoke(this, data);
     }
 
     private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage msg)
@@ -360,6 +367,12 @@ public sealed class TwitchClient
         {
             OnChatMessageReceived?.Invoke(this, msg);
         }
+    }
+
+    private void IrcHandler_OnRoomstateReceived(object? sender, RoomstateArgs roomstateArgs)
+    {
+        Channels.Update(in roomstateArgs);
+        OnRoomstateReceived?.Invoke(this, roomstateArgs);
     }
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)
@@ -415,5 +428,10 @@ public sealed class TwitchClient
         }
 
         throw new FormatException("The OAuthToken is in an invalid format.");
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 }
