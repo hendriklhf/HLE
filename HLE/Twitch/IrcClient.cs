@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
+using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
@@ -28,12 +29,7 @@ public abstract class IrcClient : IDisposable
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; init; }
-
-    /// <summary>
-    /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.
-    /// </summary>
-    public bool IsVerifiedBot { get; init; }
+    public bool UseSSL { get; }
 
     /// <summary>
     /// Indicates whether the client is connected or not.
@@ -66,6 +62,8 @@ public abstract class IrcClient : IDisposable
     private protected readonly ArrayPool<byte> _byteArrayPool = ArrayPool<byte>.Create();
     private protected readonly ArrayPool<char> _charArrayPool = ArrayPool<char>.Create();
 
+    private readonly bool _isVerifiedBot;
+
     private protected const string _newLine = "\r\n";
 
     /// <summary>
@@ -73,36 +71,30 @@ public abstract class IrcClient : IDisposable
     /// </summary>
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
-    protected IrcClient(string username, string? oAuthToken = null)
+    /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
+    protected IrcClient(string username, string? oAuthToken = null, ClientOptions options = default)
     {
         Username = username;
         OAuthToken = oAuthToken;
+        UseSSL = options.UseSSL;
+        _isVerifiedBot = options.IsVerifiedBot;
         _token = _tokenSource.Token;
         _url = GetUrl();
     }
 
-    /// <summary>
-    /// Connects the client to the Twitch IRC server.
-    /// </summary>
-    /// <param name="channels">The collection of channels the client will join on connect.</param>
+    /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
     public void Connect(IEnumerable<string> channels)
     {
         Connect(channels.ToArray().AsMemory());
     }
 
-    /// <summary>
-    /// Connects the client to the Twitch IRC server.
-    /// </summary>
-    /// <param name="channels">The collection of channels the client will join on connect.</param>
+    /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
     public void Connect(string[] channels)
     {
         Connect(channels.AsMemory());
     }
 
-    /// <summary>
-    /// Connects the client to the Twitch IRC server.
-    /// </summary>
-    /// <param name="channels">The collection of channels the client will join on connect.</param>
+    /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
     public void Connect(List<string> channels)
     {
         Connect(CollectionsMarshal.AsSpan(channels).AsMemory());
@@ -154,11 +146,17 @@ public abstract class IrcClient : IDisposable
         Connect(channels);
     }
 
+    /// <inheritdoc cref="SendRaw(ReadOnlyMemory{char})"/>
+    public void SendRaw(string rawMessage)
+    {
+        SendRaw(rawMessage.AsMemory());
+    }
+
     /// <summary>
     /// Sends a raw message to the Twitch IRC server.
     /// </summary>
     /// <param name="rawMessage">The IRC message.</param>
-    public void SendRaw(string rawMessage)
+    public void SendRaw(ReadOnlyMemory<char> rawMessage)
     {
         async ValueTask SendAsync()
         {
@@ -218,7 +216,7 @@ public abstract class IrcClient : IDisposable
             return;
         }
 
-        int maxChannels = IsVerifiedBot ? 200 : 20;
+        int maxChannels = _isVerifiedBot ? 200 : 20;
         const short period = 10000;
 
         long start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

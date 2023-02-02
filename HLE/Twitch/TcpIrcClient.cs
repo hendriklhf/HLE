@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
@@ -25,7 +26,8 @@ public sealed class TcpIrcClient : IrcClient
     /// </summary>
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
-    public TcpIrcClient(string username, string? oAuthToken = null) : base(username, oAuthToken)
+    /// /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
+    public TcpIrcClient(string username, string? oAuthToken = null, ClientOptions options = default) : base(username, oAuthToken, options)
     {
     }
 

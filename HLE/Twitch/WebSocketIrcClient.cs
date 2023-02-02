@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
@@ -22,7 +23,8 @@ public sealed class WebSocketIrcClient : IrcClient
     /// </summary>
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
-    public WebSocketIrcClient(string username, string? oAuthToken = null) : base(username, oAuthToken)
+    /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
+    public WebSocketIrcClient(string username, string? oAuthToken = null, ClientOptions options = default) : base(username, oAuthToken, options)
     {
     }
 
@@ -50,7 +52,7 @@ public sealed class WebSocketIrcClient : IrcClient
 
     private protected override void StartListening()
     {
-        async ValueTask StartListeningLocal()
+        async ValueTask StartListeningAsync()
         {
             Memory<byte> buffer = new byte[2048];
             Memory<char> charBuffer = new char[4096];
@@ -104,7 +106,7 @@ public sealed class WebSocketIrcClient : IrcClient
             }
         }
 
-        Task.Run(StartListeningLocal, _token);
+        Task.Run(StartListeningAsync, _token);
     }
 
     private protected override async ValueTask ConnectClient()

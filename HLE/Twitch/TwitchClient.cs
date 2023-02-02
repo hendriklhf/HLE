@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -16,7 +17,7 @@ public sealed class TwitchClient : IDisposable
     /// <summary>
     /// The username of the client.
     /// </summary>
-    public string Username { get; }
+    public string Username => _client.Username;
 
     /// <summary>
     /// Indicates whether the client is connected anonymously or not.
@@ -37,7 +38,7 @@ public sealed class TwitchClient : IDisposable
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; }
+    public bool UseSSL => _client.UseSSL;
 
     /// <summary>
     /// The list of channels the client is connected to. Channels can be retrieved by the owner's username or user id in order to read the room state, e.g. if slow-mode is on.
@@ -98,6 +99,9 @@ public sealed class TwitchClient : IDisposable
     private readonly List<string> _ircChannels = new();
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _anonymousLoginPattern = new(@"^justinfan\w+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+
+    private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';
 
     /// <summary>
@@ -107,19 +111,11 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     public TwitchClient(ClientOptions options = default)
     {
-        Username = "justinfan123";
         ClientType = options.ClientType;
-        UseSSL = options.UseSSL;
         _client = ClientType switch
         {
-            ClientType.WebSocket => new WebSocketIrcClient(Username)
-            {
-                UseSSL = UseSSL
-            },
-            ClientType.Tcp => new TcpIrcClient(Username)
-            {
-                UseSSL = UseSSL
-            },
+            ClientType.WebSocket => new WebSocketIrcClient(_anonymousUsername, null, options),
+            ClientType.Tcp => new TcpIrcClient(_anonymousUsername, null, options),
             _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
         IsAnonymousLogin = true;
@@ -136,23 +132,30 @@ public sealed class TwitchClient : IDisposable
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
     public TwitchClient(string username, string oAuthToken, ClientOptions options = default)
     {
-        Username = FormatChannel(username, false);
+        username = FormatChannel(username, false);
         oAuthToken = ValidateOAuthToken(oAuthToken);
         ClientType = options.ClientType;
         _client = ClientType switch
         {
-            ClientType.WebSocket => new WebSocketIrcClient(Username, oAuthToken)
-            {
-                UseSSL = UseSSL,
-                IsVerifiedBot = options.IsVerifiedBot
-            },
-            ClientType.Tcp => new TcpIrcClient(Username, oAuthToken)
-            {
-                UseSSL = UseSSL,
-                IsVerifiedBot = options.IsVerifiedBot
-            },
+            ClientType.WebSocket => new WebSocketIrcClient(username, oAuthToken, options),
+            ClientType.Tcp => new TcpIrcClient(username, oAuthToken, options),
             _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
+        IsAnonymousLogin = false;
+
+        SetEvents();
+    }
+
+    public TwitchClient(IrcClient ircClient)
+    {
+        ClientType = ircClient switch
+        {
+            WebSocketIrcClient => ClientType.WebSocket,
+            TcpIrcClient => ClientType.Tcp,
+            _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
+        };
+        IsAnonymousLogin = _anonymousLoginPattern.IsMatch(ircClient.Username);
+        _client = ircClient;
 
         SetEvents();
     }
@@ -168,7 +171,6 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
-        //_ircHandler.OnUserStateReceived += (_, _) =>
         _ircHandler.OnPingReceived += (_, e) => SendRaw("PONG :" + new string(e.Span));
         _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemory());
     }
@@ -258,14 +260,22 @@ public sealed class TwitchClient : IDisposable
         }
     }
 
-    /// <summary>
-    /// If the client is not connected, adds the channels to the channel list, otherwise connects the client to the channels.
-    /// </summary>
-    /// <param name="channels">The channels</param>
-    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
+    /// <inheritdoc cref="JoinChannels(ReadOnlySpan{String})"/>
+    public void JoinChannels(IEnumerable<string> channels)
+    {
+        JoinChannels(channels.ToArray());
+    }
+
+    /// <inheritdoc cref="JoinChannels(ReadOnlySpan{String})"/>
+    public void JoinChannels(List<string> channels)
+    {
+        JoinChannels(CollectionsMarshal.AsSpan(channels));
+    }
+
+    /// <inheritdoc cref="JoinChannels(ReadOnlySpan{String})"/>
     public void JoinChannels(params string[] channels)
     {
-        JoinChannels(channels.AsEnumerable());
+        JoinChannels((ReadOnlySpan<string>)channels);
     }
 
     /// <summary>
@@ -273,12 +283,11 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     /// <param name="channels">The channels</param>
     /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
-    public void JoinChannels(IEnumerable<string> channels)
+    public void JoinChannels(ReadOnlySpan<string> channels)
     {
-        ReadOnlySpan<string> channelSpan = channels.ToArray();
-        for (int i = 0; i < channelSpan.Length; i++)
+        for (int i = 0; i < channels.Length; i++)
         {
-            JoinChannel(channelSpan[i]);
+            JoinChannel(channels[i]);
         }
     }
 
@@ -302,22 +311,34 @@ public sealed class TwitchClient : IDisposable
         }
     }
 
+    /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
+    public void LeaveChannels(IEnumerable<string> channels)
+    {
+        LeaveChannels(channels.ToArray());
+    }
+
+    /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
+    public void LeaveChannels(List<string> channels)
+    {
+        LeaveChannels(CollectionsMarshal.AsSpan(channels));
+    }
+
+    /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
+    public void LeaveChannels(params string[] channels)
+    {
+        LeaveChannels(channels.AsEnumerable());
+    }
+
     /// <summary>
     /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
     /// </summary>
     /// <param name="channels">The channels</param>
-    public void LeaveChannels(IEnumerable<string> channels)
+    public void LeaveChannels(ReadOnlySpan<string> channels)
     {
-        ReadOnlySpan<string> channelSpan = channels.ToArray();
-        for (int i = 0; i < channelSpan.Length; i++)
+        for (int i = 0; i < channels.Length; i++)
         {
-            LeaveChannel(channelSpan[i]);
+            LeaveChannel(channels[i]);
         }
-    }
-
-    public void LeaveChannels(params string[] channels)
-    {
-        LeaveChannels(channels.AsEnumerable());
     }
 
     /// <summary>
@@ -393,22 +414,22 @@ public sealed class TwitchClient : IDisposable
         {
             if (channel[0] == _channelPrefix)
             {
-                channel.ToLower(result, default);
+                channel.ToLower(result, CultureInfo.InvariantCulture);
                 return channel.Length;
             }
 
             result[0] = _channelPrefix;
-            channel.ToLower(result[1..], default);
+            channel.ToLower(result[1..], CultureInfo.InvariantCulture);
             return channel.Length + 1;
         }
 
         if (channel[0] == _channelPrefix)
         {
-            channel[1..].ToLower(result, default);
+            channel[1..].ToLower(result, CultureInfo.InvariantCulture);
             return channel.Length - 1;
         }
 
-        channel.ToLower(result, default);
+        channel.ToLower(result, CultureInfo.InvariantCulture);
         return channel.Length;
     }
 
@@ -419,12 +440,12 @@ public sealed class TwitchClient : IDisposable
 
         if (oAuthPattern.IsMatch(oAuthToken))
         {
-            return oAuthToken.ToLower();
+            return oAuthToken.ToLowerInvariant();
         }
 
         if (oAuthPatternNoPrefix.IsMatch(oAuthToken))
         {
-            return $"oauth:{oAuthToken}".ToLower();
+            return $"oauth:{oAuthToken}".ToLowerInvariant();
         }
 
         throw new FormatException("The OAuthToken is in an invalid format.");
