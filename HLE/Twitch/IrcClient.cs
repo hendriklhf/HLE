@@ -21,11 +21,6 @@ public abstract class IrcClient : IDisposable
     public string Username { get; }
 
     /// <summary>
-    /// The OAuth token of the user. If null, the client is connected anonymously.
-    /// </summary>
-    public string? OAuthToken { get; }
-
-    /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
@@ -47,24 +42,19 @@ public abstract class IrcClient : IDisposable
     public event EventHandler? OnDisconnected;
 
     /// <summary>
-    /// Is invoked if the client receives data.
+    /// Is invoked if the client receives data. If this event is subscribed to, the <see cref="ReceivedData"/> instance has to be manually disposed.
+    /// Read more in the documentation of the <see cref="ReceivedData"/> class.
     /// </summary>
-    public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
+    public event EventHandler<ReceivedData>? OnDataReceived;
 
-    /// <summary>
-    /// Is invoked if the client sends data.
-    /// </summary>
-    public event EventHandler<ReadOnlyMemory<char>>? OnDataSent;
-
+    private protected readonly string? _oAuthToken;
     private protected CancellationTokenSource _tokenSource = new();
     private protected CancellationToken _token;
     private protected readonly (string Url, int Port) _url;
-    private protected readonly ArrayPool<byte> _byteArrayPool = ArrayPool<byte>.Create();
-    private protected readonly ArrayPool<char> _charArrayPool = ArrayPool<char>.Create();
-
-    private readonly bool _isVerifiedBot;
 
     private protected const string _newLine = "\r\n";
+
+    private readonly bool _isVerifiedBot;
 
     private const string _passPrefix = "PASS ";
     private const string _nickPrefix = "NICK ";
@@ -72,6 +62,8 @@ public abstract class IrcClient : IDisposable
     private const string _privMsgPrefix = "PRIVMSG ";
     private const string _joinPrefix = "JOIN ";
     private const string _partPrefix = "PART ";
+    private const byte _maxChannelNameLength = 26; // 25 for the name + 1 for the '#'
+    private const ushort _maxMessageLength = 500;
 
     /// <summary>
     /// The default constructor of the base <see cref="IrcClient"/>.
@@ -82,7 +74,7 @@ public abstract class IrcClient : IDisposable
     protected IrcClient(string username, string? oAuthToken = null, ClientOptions options = default)
     {
         Username = username;
-        OAuthToken = oAuthToken;
+        _oAuthToken = oAuthToken;
         UseSSL = options.UseSSL;
         _isVerifiedBot = options.IsVerifiedBot;
         _token = _tokenSource.Token;
@@ -108,14 +100,14 @@ public abstract class IrcClient : IDisposable
     }
 
     /// <summary>
-    /// Connects the client to the Twitch IRC server. This message will be exited after the client has joined all channels.
+    /// Connects the client to the Twitch IRC server. This method will be exited after the client has joined all channels.
     /// </summary>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public void Connect(ReadOnlyMemory<string> channels)
     {
         async Task ConnectAsync()
         {
-            char[] rentedArray = _charArrayPool.Rent(_capReqMessage.Length);
+            char[] rentedArray = ArrayPool<char>.Shared.Rent(_capReqMessage.Length);
             try
             {
                 Memory<char> buffer = rentedArray;
@@ -125,12 +117,12 @@ public abstract class IrcClient : IDisposable
                 StartListening();
                 OnConnected?.Invoke(this, EventArgs.Empty);
 
-                if (OAuthToken is not null)
+                if (_oAuthToken is not null)
                 {
                     _passPrefix.CopyTo(buffer.Span);
                     bufferLength = _passPrefix.Length;
-                    OAuthToken.CopyTo(buffer.Span[bufferLength..]);
-                    bufferLength += OAuthToken.Length;
+                    _oAuthToken.CopyTo(buffer.Span[bufferLength..]);
+                    bufferLength += _oAuthToken.Length;
                     await Send(buffer[..bufferLength]);
                 }
 
@@ -144,11 +136,11 @@ public abstract class IrcClient : IDisposable
                 bufferLength = _capReqMessage.Length;
                 await Send(buffer[..bufferLength]);
 
-                await JoinChannels(channels);
+                await JoinChannelsThrottled(channels);
             }
             finally
             {
-                _charArrayPool.Return(rentedArray);
+                ArrayPool<char>.Shared.Return(rentedArray);
             }
         }
 
@@ -212,23 +204,23 @@ public abstract class IrcClient : IDisposable
     {
         async ValueTask SendAsync()
         {
-            char[] rentedArray = _charArrayPool.Rent(600);
+            char[] rentedArray = ArrayPool<char>.Shared.Rent(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
             try
             {
                 Memory<char> buffer = rentedArray;
                 _privMsgPrefix.CopyTo(buffer.Span);
                 int bufferLength = _privMsgPrefix.Length;
-                channel.CopyTo(buffer[bufferLength..]);
+                channel.Span.CopyTo(buffer.Span[bufferLength..]);
                 bufferLength += channel.Length;
                 buffer.Span[bufferLength++] = ' ';
                 buffer.Span[bufferLength++] = ':';
-                message.CopyTo(buffer[bufferLength..]);
+                message.Span.CopyTo(buffer.Span[bufferLength..]);
                 bufferLength += message.Length;
                 await Send(buffer[..bufferLength]);
             }
             finally
             {
-                _charArrayPool.Return(rentedArray);
+                ArrayPool<char>.Shared.Return(rentedArray);
             }
         }
 
@@ -249,19 +241,19 @@ public abstract class IrcClient : IDisposable
     {
         async ValueTask JoinChannelAsync()
         {
-            char[] rentedArray = _charArrayPool.Rent(_joinPrefix.Length + 26);
+            char[] rentedArray = ArrayPool<char>.Shared.Rent(_joinPrefix.Length + _maxChannelNameLength);
             try
             {
                 Memory<char> buffer = rentedArray;
                 _joinPrefix.CopyTo(buffer.Span);
                 int bufferLength = _joinPrefix.Length;
-                channel.CopyTo(buffer[bufferLength..]);
+                channel.Span.CopyTo(buffer.Span[bufferLength..]);
                 bufferLength += channel.Length;
                 await Send(buffer[..bufferLength]);
             }
             finally
             {
-                _charArrayPool.Return(rentedArray);
+                ArrayPool<char>.Shared.Return(rentedArray);
             }
         }
 
@@ -281,28 +273,28 @@ public abstract class IrcClient : IDisposable
     {
         async ValueTask LeaveChannelAsync()
         {
-            char[] rentedArray = _charArrayPool.Rent(_partPrefix.Length + 26);
+            char[] rentedArray = ArrayPool<char>.Shared.Rent(_partPrefix.Length + _maxChannelNameLength);
             try
             {
                 Memory<char> buffer = rentedArray;
                 _partPrefix.CopyTo(buffer.Span);
                 int bufferLength = _partPrefix.Length;
-                channel.CopyTo(buffer[bufferLength..]);
+                channel.Span.CopyTo(buffer.Span[bufferLength..]);
                 bufferLength += channel.Length;
                 await Send(buffer[..bufferLength]);
             }
             finally
             {
-                _charArrayPool.Return(rentedArray);
+                ArrayPool<char>.Shared.Return(rentedArray);
             }
         }
 
         Task.Run(LeaveChannelAsync, _token);
     }
 
-    private async ValueTask JoinChannels(ReadOnlyMemory<string> channels)
+    private async ValueTask JoinChannelsThrottled(ReadOnlyMemory<string> channels)
     {
-        char[] rentedArray = _charArrayPool.Rent(_joinPrefix.Length + 26);
+        char[] rentedArray = ArrayPool<char>.Shared.Rent(_joinPrefix.Length + _maxChannelNameLength);
         try
         {
             if (channels.Length == 0)
@@ -310,22 +302,22 @@ public abstract class IrcClient : IDisposable
                 return;
             }
 
-            int maxChannels = _isVerifiedBot ? 200 : 20;
-            const short period = 10000;
+            int maxJoinsInPeriod = _isVerifiedBot ? 200 : 20;
+            TimeSpan period = TimeSpan.FromSeconds(10);
 
             Memory<char> buffer = rentedArray;
-            long start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            DateTimeOffset start = DateTimeOffset.UtcNow;
             for (int i = 0; i < channels.Length; i++)
             {
-                if (i > 0 && i % maxChannels == 0)
+                if (i > 0 && i % maxJoinsInPeriod == 0)
                 {
-                    int waitTime = (int)(period - (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - start));
-                    if (waitTime > 0)
+                    TimeSpan waitTime = period - (DateTimeOffset.UtcNow - start);
+                    if (waitTime.TotalMilliseconds > 0)
                     {
                         await Task.Delay(waitTime, _token);
                     }
 
-                    start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    start = DateTimeOffset.UtcNow;
                 }
 
                 _joinPrefix.CopyTo(buffer.Span);
@@ -337,7 +329,7 @@ public abstract class IrcClient : IDisposable
         }
         finally
         {
-            _charArrayPool.Return(rentedArray);
+            ArrayPool<char>.Shared.Return(rentedArray);
         }
     }
 
@@ -349,19 +341,15 @@ public abstract class IrcClient : IDisposable
         _token = _tokenSource.Token;
     }
 
-    private protected void InvokeDataReceived(IrcClient sender, ReadOnlyMemory<char> data)
+    private protected void InvokeDataReceived(IrcClient sender, ReceivedData data)
     {
-        OnDataReceived?.Invoke(sender, data);
-    }
+        if (OnDataReceived is null)
+        {
+            data.Dispose();
+            return;
+        }
 
-    private protected void InvokeDataSent(IrcClient sender, string data)
-    {
-        OnDataSent?.Invoke(sender, data.AsMemory());
-    }
-
-    private protected void InvokeDataSent(IrcClient sender, ReadOnlyMemory<char> data)
-    {
-        OnDataSent?.Invoke(sender, data);
+        OnDataReceived.Invoke(sender, data);
     }
 
     private protected abstract ValueTask Send(string message);

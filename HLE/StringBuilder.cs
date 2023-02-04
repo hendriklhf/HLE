@@ -25,19 +25,16 @@ public ref struct StringBuilder
     {
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public StringBuilder(Span<char> buffer)
     {
         _buffer = buffer;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe StringBuilder(char* pointer, int length)
     {
         _buffer = new(pointer, length);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe StringBuilder(ref char reference, int length)
     {
         _buffer = new((char*)Unsafe.AsPointer(ref reference), length);
@@ -205,13 +202,13 @@ public ref struct StringBuilder
     }
 
     [Pure]
-    public bool Equals(StringBuilder builder, StringComparison comparisonType = default)
+    public readonly bool Equals(StringBuilder builder, StringComparison comparisonType = default)
     {
         return ((ReadOnlySpan<char>)_buffer[.._length]).Equals(builder._buffer[..builder._length], comparisonType);
     }
 
     [Pure]
-    public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType = default)
+    public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType = default)
     {
         return ((ReadOnlySpan<char>)_buffer[.._length]).Equals(str, comparisonType);
     }

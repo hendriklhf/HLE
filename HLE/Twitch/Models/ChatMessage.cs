@@ -36,7 +36,7 @@ public sealed class ChatMessage
     public string DisplayName { get; init; } = string.Empty;
 
     /// <summary>
-    /// Indicates whether the message is the first message the user has sent in this channel or not.
+    /// Indicates whether the message is the first message the user has sent in the channel or not.
     /// </summary>
     public bool IsFirstMessage { get; init; }
 
@@ -205,14 +205,12 @@ public sealed class ChatMessage
         Span<Range> ranges = stackalloc Range[value.Length];
         int rangesLength = value.GetRangesOfSplit(',', ranges);
         Dictionary<string, string> result = new(rangesLength);
-        Span<Range> infoRanges = stackalloc Range[2];
         for (int i = 0; i < rangesLength; i++)
         {
             ReadOnlySpan<char> info = value[ranges[i]];
-            info.GetRangesOfSplit('/', infoRanges);
-
-            string key = new(info[infoRanges[0]]);
-            string val = new(info[infoRanges[1]]);
+            int slashIndex = info.IndexOf('/');
+            string key = new(info[..slashIndex]);
+            string val = new(info[(slashIndex + 1)..]);
             CollectionsMarshal.GetValueRefOrAddDefault(result, key, out _) = val;
         }
 
@@ -231,14 +229,12 @@ public sealed class ChatMessage
         badgesRanges = badgesRanges[..badgesRangesLength];
         Badge[] result = new Badge[badgesRangesLength];
         ref Badge firstBadge = ref MemoryMarshal.GetArrayDataReference(result);
-        Span<Range> infoRanges = stackalloc Range[2];
         for (int i = 0; i < badgesRangesLength; i++)
         {
             ReadOnlySpan<char> info = value[badgesRanges[i]];
-            info.GetRangesOfSplit('/', infoRanges);
-
-            string name = new(info[infoRanges[0]]);
-            string level = new(info[infoRanges[1]]);
+            int slashIndex = info.IndexOf('/');
+            string name = new(info[..slashIndex]);
+            string level = new(info[(slashIndex + 1)..]);
             Unsafe.Add(ref firstBadge, i) = new(name, level);
         }
 
@@ -247,7 +243,7 @@ public sealed class ChatMessage
 
     private static Color GetColor(ReadOnlySpan<char> value)
     {
-        if (value.IsEmpty)
+        if (value.Length == 0)
         {
             return Color.Empty;
         }

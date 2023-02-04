@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,17 +36,16 @@ public sealed class WebSocketIrcClient : IrcClient
 
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
-        byte[] rentedArray = _byteArrayPool.Rent(2048);
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(message.Length << 1);
         try
         {
             Memory<byte> bytes = rentedArray;
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
             await _webSocket.SendAsync(bytes[..byteCount], WebSocketMessageType.Text, true, _token);
-            InvokeDataSent(this, message);
         }
         finally
         {
-            _byteArrayPool.Return(rentedArray);
+            ArrayPool<byte>.Shared.Return(rentedArray);
         }
     }
 
@@ -53,20 +53,20 @@ public sealed class WebSocketIrcClient : IrcClient
     {
         async ValueTask StartListeningAsync()
         {
-            Memory<byte> buffer = new byte[2048];
+            Memory<byte> byteBuffer = new byte[2048];
             Memory<char> charBuffer = new char[4096];
-            int charBufferLength = 0;
+            int bufferLength = 0;
             Memory<Range> rangeBuffer = new Range[512];
             while (IsConnected && !_token.IsCancellationRequested)
             {
-                ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(buffer, _token);
+                ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer, _token);
                 if (result.Count == 0)
                 {
                     continue;
                 }
 
-                int count = Encoding.UTF8.GetChars(buffer.Span[..result.Count], charBuffer.Span[charBufferLength..]);
-                ReadOnlyMemory<char> chars = charBuffer[..(count + charBufferLength)];
+                int count = Encoding.UTF8.GetChars(byteBuffer.Span[..result.Count], charBuffer.Span[bufferLength..]);
+                ReadOnlyMemory<char> chars = charBuffer[..(count + bufferLength)];
                 int rangesLength = chars.Span.GetRangesOfSplit(_newLine, rangeBuffer.Span);
                 bool isEndOfMessage = chars.Span[^2] == _newLine[0] && chars.Span[^1] == _newLine[1];
                 if (isEndOfMessage)
@@ -76,11 +76,11 @@ public sealed class WebSocketIrcClient : IrcClient
                         ReadOnlyMemory<char> charSpan = chars[rangeBuffer.Span[i]];
                         if (charSpan.Length > 0)
                         {
-                            InvokeDataReceived(this, charSpan.ToArray());
+                            InvokeDataReceived(this, ReceivedData.Create(charSpan.Span));
                         }
                     }
 
-                    charBufferLength = 0;
+                    bufferLength = 0;
                     continue;
                 }
 
@@ -90,7 +90,7 @@ public sealed class WebSocketIrcClient : IrcClient
                     ReadOnlyMemory<char> charSpan = chars[rangeBuffer.Span[i]];
                     if (charSpan.Length > 0)
                     {
-                        InvokeDataReceived(this, charSpan.ToArray());
+                        InvokeDataReceived(this, ReceivedData.Create(charSpan.Span));
                     }
                 }
 
@@ -100,8 +100,8 @@ public sealed class WebSocketIrcClient : IrcClient
                     continue;
                 }
 
-                lastPart.CopyTo(charBuffer);
-                charBufferLength = lastPart.Length;
+                lastPart.Span.CopyTo(charBuffer.Span);
+                bufferLength = lastPart.Length;
             }
         }
 

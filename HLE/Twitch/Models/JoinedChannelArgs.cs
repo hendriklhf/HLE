@@ -10,23 +10,23 @@ public readonly struct JoinedChannelArgs
     /// <summary>
     /// The username of the user that joined the channel. All lower case.
     /// </summary>
-    public ReadOnlyMemory<char> Username { get; }
+    public string Username { get; }
 
     /// <summary>
-    /// The channel the user joined. All lower case.
+    /// The channel the user joined. All lower case, without '#'.
     /// </summary>
-    public ReadOnlyMemory<char> Channel { get; }
+    public string Channel { get; }
 
     /// <summary>
     /// The default constructor of <see cref="JoinedChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
-    public JoinedChannelArgs(ReadOnlyMemory<char> ircMessage, Span<Range> ircRanges)
+    public JoinedChannelArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
-        ReadOnlyMemory<char> split0 = ircMessage[ircRanges[0]];
-        int idxExcl = split0.Span.IndexOf('!');
-        Username = split0[1..idxExcl];
-        Channel = ircMessage[ircRanges[^1]][1..];
+        ReadOnlySpan<char> split0 = ircMessage[ircRanges[0]];
+        int idxExcl = split0.IndexOf('!');
+        Username = new(split0[1..idxExcl]);
+        Channel = new(ircMessage[ircRanges[^1]][1..]);
     }
 }

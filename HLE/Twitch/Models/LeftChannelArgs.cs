@@ -10,23 +10,23 @@ public readonly struct LeftChannelArgs
     /// <summary>
     /// The username of the user that left the channel. All lower case.
     /// </summary>
-    public ReadOnlyMemory<char> Username { get; }
+    public string Username { get; }
 
     /// <summary>
-    /// The chanel the user left. All lower case.
+    /// The channel the user left. All lower case, without '#'.
     /// </summary>
-    public ReadOnlyMemory<char> Channel { get; }
+    public string Channel { get; }
 
     /// <summary>
     /// The default constructor of <see cref="LeftChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
-    public LeftChannelArgs(ReadOnlyMemory<char> ircMessage, Span<Range> ircRanges)
+    public LeftChannelArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
-        ReadOnlyMemory<char> split0 = ircMessage[ircRanges[0]];
-        int idxExcl = split0.Span.IndexOf('!');
-        Username = split0[1..idxExcl];
-        Channel = ircMessage[ircRanges[^1]][1..];
+        ReadOnlySpan<char> split0 = ircMessage[ircRanges[0]];
+        int idxExcl = split0.IndexOf('!');
+        Username = new(split0[1..idxExcl]);
+        Channel = new(ircMessage[ircRanges[^1]][1..]);
     }
 }

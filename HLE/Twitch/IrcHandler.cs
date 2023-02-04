@@ -50,7 +50,7 @@ public sealed class IrcHandler
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
     public bool Handle(ReadOnlyMemory<char> ircMessageM)
     {
-        var ircMessage = ircMessageM.Span;
+        ReadOnlySpan<char> ircMessage = ircMessageM.Span;
         Span<Range> ircRanges = stackalloc Range[ircMessage.Length];
         int ircRangesLength = ircMessage.GetRangesOfSplit(' ', ircRanges);
         ircRanges = ircRanges[..ircRangesLength];
@@ -72,13 +72,13 @@ public sealed class IrcHandler
 
                 if (ircMessage[ircRanges[1]].Equals(_joinCommand, StringComparison.Ordinal))
                 {
-                    OnJoinedChannel?.Invoke(this, new(ircMessageM, ircRanges));
+                    OnJoinedChannel?.Invoke(this, new(ircMessage, ircRanges));
                     return true;
                 }
 
                 if (ircMessage[ircRanges[1]].Equals(_partCommand, StringComparison.Ordinal))
                 {
-                    OnLeftChannel?.Invoke(this, new(ircMessageM, ircRanges));
+                    OnLeftChannel?.Invoke(this, new(ircMessage, ircRanges));
                     return true;
                 }
 

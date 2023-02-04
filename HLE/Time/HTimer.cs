@@ -5,31 +5,26 @@ namespace HLE.Time;
 
 public sealed class HTimer
 {
-    public bool AutoReset
-    {
-        get => _timer.AutoReset;
-        set => _timer.AutoReset = value;
-    }
+    public bool AutoReset { get; set; }
 
     public bool Enabled => _timer.Enabled;
 
-    public double Interval
-    {
-        get => _timer.Interval;
-        set => _timer.Interval = value;
-    }
+    public double Interval => _timer.Interval;
 
-    public double RemainingTime => GetRemainingTime();
+    public TimeSpan RemainingTime => GetRemainingTime();
 
     public event EventHandler? OnElapsed;
 
     private readonly Timer _timer;
-
-    private double _end;
+    private DateTimeOffset _end;
 
     public HTimer(double interval)
     {
-        _timer = new(interval);
+        _timer = new(interval)
+        {
+            AutoReset = false
+        };
+
         _timer.Elapsed += (_, _) =>
         {
             OnElapsed?.Invoke(this, EventArgs.Empty);
@@ -42,24 +37,23 @@ public sealed class HTimer
 
     public void Start()
     {
-        _end = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + Interval;
+        _end = DateTimeOffset.UtcNow.AddMilliseconds(Interval);
         _timer.Start();
     }
 
     public void Stop()
     {
-        _end = -1;
+        _end = default;
         _timer.Stop();
     }
 
-    private double GetRemainingTime()
+    private TimeSpan GetRemainingTime()
     {
-        if (Math.Abs(_end + 1) < 0 || !Enabled)
+        if (_end == default)
         {
-            return -1;
+            return TimeSpan.Zero;
         }
 
-        double result = _end - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        return result >= 0 ? result : 0;
+        return _end - DateTimeOffset.UtcNow;
     }
 }

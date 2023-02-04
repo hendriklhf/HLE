@@ -78,14 +78,10 @@ public sealed class TwitchClient : IDisposable
     public event EventHandler<ChatMessage>? OnChatMessageReceived;
 
     /// <summary>
-    /// Is invoked if data is received from the chat server.
+    /// Is invoked if data is received from the chat server. If this event is subscribed to, the <see cref="ReceivedData"/> instance has to be manually disposed.
+    /// Read more in the documentation of the <see cref="ReceivedData"/> class.
     /// </summary>
-    public event EventHandler<ReadOnlyMemory<char>>? OnDataReceived;
-
-    /// <summary>
-    /// Is invoked if data is sent to the chat server.
-    /// </summary>
-    public event EventHandler<ReadOnlyMemory<char>>? OnDataSent;
+    public event EventHandler<ReceivedData>? OnDataReceived;
 
     #endregion Events
 
@@ -166,7 +162,6 @@ public sealed class TwitchClient : IDisposable
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
         _client.OnDisconnected += (_, e) => OnDisconnected?.Invoke(this, e);
         _client.OnDataReceived += IrcClient_OnDataReceived;
-        _client.OnDataSent += (_, e) => OnDataSent?.Invoke(this, e);
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
         _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
@@ -268,7 +263,7 @@ public sealed class TwitchClient : IDisposable
     }
 
     /// <summary>
-    /// Connects the client to the chat server. This message will be exited after the client has joined all channels.
+    /// Connects the client to the chat server.
     /// </summary>
     public void Connect()
     {
@@ -404,10 +399,16 @@ public sealed class TwitchClient : IDisposable
         Channels.Clear();
     }
 
-    private void IrcClient_OnDataReceived(object? sender, ReadOnlyMemory<char> data)
+    private void IrcClient_OnDataReceived(object? sender, ReceivedData data)
     {
-        _ircHandler.Handle(data);
-        OnDataReceived?.Invoke(this, data);
+        _ircHandler.Handle(data.Memory);
+        if (OnDataReceived is null)
+        {
+            data.Dispose();
+            return;
+        }
+
+        OnDataReceived.Invoke(this, data);
     }
 
     private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage msg)

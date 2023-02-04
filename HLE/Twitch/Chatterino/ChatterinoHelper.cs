@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text.Json;
@@ -22,7 +23,7 @@ public static class ChatterinoHelper
     /// <summary>
     /// Gets all channels of all your tabs from the Chatterino settings.
     /// </summary>
-    /// <returns>A <see cref="List{String}"/> of all channels.</returns>
+    /// <returns>A string array of all channels.</returns>
     /// <exception cref="JsonException">Will be thrown if the JSON settings file is not of the expected format.</exception>
     [SupportedOSPlatform("windows")]
     public static string[] GetChannels()
@@ -64,6 +65,6 @@ public static class ChatterinoHelper
             GetChannelsFromSplits(splits, result, resultSpan);
         }
 
-        return result.ToArray();
+        return result.Distinct().ToArray();
     }
 }
