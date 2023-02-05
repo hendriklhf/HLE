@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HLE.Twitch;
+namespace HLE.Twitch.Models;
 
 [Flags]
 internal enum ChatMessageFlags : byte
