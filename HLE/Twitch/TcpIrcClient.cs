@@ -9,6 +9,7 @@ namespace HLE.Twitch;
 
 /// <summary>
 /// Provides a Twitch IRC server connection via a <see cref="TcpClient"/>.
+/// This class does not validate input, the overlying <see cref="TwitchClient"/> does that.
 /// </summary>
 public sealed class TcpIrcClient : IrcClient
 {

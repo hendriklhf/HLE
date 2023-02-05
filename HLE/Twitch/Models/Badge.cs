@@ -3,7 +3,7 @@
 /// <summary>
 /// A class that represent a badge of user.
 /// </summary>
-public sealed class Badge
+public readonly struct Badge
 {
     /// <summary>
     /// The name of the badge.

@@ -28,7 +28,7 @@ public class IrcHandlerTest
         _ircHandler.OnChatMessageReceived += (_, msg) =>
         {
             invoked = true;
-            Assert.AreEqual(0, msg.BadgeInfo.Count);
+            Assert.AreEqual(0, msg.BadgeInfo.Length);
             Assert.AreEqual(2, msg.Badges.Length);
             Assert.AreEqual("1", msg.Badges[0].Level);
             Assert.AreEqual("1", msg.Badges[1].Level);

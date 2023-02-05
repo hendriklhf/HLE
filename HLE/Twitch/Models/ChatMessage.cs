@@ -187,11 +187,13 @@ public sealed class ChatMessage
         Message = GetMessage(ircMessage, ircRanges);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<Range> ircRanges)
     {
         return new(IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(ircRanges[3].End.Value + 2)..]);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Badge[] GetBadges(ReadOnlySpan<char> value)
     {
         if (value.Length == 0)
@@ -215,6 +217,7 @@ public sealed class ChatMessage
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Color GetColor(ReadOnlySpan<char> value)
     {
         if (value.Length == 0)
@@ -228,25 +231,34 @@ public sealed class ChatMessage
         return Color.FromArgb(r, g, b);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string GetDisplayName(ReadOnlySpan<char> value)
     {
         return new(value[^2] == _nameWithSpaceEnding[0] && value[^1] == _nameWithSpaceEnding[1] ? value[..^2] : value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetIsFirstMsg(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, _guidFormat);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetIsModerator(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetIsSubscriber(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetTmiSentTs(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetIsTurboUser(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     /// <summary>

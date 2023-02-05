@@ -10,6 +10,7 @@ namespace HLE.Twitch;
 
 /// <summary>
 /// The base class for IRC clients.
+/// This class does not validate input, the overlying <see cref="TwitchClient"/> does that.
 /// </summary>
 public abstract class IrcClient : IDisposable
 {

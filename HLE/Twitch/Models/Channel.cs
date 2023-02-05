@@ -46,7 +46,7 @@ public sealed class Channel
     /// </summary>
     public bool SubsOnly { get; private set; }
 
-    internal string _prefixedName;
+    internal readonly string _prefixedName;
 
     private static readonly ChangedRoomstate[] _roomstates = Enum.GetValues<ChangedRoomstate>();
 
