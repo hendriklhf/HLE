@@ -159,7 +159,7 @@ public static class Random
             chars[i] = (char)(i + minChar);
         }
 
-        Span<char> result = Utils.UseStackAlloc<char>(length) ? stackalloc char[length] : new char[length];
+        Span<char> result = MemoryHelper.UseStackAlloc<char>(length) ? stackalloc char[length] : new char[length];
         for (int i = 0; i < length; i++)
         {
             result[i] = chars.Random();
@@ -181,7 +181,7 @@ public static class Random
     public static unsafe T Struct<T>() where T : struct
     {
         int sizeT = sizeof(T);
-        Span<byte> bytes = Utils.UseStackAlloc<T>(1) ? stackalloc byte[sizeT] : new byte[sizeT];
+        Span<byte> bytes = MemoryHelper.UseStackAlloc<T>(1) ? stackalloc byte[sizeT] : new byte[sizeT];
         ref byte firstByte = ref MemoryMarshal.GetReference(bytes);
         for (int i = 0; i < sizeT; i++)
         {
@@ -319,14 +319,14 @@ public static class Random
             return string.Empty;
         }
 
-        Span<byte> bytes = Utils.UseStackAlloc<char>(length) ? stackalloc byte[length * sizeof(char)] : new byte[length * sizeof(char)];
+        Span<byte> bytes = MemoryHelper.UseStackAlloc<char>(length) ? stackalloc byte[length * sizeof(char)] : new byte[length * sizeof(char)];
         _strong.GetBytes(bytes);
         return new((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bytes)), 0, length);
     }
 
     public static unsafe T StrongStruct<T>() where T : struct
     {
-        Span<byte> bytes = Utils.UseStackAlloc<T>(1) ? stackalloc byte[sizeof(T)] : new byte[sizeof(T)];
+        Span<byte> bytes = MemoryHelper.UseStackAlloc<T>(1) ? stackalloc byte[sizeof(T)] : new byte[sizeof(T)];
         _strong.GetBytes(bytes);
         return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
     }

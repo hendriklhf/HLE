@@ -68,12 +68,12 @@ public static class StringHelper
             };
         }
 
-        Span<Range> ranges = Utils.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
+        Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
         int rangesLength = GetRangesOfSplit(span, separator, ranges);
 
         string[] result = new string[ranges.Length];
         ref string firstResultItem = ref MemoryMarshal.GetArrayDataReference(result);
-        Span<char> buffer = Utils.UseStackAlloc<char>(charCount) ? stackalloc char[charCount] : new char[charCount];
+        Span<char> buffer = MemoryHelper.UseStackAlloc<char>(charCount) ? stackalloc char[charCount] : new char[charCount];
         int resultLength = 0;
         int bufferLength = 0;
         for (int i = 0; i < rangesLength; i++)
@@ -144,7 +144,7 @@ public static class StringHelper
     [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, c, indices);
         return indices[..length].ToArray();
     }
@@ -183,7 +183,7 @@ public static class StringHelper
     [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, s, indices);
         return indices[..length].ToArray();
     }
@@ -228,9 +228,9 @@ public static class StringHelper
             return Array.Empty<Range>();
         }
 
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
-        Span<Range> ranges = Utils.UseStackAlloc<Range>(indicesLength + 1) ? stackalloc Range[indicesLength + 1] : new Range[indicesLength + 1];
+        Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(indicesLength + 1) ? stackalloc Range[indicesLength + 1] : new Range[indicesLength + 1];
         int rangesLength = GetRangesOfSplit(ranges, indices[..indicesLength]);
         return ranges[..rangesLength].ToArray();
     }
@@ -242,7 +242,7 @@ public static class StringHelper
             return 0;
         }
 
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         return GetRangesOfSplit(ranges, indices);
@@ -291,7 +291,7 @@ public static class StringHelper
             return Array.Empty<Range>();
         }
 
-        Span<Range> ranges = Utils.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
+        Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
         int rangesLength = GetRangesOfSplit(span, separator, ranges);
         return ranges[..rangesLength].ToArray();
     }
@@ -303,7 +303,7 @@ public static class StringHelper
             return 0;
         }
 
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         ranges = ranges[..(indicesLength + 1)];

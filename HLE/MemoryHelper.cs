@@ -6,10 +6,34 @@ using System.Runtime.Intrinsics;
 
 namespace HLE;
 
-public static class MemoryHelper
+public static unsafe class MemoryHelper
 {
+    public static int MaxStackAllocSize
+    {
+        get => _maxStackAllocSize;
+        set => _maxStackAllocSize = value;
+    }
+
+    private static int _maxStackAllocSize = sizeof(nuint) >= sizeof(ulong) ? 1_000_000 : 250_000;
+
     /// <summary>
-    /// Vectorized memory copy. Will be faster than other memory copy method for data larger than around 10.000 bytes.
+    /// Determines whether to use a stack or a heap allocation by passing a generic type and the element count.
+    /// The default maximum stack allocation size is set to 1.000.000 bytes for 64-bit processes and to 250.000 bytes for 32-bit processes.
+    /// The default maximum can also be changed with the <see cref="MaxStackAllocSize"/> property.
+    /// </summary>
+    /// <param name="elementCount">The amount of elements that will be multiplied by the type's size.</param>
+    /// <typeparam name="T">The type.</typeparam>
+    /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool UseStackAlloc<T>(int elementCount) where T : struct
+    {
+        int totalByteSize = sizeof(T) * elementCount;
+        return totalByteSize <= _maxStackAllocSize;
+    }
+
+    /// <summary>
+    /// Vectorized memory copy. Will be faster than other memory copy methods for data larger than around 10.000 bytes.
     /// </summary>
     /// <param name="source">The source of the copied data.</param>
     /// <param name="destination">The destination of the copied data.</param>
@@ -23,7 +47,7 @@ public static class MemoryHelper
     }
 
     /// <summary>
-    /// Vectorized memory copy. Will be faster than other memory copy method for data larger than around 10.000 bytes.
+    /// Vectorized memory copy. Will be faster than other memory copy methods for data larger than around 10.000 bytes.
     /// </summary>
     /// <param name="source">The source of the copied data.</param>
     /// <param name="destination">The destination of the copied data.</param>
@@ -37,7 +61,7 @@ public static class MemoryHelper
     }
 
     /// <summary>
-    /// Vectorized memory copy. Will be faster than other memory copy method for data larger than around 10.000 bytes.
+    /// Vectorized memory copy. Will be faster than other memory copy methods for data larger than around 10.000 bytes.
     /// </summary>
     /// <param name="source">The source of the copied data.</param>
     /// <param name="destination">The destination of the copied data.</param>
@@ -51,7 +75,7 @@ public static class MemoryHelper
     }
 
     /// <inheritdoc cref="VectorizedCopy{T}(ref T,ref T,int)"/>
-    public static unsafe void VectorizedCopy<T>(T* source, T* destination, int elementCount) where T : struct
+    public static void VectorizedCopy<T>(T* source, T* destination, int elementCount) where T : struct
     {
         ref T sourcePtr = ref Unsafe.AsRef<T>(source);
         ref T destinationPtr = ref Unsafe.AsRef<T>(destination);
@@ -59,14 +83,14 @@ public static class MemoryHelper
     }
 
     /// <summary>
-    /// Vectorized memory copy. Will be faster than other memory copy method for data larger than around 10.000 bytes.
+    /// Vectorized memory copy. Will be faster than other memory copy methods for data larger than around 10.000 bytes.
     /// </summary>
     /// <param name="source">A pointer to the source of the copied data.</param>
     /// <param name="destination">A pointer to the destination of the copied data.</param>
     /// <param name="elementCount">The amount of elements that will be copied.</param>
     /// <typeparam name="T">The type of elements that will be copied.</typeparam>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static unsafe void VectorizedCopy<T>(ref T source, ref T destination, int elementCount) where T : struct
+    public static void VectorizedCopy<T>(ref T source, ref T destination, int elementCount) where T : struct
     {
         ref byte sourceByte = ref Unsafe.As<T, byte>(ref source);
         ref byte destinationByte = ref Unsafe.As<T, byte>(ref destination);
@@ -136,13 +160,13 @@ public static class MemoryHelper
     }
 
     [Pure]
-    public static unsafe Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
+    public static Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
     {
         return *(Span<T>*)&span;
     }
 
     [Pure]
-    public static unsafe Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
+    public static Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
     {
         return *(Memory<T>*)&memory;
     }
@@ -153,7 +177,7 @@ public static class MemoryHelper
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    internal static unsafe Memory<T> AsMemory<T>(this Span<T> span)
+    internal static Memory<T> AsMemory<T>(this Span<T> span)
     {
         Memory<T> result = default;
         byte* spanPtr = (byte*)&span;

@@ -51,7 +51,7 @@ public sealed class IrcHandler
     public bool Handle(ReadOnlyMemory<char> ircMessageM)
     {
         ReadOnlySpan<char> ircMessage = ircMessageM.Span;
-        Span<Range> ircRanges = Utils.UseStackAlloc<Range>(ircMessage.Length) ? stackalloc Range[ircMessage.Length] : new Range[ircMessage.Length];
+        Span<Range> ircRanges = MemoryHelper.UseStackAlloc<Range>(ircMessage.Length) ? stackalloc Range[ircMessage.Length] : new Range[ircMessage.Length];
         int ircRangesLength = ircMessage.GetRangesOfSplit(' ', ircRanges);
         ircRanges = ircRanges[..ircRangesLength];
 

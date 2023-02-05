@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Twitch;
 
+[DebuggerDisplay("{ToString()}")]
 public struct MessageBuilder : IDisposable
 {
     public readonly ref char this[int index] => ref Span[index];
@@ -31,6 +33,11 @@ public struct MessageBuilder : IDisposable
     public MessageBuilder()
     {
         _buffer = ArrayPool<char>.Shared.Rent(_maxMessageLength);
+    }
+
+    public MessageBuilder(int bufferLength)
+    {
+        _buffer = ArrayPool<char>.Shared.Rent(bufferLength);
     }
 
     public readonly void Dispose()

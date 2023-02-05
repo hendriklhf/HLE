@@ -88,7 +88,7 @@ public sealed class EmojiFileGenerator
             }
         }
 
-        StringBuilder builder = Utils.UseStackAlloc<char>(_emojiJsonBytes.Length >> 2) ? stackalloc char[_emojiJsonBytes.Length >> 2] : new char[_emojiJsonBytes.Length >> 2];
+        StringBuilder builder = MemoryHelper.UseStackAlloc<char>(_emojiJsonBytes.Length >> 2) ? stackalloc char[_emojiJsonBytes.Length >> 2] : new char[_emojiJsonBytes.Length >> 2];
         builder.Append("#pragma warning disable 1591", Environment.NewLine);
         builder.Append("// ReSharper disable UnusedMember.Global", Environment.NewLine);
         builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);

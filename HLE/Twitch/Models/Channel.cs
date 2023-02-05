@@ -10,7 +10,7 @@ namespace HLE.Twitch.Models;
 public sealed class Channel
 {
     /// <summary>
-    /// The username of the channel owner. All lower case.
+    /// The username of the channel owner. All lower case, without '#'.
     /// </summary>
     public string Name { get; }
 

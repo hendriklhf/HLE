@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -170,25 +171,31 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemory());
     }
 
-    /// <inheritdoc cref="Send(ReadOnlySpan{char},ReadOnlyMemory{char})"/>
-    public void Send(string channel, string message)
+    /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
+    public async Task SendAsync(string channel, string message)
     {
-        Send((ReadOnlySpan<char>)channel, message.AsMemory());
+        await SendAsync(channel.AsMemory(), message.AsMemory());
     }
 
-    /// <inheritdoc cref="Send(ReadOnlySpan{char},ReadOnlyMemory{char})"/>
-    public void Send(string channel, ReadOnlyMemory<char> message)
+    /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
+    public async Task SendAsync(string channel, MessageBuilder builder)
     {
-        Send((ReadOnlySpan<char>)channel, message);
+        await SendAsync(channel.AsMemory(), builder.Message);
+    }
+
+    /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
+    public async Task SendAsync(string channel, ReadOnlyMemory<char> message)
+    {
+        await SendAsync(channel.AsMemory(), message);
     }
 
     /// <summary>
-    /// Sends a chat messages.
+    /// Asynchronously sends a chat messages.
     /// </summary>
     /// <param name="channel">The username of the channel owner</param>
     /// <param name="message">The message that will be sent</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="channel"/> is in the wrong format.</exception>
-    public void Send(ReadOnlySpan<char> channel, ReadOnlyMemory<char> message)
+    public async Task SendAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
         if (!IsConnected)
         {
@@ -200,19 +207,19 @@ public sealed class TwitchClient : IDisposable
             throw Exceptions.AnonymousConnection;
         }
 
-        string? prefixedChannel = Channels[channel]?._prefixedName;
+        string? prefixedChannel = Channels[channel.Span]?._prefixedName;
         if (prefixedChannel is null)
         {
             throw Exceptions.NotConnectedToTheSpecifiedChannel;
         }
 
-        _client.SendMessage(prefixedChannel.AsMemory(), message);
+        await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
-    /// <inheritdoc cref="Send(long, ReadOnlyMemory{char})"/>
+    /// <inheritdoc cref="Send(long,ReadOnlyMemory{char})"/>
     public void Send(long channelId, string message)
     {
-        Send(channelId, message.AsMemory());
+        SendAsync(channelId, message.AsMemory());
     }
 
     /// <summary>
@@ -221,6 +228,37 @@ public sealed class TwitchClient : IDisposable
     /// <param name="channelId">The user id of the channel owner</param>
     /// <param name="message">The message that will be sent</param>
     public void Send(long channelId, ReadOnlyMemory<char> message)
+    {
+        SendAsync(channelId, message);
+    }
+
+    /// <inheritdoc cref="SendAsync(long,System.ReadOnlyMemory{char})"/>
+    public async Task SendAsync(long channelId, string message)
+    {
+        await SendAsync(channelId, message.AsMemory());
+    }
+
+    /// <summary>
+    /// Asynchronously sends a chat message and also disposes the <see cref="MessageBuilder"/> by default.
+    /// </summary>
+    /// <param name="channelId">The user id of the channel owner.</param>
+    /// <param name="builder">The builder that contains the message that will be sent.</param>
+    /// <param name="disposeBuilder">If true, disposes the builder after the message was sent.</param>
+    public async Task SendAsync(long channelId, MessageBuilder builder, bool disposeBuilder = true)
+    {
+        await SendAsync(channelId, builder.Message);
+        if (disposeBuilder)
+        {
+            builder.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously sends a chat message.
+    /// </summary>
+    /// <param name="channelId">The user id of the channel owner</param>
+    /// <param name="message">The message that will be sent</param>
+    public async Task SendAsync(long channelId, ReadOnlyMemory<char> message)
     {
         if (!IsConnected)
         {
@@ -238,13 +276,13 @@ public sealed class TwitchClient : IDisposable
             throw Exceptions.NotConnectedToTheSpecifiedChannel;
         }
 
-        _client.SendMessage(prefixedChannel.AsMemory(), message);
+        await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
     /// <inheritdoc cref="SendRaw(ReadOnlyMemory{char})"/>
     public void SendRaw(string rawMessage)
     {
-        SendRaw(rawMessage.AsMemory());
+        SendRawAsync(rawMessage.AsMemory());
     }
 
     /// <summary>
@@ -253,58 +291,102 @@ public sealed class TwitchClient : IDisposable
     /// <param name="rawMessage">The raw message</param>
     public void SendRaw(ReadOnlyMemory<char> rawMessage)
     {
+        SendRawAsync(rawMessage);
+    }
+
+    /// <inheritdoc cref="SendRawAsync(System.ReadOnlyMemory{char})"/>
+    public async Task SendRawAsync(string rawMessage)
+    {
+        await SendRawAsync(rawMessage.AsMemory());
+    }
+
+    /// <summary>
+    /// Asynchronously sends a raw message to the chat server.
+    /// </summary>
+    /// <param name="rawMessage">The raw message</param>
+    public async Task SendRawAsync(ReadOnlyMemory<char> rawMessage)
+    {
         if (!IsConnected)
         {
             throw Exceptions.NotConnected;
         }
 
-        _client.SendRaw(rawMessage);
+        await _client.SendRawAsync(rawMessage);
     }
 
     /// <summary>
-    /// Connects the client to the chat server. This method will be exited after the client has joined all channels.
+    /// Connects the client to the chat server.
     /// </summary>
     public void Connect()
+    {
+        ConnectAsync(_ircChannels);
+    }
+
+    /// <summary>
+    /// Asynchronously connects the client to the chat server. This method will be exited after the client has joined all channels.
+    /// </summary>
+    public async Task ConnectAsync()
     {
         if (IsConnected)
         {
             return;
         }
 
-        _client.Connect(_ircChannels);
+        await ConnectAsync(_ircChannels);
+    }
+
+    private async ValueTask ConnectAsync(List<string> ircChannels)
+    {
+        await _client.ConnectAsync(ircChannels);
+    }
+
+    /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
+    public async Task JoinChannelsAsync(IEnumerable<string> channels)
+    {
+        await JoinChannelsAsync(channels.ToArray().AsMemory());
+    }
+
+    /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
+    public async Task JoinChannelsAsync(List<string> channels)
+    {
+        await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
+    }
+
+    /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
+    public async Task JoinChannelsAsync(string[] channels)
+    {
+        await JoinChannelsAsync(channels.AsMemory());
     }
 
     /// <summary>
-    /// If the client is not connected, adds the channel to the channel list, otherwise connects the client to the channel.
+    /// If the client is not connected, adds the channels to the channel list, otherwise asynchronously connects the client to the channels.
     /// </summary>
-    /// <param name="channel">The channel</param>
-    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if the <paramref name="channel"/> is in the wrong format.</exception>
-    public void JoinChannel(string channel)
+    /// <param name="channels">The channels</param>
+    /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
+    public async Task JoinChannelsAsync(ReadOnlyMemory<string> channels)
     {
-        channel = FormatChannel(channel);
-        _ircChannels.Add(channel);
-        if (IsConnected)
+        for (int i = 0; i < channels.Length; i++)
         {
-            _client.JoinChannel(channel);
+            await JoinChannelAsync(channels.Span[i]);
         }
     }
 
-    /// <inheritdoc cref="JoinChannels(ReadOnlySpan{String})"/>
+    /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
     public void JoinChannels(IEnumerable<string> channels)
     {
         JoinChannels(channels.ToArray());
     }
 
-    /// <inheritdoc cref="JoinChannels(ReadOnlySpan{String})"/>
+    /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
     public void JoinChannels(List<string> channels)
     {
-        JoinChannels(CollectionsMarshal.AsSpan(channels));
+        JoinChannels(CollectionsMarshal.AsSpan(channels).AsMemory());
     }
 
-    /// <inheritdoc cref="JoinChannels(ReadOnlySpan{String})"/>
+    /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
     public void JoinChannels(params string[] channels)
     {
-        JoinChannels((ReadOnlySpan<string>)channels);
+        JoinChannels(channels.AsMemory());
     }
 
     /// <summary>
@@ -312,62 +394,144 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     /// <param name="channels">The channels</param>
     /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
-    public void JoinChannels(ReadOnlySpan<string> channels)
+    public void JoinChannels(ReadOnlyMemory<string> channels)
     {
-        for (int i = 0; i < channels.Length; i++)
-        {
-            JoinChannel(channels[i]);
-        }
+        JoinChannelsAsync(channels);
+    }
+
+    /// <inheritdoc cref="JoinChannel(ReadOnlyMemory{char})"/>
+    public void JoinChannel(string channel)
+    {
+        JoinChannelAsync(channel.AsMemory());
     }
 
     /// <summary>
-    /// If the client is not connected, removes the channel from the channel list, otherwise leaves the channel.
+    /// If the client is not connected, adds the channel to the channel list, otherwise connects the client to the channel.
     /// </summary>
     /// <param name="channel">The channel</param>
-    public void LeaveChannel(string channel)
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if the <paramref name="channel"/> is in the wrong format.</exception>
+    public void JoinChannel(ReadOnlyMemory<char> channel)
+    {
+        JoinChannelAsync(channel);
+    }
+
+    /// <inheritdoc cref="JoinChannelAsync(ReadOnlyMemory{char})"/>
+    public async Task JoinChannelAsync(string channel)
+    {
+        await JoinChannelAsync(channel.AsMemory());
+    }
+
+    /// <summary>
+    /// If the client is not connected, adds the channel to the channel list, otherwise asynchronously connects the client to the channel.
+    /// </summary>
+    /// <param name="channel">The channel</param>
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if the <paramref name="channel"/> is in the wrong format.</exception>
+    public async Task JoinChannelAsync(ReadOnlyMemory<char> channel)
+    {
+        string channelString = FormatChannel(channel.Span);
+        _ircChannels.Add(channelString);
+        if (IsConnected)
+        {
+            await _client.JoinChannelAsync(channelString.AsMemory());
+        }
+    }
+
+    /// <inheritdoc cref="LeaveChannelAsync(ReadOnlyMemory{char})"/>
+    public async Task LeaveChannelAsync(string channel)
+    {
+        await LeaveChannelAsync(channel.AsMemory());
+    }
+
+    /// <summary>
+    /// If the client is not connected, removes the channel from the channel list, otherwise asynchronously leaves the channel.
+    /// </summary>
+    /// <param name="channel">The channel</param>
+    public async Task LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
         if (_ircChannels.Count == 0)
         {
             return;
         }
 
-        channel = FormatChannel(channel);
-        _ircChannels.Remove(channel);
-        Channels.Remove(channel);
+        string channelString = FormatChannel(channel.Span);
+        _ircChannels.Remove(channelString);
+        Channels.Remove(channel.Span);
         if (IsConnected)
         {
-            _client.LeaveChannel(channel);
+            await _client.LeaveChannelAsync(channel);
         }
     }
 
-    /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
-    public void LeaveChannels(IEnumerable<string> channels)
+    /// <inheritdoc cref="LeaveChannel(ReadOnlyMemory{char})"/>
+    public void LeaveChannel(string channel)
     {
-        LeaveChannels(channels.ToArray());
+        LeaveChannelAsync(channel.AsMemory());
     }
 
-    /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
-    public void LeaveChannels(List<string> channels)
+    /// <summary>
+    /// If the client is not connected, removes the channel from the channel list, otherwise leaves the channel.
+    /// </summary>
+    /// <param name="channel">The channel</param>
+    public void LeaveChannel(ReadOnlyMemory<char> channel)
     {
-        LeaveChannels(CollectionsMarshal.AsSpan(channels));
+        LeaveChannelAsync(channel);
     }
 
-    /// <inheritdoc cref="LeaveChannels(ReadOnlySpan{string})"/>
-    public void LeaveChannels(params string[] channels)
+    /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
+    public async Task LeaveChannelsAsync(IEnumerable<string> channels)
     {
-        LeaveChannels((ReadOnlySpan<string>)channels);
+        await LeaveChannelsAsync(channels.ToArray().AsMemory());
+    }
+
+    /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
+    public async Task LeaveChannelsAsync(List<string> channels)
+    {
+        await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
+    }
+
+    /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
+    public async Task LeaveChannelsAsync(params string[] channels)
+    {
+        await LeaveChannelsAsync(channels.AsMemory());
     }
 
     /// <summary>
     /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
     /// </summary>
     /// <param name="channels">The channels</param>
-    public void LeaveChannels(ReadOnlySpan<string> channels)
+    public async Task LeaveChannelsAsync(ReadOnlyMemory<string> channels)
     {
         for (int i = 0; i < channels.Length; i++)
         {
-            LeaveChannel(channels[i]);
+            await LeaveChannelAsync(channels.Span[i]);
         }
+    }
+
+    /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>
+    public void LeaveChannels(IEnumerable<string> channels)
+    {
+        LeaveChannels(channels.ToArray().AsMemory());
+    }
+
+    /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>
+    public void LeaveChannels(List<string> channels)
+    {
+        LeaveChannels(CollectionsMarshal.AsSpan(channels).AsMemory());
+    }
+
+    /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>
+    public void LeaveChannels(params string[] channels)
+    {
+        LeaveChannels(channels.AsMemory());
+    }
+
+    /// <summary>
+    /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
+    /// </summary>
+    /// <param name="channels">The channels</param>
+    public void LeaveChannels(ReadOnlyMemory<string> channels)
+    {
+        LeaveChannelsAsync(channels);
     }
 
     /// <summary>
@@ -375,9 +539,17 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     public void LeaveChannels()
     {
+        LeaveChannelsAsync();
+    }
+
+    /// <summary>
+    /// If the client is not connected, clears the channel list, otherwise also asynchronously leaves all channels.
+    /// </summary>
+    public async Task LeaveChannelsAsync()
+    {
         if (IsConnected)
         {
-            LeaveChannels(_ircChannels);
+            await LeaveChannelsAsync(_ircChannels);
         }
 
         Channels.Clear();
@@ -389,12 +561,20 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     public void Disconnect()
     {
+        DisconnectAsync();
+    }
+
+    /// <summary>
+    /// Asynchronously disconnects the client from the chat server.
+    /// </summary>
+    public async Task DisconnectAsync()
+    {
         if (!IsConnected)
         {
             return;
         }
 
-        _client.Disconnect();
+        await _client.DisconnectAsync();
         Channels.Clear();
     }
 

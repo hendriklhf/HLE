@@ -346,7 +346,7 @@ public static class CollectionHelper
             return Array.Empty<T[]>();
         }
 
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         if (indicesLength == 0)
         {
@@ -413,7 +413,7 @@ public static class CollectionHelper
     [Pure]
     public static string RandomString(this ReadOnlySpan<char> span, int wordLength)
     {
-        Span<char> result = Utils.UseStackAlloc<char>(wordLength) ? stackalloc char[wordLength] : new char[wordLength];
+        Span<char> result = MemoryHelper.UseStackAlloc<char>(wordLength) ? stackalloc char[wordLength] : new char[wordLength];
         RandomString(span, result);
         return new(result);
     }
@@ -460,7 +460,7 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> condition)
     {
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, condition, indices);
         return indices[..length].ToArray();
     }
@@ -518,7 +518,7 @@ public static class CollectionHelper
     [Pure]
     public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition)
     {
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, condition, indices);
         return indices[..length].ToArray();
     }
@@ -576,7 +576,7 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item)
     {
-        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
+        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, item, indices);
         return indices[..length].ToArray();
     }

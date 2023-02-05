@@ -10,12 +10,12 @@ namespace HLE.Twitch.Models;
 /// Otherwise it will lead to memory leaks.
 /// Which also means that the instances or any members of this class should not be cached or persisted in any way after received by an event invocation.
 /// </summary>
-[DebuggerDisplay("{new string(Span)}")]
+[DebuggerDisplay("{ToString()}")]
 public readonly struct ReceivedData : IDisposable
 {
-    public Span<char> Span => ((Span<char>)_data)[.._dataLength];
+    public ReadOnlySpan<char> Span => ((Span<char>)_data)[.._dataLength];
 
-    public Memory<char> Memory => ((Memory<char>)_data)[.._dataLength];
+    public ReadOnlyMemory<char> Memory => ((Memory<char>)_data)[.._dataLength];
 
     private readonly char[] _data;
     private readonly int _dataLength;
