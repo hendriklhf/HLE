@@ -26,76 +26,77 @@ public sealed class ChatMessage
     /// <summary>
     /// The color of the user's name in a Twitch chat overlay.
     /// </summary>
-    public Color Color { get; init; }
+    public Color Color { get; }
 
     /// <summary>
     /// The display name of the user with the preferred casing.
     /// </summary>
-    public string DisplayName { get; init; } = string.Empty;
+    public string DisplayName { get; } = string.Empty;
 
     /// <summary>
     /// Indicates whether the message is the first message the user has sent in the channel or not.
     /// </summary>
-    public bool IsFirstMessage { get; init; }
+    public bool IsFirstMessage => (_flags & ChatMessageFlags.IsFirstMessage) == ChatMessageFlags.IsFirstMessage;
 
     /// <summary>
     /// The unique message id.
     /// </summary>
-    public Guid Id { get; init; }
+    public Guid Id { get; }
 
     /// <summary>
     /// Indicates whether the user is a moderator or not.
     /// </summary>
-    public bool IsModerator { get; init; }
+    public bool IsModerator => (_flags & ChatMessageFlags.IsModerator) == ChatMessageFlags.IsModerator;
 
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
-    public long ChannelId { get; init; }
+    public long ChannelId { get; }
 
     /// <summary>
     /// Indicates whether the user is a subscriber or not.
     /// The subscription age can be obtained from <see cref="Badges"/> and <see cref="BadgeInfo"/>.
     /// </summary>
-    public bool IsSubscriber { get; init; }
+    public bool IsSubscriber => (_flags & ChatMessageFlags.IsSubscriber) == ChatMessageFlags.IsSubscriber;
 
     /// <summary>
     /// The unix timestamp in milliseconds of the moment the message has been sent.
     /// </summary>
-    public long TmiSentTs { get; init; }
+    public long TmiSentTs { get; }
 
     /// <summary>
     /// Indicates whether the user is subscribing to Twitch Turbo or not.
     /// </summary>
-    public bool IsTurboUser { get; init; }
+    public bool IsTurboUser => (_flags & ChatMessageFlags.IsTurboUser) == ChatMessageFlags.IsTurboUser;
 
     /// <summary>
     /// The user id of the user who sent the message.
     /// </summary>
-    public long UserId { get; init; }
+    public long UserId { get; }
 
     /// <summary>
     /// Indicates whether the message was sent as an action (prefixed with "/me") or not.
     /// </summary>
-    public bool IsAction { get; init; }
+    public bool IsAction => (_flags & ChatMessageFlags.IsAction) == ChatMessageFlags.IsAction;
 
     /// <summary>
     /// The username of the user who sent the message. All lower case.
     /// </summary>
-    public string Username { get; init; }
+    public string Username { get; }
 
     /// <summary>
-    /// The username of the channel owner. All lower case.
+    /// The username of the channel owner. All lower case, without '#'.
     /// </summary>
-    public string Channel { get; init; }
+    public string Channel { get; }
 
     /// <summary>
     /// The message content.
     /// </summary>
-    public string Message { get; init; }
+    public string Message { get; }
 
     private readonly Badge[]? _badgeInfo;
     private readonly Badge[]? _badges;
+    private readonly ChatMessageFlags _flags = 0;
 
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
@@ -149,7 +150,7 @@ public sealed class ChatMessage
             }
             else if (key.Equals(_firstMsgTag, StringComparison.Ordinal))
             {
-                IsFirstMessage = GetIsFirstMsg(value);
+                _flags |= GetIsFirstMsg(value);
             }
             else if (key.Equals(_idTag, StringComparison.Ordinal))
             {
@@ -157,7 +158,7 @@ public sealed class ChatMessage
             }
             else if (key.Equals(_modTag, StringComparison.Ordinal))
             {
-                IsModerator = GetIsModerator(value);
+                _flags |= GetIsModerator(value);
             }
             else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
@@ -165,7 +166,7 @@ public sealed class ChatMessage
             }
             else if (key.Equals(_subscriberTag, StringComparison.Ordinal))
             {
-                IsSubscriber = GetIsSubscriber(value);
+                _flags |= GetIsSubscriber(value);
             }
             else if (key.Equals(_tmiSentTsTag, StringComparison.Ordinal))
             {
@@ -173,7 +174,7 @@ public sealed class ChatMessage
             }
             else if (key.Equals(_turboTag, StringComparison.Ordinal))
             {
-                IsTurboUser = GetIsTurboUser(value);
+                _flags |= GetIsTurboUser(value);
             }
             else if (key.Equals(_userIdTag, StringComparison.Ordinal))
             {
@@ -181,10 +182,18 @@ public sealed class ChatMessage
             }
         }
 
-        IsAction = ircMessage[ircRanges[4]].Equals(_actionPrefix, StringComparison.Ordinal);
+        _flags |= GetIsAction(ircMessage, ircRanges);
         Username = DisplayName.ToLowerInvariant();
         Channel = new(ircMessage[ircRanges[3]][1..]);
         Message = GetMessage(ircMessage, ircRanges);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ChatMessageFlags GetIsAction(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
+    {
+        bool isAction = ircMessage[ircRanges[4]].Equals(_actionPrefix, StringComparison.Ordinal);
+        byte asByte = Unsafe.As<bool, byte>(ref isAction);
+        return (ChatMessageFlags)(asByte << 4);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -238,25 +247,45 @@ public sealed class ChatMessage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetIsFirstMsg(ReadOnlySpan<char> value) => value[0] == '1';
+    private static ChatMessageFlags GetIsFirstMsg(ReadOnlySpan<char> value)
+    {
+        bool isFirstMessage = value[0] == '1';
+        byte asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
+        return (ChatMessageFlags)asByte;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, _guidFormat);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetIsModerator(ReadOnlySpan<char> value) => value[0] == '1';
+    private static ChatMessageFlags GetIsModerator(ReadOnlySpan<char> value)
+    {
+        bool isModerator = value[0] == '1';
+        byte asByte = Unsafe.As<bool, byte>(ref isModerator);
+        return (ChatMessageFlags)(asByte << 1);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetIsSubscriber(ReadOnlySpan<char> value) => value[0] == '1';
+    private static ChatMessageFlags GetIsSubscriber(ReadOnlySpan<char> value)
+    {
+        bool isSubscriber = value[0] == '1';
+        byte asByte = Unsafe.As<bool, byte>(ref isSubscriber);
+        return (ChatMessageFlags)(asByte << 2);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetTmiSentTs(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetIsTurboUser(ReadOnlySpan<char> value) => value[0] == '1';
+    private static ChatMessageFlags GetIsTurboUser(ReadOnlySpan<char> value)
+    {
+        bool isTurboUser = value[0] == '1';
+        byte asByte = Unsafe.As<bool, byte>(ref isTurboUser);
+        return (ChatMessageFlags)(asByte << 3);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetUserId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
