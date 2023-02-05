@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -18,7 +16,7 @@ public sealed class ChatMessage
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
     /// </summary>
-    public ReadOnlyDictionary<string, string> BadgeInfo { get; init; } = _emptyDictionary;
+    public ReadOnlySpan<Badge> BadgeInfo => _badgeInfo;
 
     /// <summary>
     /// Holds all the badges the user has.
@@ -96,9 +94,8 @@ public sealed class ChatMessage
     /// </summary>
     public string Message { get; init; }
 
-    private readonly Badge[] _badges = Array.Empty<Badge>();
-
-    private static readonly ReadOnlyDictionary<string, string> _emptyDictionary = new(new Dictionary<string, string>());
+    private readonly Badge[]? _badgeInfo;
+    private readonly Badge[]? _badges;
 
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
@@ -136,7 +133,7 @@ public sealed class ChatMessage
             ReadOnlySpan<char> value = tag[(equalSignIndex + 1)..];
             if (key.Equals(_badgeInfoTag, StringComparison.Ordinal))
             {
-                BadgeInfo = GetBadgeInfo(value);
+                _badgeInfo = GetBadges(value);
             }
             else if (key.Equals(_badgesTag, StringComparison.Ordinal))
             {
@@ -195,28 +192,6 @@ public sealed class ChatMessage
         return new(IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(ircRanges[3].End.Value + 2)..]);
     }
 
-    private static ReadOnlyDictionary<string, string> GetBadgeInfo(ReadOnlySpan<char> value)
-    {
-        if (value.IsEmpty)
-        {
-            return _emptyDictionary;
-        }
-
-        Span<Range> ranges = stackalloc Range[value.Length];
-        int rangesLength = value.GetRangesOfSplit(',', ranges);
-        Dictionary<string, string> result = new(rangesLength);
-        for (int i = 0; i < rangesLength; i++)
-        {
-            ReadOnlySpan<char> info = value[ranges[i]];
-            int slashIndex = info.IndexOf('/');
-            string key = new(info[..slashIndex]);
-            string val = new(info[(slashIndex + 1)..]);
-            CollectionsMarshal.GetValueRefOrAddDefault(result, key, out _) = val;
-        }
-
-        return new(result);
-    }
-
     private static Badge[] GetBadges(ReadOnlySpan<char> value)
     {
         if (value.Length == 0)
@@ -224,14 +199,13 @@ public sealed class ChatMessage
             return Array.Empty<Badge>();
         }
 
-        Span<Range> badgesRanges = stackalloc Range[value.Length];
-        int badgesRangesLength = value.GetRangesOfSplit(',', badgesRanges);
-        badgesRanges = badgesRanges[..badgesRangesLength];
-        Badge[] result = new Badge[badgesRangesLength];
+        Span<Range> ranges = stackalloc Range[value.Length];
+        int rangesLength = value.GetRangesOfSplit(',', ranges);
+        Badge[] result = new Badge[rangesLength];
         ref Badge firstBadge = ref MemoryMarshal.GetArrayDataReference(result);
-        for (int i = 0; i < badgesRangesLength; i++)
+        for (int i = 0; i < rangesLength; i++)
         {
-            ReadOnlySpan<char> info = value[badgesRanges[i]];
+            ReadOnlySpan<char> info = value[ranges[i]];
             int slashIndex = info.IndexOf('/');
             string name = new(info[..slashIndex]);
             string level = new(info[(slashIndex + 1)..]);

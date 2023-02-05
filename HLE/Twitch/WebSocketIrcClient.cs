@@ -15,7 +15,7 @@ public sealed class WebSocketIrcClient : IrcClient
     /// <summary>
     /// Indicates whether the client is connected or not.
     /// </summary>
-    public override bool IsConnected => _webSocket.State is WebSocketState.Open && !_token.IsCancellationRequested;
+    public override bool IsConnected => _webSocket.State is WebSocketState.Open;
 
     private readonly ClientWebSocket _webSocket = new();
 
@@ -29,11 +29,6 @@ public sealed class WebSocketIrcClient : IrcClient
     {
     }
 
-    private protected override async ValueTask Send(string message)
-    {
-        await Send(message.AsMemory());
-    }
-
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(message.Length << 1);
@@ -41,7 +36,7 @@ public sealed class WebSocketIrcClient : IrcClient
         {
             Memory<byte> bytes = rentedArray;
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
-            await _webSocket.SendAsync(bytes[..byteCount], WebSocketMessageType.Text, true, _token);
+            await _webSocket.SendAsync(bytes[..byteCount], WebSocketMessageType.Text, true, default);
         }
         finally
         {
@@ -57,9 +52,9 @@ public sealed class WebSocketIrcClient : IrcClient
             Memory<char> charBuffer = new char[4096];
             int bufferLength = 0;
             Memory<Range> rangeBuffer = new Range[512];
-            while (IsConnected && !_token.IsCancellationRequested)
+            while (IsConnected)
             {
-                ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer, _token);
+                ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer, default);
                 if (result.Count == 0)
                 {
                     continue;
@@ -105,17 +100,17 @@ public sealed class WebSocketIrcClient : IrcClient
             }
         }
 
-        Task.Run(StartListeningAsync, _token);
+        Task.Run(StartListeningAsync);
     }
 
     private protected override async ValueTask ConnectClient()
     {
-        await _webSocket.ConnectAsync(new($"{_url.Url}:{_url.Port}"), _token);
+        await _webSocket.ConnectAsync(new($"{_url.Url}:{_url.Port}"), default);
     }
 
     private protected override async ValueTask DisconnectClient(string closeMessage)
     {
-        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _token);
+        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, default);
     }
 
     private protected override (string Url, int Port) GetUrl()
@@ -123,9 +118,9 @@ public sealed class WebSocketIrcClient : IrcClient
         return UseSSL ? ("wss://irc-ws.chat.twitch.tv", 443) : ("ws://irc-ws.chat.twitch.tv", 80);
     }
 
+    /// <inheritdoc cref="IDisposable.Dispose"/>
     public override void Dispose()
     {
-        base.Dispose();
         _webSocket.Dispose();
     }
 }

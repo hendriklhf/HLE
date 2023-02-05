@@ -346,7 +346,7 @@ public static class CollectionHelper
             return Array.Empty<T[]>();
         }
 
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         if (indicesLength == 0)
         {
@@ -413,8 +413,7 @@ public static class CollectionHelper
     [Pure]
     public static string RandomString(this ReadOnlySpan<char> span, int wordLength)
     {
-        int totalBytes = wordLength * sizeof(char);
-        Span<char> result = totalBytes > 500_000 ? new char[wordLength] : stackalloc char[wordLength];
+        Span<char> result = Utils.UseStackAlloc<char>(wordLength) ? stackalloc char[wordLength] : new char[wordLength];
         RandomString(span, result);
         return new(result);
     }
@@ -461,7 +460,7 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> condition)
     {
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, condition, indices);
         return indices[..length].ToArray();
     }
@@ -519,7 +518,7 @@ public static class CollectionHelper
     [Pure]
     public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition)
     {
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, condition, indices);
         return indices[..length].ToArray();
     }
@@ -577,7 +576,7 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item)
     {
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, item, indices);
         return indices[..length].ToArray();
     }
@@ -657,9 +656,8 @@ public static class CollectionHelper
 
     public static void ForRanges<T>(this ReadOnlySpan<T> span, params (Range Range, Action<T> Action)[] operations)
     {
-        Span<(Range Range, Action<T> Action)> operationSpan = operations;
         ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
-        for (int i = 0; i < operationSpan.Length; i++)
+        for (int i = 0; i < operations.Length; i++)
         {
             var op = Unsafe.Add(ref firstOperation, i);
             int start = op.Range.Start.Value;
@@ -690,10 +688,9 @@ public static class CollectionHelper
 
     public static void ForRanges<T>(this Span<T> span, params (Range Range, Func<T, T> Func)[] operations)
     {
-        Span<(Range Range, Func<T, T> Func)> operationSpan = operations;
         ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
         ref T firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < operationSpan.Length; i++)
+        for (int i = 0; i < operations.Length; i++)
         {
             var op = Unsafe.Add(ref firstOperation, i);
             int start = op.Range.Start.Value;
@@ -790,43 +787,4 @@ public static class CollectionHelper
 
     [Pure]
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
-
-    [Pure]
-    public static unsafe Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
-    {
-        return *(Span<T>*)&span;
-    }
-
-    [Pure]
-    public static unsafe Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
-    {
-        return *(Memory<T>*)&memory;
-    }
-
-    /// <summary>
-    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. ⚠️ Only works if the span's reference is the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
-    /// </summary>
-    /// <param name="span">The span that will be converted.</param>
-    /// <returns>A memory view over the span.</returns>
-    [Pure]
-    internal static unsafe Memory<T> AsMemoryUnsafe<T>(this Span<T> span)
-    {
-        Memory<T> result = default;
-        byte* spanPtr = (byte*)&span;
-        byte* memoryPtr = (byte*)&result;
-        nuint* memoryReference = (nuint*)memoryPtr;
-        int* memoryIndex = (int*)(memoryPtr + sizeof(nuint));
-        int* memoryLength = (int*)(memoryPtr + sizeof(nuint) + sizeof(int));
-
-        nuint reference = *(nuint*)spanPtr;
-        reference -= (nuint)(sizeof(nuint) << 1);
-        *memoryReference = reference;
-
-        *memoryIndex = 0;
-
-        int length = *(int*)(spanPtr + sizeof(nuint));
-        *memoryLength = length;
-
-        return result;
-    }
 }

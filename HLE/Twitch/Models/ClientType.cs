@@ -1,6 +1,6 @@
 ﻿namespace HLE.Twitch.Models;
 
-public enum ClientType : byte
+public enum ClientType : sbyte
 {
     WebSocket,
     Tcp

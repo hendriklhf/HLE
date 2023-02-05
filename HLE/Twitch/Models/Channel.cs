@@ -14,8 +14,6 @@ public sealed class Channel
     /// </summary>
     public string Name { get; }
 
-    internal string PrefixedName { get; }
-
     /// <summary>
     /// The user id of the channel owner.
     /// </summary>
@@ -48,12 +46,14 @@ public sealed class Channel
     /// </summary>
     public bool SubsOnly { get; private set; }
 
+    internal string _prefixedName;
+
     private static readonly ChangedRoomstate[] _roomstates = Enum.GetValues<ChangedRoomstate>();
 
     internal Channel(in RoomstateArgs args)
     {
         Name = args.Channel;
-        PrefixedName = '#' + args.Channel;
+        _prefixedName = '#' + args.Channel;
         Id = args.ChannelId;
         EmoteOnly = args.EmoteOnly;
         FollowersOnly = args.FollowersOnly;

@@ -15,7 +15,7 @@ public sealed class TcpIrcClient : IrcClient
     /// <summary>
     /// Indicates whether the client is connected or not.
     /// </summary>
-    public override bool IsConnected => _tcpClient.Connected && !_token.IsCancellationRequested;
+    public override bool IsConnected => _tcpClient.Connected;
 
     private readonly TcpClient _tcpClient = new();
     private StreamReader? _reader;
@@ -31,11 +31,6 @@ public sealed class TcpIrcClient : IrcClient
     {
     }
 
-    private protected override async ValueTask Send(string message)
-    {
-        await Send(message.AsMemory());
-    }
-
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
         if (_writer is null)
@@ -43,7 +38,7 @@ public sealed class TcpIrcClient : IrcClient
             throw new ArgumentNullException(nameof(_writer));
         }
 
-        await _writer.WriteAsync(message, _token);
+        await _writer.WriteAsync(message);
         await _writer.FlushAsync();
     }
 
@@ -54,9 +49,9 @@ public sealed class TcpIrcClient : IrcClient
             Memory<char> buffer = new char[4096];
             int bufferLength = 0;
             Memory<Range> rangeBuffer = new Range[512];
-            while (IsConnected && !_tokenSource.IsCancellationRequested)
+            while (IsConnected)
             {
-                int count = await _reader.ReadAsync(buffer[bufferLength..], _token);
+                int count = await _reader.ReadAsync(buffer[bufferLength..]);
                 if (count == 0)
                 {
                     continue;
@@ -106,12 +101,12 @@ public sealed class TcpIrcClient : IrcClient
             throw new ArgumentNullException(nameof(_reader));
         }
 
-        Task.Run(StartListeningAsync, _token);
+        Task.Run(StartListeningAsync);
     }
 
     private protected override async ValueTask ConnectClient()
     {
-        await _tcpClient.ConnectAsync(_url.Url, _url.Port, _token);
+        await _tcpClient.ConnectAsync(_url.Url, _url.Port);
         Stream stream = _tcpClient.GetStream();
         if (UseSSL)
         {
@@ -135,9 +130,9 @@ public sealed class TcpIrcClient : IrcClient
         return UseSSL ? ("irc.chat.twitch.tv", 443) : ("irc.chat.twitch.tv", 80);
     }
 
+    /// <inheritdoc cref="IDisposable.Dispose"/>
     public override void Dispose()
     {
-        base.Dispose();
         _tcpClient.Dispose();
         _reader?.Dispose();
         _writer?.Dispose();

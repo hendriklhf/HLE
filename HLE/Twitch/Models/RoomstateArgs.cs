@@ -32,7 +32,7 @@ public readonly struct RoomstateArgs
     public long ChannelId { get; init; }
 
     /// <summary>
-    /// The username of the channel owner.
+    /// The username of the channel owner. All lower case, without '#'.
     /// </summary>
     public string Channel { get; init; }
 

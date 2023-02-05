@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using HLE.Collections;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -149,7 +148,7 @@ public sealed class TwitchClient : IDisposable
         {
             WebSocketIrcClient => ClientType.WebSocket,
             TcpIrcClient => ClientType.Tcp,
-            _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
+            _ => (ClientType)(-1)
         };
         IsAnonymousLogin = _anonymousLoginPattern.IsMatch(ircClient.Username);
         _client = ircClient;
@@ -168,7 +167,7 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += IrcHandler_OnPingReceived;
-        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
+        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemory());
     }
 
     /// <inheritdoc cref="Send(ReadOnlySpan{char},ReadOnlyMemory{char})"/>
@@ -201,7 +200,7 @@ public sealed class TwitchClient : IDisposable
             throw Exceptions.AnonymousConnection;
         }
 
-        string? prefixedChannel = Channels[channel]?.PrefixedName;
+        string? prefixedChannel = Channels[channel]?._prefixedName;
         if (prefixedChannel is null)
         {
             throw Exceptions.NotConnectedToTheSpecifiedChannel;
@@ -233,7 +232,7 @@ public sealed class TwitchClient : IDisposable
             throw Exceptions.AnonymousConnection;
         }
 
-        string? prefixedChannel = Channels[channelId]?.PrefixedName;
+        string? prefixedChannel = Channels[channelId]?._prefixedName;
         if (prefixedChannel is null)
         {
             throw Exceptions.NotConnectedToTheSpecifiedChannel;
@@ -263,7 +262,7 @@ public sealed class TwitchClient : IDisposable
     }
 
     /// <summary>
-    /// Connects the client to the chat server.
+    /// Connects the client to the chat server. This method will be exited after the client has joined all channels.
     /// </summary>
     public void Connect()
     {

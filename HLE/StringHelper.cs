@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text.RegularExpressions;
-using HLE.Collections;
 
 namespace HLE;
 
@@ -69,12 +68,12 @@ public static class StringHelper
             };
         }
 
-        Span<Range> ranges = stackalloc Range[span.Length];
+        Span<Range> ranges = Utils.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
         int rangesLength = GetRangesOfSplit(span, separator, ranges);
 
         string[] result = new string[ranges.Length];
         ref string firstResultItem = ref MemoryMarshal.GetArrayDataReference(result);
-        Span<char> buffer = stackalloc char[charCount];
+        Span<char> buffer = Utils.UseStackAlloc<char>(charCount) ? stackalloc char[charCount] : new char[charCount];
         int resultLength = 0;
         int bufferLength = 0;
         for (int i = 0; i < rangesLength; i++)
@@ -145,7 +144,7 @@ public static class StringHelper
     [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, c, indices);
         return indices[..length].ToArray();
     }
@@ -184,7 +183,7 @@ public static class StringHelper
     [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, s, indices);
         return indices[..length].ToArray();
     }
@@ -229,9 +228,9 @@ public static class StringHelper
             return Array.Empty<Range>();
         }
 
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
-        Span<Range> ranges = stackalloc Range[indicesLength + 1];
+        Span<Range> ranges = Utils.UseStackAlloc<Range>(indicesLength + 1) ? stackalloc Range[indicesLength + 1] : new Range[indicesLength + 1];
         int rangesLength = GetRangesOfSplit(ranges, indices[..indicesLength]);
         return ranges[..rangesLength].ToArray();
     }
@@ -243,7 +242,7 @@ public static class StringHelper
             return 0;
         }
 
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         return GetRangesOfSplit(ranges, indices);
@@ -292,7 +291,7 @@ public static class StringHelper
             return Array.Empty<Range>();
         }
 
-        Span<Range> ranges = stackalloc Range[span.Length];
+        Span<Range> ranges = Utils.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
         int rangesLength = GetRangesOfSplit(span, separator, ranges);
         return ranges[..rangesLength].ToArray();
     }
@@ -304,7 +303,7 @@ public static class StringHelper
             return 0;
         }
 
-        Span<int> indices = stackalloc int[span.Length];
+        Span<int> indices = Utils.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         indices = indices[..indicesLength];
         ranges = ranges[..(indicesLength + 1)];
@@ -375,7 +374,7 @@ public static class StringHelper
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector256<ushort> equalsVector = Vector256.Create((ushort)c);
             Vector256<ushort> oneVector = Vector256.Create((ushort)1);
-            while (shortSpan.Length > vector256Count)
+            while (shortSpan.Length >= vector256Count)
             {
                 Vector256<ushort> vector = Vector256.Create(shortSpan[..vector256Count]);
                 shortSpan = shortSpan[vector256Count..];
@@ -399,7 +398,7 @@ public static class StringHelper
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector128<ushort> equalsVector = Vector128.Create((ushort)c);
             Vector128<ushort> oneVector = Vector128.Create((ushort)1);
-            while (shortSpan.Length > vector128Count)
+            while (shortSpan.Length >= vector128Count)
             {
                 Vector128<ushort> vector = Vector128.Create(shortSpan[..vector128Count]);
                 shortSpan = shortSpan[vector128Count..];
@@ -423,7 +422,7 @@ public static class StringHelper
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector64<ushort> equalsVector = Vector64.Create((ushort)c);
             Vector64<ushort> oneVector = Vector64.Create((ushort)1);
-            while (shortSpan.Length > vector64Count)
+            while (shortSpan.Length >= vector64Count)
             {
                 Vector64<ushort> vector = Vector64.Create(shortSpan[..vector64Count]);
                 shortSpan = shortSpan[vector64Count..];
