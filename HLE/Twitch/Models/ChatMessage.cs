@@ -25,6 +25,7 @@ public sealed class ChatMessage
 
     /// <summary>
     /// The color of the user's name in a Twitch chat overlay.
+    /// If the user does not have a color, the value is "Color.Empty".
     /// </summary>
     public Color Color { get; }
 
@@ -123,12 +124,14 @@ public sealed class ChatMessage
     public ChatMessage(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        Span<Range> tagsRanges = stackalloc Range[tags.Length];
-        int tagsRangesLength = tags.GetRangesOfSplit(';', tagsRanges);
 
-        for (int i = 0; i < tagsRangesLength; i++)
+        int semicolonIndex = tags.IndexOf(';');
+        while (semicolonIndex != -1)
         {
-            ReadOnlySpan<char> tag = tags[tagsRanges[i]];
+            ReadOnlySpan<char> tag = tags[..semicolonIndex];
+            tags = tags[(semicolonIndex + 1)..];
+            semicolonIndex = tags.IndexOf(';');
+
             int equalSignIndex = tag.IndexOf('=');
             ReadOnlySpan<char> key = tag[..equalSignIndex];
             ReadOnlySpan<char> value = tag[(equalSignIndex + 1)..];
@@ -243,7 +246,10 @@ public sealed class ChatMessage
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string GetDisplayName(ReadOnlySpan<char> value)
     {
-        return new(value[^2] == _nameWithSpaceEnding[0] && value[^1] == _nameWithSpaceEnding[1] ? value[..^2] : value);
+        bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
+        bool isLetterS = value[^1] == _nameWithSpaceEnding[1];
+        byte asByte = (byte)(Unsafe.As<bool, byte>(ref isBackSlash) + Unsafe.As<bool, byte>(ref isLetterS));
+        return new(value[..^asByte]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
