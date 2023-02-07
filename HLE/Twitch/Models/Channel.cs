@@ -68,7 +68,7 @@ public sealed class Channel
         for (int i = 0; i < _roomstates.Length; i++)
         {
             ChangedRoomstate roomstate = Unsafe.Add(ref firstRoomstate, i);
-            bool roomstateChanged = (args.ChangedStates & roomstate) == roomstate;
+            bool roomstateChanged = (args._changedStates & roomstate) == roomstate;
             if (!roomstateChanged)
             {
                 continue;

@@ -24,10 +24,8 @@ public class IrcHandlerTest
     [TestMethod]
     public void PrivMsgTest(int messageIdx)
     {
-        bool invoked = false;
         _ircHandler.OnChatMessageReceived += (_, msg) =>
         {
-            invoked = true;
             Assert.AreEqual(0, msg.BadgeInfo.Length);
             Assert.AreEqual(2, msg.Badges.Length);
             Assert.AreEqual("1", msg.Badges[0].Level);
@@ -48,17 +46,14 @@ public class IrcHandlerTest
             Assert.AreEqual("lbnshlfe", msg.Channel);
             Assert.AreEqual("xd xd xd", msg.Message);
         };
-        _ircHandler.Handle(_messages[messageIdx]);
-        Assert.IsTrue(invoked);
+        Assert.IsTrue(_ircHandler.Handle(_messages[messageIdx]));
     }
 
     [TestMethod]
     public void RoomstateTestAllOff()
     {
-        bool invoked = false;
         _ircHandler.OnRoomstateReceived += (_, rmst) =>
         {
-            invoked = true;
             Assert.AreEqual(false, rmst.EmoteOnly);
             Assert.AreEqual(-1, rmst.FollowersOnly);
             Assert.AreEqual(false, rmst.R9K);
@@ -67,17 +62,14 @@ public class IrcHandlerTest
             Assert.AreEqual(false, rmst.SubsOnly);
             Assert.AreEqual("strbhlfe", rmst.Channel);
         };
-        _ircHandler.Handle(_messages[1]);
-        Assert.IsTrue(invoked);
+        Assert.IsTrue(_ircHandler.Handle(_messages[1]));
     }
 
     [TestMethod]
     public void RoomstateTestAllOn()
     {
-        bool invoked = false;
         _ircHandler.OnRoomstateReceived += (_, rmst) =>
         {
-            invoked = true;
             Assert.AreEqual(true, rmst.EmoteOnly);
             Assert.AreEqual(15, rmst.FollowersOnly);
             Assert.AreEqual(true, rmst.R9K);
@@ -86,8 +78,7 @@ public class IrcHandlerTest
             Assert.AreEqual(true, rmst.SubsOnly);
             Assert.AreEqual("strbhlfe", rmst.Channel);
         };
-        _ircHandler.Handle(_messages[2]);
-        Assert.IsTrue(invoked);
+        Assert.IsTrue(_ircHandler.Handle(_messages[2]));
     }
 
     [TestMethod]

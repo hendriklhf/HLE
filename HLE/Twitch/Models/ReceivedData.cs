@@ -2,6 +2,8 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Models;
 
@@ -16,6 +18,8 @@ public readonly struct ReceivedData : IDisposable
     public ReadOnlySpan<char> Span => ((Span<char>)_data)[.._dataLength];
 
     public ReadOnlyMemory<char> Memory => ((Memory<char>)_data)[.._dataLength];
+
+    public int Length => _dataLength;
 
     private readonly char[] _data;
     private readonly int _dataLength;
@@ -37,7 +41,9 @@ public readonly struct ReceivedData : IDisposable
     {
         int dataLength = data.Length;
         char[] rentedArray = ArrayPool<char>.Shared.Rent(dataLength);
-        data.CopyTo(rentedArray);
+        ref byte source = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(data));
+        ref byte destination = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetArrayDataReference(rentedArray));
+        Unsafe.CopyBlock(ref destination, ref source, (uint)(dataLength << 1));
         return new(rentedArray, dataLength);
     }
 

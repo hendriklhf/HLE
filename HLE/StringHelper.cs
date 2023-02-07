@@ -379,7 +379,7 @@ public static class StringHelper
                 Vector256<ushort> vector = Vector256.Create(shortSpan[..vector256Count]);
                 shortSpan = shortSpan[vector256Count..];
                 Vector256<ushort> equals = Vector256.Equals(vector, equalsVector);
-                Vector256<ushort> and = Vector256.BitwiseAnd(equals, Vector256.Create((ushort)1));
+                Vector256<ushort> and = Vector256.BitwiseAnd(equals, oneVector);
                 result += Vector256.Dot(and, oneVector);
             }
 
@@ -403,7 +403,7 @@ public static class StringHelper
                 Vector128<ushort> vector = Vector128.Create(shortSpan[..vector128Count]);
                 shortSpan = shortSpan[vector128Count..];
                 Vector128<ushort> equals = Vector128.Equals(vector, equalsVector);
-                Vector128<ushort> and = Vector128.BitwiseAnd(equals, Vector128.Create((ushort)1));
+                Vector128<ushort> and = Vector128.BitwiseAnd(equals, oneVector);
                 result += Vector128.Dot(and, oneVector);
             }
 
@@ -427,7 +427,7 @@ public static class StringHelper
                 Vector64<ushort> vector = Vector64.Create(shortSpan[..vector64Count]);
                 shortSpan = shortSpan[vector64Count..];
                 Vector64<ushort> equals = Vector64.Equals(vector, equalsVector);
-                Vector64<ushort> and = Vector64.BitwiseAnd(equals, Vector64.Create((ushort)1));
+                Vector64<ushort> and = Vector64.BitwiseAnd(equals, oneVector);
                 result += Vector64.Dot(and, oneVector);
             }
 

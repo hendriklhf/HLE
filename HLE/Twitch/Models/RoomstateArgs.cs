@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Twitch.Models;
 
@@ -47,7 +48,7 @@ public readonly struct RoomstateArgs
     /// </summary>
     public bool SubsOnly { get; init; }
 
-    internal ChangedRoomstate ChangedStates { get; } = 0;
+    internal readonly ChangedRoomstate _changedStates = 0;
 
     private const string _emoteOnlyTag = "emote-only";
     private const string _followersOnlyTag = "followers-only";
@@ -64,34 +65,32 @@ public readonly struct RoomstateArgs
     public RoomstateArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        Span<Range> tagsRanges = stackalloc Range[tags.Length];
-        int tagsRangesLength = tags.GetRangesOfSplit(';', tagsRanges);
-        tagsRanges = tagsRanges[..tagsRangesLength];
-        for (int i = 0; i < tagsRangesLength; i++)
+        int semicolonIndex = tags.IndexOf(';');
+        while (semicolonIndex != -1)
         {
-            ReadOnlySpan<char> tag = tags[tagsRanges[i]];
-            // ReSharper disable once StackAllocInsideLoop
-#pragma warning disable CA2014
-            Span<Range> tagRanges = stackalloc Range[tag.Length];
-#pragma warning restore CA2014
-            int tagRangesLength = tag.GetRangesOfSplit('=', tagRanges);
-            tagRanges = tagRanges[..tagRangesLength];
-            ReadOnlySpan<char> key = tag[tagRanges[0]];
-            ReadOnlySpan<char> value = tag[tagRanges[1]];
+            // FIXME: last tag isn't read
+            ReadOnlySpan<char> tag = tags[..semicolonIndex];
+            tags = tags[(semicolonIndex + 1)..];
+            semicolonIndex = tags.IndexOf(';');
+
+            int equalsSignIndex = tag.IndexOf('=');
+            ReadOnlySpan<char> key = tag[..equalsSignIndex];
+            ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
+
             if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))
             {
                 EmoteOnly = GetEmoteOnly(value);
-                ChangedStates |= ChangedRoomstate.EmoteOnly;
+                _changedStates |= ChangedRoomstate.EmoteOnly;
             }
             else if (key.Equals(_followersOnlyTag, StringComparison.Ordinal))
             {
                 FollowersOnly = GetFollowersOnly(value);
-                ChangedStates |= ChangedRoomstate.FollowersOnly;
+                _changedStates |= ChangedRoomstate.FollowersOnly;
             }
             else if (key.Equals(_r9KTag, StringComparison.Ordinal))
             {
                 R9K = GetR9K(value);
-                ChangedStates |= ChangedRoomstate.R9K;
+                _changedStates |= ChangedRoomstate.R9K;
             }
             else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
@@ -100,27 +99,36 @@ public readonly struct RoomstateArgs
             else if (key.Equals(_slowModeTag, StringComparison.Ordinal))
             {
                 SlowMode = GetSlowMode(value);
-                ChangedStates |= ChangedRoomstate.SlowMode;
+                _changedStates |= ChangedRoomstate.SlowMode;
             }
             else if (key.Equals(_subsOnlyTag, StringComparison.Ordinal))
             {
                 SubsOnly = GetSubsOnly(value);
-                ChangedStates |= ChangedRoomstate.SubsOnly;
+                _changedStates |= ChangedRoomstate.SubsOnly;
             }
         }
 
         Channel = new(ircMessage[ircRanges[^1]][1..]);
     }
 
-    private static bool GetEmoteOnly(ReadOnlySpan<char> value) => value[^1] == '1';
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool GetEmoteOnly(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int GetFollowersOnly(ReadOnlySpan<char> value) => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
-    private static bool GetR9K(ReadOnlySpan<char> value) => value[^1] == '1';
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool GetR9K(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetChannelId(ReadOnlySpan<char> value) => long.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int GetSlowMode(ReadOnlySpan<char> value) => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
-    private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[^1] == '1';
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool GetSubsOnly(ReadOnlySpan<char> value)
+    {
+        return value[0] == '1';
+    }
 }

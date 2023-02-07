@@ -580,7 +580,7 @@ public sealed class TwitchClient : IDisposable
 
     private void IrcClient_OnDataReceived(object? sender, ReceivedData data)
     {
-        _ircHandler.Handle(data.Memory);
+        _ircHandler.Handle(data.Span);
         if (OnDataReceived is null)
         {
             data.Dispose();
@@ -601,13 +601,20 @@ public sealed class TwitchClient : IDisposable
         OnRoomstateReceived?.Invoke(this, roomstateArgs);
     }
 
-    private void IrcHandler_OnPingReceived(object? sender, ReadOnlyMemory<char> message)
+    private void IrcHandler_OnPingReceived(object? sender, ReceivedData data)
     {
-        ((ReadOnlySpan<char>)_pongPrefix).CopyTo(_pingResponseBuffer.Span);
-        int bufferLength = _pongPrefix.Length;
-        message.Span.CopyTo(_pingResponseBuffer.Span);
-        bufferLength += message.Length;
-        SendRaw(_pingResponseBuffer[..bufferLength]);
+        try
+        {
+            ((ReadOnlySpan<char>)_pongPrefix).CopyTo(_pingResponseBuffer.Span);
+            int bufferLength = _pongPrefix.Length;
+            data.Span.CopyTo(_pingResponseBuffer.Span);
+            bufferLength += data.Length;
+            SendRawAsync(_pingResponseBuffer[..bufferLength]).Wait();
+        }
+        finally
+        {
+            data.Dispose();
+        }
     }
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)

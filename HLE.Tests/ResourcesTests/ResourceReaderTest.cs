@@ -16,7 +16,7 @@ public class ResourceReaderTest
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            string? resource = reader.ReadResource($"ResourcesTests.Resource{i}");
+            string? resource = reader.Read($"ResourcesTests.Resource{i}");
             resources.Add(resource);
         }
 
@@ -33,7 +33,7 @@ public class ResourceReaderTest
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            string? resource = reader.ReadResource($"ResourcesTests.Resource{i}");
+            string? resource = reader.Read($"ResourcesTests.Resource{i}");
             resources.Add(resource);
         }
 

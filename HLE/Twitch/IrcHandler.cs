@@ -32,7 +32,7 @@ public sealed class IrcHandler
 
     internal event EventHandler? OnReconnectReceived;
 
-    internal event EventHandler<ReadOnlyMemory<char>>? OnPingReceived;
+    internal event EventHandler<ReceivedData>? OnPingReceived;
 
     #endregion Events
 
@@ -46,11 +46,10 @@ public sealed class IrcHandler
     /// <summary>
     /// Handles the incoming messages.
     /// </summary>
-    /// <param name="ircMessageM">The IRC message.</param>
+    /// <param name="ircMessage">The IRC message.</param>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
-    public bool Handle(ReadOnlyMemory<char> ircMessageM)
+    public bool Handle(ReadOnlySpan<char> ircMessage)
     {
-        ReadOnlySpan<char> ircMessage = ircMessageM.Span;
         Span<Range> ircRanges = MemoryHelper.UseStackAlloc<Range>(ircMessage.Length) ? stackalloc Range[ircMessage.Length] : new Range[ircMessage.Length];
         int ircRangesLength = ircMessage.GetRangesOfSplit(' ', ircRanges);
         ircRanges = ircRanges[..ircRangesLength];
@@ -86,7 +85,7 @@ public sealed class IrcHandler
             case > 0:
                 if (ircMessage[ircRanges[0]].Equals(_pingCommand, StringComparison.Ordinal))
                 {
-                    OnPingReceived?.Invoke(this, ircMessageM[6..]);
+                    OnPingReceived?.Invoke(this, ReceivedData.Create(ircMessage[6..]));
                     return true;
                 }
 
@@ -101,6 +100,4 @@ public sealed class IrcHandler
 
         return false;
     }
-
-    public bool Handle(string ircMessage) => Handle(ircMessage.AsMemory());
 }

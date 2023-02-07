@@ -21,7 +21,7 @@ public sealed class ResourceReader
     }
 
     [Pure]
-    public string? ReadResource(string resourceName)
+    public string? Read(string resourceName)
     {
         string resourcePath = string.Join('.', _assembly.GetName().Name, resourceName);
         return ReadResourceFromPath(resourcePath);
