@@ -2,7 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
-namespace HLE;
+namespace HLE.Memory;
 
 public static unsafe class MemoryHelper
 {
@@ -43,29 +43,38 @@ public static unsafe class MemoryHelper
     }
 
     /// <summary>
-    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. ⚠️ Only works if the span's reference is the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
+    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
     /// </summary>
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    internal static Memory<T> AsMemory<T>(this Span<T> span)
+    public static Memory<T> AsMemoryUnsafe<T>(this Span<T> span)
     {
         Unsafe.SkipInit(out Memory<T> result);
-        byte* spanPtr = (byte*)&span;
-        byte* memoryPtr = (byte*)&result;
-        nuint* memoryReference = (nuint*)memoryPtr;
-        int* memoryIndex = (int*)(memoryPtr + sizeof(nuint));
-        int* memoryLength = (int*)(memoryPtr + sizeof(nuint) + sizeof(int));
+        byte* spanPointerAsBytePointer = (byte*)&span;
+        byte* memoryPointerAsBytePointer = (byte*)&result;
 
-        nuint reference = *(nuint*)spanPtr;
-        reference -= (nuint)(sizeof(nuint) << 1);
-        *memoryReference = reference;
+        // pointers to the three fields Memory<T> consists off
+        nuint* memoryReferenceField = (nuint*)memoryPointerAsBytePointer;
+        int* memoryIndexField = (int*)(memoryPointerAsBytePointer + sizeof(nuint));
+        int* memoryLengthField = (int*)(memoryPointerAsBytePointer + sizeof(nuint) + sizeof(int));
 
-        *memoryIndex = 0;
+        nuint spanReferenceFieldValue = *(nuint*)spanPointerAsBytePointer;
+        spanReferenceFieldValue -= (nuint)(sizeof(nuint) << 1);
+        *memoryReferenceField = spanReferenceFieldValue;
 
-        int length = *(int*)(spanPtr + sizeof(nuint));
-        *memoryLength = length;
+        *memoryIndexField = 0;
+
+        int memoryLength = *(int*)(spanPointerAsBytePointer + sizeof(nuint));
+        *memoryLengthField = memoryLength;
 
         return result;
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nuint GetRawDataPointer<T>(T reference) where T : class
+    {
+        return *(nuint*)(nuint)(&reference);
     }
 }

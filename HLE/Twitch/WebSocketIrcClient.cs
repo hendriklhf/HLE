@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -32,17 +33,9 @@ public sealed class WebSocketIrcClient : IrcClient
 
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(message.Length << 1);
-        try
-        {
-            Memory<byte> bytes = rentedArray;
-            int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
-            await _webSocket.SendAsync(bytes[..byteCount], WebSocketMessageType.Text, true, default);
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(rentedArray);
-        }
+        using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.Rent(message.Length << 1);
+        int byteCount = Encoding.UTF8.GetBytes(message.Span, byteBuffer);
+        await _webSocket.SendAsync(byteBuffer.Memory[..byteCount], WebSocketMessageType.Text, true, default);
     }
 
     private protected override void StartListening()

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text.RegularExpressions;
+using HLE.Memory;
 
 namespace HLE;
 
@@ -305,9 +306,8 @@ public static class StringHelper
 
         Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
-        indices = indices[..indicesLength];
         ranges = ranges[..(indicesLength + 1)];
-        return GetRangesOfSplit(separator.Length, ranges, indices);
+        return GetRangesOfSplit(separator.Length, ranges, indices[..indicesLength]);
     }
 
     internal static int GetRangesOfSplit(int separatorLength, Span<Range> ranges, ReadOnlySpan<int> indices)

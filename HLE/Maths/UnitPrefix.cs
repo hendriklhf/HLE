@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace HLE.Maths;
 
 /// <summary>
 /// A class that represents a unit prefix.
 /// </summary>
-public sealed class UnitPrefix
+public readonly struct UnitPrefix
 {
     /// <summary>
     /// The representation of the unit prefix Yotta.
@@ -112,10 +112,7 @@ public sealed class UnitPrefix
     /// </summary>
     public static UnitPrefix Yocto { get; } = new("Yocto", "y", 1e-24);
 
-    /// <summary>
-    /// A <see cref="IEnumerable{UnitPrefix}"/> that contains every unit prefix.
-    /// </summary>
-    public static UnitPrefix[] UnitPrefixCollection { get; } =
+    private static readonly UnitPrefix[] _unitPrefixCollection =
     {
         Yotta,
         Zetta,
@@ -139,6 +136,11 @@ public sealed class UnitPrefix
         Zepto,
         Yocto
     };
+
+    /// <summary>
+    /// A <see cref="ReadOnlySpan{T}"/> that contains every unit prefix.
+    /// </summary>
+    public static ReadOnlySpan<UnitPrefix> UnitPrefixCollection => _unitPrefixCollection;
 
     /// <summary>
     /// The name of the prefix.

@@ -128,7 +128,6 @@ public sealed class ChatMessage
         int semicolonIndex = tags.IndexOf(';');
         while (semicolonIndex != -1)
         {
-            // FIXME: last tag isn't read
             ReadOnlySpan<char> tag = tags[..semicolonIndex];
             tags = tags[(semicolonIndex + 1)..];
             semicolonIndex = tags.IndexOf(';');

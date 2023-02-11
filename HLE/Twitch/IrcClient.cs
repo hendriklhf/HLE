@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -92,7 +93,7 @@ public abstract class IrcClient : IDisposable
     /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
     public void Connect(List<string> channels)
     {
-        Connect(CollectionsMarshal.AsSpan(channels).AsMemory());
+        Connect(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
     }
 
     /// <summary>
@@ -119,7 +120,7 @@ public abstract class IrcClient : IDisposable
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
     public async Task ConnectAsync(List<string> channels)
     {
-        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
+        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
     }
 
     /// <summary>
@@ -128,41 +129,33 @@ public abstract class IrcClient : IDisposable
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public async Task ConnectAsync(ReadOnlyMemory<string> channels)
     {
-        char[] rentedArray = ArrayPool<char>.Shared.Rent(_capReqMessage.Length);
-        try
+        using RentedArray<char> buffer = ArrayPool<char>.Shared.Rent(_capReqMessage.Length);
+        int bufferLength;
+
+        await ConnectClient();
+        StartListening();
+        OnConnected?.Invoke(this, EventArgs.Empty);
+
+        if (_oAuthToken is not null)
         {
-            Memory<char> buffer = rentedArray;
-            int bufferLength;
-
-            await ConnectClient();
-            StartListening();
-            OnConnected?.Invoke(this, EventArgs.Empty);
-
-            if (_oAuthToken is not null)
-            {
-                _passPrefix.CopyTo(buffer.Span);
-                bufferLength = _passPrefix.Length;
-                _oAuthToken.CopyTo(buffer.Span[bufferLength..]);
-                bufferLength += _oAuthToken.Length;
-                await Send(buffer[..bufferLength]);
-            }
-
-            _nickPrefix.CopyTo(buffer.Span);
-            bufferLength = _nickPrefix.Length;
-            Username.CopyTo(buffer.Span[bufferLength..]);
-            bufferLength += Username.Length;
-            await Send(buffer[..bufferLength]);
-
-            _capReqMessage.CopyTo(buffer.Span);
-            bufferLength = _capReqMessage.Length;
-            await Send(buffer[..bufferLength]);
-
-            await JoinChannelsThrottled(channels);
+            _passPrefix.CopyTo(buffer);
+            bufferLength = _passPrefix.Length;
+            _oAuthToken.CopyTo(buffer[bufferLength..]);
+            bufferLength += _oAuthToken.Length;
+            await Send(buffer.Memory[..bufferLength]);
         }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(rentedArray);
-        }
+
+        _nickPrefix.CopyTo(buffer);
+        bufferLength = _nickPrefix.Length;
+        Username.CopyTo(buffer[bufferLength..]);
+        bufferLength += Username.Length;
+        await Send(buffer.Memory[..bufferLength]);
+
+        _capReqMessage.CopyTo(buffer);
+        bufferLength = _capReqMessage.Length;
+        await Send(buffer.Memory[..bufferLength]);
+
+        await JoinChannelsThrottled(channels);
     }
 
     /// <summary>
@@ -264,24 +257,16 @@ public abstract class IrcClient : IDisposable
     /// <param name="message">The message that will be sent to the channel.</param>
     public async Task SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
-        char[] rentedArray = ArrayPool<char>.Shared.Rent(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
-        try
-        {
-            Memory<char> buffer = rentedArray;
-            _privMsgPrefix.CopyTo(buffer.Span);
-            int bufferLength = _privMsgPrefix.Length;
-            channel.Span.CopyTo(buffer.Span[bufferLength..]);
-            bufferLength += channel.Length;
-            buffer.Span[bufferLength++] = ' ';
-            buffer.Span[bufferLength++] = ':';
-            message.Span.CopyTo(buffer.Span[bufferLength..]);
-            bufferLength += message.Length;
-            await Send(buffer[..bufferLength]);
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(rentedArray);
-        }
+        using RentedArray<char> buffer = ArrayPool<char>.Shared.Rent(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
+        _privMsgPrefix.CopyTo(buffer);
+        int bufferLength = _privMsgPrefix.Length;
+        channel.Span.CopyTo(buffer[bufferLength..]);
+        bufferLength += channel.Length;
+        buffer[bufferLength++] = ' ';
+        buffer[bufferLength++] = ':';
+        message.Span.CopyTo(buffer[bufferLength..]);
+        bufferLength += message.Length;
+        await Send(buffer.Memory[..bufferLength]);
     }
 
     /// <inheritdoc cref="JoinChannel(ReadOnlyMemory{char})"/>
@@ -311,20 +296,13 @@ public abstract class IrcClient : IDisposable
     /// <param name="channel">The channel the client will join.</param>
     public async Task JoinChannelAsync(ReadOnlyMemory<char> channel)
     {
-        char[] rentedArray = ArrayPool<char>.Shared.Rent(_joinPrefix.Length + _maxChannelNameLength);
-        try
-        {
-            Memory<char> buffer = rentedArray;
-            _joinPrefix.CopyTo(buffer.Span);
-            int bufferLength = _joinPrefix.Length;
-            channel.Span.CopyTo(buffer.Span[bufferLength..]);
-            bufferLength += channel.Length;
-            await Send(buffer[..bufferLength]);
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(rentedArray);
-        }
+        using RentedArray<char> rentedArray = ArrayPool<char>.Shared.Rent(_joinPrefix.Length + _maxChannelNameLength);
+        Memory<char> buffer = rentedArray;
+        _joinPrefix.CopyTo(buffer.Span);
+        int bufferLength = _joinPrefix.Length;
+        channel.Span.CopyTo(buffer.Span[bufferLength..]);
+        bufferLength += channel.Length;
+        await Send(buffer[..bufferLength]);
     }
 
     /// <inheritdoc cref="LeaveChannel(ReadOnlyMemory{char})"/>
@@ -354,60 +332,44 @@ public abstract class IrcClient : IDisposable
     /// <param name="channel">The channel the client will leave.</param>
     public async Task LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
-        char[] rentedArray = ArrayPool<char>.Shared.Rent(_partPrefix.Length + _maxChannelNameLength);
-        try
-        {
-            Memory<char> buffer = rentedArray;
-            _partPrefix.CopyTo(buffer.Span);
-            int bufferLength = _partPrefix.Length;
-            channel.Span.CopyTo(buffer.Span[bufferLength..]);
-            bufferLength += channel.Length;
-            await Send(buffer[..bufferLength]);
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(rentedArray);
-        }
+        using RentedArray<char> buffer = ArrayPool<char>.Shared.Rent(_partPrefix.Length + _maxChannelNameLength);
+        _partPrefix.CopyTo(buffer);
+        int bufferLength = _partPrefix.Length;
+        channel.Span.CopyTo(buffer[bufferLength..]);
+        bufferLength += channel.Length;
+        await Send(buffer.Memory[..bufferLength]);
     }
 
     private async ValueTask JoinChannelsThrottled(ReadOnlyMemory<string> channels)
     {
-        char[] rentedArray = ArrayPool<char>.Shared.Rent(_joinPrefix.Length + _maxChannelNameLength);
-        try
+        if (channels.Length == 0)
         {
-            if (channels.Length == 0)
-            {
-                return;
-            }
+            return;
+        }
 
-            int maxJoinsInPeriod = _isVerifiedBot ? 200 : 20;
-            TimeSpan period = TimeSpan.FromSeconds(10);
+        int maxJoinsInPeriod = _isVerifiedBot ? 200 : 20;
+        TimeSpan period = TimeSpan.FromSeconds(10);
 
-            Memory<char> buffer = rentedArray;
-            DateTimeOffset start = DateTimeOffset.UtcNow;
-            for (int i = 0; i < channels.Length; i++)
+        using RentedArray<char> buffer = ArrayPool<char>.Shared.Rent(_joinPrefix.Length + _maxChannelNameLength);
+        DateTimeOffset start = DateTimeOffset.UtcNow;
+        for (int i = 0; i < channels.Length; i++)
+        {
+            if (i > 0 && i % maxJoinsInPeriod == 0)
             {
-                if (i > 0 && i % maxJoinsInPeriod == 0)
+                TimeSpan waitTime = period - (DateTimeOffset.UtcNow - start);
+                if (waitTime.TotalMilliseconds > 0)
                 {
-                    TimeSpan waitTime = period - (DateTimeOffset.UtcNow - start);
-                    if (waitTime.TotalMilliseconds > 0)
-                    {
-                        await Task.Delay(waitTime);
-                    }
-
-                    start = DateTimeOffset.UtcNow;
+                    await Task.Delay(waitTime);
                 }
 
-                _joinPrefix.CopyTo(buffer.Span);
-                int bufferLength = _joinPrefix.Length;
-                channels.Span[i].CopyTo(buffer.Span[bufferLength..]);
-                bufferLength += channels.Span[i].Length;
-                await Send(buffer[..bufferLength]);
+                start = DateTimeOffset.UtcNow;
             }
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(rentedArray);
+
+            _joinPrefix.CopyTo(buffer);
+            int bufferLength = _joinPrefix.Length;
+            channels.Span[i].CopyTo(buffer[bufferLength..]);
+            bufferLength += channels.Span[i].Length;
+            await Send(buffer.Memory[..bufferLength]);
         }
     }
 

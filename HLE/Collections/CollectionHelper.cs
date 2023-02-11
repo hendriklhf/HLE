@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE.Collections;
 
@@ -13,12 +14,6 @@ namespace HLE.Collections;
 /// </summary>
 public static class CollectionHelper
 {
-    /// <summary>
-    /// Will loop through an <see cref="IEnumerable{T}"/> and performs the given <paramref name="action"/> on each element.
-    /// </summary>
-    /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
-    /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
-    /// <param name="action">The action that will be performed.</param>
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T> action)
     {
         return ForEach(collection.ToArray(), action);
@@ -56,13 +51,6 @@ public static class CollectionHelper
         }
     }
 
-    /// <summary>
-    /// Will loop through an <see cref="IEnumerable{T}"/> and performs the given <paramref name="action"/> on each element.<br/>
-    /// The <see cref="int"/> parameter of <paramref name="action"/> is the index of the current item in the loop.
-    /// </summary>
-    /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
-    /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be looped through.</param>
-    /// <param name="action">The action that will be performed.</param>
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
     {
         return ForEach(collection.ToArray(), action);
@@ -100,12 +88,6 @@ public static class CollectionHelper
         }
     }
 
-    /// <summary>
-    /// Checks if the <see cref="IEnumerable{T}"/> is null or empty.
-    /// </summary>
-    /// <typeparam name="T">The type of the <see cref="IEnumerable{T}"/>.</typeparam>
-    /// <param name="collection">The checked collection.</param>
-    /// <returns>True, if null or empty, false otherwise.</returns>
     [Pure]
     public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? collection)
     {
@@ -129,7 +111,7 @@ public static class CollectionHelper
     /// </summary>
     /// <typeparam name="T">The type of the <paramref name="collection"/>.</typeparam>
     /// <param name="collection">The collection the random element will be taken from.</param>
-    /// <returns>A random element or <see langword="null"/> if the <paramref name="collection"/> doesn't contain any elements.</returns>
+    /// <returns>A random element or the default type value if the <paramref name="collection"/> doesn't contain any elements.</returns>
     [Pure]
     public static T? Random<T>(this IEnumerable<T> collection)
     {
@@ -192,34 +174,18 @@ public static class CollectionHelper
         return string.Join(separator, collection);
     }
 
-    /// <summary>
-    /// Concatenates every element of the <paramref name="collection"/> separated by the <paramref name="separator"/>.
-    /// </summary>
-    /// <param name="collection">The <see cref="IEnumerable{Char}"/> that will be converted to a <see cref="string"/>.</param>
-    /// <param name="separator"></param>
-    /// <returns></returns>
     [Pure]
     public static string JoinToString(this IEnumerable<char> collection, string separator)
     {
         return string.Join(separator, collection);
     }
 
-    /// <summary>
-    /// Concatenates every element of the <paramref name="collection"/>.
-    /// </summary>
-    /// <param name="collection"></param>
-    /// <returns></returns>
     [Pure]
     public static string ConcatToString(this IEnumerable<char> collection)
     {
         return string.Concat(collection);
     }
 
-    /// <summary>
-    /// Concatenates every element of the <paramref name="collection"/>
-    /// </summary>
-    /// <param name="collection"></param>
-    /// <returns></returns>
     [Pure]
     public static string ConcatToString(this IEnumerable<string> collection)
     {

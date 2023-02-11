@@ -18,11 +18,15 @@ public ref struct StringBuilder
 
     public readonly int Capacity => _buffer.Length;
 
-    private readonly Span<char> _buffer = Span<char>.Empty;
+    private readonly Span<char> _buffer;
     private int _length;
+
+    public static StringBuilder Empty => new();
 
     public StringBuilder()
     {
+        _buffer = Span<char>.Empty;
+        _length = 0;
     }
 
     public StringBuilder(Span<char> buffer)

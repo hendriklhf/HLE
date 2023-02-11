@@ -47,6 +47,12 @@ public class RandomTest
         {
             Assert.IsTrue(Random.Byte() is byte);
         }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            byte randomByte = Random.Byte(0, 10);
+            Assert.IsTrue(randomByte is >= 0 and <= 10);
+        }
     }
 
     [TestMethod]
@@ -55,6 +61,12 @@ public class RandomTest
         for (int i = 0; i < 100_000; i++)
         {
             Assert.IsTrue(Random.SByte() is sbyte);
+        }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            sbyte randomSByte = Random.SByte(0, 10);
+            Assert.IsTrue(randomSByte is >= 0 and <= 10);
         }
     }
 
@@ -65,6 +77,12 @@ public class RandomTest
         {
             Assert.IsTrue(Random.Short() is short);
         }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            short randomShort = Random.Short(0, 10);
+            Assert.IsTrue(randomShort is >= 0 and <= 10);
+        }
     }
 
     [TestMethod]
@@ -73,6 +91,12 @@ public class RandomTest
         for (int i = 0; i < 100_000; i++)
         {
             Assert.IsTrue(Random.UShort() is ushort);
+        }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            ushort randomUShort = Random.UShort(0, 10);
+            Assert.IsTrue(randomUShort is >= 0 and <= 10);
         }
     }
 
@@ -83,6 +107,12 @@ public class RandomTest
         {
             Assert.IsTrue(Random.Int() is int);
         }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            int randomInt = Random.Int(0, 10);
+            Assert.IsTrue(randomInt is >= 0 and <= 10);
+        }
     }
 
     [TestMethod]
@@ -92,6 +122,12 @@ public class RandomTest
         {
             Assert.IsTrue(Random.UInt() is uint);
         }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            uint randomUInt = Random.UInt(0, 10);
+            Assert.IsTrue(randomUInt is >= 0 and <= 10);
+        }
     }
 
     [TestMethod]
@@ -100,6 +136,12 @@ public class RandomTest
         for (int i = 0; i < 100_000; i++)
         {
             Assert.IsTrue(Random.Long() is long);
+        }
+
+        for (int i = 0; i < 100_000; i++)
+        {
+            long randomLong = Random.Long(0, 10);
+            Assert.IsTrue(randomLong is >= 0 and <= 10);
         }
     }
 

@@ -48,7 +48,7 @@ public readonly struct RoomstateArgs
     /// </summary>
     public bool SubsOnly { get; init; }
 
-    internal readonly ChangedRoomstate _changedStates = 0;
+    internal readonly ChangedRoomstate _changedStateFlags = 0;
 
     private const string _emoteOnlyTag = "emote-only";
     private const string _followersOnlyTag = "followers-only";
@@ -65,32 +65,30 @@ public readonly struct RoomstateArgs
     public RoomstateArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
     {
         ReadOnlySpan<char> tags = ircMessage[ircRanges[0]][1..];
-        int semicolonIndex = tags.IndexOf(';');
-        while (semicolonIndex != -1)
+        int equalsSignIndex = tags.IndexOf('=');
+        while (equalsSignIndex != -1)
         {
-            // FIXME: last tag isn't read
-            ReadOnlySpan<char> tag = tags[..semicolonIndex];
-            tags = tags[(semicolonIndex + 1)..];
-            semicolonIndex = tags.IndexOf(';');
-
-            int equalsSignIndex = tag.IndexOf('=');
-            ReadOnlySpan<char> key = tag[..equalsSignIndex];
-            ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
+            int semicolonIndex = tags.IndexOf(';');
+            Index valueEnd = Unsafe.As<int, Index>(ref semicolonIndex);
+            ReadOnlySpan<char> key = tags[..equalsSignIndex];
+            ReadOnlySpan<char> value = tags[(equalsSignIndex + 1)..valueEnd];
+            tags = semicolonIndex == -1 ? tags[tags.Length..] : tags[(semicolonIndex + 1)..];
+            equalsSignIndex = tags.IndexOf('=');
 
             if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))
             {
                 EmoteOnly = GetEmoteOnly(value);
-                _changedStates |= ChangedRoomstate.EmoteOnly;
+                _changedStateFlags |= ChangedRoomstate.EmoteOnly;
             }
             else if (key.Equals(_followersOnlyTag, StringComparison.Ordinal))
             {
                 FollowersOnly = GetFollowersOnly(value);
-                _changedStates |= ChangedRoomstate.FollowersOnly;
+                _changedStateFlags |= ChangedRoomstate.FollowersOnly;
             }
             else if (key.Equals(_r9KTag, StringComparison.Ordinal))
             {
                 R9K = GetR9K(value);
-                _changedStates |= ChangedRoomstate.R9K;
+                _changedStateFlags |= ChangedRoomstate.R9K;
             }
             else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
@@ -99,12 +97,12 @@ public readonly struct RoomstateArgs
             else if (key.Equals(_slowModeTag, StringComparison.Ordinal))
             {
                 SlowMode = GetSlowMode(value);
-                _changedStates |= ChangedRoomstate.SlowMode;
+                _changedStateFlags |= ChangedRoomstate.SlowMode;
             }
             else if (key.Equals(_subsOnlyTag, StringComparison.Ordinal))
             {
                 SubsOnly = GetSubsOnly(value);
-                _changedStates |= ChangedRoomstate.SubsOnly;
+                _changedStateFlags |= ChangedRoomstate.SubsOnly;
             }
         }
 
@@ -127,8 +125,5 @@ public readonly struct RoomstateArgs
     private static int GetSlowMode(ReadOnlySpan<char> value) => int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetSubsOnly(ReadOnlySpan<char> value)
-    {
-        return value[0] == '1';
-    }
+    private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
 }

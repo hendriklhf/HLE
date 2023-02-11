@@ -1,4 +1,5 @@
 ﻿using System;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;

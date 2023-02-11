@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using HLE.Memory;
 
 namespace HLE.Emojis;
 
@@ -89,15 +90,16 @@ public sealed class EmojiFileGenerator
         }
 
         StringBuilder builder = MemoryHelper.UseStackAlloc<char>(_emojiJsonBytes.Length >> 2) ? stackalloc char[_emojiJsonBytes.Length >> 2] : new char[_emojiJsonBytes.Length >> 2];
-        builder.Append("#pragma warning disable 1591", Environment.NewLine);
-        builder.Append("// ReSharper disable UnusedMember.Global", Environment.NewLine);
-        builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);
-        builder.Append("namsespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
-        builder.Append("/// <summary>", Environment.NewLine);
-        builder.Append("///     A class that contains (almost) every existing emoji. Generated ", DateTime.UtcNow.ToString("R"), " with the <see cref=\"", nameof(EmojiFileGenerator), "\"/>.", Environment.NewLine);
-        builder.Append("/// </summary>", Environment.NewLine);
-        builder.Append("public static class Emoji", Environment.NewLine, "{", Environment.NewLine);
+        AppendFileHeader(ref builder);
+        AppendEmojis(ref builder);
 
+        builder.Append('}');
+        builder.Append(Environment.NewLine);
+        return builder.ToString();
+    }
+
+    private void AppendEmojis(ref StringBuilder builder)
+    {
         Span<char> indentation = stackalloc char[IndentationSize];
         indentation.Fill(IndentationChar);
 
@@ -111,9 +113,9 @@ public sealed class EmojiFileGenerator
         };
         Utf8JsonReader jsonReader = new(_emojiJsonBytes, options);
 
-        Span<char> emoji = stackalloc char[100];
+        Span<char> emojiBuffer = stackalloc char[100];
         int emojiLength = 0;
-        Span<char> name = stackalloc char[100];
+        Span<char> nameBuffer = stackalloc char[100];
 
         while (jsonReader.Read())
         {
@@ -122,27 +124,35 @@ public sealed class EmojiFileGenerator
                 case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(emojiProperty):
                     jsonReader.Read();
                     ReadOnlySpan<byte> emojiBytes = jsonReader.ValueSpan;
-                    emojiLength = Encoding.UTF8.GetChars(emojiBytes, emoji);
+                    emojiLength = Encoding.UTF8.GetChars(emojiBytes, emojiBuffer);
                     break;
                 case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(aliasesProperty):
                     jsonReader.Read();
                     jsonReader.Read();
                     ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
-                    int nameLength = Encoding.UTF8.GetChars(nameBytes, name);
-                    name[0] = char.ToUpper(name[0]);
-                    CheckForIllegalName(name, ref nameLength);
+                    int nameLength = Encoding.UTF8.GetChars(nameBytes, nameBuffer);
+                    nameBuffer[0] = char.ToUpper(nameBuffer[0]);
+                    CheckForIllegalName(nameBuffer, ref nameLength);
 
-                    builder.Append(indentation, _publicConstString, StringHelper.Whitespace, name[..nameLength], StringHelper.Whitespace);
-                    builder.Append(_equalSignSpaceQuotation, emoji[..emojiLength], _quotationSemicolon, Environment.NewLine);
+                    builder.Append(indentation, _publicConstString, StringHelper.Whitespace, nameBuffer[..nameLength], StringHelper.Whitespace);
+                    builder.Append(_equalSignSpaceQuotation, emojiBuffer[..emojiLength], _quotationSemicolon, Environment.NewLine);
                     break;
                 default:
                     continue;
             }
         }
+    }
 
-        builder.Append('}');
-        builder.Append(Environment.NewLine);
-        return builder.ToString();
+    private void AppendFileHeader(ref StringBuilder builder)
+    {
+        builder.Append("#pragma warning disable 1591", Environment.NewLine);
+        builder.Append("// ReSharper disable UnusedMember.Global", Environment.NewLine);
+        builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);
+        builder.Append("namsespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
+        builder.Append("/// <summary>", Environment.NewLine);
+        builder.Append("///     A class that contains (almost) every existing emoji. Generated ", DateTime.UtcNow.ToString("R"), " with the <see cref=\"", nameof(EmojiFileGenerator), "\"/>.", Environment.NewLine);
+        builder.Append("/// </summary>", Environment.NewLine);
+        builder.Append("public static class Emoji", Environment.NewLine, "{", Environment.NewLine);
     }
 
     private void CheckForIllegalName(Span<char> name, ref int nameLength)

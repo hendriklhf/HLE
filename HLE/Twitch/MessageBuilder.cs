@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace HLE.Twitch;
 
-[DebuggerDisplay("{ToString()}")]
+[DebuggerDisplay("\"{ToString()}\"")]
 public struct MessageBuilder : IDisposable
 {
     public readonly ref char this[int index] => ref Span[index];
@@ -30,12 +30,7 @@ public struct MessageBuilder : IDisposable
 
     private const ushort _maxMessageLength = 500;
 
-    public MessageBuilder()
-    {
-        _buffer = ArrayPool<char>.Shared.Rent(_maxMessageLength);
-    }
-
-    public MessageBuilder(int bufferLength)
+    public MessageBuilder(int bufferLength = _maxMessageLength)
     {
         _buffer = ArrayPool<char>.Shared.Rent(bufferLength);
     }
@@ -192,12 +187,6 @@ public struct MessageBuilder : IDisposable
     {
         Append(c, c2, c3, c4, c5, c6, c7, c8, c9);
         Span[_length++] = c10;
-    }
-
-    public void Remove(int index)
-    {
-        Span[(index + 1).._length].CopyTo(Span[index..]);
-        _length--;
     }
 
     [Pure]

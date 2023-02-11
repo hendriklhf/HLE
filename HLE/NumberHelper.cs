@@ -1,16 +1,10 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace HLE;
 
 public static class NumberHelper
 {
-#pragma warning disable IDE0060
-    public static string InsertKDots(byte number, char kchar = '.')
-    {
-        return number.ToString();
-    }
-#pragma warning restore IDE0060
-
     public static byte GetNumberLength(byte number)
     {
         const byte one = 1;
@@ -43,13 +37,6 @@ public static class NumberHelper
         digits[^digitCount..].CopyTo(digits);
         return digitCount;
     }
-
-#pragma warning disable IDE0060
-    public static string InsertKDots(sbyte number, char kchar = '.')
-    {
-        return number.ToString();
-    }
-#pragma warning restore IDE0060
 
     public static byte GetNumberLength(sbyte number)
     {
@@ -386,31 +373,33 @@ public static class NumberHelper
         }
 
         bool isNegative = number < 0;
-        number = Math.Abs(number);
-        Span<char> chars = stackalloc char[numberLength];
-        number.TryFormat(chars, out int length);
-        chars = chars[..length];
+        byte isNegativeAsByte = Unsafe.As<bool, byte>(ref isNegative);
+        number = isNegative ? -number : number;
+        Span<char> numberChars = stackalloc char[numberLength];
+        number.TryFormat(numberChars, out int length);
+        numberChars = numberChars[..length];
 
-        int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
-        int total = isNegative ? numberLength + dotCount + 1 : numberLength + dotCount;
-        Span<char> result = stackalloc char[total];
-        int start = isNegative ? (numberLength % 3) + 1 : numberLength % 3;
-        if (start == (isNegative ? 1 : 0))
-        {
-            start += 3;
-        }
+        const byte amountOfNumbersGroupedByDots = 3;
+        bool isLengthDivisibleBy3 = numberLength % amountOfNumbersGroupedByDots == 0;
+        byte isLengthDivisibleBy3AsByte = Unsafe.As<bool, byte>(ref isLengthDivisibleBy3);
 
-        int nextDot = start;
-        for (int i = isNegative ? 1 : 0; i < total; i++)
+        int countOfDotsInNumber = (numberLength / amountOfNumbersGroupedByDots) - isLengthDivisibleBy3AsByte;
+        int totalLengthOfResult = numberLength + countOfDotsInNumber + isNegativeAsByte;
+        Span<char> result = stackalloc char[totalLengthOfResult];
+
+        int startIndexInSpan = (numberLength % amountOfNumbersGroupedByDots) + isNegativeAsByte;
+        startIndexInSpan += amountOfNumbersGroupedByDots * isNegativeAsByte;
+        int indexOfTheNextDotInSpan = startIndexInSpan;
+        for (int i = isNegativeAsByte; i < totalLengthOfResult; i++)
         {
-            if (i == nextDot)
+            if (i == indexOfTheNextDotInSpan)
             {
                 result[i] = kchar;
-                nextDot += 4;
+                indexOfTheNextDotInSpan += amountOfNumbersGroupedByDots + 1;
             }
             else
             {
-                result[i] = chars[isNegative ? i - 1 - ((nextDot - start) >> 2) : i - ((nextDot - start) >> 2)];
+                result[i] = numberChars[i - isNegativeAsByte - ((indexOfTheNextDotInSpan - startIndexInSpan) >> 2)];
             }
         }
 
