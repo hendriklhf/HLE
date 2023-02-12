@@ -89,14 +89,14 @@ public sealed class TwitchClient : IDisposable
     private readonly IrcClient _client;
     private readonly IrcHandler _ircHandler = new();
     private readonly List<string> _ircChannels = new();
-    private readonly Memory<char> _pingResponseBuffer = new char[30];
+    private readonly Memory<byte> _pingResponseBuffer = new byte[50];
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
     private static readonly Regex _anonymousLoginPattern = new(@"^justinfan\w+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
     private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';
-    private const string _pongPrefix = "PONG :";
+    private readonly byte[] _pongPrefix = "PONG :"u8.ToArray();
 
     /// <summary>
     /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.
@@ -109,7 +109,9 @@ public sealed class TwitchClient : IDisposable
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketIrcClient(_anonymousUsername, null, options),
+#if TCP
             ClientType.Tcp => new TcpIrcClient(_anonymousUsername, null, options),
+#endif
             _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
         IsAnonymousLogin = true;
@@ -132,7 +134,9 @@ public sealed class TwitchClient : IDisposable
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketIrcClient(username, oAuthToken, options),
+#if TCP
             ClientType.Tcp => new TcpIrcClient(username, oAuthToken, options),
+#endif
             _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
         IsAnonymousLogin = false;
@@ -149,7 +153,9 @@ public sealed class TwitchClient : IDisposable
         ClientType = ircClient switch
         {
             WebSocketIrcClient => ClientType.WebSocket,
+#if TCP
             TcpIrcClient => ClientType.Tcp,
+#endif
             _ => (ClientType)(-1)
         };
         IsAnonymousLogin = _anonymousLoginPattern.IsMatch(ircClient.Username);
@@ -295,6 +301,15 @@ public sealed class TwitchClient : IDisposable
         SendRawAsync(rawMessage);
     }
 
+    /// <summary>
+    /// Sends a raw message of UTF-8 bytes to the chat server.
+    /// </summary>
+    /// <param name="rawMessage">The raw message</param>
+    public void SendRaw(ReadOnlyMemory<byte> rawMessage)
+    {
+        SendRawAsync(rawMessage);
+    }
+
     /// <inheritdoc cref="SendRawAsync(System.ReadOnlyMemory{char})"/>
     public async Task SendRawAsync(string rawMessage)
     {
@@ -306,6 +321,20 @@ public sealed class TwitchClient : IDisposable
     /// </summary>
     /// <param name="rawMessage">The raw message</param>
     public async Task SendRawAsync(ReadOnlyMemory<char> rawMessage)
+    {
+        if (!IsConnected)
+        {
+            throw Exceptions.NotConnected;
+        }
+
+        await _client.SendRawAsync(rawMessage);
+    }
+
+    /// <summary>
+    /// Asynchronously sends a raw message of UTF-8 bytes to the chat server.
+    /// </summary>
+    /// <param name="rawMessage">The raw message</param>
+    public async Task SendRawAsync(ReadOnlyMemory<byte> rawMessage)
     {
         if (!IsConnected)
         {
@@ -606,7 +635,7 @@ public sealed class TwitchClient : IDisposable
     {
         try
         {
-            ((ReadOnlySpan<char>)_pongPrefix).CopyTo(_pingResponseBuffer.Span);
+            ((ReadOnlySpan<byte>)_pongPrefix).CopyTo(_pingResponseBuffer.Span);
             int bufferLength = _pongPrefix.Length;
             data.Span.CopyTo(_pingResponseBuffer.Span);
             bufferLength += data.Length;

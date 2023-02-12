@@ -569,33 +569,33 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static bool ContentEquals<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
+    public static bool SequenceEqual<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
     {
-        return ContentEquals(collection.ToArray(), collection2.ToArray());
+        return SequenceEqual(collection.ToArray(), collection2.ToArray());
     }
 
     [Pure]
-    public static bool ContentEquals<T>(this List<T> list, List<T> list2)
+    public static bool SequenceEqual<T>(this List<T> list, List<T> list2)
     {
-        return ContentEquals(CollectionsMarshal.AsSpan(list), CollectionsMarshal.AsSpan(list2));
+        return SequenceEqual(CollectionsMarshal.AsSpan(list), CollectionsMarshal.AsSpan(list2));
     }
 
     [Pure]
-    public static bool ContentEquals<T>(this T[] array, T[] array2)
+    public static bool SequenceEqual<T>(this T[] array, T[] array2)
     {
-        return ContentEquals((ReadOnlySpan<T>)array, array2);
+        return SequenceEqual((ReadOnlySpan<T>)array, array2);
     }
 
     [Pure]
-    public static bool ContentEquals<T>(this Span<T> span, Span<T> span2)
+    private static bool SequenceEqual<T>(this Span<T> span, Span<T> span2)
     {
-        return ContentEquals((ReadOnlySpan<T>)span, span2);
+        return SequenceEqual((ReadOnlySpan<T>)span, span2);
     }
 
     [Pure]
-    public static bool ContentEquals<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> span2)
+    private static bool SequenceEqual<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> span2)
     {
-        return span.SequenceEqual(span2);
+        return MemoryExtensions.SequenceEqual(span, span2);
     }
 
     public static T[] ForRanges<T>(this IEnumerable<T> collection, params (Range Range, Action<T> Action)[] operations)

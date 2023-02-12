@@ -1,7 +1,7 @@
 ﻿namespace HLE.Twitch.Models;
 
 /// <summary>
-/// A class that represent a badge of user.
+/// A class that represent a badge or badge info of a user.
 /// </summary>
 public readonly struct Badge
 {

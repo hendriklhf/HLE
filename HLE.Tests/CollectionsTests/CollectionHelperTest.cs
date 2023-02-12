@@ -182,16 +182,16 @@ public class CollectionHelperTest
             2,
             3
         };
-        Assert.IsTrue(arr1.ContentEquals(arr2));
+        Assert.IsTrue(arr1.SequenceEqual(arr2));
         arr2[1] = 1;
-        Assert.IsFalse(arr1.ContentEquals(arr2));
+        Assert.IsFalse(arr1.SequenceEqual(arr2));
 
         string s1 = "hello";
         const string s2 = "hello";
-        Assert.IsTrue(s1.ContentEquals(s2));
+        Assert.IsTrue(CollectionHelper.SequenceEqual(s1, s2));
 
         s1 = "hallo";
-        Assert.IsFalse(s1.ContentEquals(s2));
+        Assert.IsFalse(CollectionHelper.SequenceEqual(s1, s2));
     }
 
     [TestMethod]
@@ -221,7 +221,7 @@ public class CollectionHelperTest
     {
         int[] arr = TestHelper.CreateIntArray(50);
         int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize()).ToArray();
-        int count = arrArr.Count(a => arr.ContentEquals(a));
+        int count = arrArr.Count(a => arr.SequenceEqual(a));
         Console.WriteLine($"Content was equal {NumberHelper.InsertKDots(count)} times.");
         Assert.IsTrue(count <= 1);
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace HLE.Twitch.Models;
 
@@ -17,16 +18,18 @@ public readonly struct LeftChannelArgs
     /// </summary>
     public string Channel { get; }
 
+    private const byte _exclamationMark = (byte)'!';
+
     /// <summary>
     /// The default constructor of <see cref="LeftChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    /// <param name="ircRanges">Ranges that represent the message split on whitespaces.</param>
-    public LeftChannelArgs(ReadOnlySpan<char> ircMessage, Span<Range> ircRanges)
+    /// <param name="indicesOfWhitespaces">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
+    public LeftChannelArgs(ReadOnlySpan<byte> ircMessage, Span<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> split0 = ircMessage[ircRanges[0]];
-        int idxExcl = split0.IndexOf('!');
-        Username = new(split0[1..idxExcl]);
-        Channel = new(ircMessage[ircRanges[^1]][1..]);
+        ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespaces[0]];
+        int indexOfExclamationMark = firstWord.IndexOf(_exclamationMark);
+        Username = Encoding.UTF8.GetString(firstWord[1..indexOfExclamationMark]);
+        Channel = Encoding.UTF8.GetString(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
     }
 }

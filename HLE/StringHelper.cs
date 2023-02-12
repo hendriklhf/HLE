@@ -385,7 +385,7 @@ public static class StringHelper
 
             for (int i = 0; i < shortSpan.Length; i++)
             {
-                bool equals = shortSpan[i] == '.';
+                bool equals = shortSpan[i] == c;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -409,7 +409,7 @@ public static class StringHelper
 
             for (int i = 0; i < shortSpan.Length; i++)
             {
-                bool equals = shortSpan[i] == '.';
+                bool equals = shortSpan[i] == c;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -433,7 +433,7 @@ public static class StringHelper
 
             for (int i = 0; i < shortSpan.Length; i++)
             {
-                bool equals = shortSpan[i] == '.';
+                bool equals = shortSpan[i] == c;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -444,6 +444,96 @@ public static class StringHelper
         for (int i = 0; i < spanLength; i++)
         {
             bool equals = Unsafe.Add(ref firstChar, i) == c;
+            result += Unsafe.As<bool, byte>(ref equals);
+        }
+
+        return result;
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static int ByteCount(this ReadOnlySpan<byte> span, byte byteToCount)
+    {
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return 0;
+        }
+
+        int result = 0;
+        int vector256Count = Vector256<byte>.Count;
+        if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
+        {
+            Vector256<byte> equalsVector = Vector256.Create(byteToCount);
+            Vector256<byte> oneVector = Vector256.Create((byte)1);
+            while (span.Length >= vector256Count)
+            {
+                Vector256<byte> vector = Vector256.Create(span[..vector256Count]);
+                span = span[vector256Count..];
+                Vector256<byte> equals = Vector256.Equals(vector, equalsVector);
+                Vector256<byte> and = Vector256.BitwiseAnd(equals, oneVector);
+                result += Vector256.Dot(and, oneVector);
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                bool equals = span[i] == byteToCount;
+                result += Unsafe.As<bool, byte>(ref equals);
+            }
+
+            return result;
+        }
+
+        int vector128Count = Vector128<byte>.Count;
+        if (Vector128.IsHardwareAccelerated && spanLength > vector128Count)
+        {
+            Vector128<byte> equalsVector = Vector128.Create(byteToCount);
+            Vector128<byte> oneVector = Vector128.Create((byte)1);
+            while (span.Length >= vector128Count)
+            {
+                Vector128<byte> vector = Vector128.Create(span[..vector128Count]);
+                span = span[vector128Count..];
+                Vector128<byte> equals = Vector128.Equals(vector, equalsVector);
+                Vector128<byte> and = Vector128.BitwiseAnd(equals, oneVector);
+                result += Vector128.Dot(and, oneVector);
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                bool equals = span[i] == '.';
+                result += Unsafe.As<bool, byte>(ref equals);
+            }
+
+            return result;
+        }
+
+        int vector64Count = Vector64<ushort>.Count;
+        if (Vector64.IsHardwareAccelerated && spanLength > vector64Count)
+        {
+            Vector64<byte> equalsVector = Vector64.Create(byteToCount);
+            Vector64<byte> oneVector = Vector64.Create((byte)1);
+            while (span.Length >= vector64Count)
+            {
+                Vector64<byte> vector = Vector64.Create(span[..vector64Count]);
+                span = span[vector64Count..];
+                Vector64<byte> equals = Vector64.Equals(vector, equalsVector);
+                Vector64<byte> and = Vector64.BitwiseAnd(equals, oneVector);
+                result += Vector64.Dot(and, oneVector);
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                bool equals = span[i] == '.';
+                result += Unsafe.As<bool, byte>(ref equals);
+            }
+
+            return result;
+        }
+
+        ref byte firstByte = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            bool equals = Unsafe.Add(ref firstByte, i) == byteToCount;
             result += Unsafe.As<bool, byte>(ref equals);
         }
 

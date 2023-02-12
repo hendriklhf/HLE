@@ -529,4 +529,26 @@ public static class NumberHelper
 
         return (byte)(c - '0');
     }
+
+    public static long ParsePositiveInt64FromUtf8Bytes(ReadOnlySpan<byte> number)
+    {
+        long result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = 10 * result + number[i] - '0';
+        }
+
+        return result;
+    }
+
+    public static int ParsePositiveInt32FromUtf8Bytes(ReadOnlySpan<byte> number)
+    {
+        int result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = 10 * result + number[i] - '0';
+        }
+
+        return result;
+    }
 }

@@ -48,7 +48,7 @@ public static unsafe class MemoryHelper
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    public static Memory<T> AsMemoryUnsafe<T>(this Span<T> span)
+    internal static Memory<T> AsMemoryUnsafe<T>(this Span<T> span)
     {
         Unsafe.SkipInit(out Memory<T> result);
         byte* spanPointerAsBytePointer = (byte*)&span;

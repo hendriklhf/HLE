@@ -1,5 +1,5 @@
 ﻿using System;
-using HLE.Memory;
+using HLE.Collections;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -37,60 +37,66 @@ public sealed class IrcHandler
 
     #endregion Events
 
-    private const string _joinCommand = "JOIN";
-    private const string _roomstateCommand = "ROOMSTATE";
-    private const string _privmsgCommand = "PRIVMSG";
-    private const string _pingCommand = "PING";
-    private const string _partCommand = "PART";
-    private const string _reconnectCommand = "RECONNECT";
+    private const byte _whitespace = (byte)' ';
+    private readonly byte[] _joinCommand = "JOIN"u8.ToArray();
+    private readonly byte[] _roomstateCommand = "ROOMSTATE"u8.ToArray();
+    private readonly byte[] _privmsgCommand = "PRIVMSG"u8.ToArray();
+    private readonly byte[] _pingCommand = "PING"u8.ToArray();
+    private readonly byte[] _partCommand = "PART"u8.ToArray();
+    private readonly byte[] _reconnectCommand = "RECONNECT"u8.ToArray();
 
     /// <summary>
     /// Handles the incoming messages.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
-    public bool Handle(ReadOnlySpan<char> ircMessage)
+    public bool Handle(ReadOnlySpan<byte> ircMessage)
     {
-        Span<Range> ircRanges = MemoryHelper.UseStackAlloc<Range>(ircMessage.Length) ? stackalloc Range[ircMessage.Length] : new Range[ircMessage.Length];
-        int ircRangesLength = ircMessage.GetRangesOfSplit(' ', ircRanges);
-        ircRanges = ircRanges[..ircRangesLength];
+        Span<int> indicesOfWhitespace = stackalloc int[ircMessage.Length];
+        int whitespaceCount = ircMessage.IndicesOf(_whitespace, indicesOfWhitespace);
 
-        switch (ircRanges.Length)
+        switch (whitespaceCount)
         {
             case > 2:
-                if (ircMessage[ircRanges[2]].Equals(_privmsgCommand, StringComparison.Ordinal))
+                ReadOnlySpan<byte> thirdWord = ircMessage[(indicesOfWhitespace[1] + 1)..indicesOfWhitespace[2]];
+                if (thirdWord.SequenceEqual(_privmsgCommand))
                 {
-                    OnChatMessageReceived?.Invoke(this, new(ircMessage, ircRanges));
+                    OnChatMessageReceived?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
                 }
 
-                if (ircMessage[ircRanges[2]].Equals(_roomstateCommand, StringComparison.Ordinal))
+                if (thirdWord.SequenceEqual(_roomstateCommand))
                 {
-                    OnRoomstateReceived?.Invoke(this, new(ircMessage, ircRanges));
+                    OnRoomstateReceived?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
                 }
 
-                if (ircMessage[ircRanges[1]].Equals(_joinCommand, StringComparison.Ordinal))
+                break;
+            case > 1:
+                ReadOnlySpan<byte> secondWord = ircMessage[(indicesOfWhitespace[0] + 1)..indicesOfWhitespace[1]];
+                if (secondWord.SequenceEqual(_joinCommand))
                 {
-                    OnJoinedChannel?.Invoke(this, new(ircMessage, ircRanges));
+                    OnJoinedChannel?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
                 }
 
-                if (ircMessage[ircRanges[1]].Equals(_partCommand, StringComparison.Ordinal))
+                if (secondWord.SequenceEqual(_partCommand))
                 {
-                    OnLeftChannel?.Invoke(this, new(ircMessage, ircRanges));
+                    OnLeftChannel?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
                 }
 
                 break;
             case > 0:
-                if (ircMessage[ircRanges[0]].Equals(_pingCommand, StringComparison.Ordinal))
+                ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespace[0]];
+                if (firstWord.SequenceEqual(_pingCommand))
                 {
                     OnPingReceived?.Invoke(this, ReceivedData.Create(ircMessage[6..]));
                     return true;
                 }
 
-                if (ircMessage[ircRanges[1]].Equals(_reconnectCommand, StringComparison.Ordinal))
+                secondWord = ircMessage[(indicesOfWhitespace[0] + 1)..];
+                if (secondWord.SequenceEqual(_reconnectCommand))
                 {
                     OnReconnectReceived?.Invoke(this, EventArgs.Empty);
                     return true;

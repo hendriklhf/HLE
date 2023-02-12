@@ -1,8 +1,12 @@
+#if TCP
 using System;
+using System.Buffers;
 using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -36,11 +40,23 @@ public sealed class TcpIrcClient : IrcClient
     {
         if (_writer is null)
         {
-            throw new ArgumentNullException(nameof(_writer));
+            throw new InvalidOperationException($"{nameof(_writer)} is null");
         }
 
         await _writer.WriteAsync(message);
         await _writer.FlushAsync();
+    }
+
+    private protected override async ValueTask Send(ReadOnlyMemory<byte> message)
+    {
+        if (_writer is null)
+        {
+            throw new InvalidOperationException($"{nameof(_writer)} is null");
+        }
+
+        using RentedArray<char> chars = ArrayPool<char>.Shared.Rent(message.Length << 1);
+        int charCount = Encoding.UTF8.GetChars(message.Span, chars.Span);
+        await Send(chars.Memory[..charCount]);
     }
 
     private protected override void StartListening()
@@ -139,3 +155,4 @@ public sealed class TcpIrcClient : IrcClient
         _writer?.Dispose();
     }
 }
+#endif
