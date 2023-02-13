@@ -16,13 +16,13 @@ namespace HLE.Twitch.Models;
 [DebuggerDisplay("{ToString()}")]
 public readonly struct ReceivedData : IDisposable
 {
-    public ReadOnlySpan<byte> Span => ((Span<byte>)_data)[.._dataLength];
+    public ReadOnlySpan<byte> Span => ((ReadOnlySpan<byte>)_data)[.._dataLength];
 
-    public ReadOnlyMemory<byte> Memory => ((Memory<byte>)_data)[.._dataLength];
+    public ReadOnlyMemory<byte> Memory => ((ReadOnlyMemory<byte>)_data)[.._dataLength];
 
     public int Length => _dataLength;
 
-    private readonly byte[] _data;
+    internal readonly byte[] _data;
     private readonly int _dataLength;
 
     private ReceivedData(byte[] data, int dataLength)
@@ -42,9 +42,9 @@ public readonly struct ReceivedData : IDisposable
     {
         int dataLength = data.Length;
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(dataLength);
-        ref byte source = ref Unsafe.As<byte, byte>(ref MemoryMarshal.GetReference(data));
-        ref byte destination = ref Unsafe.As<byte, byte>(ref MemoryMarshal.GetArrayDataReference(rentedArray));
-        Unsafe.CopyBlock(ref destination, ref source, (uint)(dataLength << 1));
+        ref byte source = ref MemoryMarshal.GetReference(data);
+        ref byte destination = ref MemoryMarshal.GetArrayDataReference(rentedArray);
+        Unsafe.CopyBlock(ref destination, ref source, (uint)dataLength);
         return new(rentedArray, dataLength);
     }
 

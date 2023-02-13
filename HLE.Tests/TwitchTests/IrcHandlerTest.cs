@@ -24,27 +24,27 @@ public class IrcHandlerTest
     [TestMethod]
     public void PrivMsgTest(int messageIdx)
     {
-        _ircHandler.OnChatMessageReceived += (_, msg) =>
+        _ircHandler.OnChatMessageReceived += (_, chatMessage) =>
         {
-            Assert.AreEqual(0, msg.BadgeInfo.Length);
-            Assert.AreEqual(2, msg.Badges.Length);
-            Assert.AreEqual("1", msg.Badges[0].Level);
-            Assert.AreEqual("1", msg.Badges[1].Level);
-            Assert.AreEqual(0xC2, msg.Color.R);
-            Assert.AreEqual(0x99, msg.Color.G);
-            Assert.AreEqual(0x00, msg.Color.B);
-            Assert.AreEqual("Strbhlfe", msg.DisplayName);
-            Assert.AreEqual(false, msg.IsFirstMessage);
-            Assert.AreEqual(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), msg.Id);
-            Assert.AreEqual(true, msg.IsModerator);
-            Assert.AreEqual(616177816, msg.ChannelId);
-            Assert.AreEqual(false, msg.IsSubscriber);
-            Assert.AreEqual(1654020883875, msg.TmiSentTs);
-            Assert.AreEqual(false, msg.IsTurboUser);
-            Assert.AreEqual(87633910, msg.UserId);
-            Assert.AreEqual("strbhlfe", msg.Username);
-            Assert.AreEqual("lbnshlfe", msg.Channel);
-            Assert.AreEqual("xd xd xd", msg.Message);
+            Assert.AreEqual(0, chatMessage.BadgeInfo.Length);
+            Assert.AreEqual(2, chatMessage.Badges.Length);
+            Assert.AreEqual("1", chatMessage.Badges[0].Level);
+            Assert.AreEqual("1", chatMessage.Badges[1].Level);
+            Assert.AreEqual(0xC2, chatMessage.Color.R);
+            Assert.AreEqual(0x99, chatMessage.Color.G);
+            Assert.AreEqual(0x00, chatMessage.Color.B);
+            Assert.AreEqual("Strbhlfe", chatMessage.DisplayName);
+            Assert.AreEqual(false, chatMessage.IsFirstMessage);
+            Assert.AreEqual(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), chatMessage.Id);
+            Assert.AreEqual(true, chatMessage.IsModerator);
+            Assert.AreEqual(616177816, chatMessage.ChannelId);
+            Assert.AreEqual(false, chatMessage.IsSubscriber);
+            Assert.AreEqual(1654020883875, chatMessage.TmiSentTs);
+            Assert.AreEqual(false, chatMessage.IsTurboUser);
+            Assert.AreEqual(87633910, chatMessage.UserId);
+            Assert.AreEqual("strbhlfe", chatMessage.Username);
+            Assert.AreEqual("lbnshlfe", chatMessage.Channel);
+            Assert.AreEqual("xd xd xd", chatMessage.Message);
         };
         Assert.IsTrue(_ircHandler.Handle(_messages[messageIdx]));
     }
@@ -52,15 +52,15 @@ public class IrcHandlerTest
     [TestMethod]
     public void RoomstateTestAllOff()
     {
-        _ircHandler.OnRoomstateReceived += (_, rmst) =>
+        _ircHandler.OnRoomstateReceived += (_, roomstateArgs) =>
         {
-            Assert.AreEqual(false, rmst.EmoteOnly);
-            Assert.AreEqual(-1, rmst.FollowersOnly);
-            Assert.AreEqual(false, rmst.R9K);
-            Assert.AreEqual(87633910, rmst.ChannelId);
-            Assert.AreEqual(0, rmst.SlowMode);
-            Assert.AreEqual(false, rmst.SubsOnly);
-            Assert.AreEqual("strbhlfe", rmst.Channel);
+            Assert.AreEqual(false, roomstateArgs.EmoteOnly);
+            Assert.AreEqual(-1, roomstateArgs.FollowersOnly);
+            Assert.AreEqual(false, roomstateArgs.R9K);
+            Assert.AreEqual(87633910, roomstateArgs.ChannelId);
+            Assert.AreEqual(0, roomstateArgs.SlowMode);
+            Assert.AreEqual(false, roomstateArgs.SubsOnly);
+            Assert.AreEqual("strbhlfe", roomstateArgs.Channel);
         };
         Assert.IsTrue(_ircHandler.Handle(_messages[1]));
     }
@@ -68,15 +68,15 @@ public class IrcHandlerTest
     [TestMethod]
     public void RoomstateTestAllOn()
     {
-        _ircHandler.OnRoomstateReceived += (_, rmst) =>
+        _ircHandler.OnRoomstateReceived += (_, roomstateArgs) =>
         {
-            Assert.AreEqual(true, rmst.EmoteOnly);
-            Assert.AreEqual(15, rmst.FollowersOnly);
-            Assert.AreEqual(true, rmst.R9K);
-            Assert.AreEqual(87633910, rmst.ChannelId);
-            Assert.AreEqual(10, rmst.SlowMode);
-            Assert.AreEqual(true, rmst.SubsOnly);
-            Assert.AreEqual("strbhlfe", rmst.Channel);
+            Assert.AreEqual(true, roomstateArgs.EmoteOnly);
+            Assert.AreEqual(15, roomstateArgs.FollowersOnly);
+            Assert.AreEqual(true, roomstateArgs.R9K);
+            Assert.AreEqual(87633910, roomstateArgs.ChannelId);
+            Assert.AreEqual(10, roomstateArgs.SlowMode);
+            Assert.AreEqual(true, roomstateArgs.SubsOnly);
+            Assert.AreEqual("strbhlfe", roomstateArgs.Channel);
         };
         Assert.IsTrue(_ircHandler.Handle(_messages[2]));
     }
@@ -84,10 +84,10 @@ public class IrcHandlerTest
     [TestMethod]
     public void JoinTest()
     {
-        _ircHandler.OnJoinedChannel += (_, jm) =>
+        _ircHandler.OnJoinedChannel += (_, joinedChannelArgs) =>
         {
-            Assert.AreEqual("strbhlfe", jm.Username);
-            Assert.AreEqual("lbnshlfe", jm.Channel);
+            Assert.AreEqual("strbhlfe", joinedChannelArgs.Username);
+            Assert.AreEqual("lbnshlfe", joinedChannelArgs.Channel);
         };
         Assert.IsTrue(_ircHandler.Handle(_messages[3]));
     }
@@ -95,10 +95,10 @@ public class IrcHandlerTest
     [TestMethod]
     public void PartTest()
     {
-        _ircHandler.OnLeftChannel += (_, pm) =>
+        _ircHandler.OnLeftChannel += (_, leftChannelArgs) =>
         {
-            Assert.AreEqual("strbhlfe", pm.Username);
-            Assert.AreEqual("lbnshlfe", pm.Channel);
+            Assert.AreEqual("strbhlfe", leftChannelArgs.Username);
+            Assert.AreEqual("lbnshlfe", leftChannelArgs.Channel);
         };
         Assert.IsTrue(_ircHandler.Handle(_messages[4]));
     }

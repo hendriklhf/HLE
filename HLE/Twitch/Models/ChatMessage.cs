@@ -107,11 +107,10 @@ public sealed class ChatMessage
     private const byte _charZero = (byte)'0';
     private const byte _comma = (byte)',';
     private const byte _slash = (byte)'/';
-    private const string _nameWithSpaceEnding = "\\s";
     private const string _guidFormat = "D";
 
+    private static readonly byte[] _nameWithSpaceEnding = "\\s"u8.ToArray();
     private static readonly byte[] _actionPrefix = ":\u0001ACTION"u8.ToArray();
-
     private static readonly byte[] _badgeInfoTag = "badge-info"u8.ToArray();
     private static readonly byte[] _badgesTag = "badges"u8.ToArray();
     private static readonly byte[] _colorTag = "color"u8.ToArray();
@@ -130,7 +129,7 @@ public sealed class ChatMessage
     /// </summary>
     /// <param name="ircMessage">The IRC message as a <see cref="ReadOnlySpan{Char}"/>.</param>
     /// <param name="indicesOfWhitespace">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
-    public ChatMessage(ReadOnlySpan<byte> ircMessage, Span<int> indicesOfWhitespace)
+    public ChatMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
     {
         ReadOnlySpan<byte> tags = ircMessage[1..indicesOfWhitespace[0]];
 
@@ -201,7 +200,7 @@ public sealed class ChatMessage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ChatMessageFlag GetIsAction(ReadOnlySpan<byte> ircMessage, Span<int> indicesOfWhitespace)
+    private static ChatMessageFlag GetIsAction(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
     {
         if (indicesOfWhitespace.Length < 5)
         {
@@ -215,7 +214,7 @@ public sealed class ChatMessage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private string GetMessage(ReadOnlySpan<byte> ircMessage, Span<int> indicesOfWhitespaces)
+    private string GetMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         ReadOnlySpan<byte> message = IsAction ? ircMessage[(ircMessage.IndexOf((byte)'\u0001') + 8)..^1] : ircMessage[(indicesOfWhitespaces[3] + 2)..];
         return Encoding.UTF8.GetString(message);
@@ -256,8 +255,7 @@ public sealed class ChatMessage
     private static string GetDisplayName(ReadOnlySpan<byte> value)
     {
         bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
-        bool isLetterS = value[^1] == _nameWithSpaceEnding[1];
-        byte asByte = (byte)(Unsafe.As<bool, byte>(ref isBackSlash) + Unsafe.As<bool, byte>(ref isLetterS));
+        byte asByte = (byte)(Unsafe.As<bool, byte>(ref isBackSlash) << 1);
         ReadOnlySpan<byte> displayName = value[..^asByte];
         return Encoding.UTF8.GetString(displayName);
     }
@@ -337,7 +335,6 @@ public sealed class ChatMessage
         return Color.FromArgb(red, green, blue);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsLetter(byte hexChar)
     {
         return hexChar > _charNine;

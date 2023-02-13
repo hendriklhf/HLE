@@ -61,11 +61,11 @@ public sealed class WebSocketIrcClient : IrcClient
             }
 
             ReadOnlyMemory<byte> receivedBytes = byteBuffer[..(result.Count + bufferLength)];
-            bool isEndOfMessage = receivedBytes.Span[^2] == _newLine[0] && receivedBytes.Span[^1] == _newLine[1];
-
+            bool isEndOfMessage = receivedBytes.Length > 2 && receivedBytes.Span[^2] == _newLine[0] && receivedBytes.Span[^1] == _newLine[1];
             if (isEndOfMessage)
             {
                 PassAllLines(receivedBytes);
+                bufferLength = 0;
                 continue;
             }
 
@@ -92,9 +92,9 @@ public sealed class WebSocketIrcClient : IrcClient
         while (receivedBytes.Length > 2)
         {
             int indexOfLineEnding = receivedBytes.Span.IndexOf(_newLine);
-            receivedBytes = receivedBytes[(indexOfLineEnding + 2)..];
             ReadOnlyMemory<byte> lineOfData = receivedBytes[..indexOfLineEnding];
             InvokeDataReceived(this, ReceivedData.Create(lineOfData.Span));
+            receivedBytes = receivedBytes[(indexOfLineEnding + _newLine.Length)..];
         }
     }
 

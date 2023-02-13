@@ -210,6 +210,27 @@ public static class StringHelper
         return indicesLength;
     }
 
+    public static int IndicesOf(this ReadOnlySpan<byte> span, byte b, Span<int> indices)
+    {
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return 0;
+        }
+
+        int length = 0;
+        ref byte firstIndex = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            bool equals = Unsafe.Add(ref firstIndex, i) == b;
+            byte asByte = Unsafe.As<bool, byte>(ref equals);
+            indices[length] = i;
+            length += asByte;
+        }
+
+        return length;
+    }
+
     [Pure]
     public static Range[] GetRangesOfSplit(this string? str, char separator = ' ')
     {
@@ -349,17 +370,17 @@ public static class StringHelper
     /// Vectorized char count.
     /// </summary>
     /// <param name="str">The string in which the char will be counted.</param>
-    /// <param name="c">The char that will be counted.</param>
-    /// <returns>The amount of the char <paramref name="c"/> in the string <paramref name="str"/>.</returns>
+    /// <param name="charToCount">The char that will be counted.</param>
+    /// <returns>The amount of the char <paramref name="charToCount"/> in the string <paramref name="str"/>.</returns>
     [Pure]
-    public static int CharCount(this string? str, char c)
+    public static int CharCount(this string? str, char charToCount)
     {
-        return CharCount((ReadOnlySpan<char>)str, c);
+        return CharCount((ReadOnlySpan<char>)str, charToCount);
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static int CharCount(this ReadOnlySpan<char> span, char c)
+    public static int CharCount(this ReadOnlySpan<char> span, char charToCount)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -372,7 +393,7 @@ public static class StringHelper
         if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector256<ushort> equalsVector = Vector256.Create((ushort)c);
+            Vector256<ushort> equalsVector = Vector256.Create((ushort)charToCount);
             Vector256<ushort> oneVector = Vector256.Create((ushort)1);
             while (shortSpan.Length >= vector256Count)
             {
@@ -385,7 +406,7 @@ public static class StringHelper
 
             for (int i = 0; i < shortSpan.Length; i++)
             {
-                bool equals = shortSpan[i] == c;
+                bool equals = shortSpan[i] == charToCount;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -396,7 +417,7 @@ public static class StringHelper
         if (Vector128.IsHardwareAccelerated && spanLength > vector128Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector128<ushort> equalsVector = Vector128.Create((ushort)c);
+            Vector128<ushort> equalsVector = Vector128.Create((ushort)charToCount);
             Vector128<ushort> oneVector = Vector128.Create((ushort)1);
             while (shortSpan.Length >= vector128Count)
             {
@@ -409,7 +430,7 @@ public static class StringHelper
 
             for (int i = 0; i < shortSpan.Length; i++)
             {
-                bool equals = shortSpan[i] == c;
+                bool equals = shortSpan[i] == charToCount;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -420,7 +441,7 @@ public static class StringHelper
         if (Vector64.IsHardwareAccelerated && spanLength > vector64Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector64<ushort> equalsVector = Vector64.Create((ushort)c);
+            Vector64<ushort> equalsVector = Vector64.Create((ushort)charToCount);
             Vector64<ushort> oneVector = Vector64.Create((ushort)1);
             while (shortSpan.Length >= vector64Count)
             {
@@ -433,7 +454,7 @@ public static class StringHelper
 
             for (int i = 0; i < shortSpan.Length; i++)
             {
-                bool equals = shortSpan[i] == c;
+                bool equals = shortSpan[i] == charToCount;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -443,7 +464,7 @@ public static class StringHelper
         ref char firstChar = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            bool equals = Unsafe.Add(ref firstChar, i) == c;
+            bool equals = Unsafe.Add(ref firstChar, i) == charToCount;
             result += Unsafe.As<bool, byte>(ref equals);
         }
 

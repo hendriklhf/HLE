@@ -556,13 +556,13 @@ public static class CollectionHelper
         }
 
         int length = 0;
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        ref T firstIndex = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            if (Unsafe.Add(ref firstItem, i)?.Equals(item) == true)
-            {
-                indices[length++] = i;
-            }
+            bool equals = Unsafe.Add(ref firstIndex, i)?.Equals(item) == true;
+            byte asByte = Unsafe.As<bool, byte>(ref equals);
+            indices[length] = i;
+            length += asByte;
         }
 
         return length;

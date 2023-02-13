@@ -25,7 +25,7 @@ public readonly struct LeftChannelArgs
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="indicesOfWhitespaces">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
-    public LeftChannelArgs(ReadOnlySpan<byte> ircMessage, Span<int> indicesOfWhitespaces)
+    public LeftChannelArgs(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespaces[0]];
         int indexOfExclamationMark = firstWord.IndexOf(_exclamationMark);

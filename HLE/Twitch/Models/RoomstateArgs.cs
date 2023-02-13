@@ -67,7 +67,7 @@ public readonly struct RoomstateArgs
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="indicesOfWhitespaces">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
-    public RoomstateArgs(ReadOnlySpan<byte> ircMessage, Span<int> indicesOfWhitespaces)
+    public RoomstateArgs(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         ReadOnlySpan<byte> tags = ircMessage[1..indicesOfWhitespaces[0]];
         int equalsSignIndex = tags.IndexOf(_equalsSign);
