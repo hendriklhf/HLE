@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 
 namespace HLE.Twitch.Models;
 
@@ -18,18 +17,16 @@ public readonly struct JoinedChannelArgs
     /// </summary>
     public string Channel { get; }
 
-    private const byte _exclamationMark = (byte)'!';
-
     /// <summary>
     /// The default constructor of <see cref="JoinedChannelArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="indicesOfWhitespaces">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
-    public JoinedChannelArgs(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public JoinedChannelArgs(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespaces[0]];
-        int idxExcl = firstWord.IndexOf(_exclamationMark);
-        Username = Encoding.UTF8.GetString(firstWord[1..idxExcl]);
-        Channel = Encoding.UTF8.GetString(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+        ReadOnlySpan<char> firstWord = ircMessage[..indicesOfWhitespaces[0]];
+        int idxExcl = firstWord.IndexOf('!');
+        Username = new(firstWord[1..idxExcl]);
+        Channel = new(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
     }
 }

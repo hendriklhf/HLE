@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text.RegularExpressions;
-using HLE.Memory;
 
 namespace HLE;
 

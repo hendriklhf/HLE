@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace HLE.Twitch.Models;
 
@@ -99,95 +98,87 @@ public sealed class ChatMessage
     private readonly Badge[]? _badges;
     private readonly ChatMessageFlag _flags = 0;
 
-    private const byte _semicolon = (byte)';';
-    private const byte _equalsSign = (byte)'=';
-    private const byte _charOne = (byte)'1';
-    private const byte _charNine = (byte)'9';
-    private const byte _charAMinus10 = 'A' - 10;
-    private const byte _charZero = (byte)'0';
-    private const byte _comma = (byte)',';
-    private const byte _slash = (byte)'/';
+    private const string _actionPrefix = ":\u0001ACTION";
+    private const string _nameWithSpaceEnding = "\\s";
     private const string _guidFormat = "D";
 
-    private static readonly byte[] _nameWithSpaceEnding = "\\s"u8.ToArray();
-    private static readonly byte[] _actionPrefix = ":\u0001ACTION"u8.ToArray();
-    private static readonly byte[] _badgeInfoTag = "badge-info"u8.ToArray();
-    private static readonly byte[] _badgesTag = "badges"u8.ToArray();
-    private static readonly byte[] _colorTag = "color"u8.ToArray();
-    private static readonly byte[] _displayNameTag = "display-name"u8.ToArray();
-    private static readonly byte[] _firstMsgTag = "first-msg"u8.ToArray();
-    private static readonly byte[] _idTag = "id"u8.ToArray();
-    private static readonly byte[] _modTag = "mod"u8.ToArray();
-    private static readonly byte[] _roomIdTag = "room-id"u8.ToArray();
-    private static readonly byte[] _subscriberTag = "subscriber"u8.ToArray();
-    private static readonly byte[] _tmiSentTsTag = "tmi-sent-ts"u8.ToArray();
-    private static readonly byte[] _turboTag = "turbo"u8.ToArray();
-    private static readonly byte[] _userIdTag = "user-id"u8.ToArray();
+    private const string _badgeInfoTag = "badge-info";
+    private const string _badgesTag = "badges";
+    private const string _colorTag = "color";
+    private const string _displayNameTag = "display-name";
+    private const string _firstMsgTag = "first-msg";
+    private const string _idTag = "id";
+    private const string _modTag = "mod";
+    private const string _roomIdTag = "room-id";
+    private const string _subscriberTag = "subscriber";
+    private const string _tmiSentTsTag = "tmi-sent-ts";
+    private const string _turboTag = "turbo";
+    private const string _userIdTag = "user-id";
 
     /// <summary>
     /// The default constructor of <see cref="ChatMessage"/>. This will parse the given IRC message.
     /// </summary>
     /// <param name="ircMessage">The IRC message as a <see cref="ReadOnlySpan{Char}"/>.</param>
     /// <param name="indicesOfWhitespace">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
-    public ChatMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
+    public ChatMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
     {
-        ReadOnlySpan<byte> tags = ircMessage[1..indicesOfWhitespace[0]];
+        ReadOnlySpan<char> tags = ircMessage[1..indicesOfWhitespace[0]];
 
-        int semicolonIndex = tags.IndexOf(_semicolon);
+        int semicolonIndex = tags.IndexOf(';');
         while (semicolonIndex != -1)
         {
-            ReadOnlySpan<byte> tag = tags[..semicolonIndex];
+            ReadOnlySpan<char> tag = tags[..semicolonIndex];
             tags = tags[(semicolonIndex + 1)..];
-            semicolonIndex = tags.IndexOf(_semicolon);
+            semicolonIndex = tags.IndexOf(';');
 
-            int equalsSignIndex = tag.IndexOf(_equalsSign);
-            ReadOnlySpan<byte> key = tag[..equalsSignIndex];
-            ReadOnlySpan<byte> value = tag[(equalsSignIndex + 1)..];
-            if (key.SequenceEqual(_badgeInfoTag))
+            int equalsSignIndex = tag.IndexOf('=');
+            ReadOnlySpan<char> key = tag[..equalsSignIndex];
+            ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
+            if (key.Equals(_badgeInfoTag, StringComparison.Ordinal))
             {
                 _badgeInfo = GetBadges(value);
             }
-            else if (key.SequenceEqual(_badgesTag))
+            else if (key.Equals(_badgesTag, StringComparison.Ordinal))
             {
                 _badges = GetBadges(value);
             }
-            else if (key.SequenceEqual(_colorTag))
+            else if (key.Equals(_colorTag, StringComparison.Ordinal))
             {
                 Color = GetColor(value);
             }
-            else if (key.SequenceEqual(_displayNameTag))
+            else if (key.Equals(_displayNameTag, StringComparison.Ordinal))
             {
                 DisplayName = GetDisplayName(value);
             }
-            else if (key.SequenceEqual(_firstMsgTag))
+            else if (key.Equals(_firstMsgTag, StringComparison.Ordinal))
             {
                 _flags |= GetIsFirstMsg(value);
             }
-            else if (key.SequenceEqual(_idTag))
+            else if (key.Equals(_idTag, StringComparison.Ordinal))
             {
                 Id = GetId(value);
             }
-            else if (key.SequenceEqual(_modTag))
+            else if (key.Equals(_modTag, StringComparison.Ordinal))
             {
                 _flags |= GetIsModerator(value);
             }
-            else if (key.SequenceEqual(_roomIdTag))
+            else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
                 ChannelId = GetChannelId(value);
             }
-            else if (key.SequenceEqual(_subscriberTag))
+            else if (key.Equals(_subscriberTag, StringComparison.Ordinal))
             {
                 _flags |= GetIsSubscriber(value);
             }
-            else if (key.SequenceEqual(_tmiSentTsTag))
+            else if (key.Equals(_tmiSentTsTag, StringComparison.Ordinal))
             {
                 TmiSentTs = GetTmiSentTs(value);
             }
-            else if (key.SequenceEqual(_turboTag))
+            else if (key.Equals(_turboTag, StringComparison.Ordinal))
             {
                 _flags |= GetIsTurboUser(value);
             }
-            else if (key.SequenceEqual(_userIdTag))
+            else if (key.Equals(_userIdTag, StringComparison.Ordinal))
             {
                 UserId = GetUserId(value);
             }
@@ -195,50 +186,50 @@ public sealed class ChatMessage
 
         _flags |= GetIsAction(ircMessage, indicesOfWhitespace);
         Username = DisplayName.ToLowerInvariant();
-        Channel = Encoding.UTF8.GetString(ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..]);
+        Channel = new(ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..]);
         Message = GetMessage(ircMessage, indicesOfWhitespace);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ChatMessageFlag GetIsAction(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
+    private static ChatMessageFlag GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
     {
         if (indicesOfWhitespace.Length < 5)
         {
             return 0;
         }
 
-        ReadOnlySpan<byte> actionPrefix = ircMessage[(indicesOfWhitespace[3] + 1)..indicesOfWhitespace[4]];
-        bool isAction = actionPrefix.SequenceEqual(_actionPrefix);
+        ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespace[3] + 1)..indicesOfWhitespace[4]];
+        bool isAction = actionPrefix.Equals(_actionPrefix, StringComparison.Ordinal);
         byte asByte = Unsafe.As<bool, byte>(ref isAction);
         return (ChatMessageFlag)(asByte << 4);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private string GetMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<byte> message = IsAction ? ircMessage[(ircMessage.IndexOf((byte)'\u0001') + 8)..^1] : ircMessage[(indicesOfWhitespaces[3] + 2)..];
-        return Encoding.UTF8.GetString(message);
+        ReadOnlySpan<char> message = IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(indicesOfWhitespaces[3] + 2)..];
+        return new(message);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Badge[] GetBadges(ReadOnlySpan<byte> value)
+    private static Badge[] GetBadges(ReadOnlySpan<char> value)
     {
         if (value.Length == 0)
         {
             return Array.Empty<Badge>();
         }
 
-        Badge[] result = new Badge[value.ByteCount(_comma) + 1];
+        Badge[] result = new Badge[value.CharCount(',') + 1];
         ref Badge firstBadge = ref MemoryMarshal.GetArrayDataReference(result);
         int badgeCount = 0;
         while (value.Length > 0)
         {
-            int indexOfComma = value.IndexOf(_comma);
-            ReadOnlySpan<byte> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
+            int indexOfComma = value.IndexOf(',');
+            ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
             value = indexOfComma == -1 ? value[value.Length..] : value[(indexOfComma + 1)..];
-            int slashIndex = info.IndexOf(_slash);
-            string name = Encoding.UTF8.GetString(info[..slashIndex]);
-            string level = Encoding.UTF8.GetString(info[(slashIndex + 1)..]);
+            int slashIndex = info.IndexOf('/');
+            string name = new(info[..slashIndex]);
+            string level = new(info[(slashIndex + 1)..]);
             Unsafe.Add(ref firstBadge, badgeCount++) = new(name, level);
         }
 
@@ -246,75 +237,72 @@ public sealed class ChatMessage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Color GetColor(ReadOnlySpan<byte> value)
+    private static Color GetColor(ReadOnlySpan<char> value)
     {
-        return value.Length == 0 ? Color.Empty : ParseHexColorFromUtf8Bytes(value[1..]);
+        return value.Length == 0 ? Color.Empty : ParseHexColor(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static string GetDisplayName(ReadOnlySpan<byte> value)
+    private static string GetDisplayName(ReadOnlySpan<char> value)
     {
         bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
         byte asByte = (byte)(Unsafe.As<bool, byte>(ref isBackSlash) << 1);
-        ReadOnlySpan<byte> displayName = value[..^asByte];
-        return Encoding.UTF8.GetString(displayName);
+        return new(value[..^asByte]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ChatMessageFlag GetIsFirstMsg(ReadOnlySpan<byte> value)
+    private static ChatMessageFlag GetIsFirstMsg(ReadOnlySpan<char> value)
     {
-        bool isFirstMessage = value[0] == _charOne;
+        bool isFirstMessage = value[0] == '1';
         byte asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
         return (ChatMessageFlag)asByte;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Guid GetId(ReadOnlySpan<byte> value)
-    {
-        Span<char> chars = stackalloc char[36];
-        Encoding.UTF8.GetChars(value, chars);
-        return Guid.ParseExact(chars, _guidFormat);
-    }
+    private static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, _guidFormat);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ChatMessageFlag GetIsModerator(ReadOnlySpan<byte> value)
+    private static ChatMessageFlag GetIsModerator(ReadOnlySpan<char> value)
     {
-        bool isModerator = value[0] == _charOne;
+        bool isModerator = value[0] == '1';
         byte asByte = Unsafe.As<bool, byte>(ref isModerator);
         return (ChatMessageFlag)(asByte << 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetChannelId(ReadOnlySpan<byte> value) => NumberHelper.ParsePositiveInt64FromUtf8Bytes(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ChatMessageFlag GetIsSubscriber(ReadOnlySpan<byte> value)
+    private static ChatMessageFlag GetIsSubscriber(ReadOnlySpan<char> value)
     {
-        bool isSubscriber = value[0] == _charOne;
+        bool isSubscriber = value[0] == '1';
         byte asByte = Unsafe.As<bool, byte>(ref isSubscriber);
         return (ChatMessageFlag)(asByte << 2);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetTmiSentTs(ReadOnlySpan<byte> value) => NumberHelper.ParsePositiveInt64FromUtf8Bytes(value);
+    private static long GetTmiSentTs(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ChatMessageFlag GetIsTurboUser(ReadOnlySpan<byte> value)
+    private static ChatMessageFlag GetIsTurboUser(ReadOnlySpan<char> value)
     {
-        bool isTurboUser = value[0] == _charOne;
+        bool isTurboUser = value[0] == '1';
         byte asByte = Unsafe.As<bool, byte>(ref isTurboUser);
         return (ChatMessageFlag)(asByte << 3);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetUserId(ReadOnlySpan<byte> value) => NumberHelper.ParsePositiveInt64FromUtf8Bytes(value);
+    private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
+
+    private const char _charAMinus10 = (char)('A' - 10);
+    private const char _charZero = '0';
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private static Color ParseHexColorFromUtf8Bytes(ReadOnlySpan<byte> number)
+    private static Color ParseHexColor(ReadOnlySpan<char> number)
     {
-        byte firstChar = number[0];
-        byte thirdChar = number[2];
-        byte fifthChar = number[4];
+        char firstChar = number[0];
+        char thirdChar = number[2];
+        char fifthChar = number[4];
 
         byte red = (byte)(IsLetter(firstChar) ? firstChar - _charAMinus10 : firstChar - _charZero);
         byte green = (byte)(IsLetter(thirdChar) ? thirdChar - _charAMinus10 : thirdChar - _charZero);
@@ -324,9 +312,9 @@ public sealed class ChatMessage
         green <<= 4;
         blue <<= 4;
 
-        byte secondChar = number[1];
-        byte forthChar = number[3];
-        byte sixthChar = number[5];
+        char secondChar = number[1];
+        char forthChar = number[3];
+        char sixthChar = number[5];
 
         red |= (byte)(IsLetter(secondChar) ? secondChar - _charAMinus10 : secondChar - _charZero);
         green |= (byte)(IsLetter(forthChar) ? forthChar - _charAMinus10 : forthChar - _charZero);
@@ -335,9 +323,9 @@ public sealed class ChatMessage
         return Color.FromArgb(red, green, blue);
     }
 
-    private static bool IsLetter(byte hexChar)
+    private static bool IsLetter(char hexChar)
     {
-        return hexChar > _charNine;
+        return hexChar > '9';
     }
 
     /// <summary>

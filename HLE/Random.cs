@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using HLE.Collections;
-using HLE.Memory;
 
 namespace HLE;
 
@@ -13,7 +12,7 @@ namespace HLE;
 /// </summary>
 public static class Random
 {
-    private static readonly System.Random _weak = new();
+    private static readonly System.Random _rng = new();
     private static readonly RandomNumberGenerator _strong = RandomNumberGenerator.Create();
 
     private const ushort _minAsciiPrintableChar = 32;
@@ -38,7 +37,7 @@ public static class Random
             max++;
         }
 
-        return (byte)_weak.Next(min, max);
+        return (byte)_rng.Next(min, max);
     }
 
     [Pure]
@@ -54,7 +53,7 @@ public static class Random
             max++;
         }
 
-        return (sbyte)_weak.Next(min, max);
+        return (sbyte)_rng.Next(min, max);
     }
 
     [Pure]
@@ -70,7 +69,7 @@ public static class Random
             max++;
         }
 
-        return (short)_weak.Next(min, max);
+        return (short)_rng.Next(min, max);
     }
 
     [Pure]
@@ -86,7 +85,7 @@ public static class Random
             max++;
         }
 
-        return (ushort)_weak.Next(min, max);
+        return (ushort)_rng.Next(min, max);
     }
 
     /// <summary>
@@ -109,7 +108,7 @@ public static class Random
             max++;
         }
 
-        return _weak.Next(min, max);
+        return _rng.Next(min, max);
     }
 
     [Pure]
@@ -125,7 +124,7 @@ public static class Random
             max++;
         }
 
-        return (uint)_weak.NextInt64(min, max);
+        return (uint)_rng.NextInt64(min, max);
     }
 
     [Pure]
@@ -141,19 +140,19 @@ public static class Random
             max++;
         }
 
-        return _weak.NextInt64(min, max);
+        return _rng.NextInt64(min, max);
     }
 
     [Pure]
     public static double Double()
     {
-        return _weak.NextDouble();
+        return _rng.NextDouble();
     }
 
     [Pure]
     public static float Float()
     {
-        return _weak.NextSingle();
+        return _rng.NextSingle();
     }
 
     [Pure]
@@ -190,10 +189,14 @@ public static class Random
     [Pure]
     public static unsafe T Struct<T>() where T : struct
     {
+        int sizeT = sizeof(T);
         Unsafe.SkipInit(out T result);
         ref byte firstByte = ref Unsafe.As<T, byte>(ref result);
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref firstByte, sizeof(T));
-        _weak.NextBytes(bytes);
+        for (int i = 0; i < sizeT; i++)
+        {
+            Unsafe.Add(ref firstByte, i) = Byte();
+        }
+
         return result;
     }
 

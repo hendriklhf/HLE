@@ -530,7 +530,7 @@ public static class NumberHelper
         return (byte)(c - '0');
     }
 
-    public static long ParsePositiveInt64FromUtf8Bytes(ReadOnlySpan<byte> number)
+    public static long ParsePositiveInt64(ReadOnlySpan<char> number)
     {
         long result = 0;
         for (int i = 0; i < number.Length; i++)
@@ -541,7 +541,7 @@ public static class NumberHelper
         return result;
     }
 
-    public static int ParsePositiveInt32FromUtf8Bytes(ReadOnlySpan<byte> number)
+    public static int ParsePositiveInt32(ReadOnlySpan<char> number)
     {
         int result = 0;
         for (int i = 0; i < number.Length; i++)

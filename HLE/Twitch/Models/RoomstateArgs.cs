@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace HLE.Twitch.Models;
 
@@ -48,95 +47,90 @@ public readonly struct RoomstateArgs
     /// </summary>
     public bool SubsOnly { get; init; }
 
-    internal readonly ChangedRoomstate _changedStateFlags = 0;
+    internal readonly ChangedRoomstate _changedStatesFlags = 0;
 
-    private const byte _equalsSign = (byte)'=';
-    private const byte _semicolon = (byte)';';
-    private const byte _charOne = (byte)'1';
-    private const byte _dash = (byte)'-';
-
-    private static readonly byte[] _emoteOnlyTag = "emote-only"u8.ToArray();
-    private static readonly byte[] _followersOnlyTag = "followers-only"u8.ToArray();
-    private static readonly byte[] _r9KTag = "r9k"u8.ToArray();
-    private static readonly byte[] _roomIdTag = "room-id"u8.ToArray();
-    private static readonly byte[] _slowModeTag = "slow"u8.ToArray();
-    private static readonly byte[] _subsOnlyTag = "subs-only"u8.ToArray();
+    private const string _emoteOnlyTag = "emote-only";
+    private const string _followersOnlyTag = "followers-only";
+    private const string _r9KTag = "r9k";
+    private const string _roomIdTag = "room-id";
+    private const string _slowModeTag = "slow";
+    private const string _subsOnlyTag = "subs-only";
 
     /// <summary>
     /// The default constructor of <see cref="RoomstateArgs"/>.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <param name="indicesOfWhitespaces">The indices of whitespaces (char 32) in <paramref name="ircMessage"/>.</param>
-    public RoomstateArgs(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public RoomstateArgs(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<byte> tags = ircMessage[1..indicesOfWhitespaces[0]];
-        int equalsSignIndex = tags.IndexOf(_equalsSign);
+        ReadOnlySpan<char> tags = ircMessage[1..indicesOfWhitespaces[0]];
+        int equalsSignIndex = tags.IndexOf('=');
         while (equalsSignIndex != -1)
         {
-            int semicolonIndex = tags.IndexOf(_semicolon);
+            int semicolonIndex = tags.IndexOf(';');
             Index valueEnd = Unsafe.As<int, Index>(ref semicolonIndex);
-            ReadOnlySpan<byte> key = tags[..equalsSignIndex];
-            ReadOnlySpan<byte> value = tags[(equalsSignIndex + 1)..valueEnd];
+            ReadOnlySpan<char> key = tags[..equalsSignIndex];
+            ReadOnlySpan<char> value = tags[(equalsSignIndex + 1)..valueEnd];
             tags = semicolonIndex == -1 ? tags[tags.Length..] : tags[(semicolonIndex + 1)..];
-            equalsSignIndex = tags.IndexOf(_equalsSign);
+            equalsSignIndex = tags.IndexOf('=');
 
-            if (key.SequenceEqual(_emoteOnlyTag))
+            if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))
             {
                 EmoteOnly = GetEmoteOnly(value);
-                _changedStateFlags |= ChangedRoomstate.EmoteOnly;
+                _changedStatesFlags |= ChangedRoomstate.EmoteOnly;
             }
-            else if (key.SequenceEqual(_followersOnlyTag))
+            else if (key.Equals(_followersOnlyTag, StringComparison.Ordinal))
             {
                 FollowersOnly = GetFollowersOnly(value);
-                _changedStateFlags |= ChangedRoomstate.FollowersOnly;
+                _changedStatesFlags |= ChangedRoomstate.FollowersOnly;
             }
-            else if (key.SequenceEqual(_r9KTag))
+            else if (key.Equals(_r9KTag, StringComparison.Ordinal))
             {
                 R9K = GetR9K(value);
-                _changedStateFlags |= ChangedRoomstate.R9K;
+                _changedStatesFlags |= ChangedRoomstate.R9K;
             }
-            else if (key.SequenceEqual(_roomIdTag))
+            else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
                 ChannelId = GetChannelId(value);
             }
-            else if (key.SequenceEqual(_slowModeTag))
+            else if (key.Equals(_slowModeTag, StringComparison.Ordinal))
             {
                 SlowMode = GetSlowMode(value);
-                _changedStateFlags |= ChangedRoomstate.SlowMode;
+                _changedStatesFlags |= ChangedRoomstate.SlowMode;
             }
-            else if (key.SequenceEqual(_subsOnlyTag))
+            else if (key.Equals(_subsOnlyTag, StringComparison.Ordinal))
             {
                 SubsOnly = GetSubsOnly(value);
-                _changedStateFlags |= ChangedRoomstate.SubsOnly;
+                _changedStatesFlags |= ChangedRoomstate.SubsOnly;
             }
         }
 
-        Channel = Encoding.UTF8.GetString(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+        Channel = new(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetEmoteOnly(ReadOnlySpan<byte> value) => value[0] == _charOne;
+    private static bool GetEmoteOnly(ReadOnlySpan<char> value) => value[0] == '1';
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetFollowersOnly(ReadOnlySpan<byte> value)
+    private static int GetFollowersOnly(ReadOnlySpan<char> value)
     {
-        if (value[0] == _dash)
+        if (value[0] == '-')
         {
             return -1;
         }
 
-        return NumberHelper.ParsePositiveInt32FromUtf8Bytes(value);
+        return NumberHelper.ParsePositiveInt32(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetR9K(ReadOnlySpan<byte> value) => value[0] == _charOne;
+    private static bool GetR9K(ReadOnlySpan<char> value) => value[0] == '1';
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetChannelId(ReadOnlySpan<byte> value) => NumberHelper.ParsePositiveInt64FromUtf8Bytes(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetSlowMode(ReadOnlySpan<byte> value) => NumberHelper.ParsePositiveInt32FromUtf8Bytes(value);
+    private static int GetSlowMode(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt32(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetSubsOnly(ReadOnlySpan<byte> value) => value[0] == _charOne;
+    private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
 }

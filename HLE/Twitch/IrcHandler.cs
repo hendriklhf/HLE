@@ -36,35 +36,34 @@ public sealed class IrcHandler
 
     #endregion Events
 
-    private const byte _whitespace = (byte)' ';
-    private readonly byte[] _joinCommand = "JOIN"u8.ToArray();
-    private readonly byte[] _roomstateCommand = "ROOMSTATE"u8.ToArray();
-    private readonly byte[] _privmsgCommand = "PRIVMSG"u8.ToArray();
-    private readonly byte[] _pingCommand = "PING"u8.ToArray();
-    private readonly byte[] _partCommand = "PART"u8.ToArray();
-    private readonly byte[] _reconnectCommand = "RECONNECT"u8.ToArray();
+    private const string _joinCommand = "JOIN";
+    private const string _roomstateCommand = "ROOMSTATE";
+    private const string _privmsgCommand = "PRIVMSG";
+    private const string _pingCommand = "PING";
+    private const string _partCommand = "PART";
+    private const string _reconnectCommand = "RECONNECT";
 
     /// <summary>
     /// Handles the incoming messages.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
-    public bool Handle(ReadOnlySpan<byte> ircMessage)
+    public bool Handle(ReadOnlySpan<char> ircMessage)
     {
         Span<int> indicesOfWhitespace = stackalloc int[ircMessage.Length];
-        int whitespaceCount = ircMessage.IndicesOf(_whitespace, indicesOfWhitespace);
+        int whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespace);
 
         switch (whitespaceCount)
         {
             case > 2:
-                ReadOnlySpan<byte> thirdWord = ircMessage[(indicesOfWhitespace[1] + 1)..indicesOfWhitespace[2]];
-                if (thirdWord.SequenceEqual(_privmsgCommand))
+                ReadOnlySpan<char> thirdWord = ircMessage[(indicesOfWhitespace[1] + 1)..indicesOfWhitespace[2]];
+                if (thirdWord.Equals(_privmsgCommand, StringComparison.Ordinal))
                 {
                     OnChatMessageReceived?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
                 }
 
-                if (thirdWord.SequenceEqual(_roomstateCommand))
+                if (thirdWord.Equals(_roomstateCommand, StringComparison.Ordinal))
                 {
                     OnRoomstateReceived?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
@@ -72,14 +71,14 @@ public sealed class IrcHandler
 
                 break;
             case > 1:
-                ReadOnlySpan<byte> secondWord = ircMessage[(indicesOfWhitespace[0] + 1)..indicesOfWhitespace[1]];
-                if (secondWord.SequenceEqual(_joinCommand))
+                ReadOnlySpan<char> secondWord = ircMessage[(indicesOfWhitespace[0] + 1)..indicesOfWhitespace[1]];
+                if (secondWord.Equals(_joinCommand, StringComparison.Ordinal))
                 {
                     OnJoinedChannel?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
                 }
 
-                if (secondWord.SequenceEqual(_partCommand))
+                if (secondWord.Equals(_partCommand, StringComparison.Ordinal))
                 {
                     OnLeftChannel?.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
                     return true;
@@ -87,8 +86,8 @@ public sealed class IrcHandler
 
                 break;
             case > 0:
-                ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespace[0]];
-                if (firstWord.SequenceEqual(_pingCommand))
+                ReadOnlySpan<char> firstWord = ircMessage[..indicesOfWhitespace[0]];
+                if (firstWord.Equals(_pingCommand, StringComparison.Ordinal))
                 {
                     OnPingReceived?.Invoke(this, ReceivedData.Create(ircMessage[6..]));
                     return true;

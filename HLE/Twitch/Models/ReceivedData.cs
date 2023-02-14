@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace HLE.Twitch.Models;
 
@@ -16,16 +15,16 @@ namespace HLE.Twitch.Models;
 [DebuggerDisplay("{ToString()}")]
 public readonly struct ReceivedData : IDisposable
 {
-    public ReadOnlySpan<byte> Span => ((ReadOnlySpan<byte>)_data)[.._dataLength];
+    public ReadOnlySpan<char> Span => ((ReadOnlySpan<char>)_data)[.._dataLength];
 
-    public ReadOnlyMemory<byte> Memory => ((ReadOnlyMemory<byte>)_data)[.._dataLength];
+    public ReadOnlyMemory<char> Memory => ((ReadOnlyMemory<char>)_data)[.._dataLength];
 
     public int Length => _dataLength;
 
-    internal readonly byte[] _data;
+    internal readonly char[] _data;
     private readonly int _dataLength;
 
-    private ReceivedData(byte[] data, int dataLength)
+    private ReceivedData(char[] data, int dataLength)
     {
         _data = data;
         _dataLength = dataLength;
@@ -38,23 +37,23 @@ public readonly struct ReceivedData : IDisposable
     /// <param name="data">The data that will be copied into the instance.</param>
     /// <returns>A <see cref="ReceivedData"/> instance containing the copied data.</returns>
     [Pure]
-    public static ReceivedData Create(ReadOnlySpan<byte> data)
+    public static ReceivedData Create(ReadOnlySpan<char> data)
     {
         int dataLength = data.Length;
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(dataLength);
-        ref byte source = ref MemoryMarshal.GetReference(data);
-        ref byte destination = ref MemoryMarshal.GetArrayDataReference(rentedArray);
-        Unsafe.CopyBlock(ref destination, ref source, (uint)dataLength);
+        char[] rentedArray = ArrayPool<char>.Shared.Rent(dataLength);
+        ref byte source = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(data));
+        ref byte destination = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetArrayDataReference(rentedArray));
+        Unsafe.CopyBlock(ref destination, ref source, (uint)(dataLength << 1));
         return new(rentedArray, dataLength);
     }
 
     public void Dispose()
     {
-        ArrayPool<byte>.Shared.Return(_data);
+        ArrayPool<char>.Shared.Return(_data);
     }
 
     public override string ToString()
     {
-        return Encoding.UTF8.GetString(Span);
+        return new(Span);
     }
 }

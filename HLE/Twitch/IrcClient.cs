@@ -50,7 +50,7 @@ public abstract class IrcClient : IDisposable
     private protected readonly string? _oAuthToken;
     private protected readonly (string Url, int Port) _url;
 
-    private protected readonly byte[] _newLine = "\r\n"u8.ToArray();
+    private protected const string _newLine = "\r\n";
 
     private readonly bool _isVerifiedBot;
 
@@ -93,7 +93,7 @@ public abstract class IrcClient : IDisposable
     /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
     public void Connect(List<string> channels)
     {
-        Connect(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
+        Connect(CollectionsMarshal.AsSpan(channels).AsMemory());
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public abstract class IrcClient : IDisposable
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
     public async Task ConnectAsync(List<string> channels)
     {
-        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
+        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
     }
 
     /// <summary>
@@ -203,15 +203,6 @@ public abstract class IrcClient : IDisposable
         SendRawAsync(rawMessage);
     }
 
-    /// <summary>
-    /// Sends a raw message of UTF-8 bytes to the Twitch IRC server.
-    /// </summary>
-    /// <param name="rawMessage">The IRC message.</param>
-    public void SendRaw(ReadOnlyMemory<byte> rawMessage)
-    {
-        SendRawAsync(rawMessage);
-    }
-
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
     public async Task SendRawAsync(string rawMessage)
     {
@@ -223,15 +214,6 @@ public abstract class IrcClient : IDisposable
     /// </summary>
     /// <param name="rawMessage">The IRC message.</param>
     public async Task SendRawAsync(ReadOnlyMemory<char> rawMessage)
-    {
-        await Send(rawMessage);
-    }
-
-    /// <summary>
-    /// Asynchronously sends a raw message of UTF-8 bytes to the Twitch IRC server.
-    /// </summary>
-    /// <param name="rawMessage">The IRC message.</param>
-    public async Task SendRawAsync(ReadOnlyMemory<byte> rawMessage)
     {
         await Send(rawMessage);
     }
@@ -403,8 +385,6 @@ public abstract class IrcClient : IDisposable
     }
 
     private protected abstract ValueTask Send(ReadOnlyMemory<char> message);
-
-    private protected abstract ValueTask Send(ReadOnlyMemory<byte> message);
 
     private protected abstract void StartListening();
 
