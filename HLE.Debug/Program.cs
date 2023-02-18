@@ -20,7 +20,7 @@ config.AddColumnProvider(DefaultColumnProviders.Metrics, DefaultColumnProviders.
 BenchmarkRunner.Run<Bench>(config);
 */
 
-[MemoryDiagnoser(false)]
+[MemoryDiagnoser]
 public class Bench
 {
 }
