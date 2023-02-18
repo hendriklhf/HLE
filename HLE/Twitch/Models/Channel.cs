@@ -92,7 +92,7 @@ public sealed class Channel
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(roomstate));
             }
         }
     }

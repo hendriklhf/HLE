@@ -9,7 +9,7 @@ namespace HLE.Memory;
 /// Represents an output sink consisting of buffers from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
-public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable
+public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyable<T>
 {
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
@@ -96,14 +96,33 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable
 
         using RentedArray<T> oldBuffer = _buffer;
         _buffer = ArrayPool<T>.Shared.Rent(elementGrowth);
-        CopyWrittenElementsIntoNewBuffer(oldBuffer);
+        CopyTo(_buffer);
     }
 
-    private unsafe void CopyWrittenElementsIntoNewBuffer(T[] oldBuffer)
+    public void CopyTo(T[] destination)
     {
-        ref byte source = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(oldBuffer));
-        ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(_buffer));
-        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * _length));
+        CopyTo((Span<T>)destination);
+    }
+
+    public void CopyTo(Memory<T> destination)
+    {
+        CopyTo(destination.Span);
+    }
+
+    public void CopyTo(Span<T> destination)
+    {
+        CopyTo(ref MemoryMarshal.GetReference(destination));
+    }
+
+    public unsafe void CopyTo(ref T destination)
+    {
+        CopyTo((T*)Unsafe.AsPointer(ref destination));
+    }
+
+    public unsafe void CopyTo(T* destination)
+    {
+        T* source = (T*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(WrittenSpan));
+        Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * _length));
     }
 
     /// <inheritdoc/>

@@ -11,7 +11,7 @@ public class EmojiFileGeneratorTest
     public void GenerateTest()
     {
         EmojiFileGenerator generator = new("Emojis");
-        string? content = generator.Generate();
+        string content = generator.Generate();
         Assert.IsFalse(string.IsNullOrEmpty(content));
     }
 
@@ -22,8 +22,8 @@ public class EmojiFileGeneratorTest
         Assert.IsTrue(fields.Length > 0);
         foreach (FieldInfo f in fields)
         {
-            string? value = f.GetValue(null)?.ToString();
-            Assert.IsTrue(value?.Length > 0);
+            string value = (string)f.GetValue(null)!;
+            Assert.IsTrue(value.Length > 0);
         }
     }
 }

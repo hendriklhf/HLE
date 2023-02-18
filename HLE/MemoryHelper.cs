@@ -48,23 +48,25 @@ public static unsafe class MemoryHelper
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    internal static Memory<T> AsMemory<T>(this Span<T> span)
+    internal static Memory<T> AsMemoryDangerous<T>(this Span<T> span)
     {
         Unsafe.SkipInit(out Memory<T> result);
-        byte* spanPtr = (byte*)&span;
-        byte* memoryPtr = (byte*)&result;
-        nuint* memoryReference = (nuint*)memoryPtr;
-        int* memoryIndex = (int*)(memoryPtr + sizeof(nuint));
-        int* memoryLength = (int*)(memoryPtr + sizeof(nuint) + sizeof(int));
+        byte* spanPointer = (byte*)&span;
+        byte* memoryPointer = (byte*)&result;
 
-        nuint reference = *(nuint*)spanPtr;
+        // pointers to the three fields Memory<T> consists of
+        nuint* memoryReferenceField = (nuint*)memoryPointer;
+        int* memoryIndexField = (int*)(memoryPointer + sizeof(nuint));
+        int* memoryLengthField = (int*)(memoryPointer + sizeof(nuint) + sizeof(int));
+
+        nuint reference = *(nuint*)spanPointer;
         reference -= (nuint)(sizeof(nuint) << 1);
-        *memoryReference = reference;
+        *memoryReferenceField = reference;
 
-        *memoryIndex = 0;
+        *memoryIndexField = 0;
 
-        int length = *(int*)(spanPtr + sizeof(nuint));
-        *memoryLength = length;
+        int length = *(int*)(spanPointer + sizeof(nuint));
+        *memoryLengthField = length;
 
         return result;
     }

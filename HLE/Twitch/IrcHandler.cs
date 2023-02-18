@@ -94,7 +94,7 @@ public sealed class IrcHandler
                 }
 
                 secondWord = ircMessage[(indicesOfWhitespace[0] + 1)..];
-                if (secondWord.SequenceEqual(_reconnectCommand))
+                if (secondWord.Equals(_reconnectCommand, StringComparison.Ordinal))
                 {
                     OnReconnectReceived?.Invoke(this, EventArgs.Empty);
                     return true;

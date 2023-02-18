@@ -91,7 +91,7 @@ public sealed class TwitchClient : IDisposable
     private readonly Memory<char> _pingResponseBuffer = new char[50];
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
-    private static readonly Regex _anonymousLoginPattern = new(@"^justinfan\w+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _anonymousLoginPattern = new(@"^justinfan[0-9]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
     private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';
@@ -174,7 +174,7 @@ public sealed class TwitchClient : IDisposable
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += IrcHandler_OnPingReceived;
-        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemory());
+        _ircHandler.OnReconnectReceived += (_, _) => _client.Reconnect(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -355,7 +355,7 @@ public sealed class TwitchClient : IDisposable
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async Task JoinChannelsAsync(List<string> channels)
     {
-        await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
+        await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
@@ -386,7 +386,7 @@ public sealed class TwitchClient : IDisposable
     /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
     public void JoinChannels(List<string> channels)
     {
-        JoinChannels(CollectionsMarshal.AsSpan(channels).AsMemory());
+        JoinChannels(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
 
     /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
@@ -492,7 +492,7 @@ public sealed class TwitchClient : IDisposable
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async Task LeaveChannelsAsync(List<string> channels)
     {
-        await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
+        await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
@@ -522,7 +522,7 @@ public sealed class TwitchClient : IDisposable
     /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>
     public void LeaveChannels(List<string> channels)
     {
-        LeaveChannels(CollectionsMarshal.AsSpan(channels).AsMemory());
+        LeaveChannels(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
 
     /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>

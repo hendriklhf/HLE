@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Twitch;
 
@@ -26,7 +27,7 @@ public struct MessageBuilder : IDisposable
     public readonly ReadOnlyMemory<char> Message => Memory[.._length];
 
     private readonly char[] _buffer;
-    private ushort _length;
+    private int _length;
 
     private const ushort _maxMessageLength = 500;
 
@@ -49,7 +50,7 @@ public struct MessageBuilder : IDisposable
     public void Append(scoped ReadOnlySpan<char> span)
     {
         span.CopyTo(Span[_length..]);
-        _length += (ushort)span.Length;
+        _length += span.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -57,7 +58,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span);
         span2.CopyTo(Span[_length..]);
-        _length += (ushort)span2.Length;
+        _length += span2.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,7 +66,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2);
         span3.CopyTo(Span[_length..]);
-        _length += (ushort)span3.Length;
+        _length += span3.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -73,7 +74,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3);
         span4.CopyTo(Span[_length..]);
-        _length += (ushort)span4.Length;
+        _length += span4.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -81,7 +82,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3, span4);
         span5.CopyTo(Span[_length..]);
-        _length += (ushort)span5.Length;
+        _length += span5.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,7 +90,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3, span4, span5);
         span6.CopyTo(Span[_length..]);
-        _length += (ushort)span6.Length;
+        _length += span6.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,7 +99,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3, span4, span5, span6);
         span7.CopyTo(Span[_length..]);
-        _length += (ushort)span7.Length;
+        _length += span7.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,7 +108,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3, span4, span5, span6, span7);
         span8.CopyTo(Span[_length..]);
-        _length += (ushort)span8.Length;
+        _length += span8.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -116,7 +117,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3, span4, span5, span6, span7, span8);
         span9.CopyTo(Span[_length..]);
-        _length += (ushort)span9.Length;
+        _length += span9.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -125,7 +126,7 @@ public struct MessageBuilder : IDisposable
     {
         Append(span, span2, span3, span4, span5, span6, span7, span8, span9);
         span10.CopyTo(Span[_length..]);
-        _length += (ushort)span10.Length;
+        _length += span10.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -192,6 +193,92 @@ public struct MessageBuilder : IDisposable
     {
         Append(c, c2, c3, c4, c5, c6, c7, c8, c9);
         Span[_length++] = c10;
+    }
+
+    public void Append(byte value)
+    {
+        Span<char> chars = stackalloc char[3];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(sbyte value)
+    {
+        Span<char> chars = stackalloc char[4];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(short value)
+    {
+        Span<char> chars = stackalloc char[6];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(ushort value)
+    {
+        Span<char> chars = stackalloc char[5];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(int value)
+    {
+        Span<char> chars = stackalloc char[11];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(uint value)
+    {
+        Span<char> chars = stackalloc char[10];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(long value)
+    {
+        Span<char> chars = stackalloc char[20];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(ulong value)
+    {
+        Span<char> chars = stackalloc char[20];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        spanFormattable.TryFormat(Span[_length..], out int charsWritten, format, formatProvider);
+        _length += charsWritten;
+    }
+
+    public void Remove(int index, int length = 1)
+    {
+        Span[(index + length).._length].CopyTo(Span[index..]);
+        _length--;
+    }
+
+    public readonly void Replace(char oldChar, char newChar)
+    {
+        ref char firstChar = ref MemoryMarshal.GetArrayDataReference(_buffer);
+        for (int i = 0; i < _length; i++)
+        {
+            ref char currentChar = ref Unsafe.Add(ref firstChar, i);
+            if (currentChar == oldChar)
+            {
+                currentChar = newChar;
+            }
+        }
+    }
+
+    public void Clear()
+    {
+        _length = 0;
     }
 
     [Pure]

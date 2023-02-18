@@ -15,7 +15,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 [DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>
+public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T>
 {
     public ref T this[int index] => ref Span[index];
 
@@ -31,13 +31,12 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>
 
     public int Length => _array.Length;
 
-    private readonly T[] _array;
+    private readonly T[] _array = System.Array.Empty<T>();
 
     public static RentedArray<T> Empty => new();
 
     public RentedArray()
     {
-        _array = System.Array.Empty<T>();
     }
 
     public RentedArray(T[] array)
@@ -73,12 +72,12 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>
 
     public override bool Equals(object? obj)
     {
-        return obj is RentedArray<T> rentedArray && ReferenceEquals(_array, rentedArray._array);
+        return obj is RentedArray<T> rentedArray && rentedArray == this;
     }
 
     public bool Equals(RentedArray<T> rentedArray)
     {
-        return ReferenceEquals(_array, rentedArray._array);
+        return rentedArray == this;
     }
 
     public bool Equals(T[] array)
@@ -149,7 +148,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>
 
     public static bool operator ==(RentedArray<T> left, RentedArray<T> right)
     {
-        return left.Equals(right);
+        return ReferenceEquals(left._array, right._array);
     }
 
     public static bool operator !=(RentedArray<T> left, RentedArray<T> right)

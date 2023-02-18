@@ -15,7 +15,12 @@ public static class CollectionHelper
 {
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T> action)
     {
-        return ForEach(collection.ToArray(), action);
+        return collection switch
+        {
+            T[] array => ForEach(array, action),
+            List<T> list => ForEach(list, action).ToArray(),
+            _ => ForEach(collection.ToArray(), action)
+        };
     }
 
     public static List<T> ForEach<T>(this List<T> list, Action<T> action)
@@ -52,7 +57,12 @@ public static class CollectionHelper
 
     public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
     {
-        return ForEach(collection.ToArray(), action);
+        return collection switch
+        {
+            T[] array => ForEach(array, action),
+            List<T> list => ForEach(list, action).ToArray(),
+            _ => ForEach(collection.ToArray(), action)
+        };
     }
 
     public static List<T> ForEach<T>(this List<T> list, Action<T, int> action)
@@ -90,7 +100,12 @@ public static class CollectionHelper
     [Pure]
     public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? collection)
     {
-        return collection is null || !collection.Any();
+        return collection switch
+        {
+            T[] array => array.Length == 0,
+            List<T> list => list.Count == 0,
+            _ => collection is null || !collection.Any()
+        };
     }
 
     [Pure]
@@ -114,7 +129,12 @@ public static class CollectionHelper
     [Pure]
     public static T? Random<T>(this IEnumerable<T> collection)
     {
-        return Random(collection.ToArray());
+        return collection switch
+        {
+            T[] array => Random(array),
+            List<T> list => Random(list),
+            _ => Random(collection.ToArray())
+        };
     }
 
     [Pure]

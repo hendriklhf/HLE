@@ -18,17 +18,20 @@ public sealed class ChannelList : IEnumerable<Channel>
     public Channel? this[long channelId] => Get(channelId);
 
     /// <inheritdoc cref="this[ReadOnlySpan{char}]"/>
-    public Channel? this[string channel] => Get(channel);
+    public Channel? this[string channelName] => Get(channelName);
+
+    /// <inheritdoc cref="this[ReadOnlySpan{char}]"/>
+    public Channel? this[ReadOnlyMemory<char> channelName] => Get(channelName.Span);
 
     /// <summary>
     /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to channel.
     /// </summary>
-    /// <param name="channel">The channel name, with or without '#'.</param>
-    public Channel? this[ReadOnlySpan<char> channel] => Get(channel);
+    /// <param name="channelName">The channel name, with or without '#'.</param>
+    public Channel? this[ReadOnlySpan<char> channelName] => Get(channelName);
 
     public int Count => _channels.Count;
 
-    private readonly List<Channel> _channels = new();
+    private readonly Dictionary<long, Channel> _channels = new();
 
     internal void Update(in RoomstateArgs args)
     {
@@ -36,7 +39,7 @@ public sealed class ChannelList : IEnumerable<Channel>
         if (channel is null)
         {
             channel = new(in args);
-            _channels.Add(channel);
+            _channels.Add(channel.Id, channel);
         }
         else
         {
@@ -44,12 +47,12 @@ public sealed class ChannelList : IEnumerable<Channel>
         }
     }
 
-    internal void Remove(ReadOnlySpan<char> name)
+    internal void Remove(ReadOnlySpan<char> channelName)
     {
-        Channel? channel = Get(name);
+        Channel? channel = Get(channelName);
         if (channel is not null)
         {
-            _channels.Remove(channel);
+            _channels.Remove(channel.Id);
         }
     }
 
@@ -58,21 +61,10 @@ public sealed class ChannelList : IEnumerable<Channel>
         _channels.Clear();
     }
 
-    private Channel? Get(long id)
+    private Channel? Get(long channelId)
     {
-        ReadOnlySpan<Channel> channels = CollectionsMarshal.AsSpan(_channels);
-        int channelsLength = channels.Length;
-        ref Channel firstChannel = ref MemoryMarshal.GetReference(channels);
-        for (int i = 0; i < channelsLength; i++)
-        {
-            Channel channel = Unsafe.Add(ref firstChannel, i);
-            if (channel.Id == id)
-            {
-                return channel;
-            }
-        }
-
-        return null;
+        ref Channel channel = ref CollectionsMarshal.GetValueRefOrNullRef(_channels, channelId);
+        return Unsafe.IsNullRef(ref channel) ? null : channel;
     }
 
     private Channel? Get(ReadOnlySpan<char> name)
@@ -82,12 +74,8 @@ public sealed class ChannelList : IEnumerable<Channel>
             name = name[1..];
         }
 
-        ReadOnlySpan<Channel> channels = CollectionsMarshal.AsSpan(_channels);
-        int channelsLength = channels.Length;
-        ref Channel firstChannel = ref MemoryMarshal.GetReference(channels);
-        for (int i = 0; i < channelsLength; i++)
+        foreach (Channel channel in _channels.Values)
         {
-            Channel channel = Unsafe.Add(ref firstChannel, i);
             if (name.Equals(channel.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return channel;
@@ -99,7 +87,7 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     public IEnumerator<Channel> GetEnumerator()
     {
-        return _channels.GetEnumerator();
+        return _channels.Values.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()

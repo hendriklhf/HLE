@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using HLE.Memory;
 
 namespace HLE.Emojis;
 
@@ -22,36 +21,16 @@ public sealed class EmojiFileGenerator
 
     private readonly Dictionary<string, string> _illegalWords = new()
     {
-        {
-            "100", "Hundred"
-        },
-        {
-            "+1", "ThumbUp"
-        },
-        {
-            "-1", "ThumbDown"
-        },
-        {
-            "T-rex", "TRex"
-        },
-        {
-            "1st_place_medal", "FirstPlaceMedal"
-        },
-        {
-            "2nd_place_medal", "SecondPlaceMedal"
-        },
-        {
-            "3rd_place_medal", "ThirdPlaceMedal"
-        },
-        {
-            "8ball", "EightBall"
-        },
-        {
-            "Non-potable_water", "NonPotableWater"
-        },
-        {
-            "1234", "OneTwoThreeFour"
-        }
+        { "100", "Hundred" },
+        { "+1", "ThumbUp" },
+        { "-1", "ThumbDown" },
+        { "T-rex", "TRex" },
+        { "1st_place_medal", "FirstPlaceMedal" },
+        { "2nd_place_medal", "SecondPlaceMedal" },
+        { "3rd_place_medal", "ThirdPlaceMedal" },
+        { "8ball", "EightBall" },
+        { "Non-potable_water", "NonPotableWater" },
+        { "1234", "OneTwoThreeFour" }
     };
 
     private byte[]? _emojiJsonBytes;
@@ -72,21 +51,14 @@ public sealed class EmojiFileGenerator
     /// <returns>The source code of the file. Null, if the creation was unsuccessful, due to e.g. not being able to retrieve the emoji data.</returns>
     /// </summary>
     [Pure]
-    public string? Generate()
+    public string Generate()
     {
         if (_emojiJsonBytes is null)
         {
-            try
-            {
-                using HttpClient httpClient = new();
-                Task<byte[]> task = httpClient.GetByteArrayAsync("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
-                task.Wait();
-                _emojiJsonBytes = task.Result;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            using HttpClient httpClient = new();
+            Task<byte[]> task = httpClient.GetByteArrayAsync("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
+            task.Wait();
+            _emojiJsonBytes = task.Result;
         }
 
         StringBuilder builder = MemoryHelper.UseStackAlloc<char>(_emojiJsonBytes.Length >> 2) ? stackalloc char[_emojiJsonBytes.Length >> 2] : new char[_emojiJsonBytes.Length >> 2];
@@ -148,7 +120,7 @@ public sealed class EmojiFileGenerator
         builder.Append("#pragma warning disable 1591", Environment.NewLine);
         builder.Append("// ReSharper disable UnusedMember.Global", Environment.NewLine);
         builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);
-        builder.Append("namsespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
+        builder.Append("namespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
         builder.Append("/// <summary>", Environment.NewLine);
         builder.Append("///     A class that contains (almost) every existing emoji. Generated ", DateTime.UtcNow.ToString("R"), " with the <see cref=\"", nameof(EmojiFileGenerator), "\"/>.", Environment.NewLine);
         builder.Append("/// </summary>", Environment.NewLine);

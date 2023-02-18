@@ -93,7 +93,7 @@ public abstract class IrcClient : IDisposable
     /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
     public void Connect(List<string> channels)
     {
-        Connect(CollectionsMarshal.AsSpan(channels).AsMemory());
+        Connect(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public abstract class IrcClient : IDisposable
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
     public async Task ConnectAsync(List<string> channels)
     {
-        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemory());
+        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
 
     /// <summary>

@@ -15,7 +15,7 @@ public sealed class ChatMessage
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
     /// </summary>
-    public ReadOnlySpan<Badge> BadgeInfo => _badgeInfo;
+    public ReadOnlySpan<Badge> BadgeInfos => _badgeInfo;
 
     /// <summary>
     /// Holds all the badges the user has.
@@ -55,7 +55,7 @@ public sealed class ChatMessage
 
     /// <summary>
     /// Indicates whether the user is a subscriber or not.
-    /// The subscription age can be obtained from <see cref="Badges"/> and <see cref="BadgeInfo"/>.
+    /// The subscription age can be obtained from <see cref="Badges"/> and <see cref="BadgeInfos"/>.
     /// </summary>
     public bool IsSubscriber => (_flags & ChatMessageFlag.IsSubscriber) == ChatMessageFlag.IsSubscriber;
 
@@ -101,6 +101,9 @@ public sealed class ChatMessage
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
     private const string _guidFormat = "D";
+
+    private const char _charAMinus10 = (char)('A' - 10);
+    private const char _charZero = '0';
 
     private const string _badgeInfoTag = "badge-info";
     private const string _badgesTag = "badges";
@@ -239,7 +242,7 @@ public sealed class ChatMessage
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Color GetColor(ReadOnlySpan<char> value)
     {
-        return value.Length == 0 ? Color.Empty : ParseHexColor(value);
+        return value.Length == 0 ? Color.Empty : ParseHexColor(value[1..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -294,9 +297,6 @@ public sealed class ChatMessage
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
-    private const char _charAMinus10 = (char)('A' - 10);
-    private const char _charZero = '0';
-
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private static Color ParseHexColor(ReadOnlySpan<char> number)
     {
@@ -304,9 +304,9 @@ public sealed class ChatMessage
         char thirdChar = number[2];
         char fifthChar = number[4];
 
-        byte red = (byte)(IsLetter(firstChar) ? firstChar - _charAMinus10 : firstChar - _charZero);
-        byte green = (byte)(IsLetter(thirdChar) ? thirdChar - _charAMinus10 : thirdChar - _charZero);
-        byte blue = (byte)(IsLetter(fifthChar) ? fifthChar - _charAMinus10 : fifthChar - _charZero);
+        byte red = (byte)(IsHexLetter(firstChar) ? firstChar - _charAMinus10 : firstChar - _charZero);
+        byte green = (byte)(IsHexLetter(thirdChar) ? thirdChar - _charAMinus10 : thirdChar - _charZero);
+        byte blue = (byte)(IsHexLetter(fifthChar) ? fifthChar - _charAMinus10 : fifthChar - _charZero);
 
         red <<= 4;
         green <<= 4;
@@ -316,14 +316,15 @@ public sealed class ChatMessage
         char forthChar = number[3];
         char sixthChar = number[5];
 
-        red |= (byte)(IsLetter(secondChar) ? secondChar - _charAMinus10 : secondChar - _charZero);
-        green |= (byte)(IsLetter(forthChar) ? forthChar - _charAMinus10 : forthChar - _charZero);
-        blue |= (byte)(IsLetter(sixthChar) ? sixthChar - _charAMinus10 : sixthChar - _charZero);
+        red |= (byte)(IsHexLetter(secondChar) ? secondChar - _charAMinus10 : secondChar - _charZero);
+        green |= (byte)(IsHexLetter(forthChar) ? forthChar - _charAMinus10 : forthChar - _charZero);
+        blue |= (byte)(IsHexLetter(sixthChar) ? sixthChar - _charAMinus10 : sixthChar - _charZero);
 
-        return Color.FromArgb(red, green, blue);
+        return Color.FromArgb(0xFF, red, green, blue);
     }
 
-    private static bool IsLetter(char hexChar)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool IsHexLetter(char hexChar)
     {
         return hexChar > '9';
     }

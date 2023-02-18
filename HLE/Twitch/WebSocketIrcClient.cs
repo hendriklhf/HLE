@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
-using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -53,59 +52,55 @@ public sealed class WebSocketIrcClient : IrcClient
 
     private async ValueTask StartListeningAsync()
     {
-        Memory<byte> byteBuffer = new byte[2048];
+        Memory<byte> byteBuffer = new byte[4096];
+        Memory<char> charBuffer = new char[4096];
         int bufferLength = 0;
         while (IsConnected)
         {
-            ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer[bufferLength..], default);
+            ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer, default);
             if (result.Count == 0)
             {
                 continue;
             }
 
-            ReadOnlyMemory<byte> receivedBytes = byteBuffer[..(result.Count + bufferLength)];
-            bool isEndOfMessage = receivedBytes.Length > 2 && receivedBytes.Span[^2] == _newLine[0] && receivedBytes.Span[^1] == _newLine[1];
+            ReadOnlyMemory<byte> receivedBytes = byteBuffer[..result.Count];
+            int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, charBuffer.Span[bufferLength..]);
+            ReadOnlyMemory<char> receivedChars = charBuffer[..(bufferLength + charCount)];
+
+            bool isEndOfMessage = receivedChars.Span[^2] == _newLine[0] && receivedChars.Span[^1] == _newLine[1];
             if (isEndOfMessage)
             {
-                PassAllLines(receivedBytes);
+                PassAllLines(receivedChars);
                 bufferLength = 0;
                 continue;
             }
 
-            PassAllLinesExceptLast(ref receivedBytes);
-            receivedBytes.Span.CopyTo(byteBuffer.Span);
-            bufferLength = receivedBytes.Length;
+            PassAllLinesExceptLast(ref receivedChars);
+            receivedChars.Span.CopyTo(charBuffer.Span);
+            bufferLength = receivedChars.Length;
         }
     }
 
-    private void PassAllLinesExceptLast(ref ReadOnlyMemory<byte> receivedBytes)
+    private void PassAllLinesExceptLast(ref ReadOnlyMemory<char> receivedChars)
     {
-        using RentedArray<char> receivedChars = ArrayPool<char>.Shared.Rent(receivedBytes.Length);
-        int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, receivedChars.Span);
-        ReadOnlySpan<char> chars = receivedChars[..charCount];
-
-        int indexOfLineEnding = chars.IndexOf(_newLine);
+        int indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
         while (indexOfLineEnding > -1)
         {
-            ReadOnlySpan<char> lineOfData = chars[..indexOfLineEnding];
-            InvokeDataReceived(this, ReceivedData.Create(lineOfData));
-            chars = chars[(indexOfLineEnding + _newLine.Length)..];
-            indexOfLineEnding = chars.IndexOf(_newLine);
+            var lineOfData = receivedChars[..indexOfLineEnding];
+            InvokeDataReceived(this, ReceivedData.Create(lineOfData.Span));
+            receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
+            indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
         }
     }
 
-    private void PassAllLines(ReadOnlyMemory<byte> receivedBytes)
+    private void PassAllLines(ReadOnlyMemory<char> receivedChars)
     {
-        using RentedArray<char> receivedChars = ArrayPool<char>.Shared.Rent(receivedBytes.Length);
-        int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, receivedChars.Span);
-        ReadOnlySpan<char> chars = receivedChars[..charCount];
-
-        while (receivedBytes.Length > 2)
+        while (receivedChars.Length > 2)
         {
-            int indexOfLineEnding = chars.IndexOf(_newLine);
-            ReadOnlySpan<char> lineOfData = chars[..indexOfLineEnding];
-            InvokeDataReceived(this, ReceivedData.Create(lineOfData));
-            chars = chars[(indexOfLineEnding + _newLine.Length)..];
+            int indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
+            ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
+            InvokeDataReceived(this, ReceivedData.Create(lineOfData.Span));
+            receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
         }
     }
 

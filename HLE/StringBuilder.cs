@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE;
 
@@ -12,21 +13,19 @@ public ref struct StringBuilder
 
     public readonly ref char this[Index index] => ref _buffer[index];
 
-    public readonly ReadOnlySpan<char> this[Range range] => _buffer[range];
+    public readonly Span<char> this[Range range] => _buffer[range];
 
     public readonly int Length => _length;
 
     public readonly int Capacity => _buffer.Length;
 
-    private readonly Span<char> _buffer;
-    private int _length;
+    private readonly Span<char> _buffer = Span<char>.Empty;
+    private int _length = 0;
 
     public static StringBuilder Empty => new();
 
     public StringBuilder()
     {
-        _buffer = Span<char>.Empty;
-        _length = 0;
     }
 
     public StringBuilder(Span<char> buffer)
@@ -39,9 +38,9 @@ public ref struct StringBuilder
         _buffer = new(pointer, length);
     }
 
-    public unsafe StringBuilder(ref char reference, int length)
+    public StringBuilder(ref char reference, int length)
     {
-        _buffer = new((char*)Unsafe.AsPointer(ref reference), length);
+        _buffer = MemoryMarshal.CreateSpan(ref reference, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -52,77 +51,77 @@ public ref struct StringBuilder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2)
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2)
     {
-        Append(span);
+        Append(span1);
         span2.CopyTo(_buffer[_length..]);
         _length += span2.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3)
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3)
     {
-        Append(span, span2);
+        Append(span1, span2);
         span3.CopyTo(_buffer[_length..]);
         _length += span3.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4)
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4)
     {
-        Append(span, span2, span3);
+        Append(span1, span2, span3);
         span4.CopyTo(_buffer[_length..]);
         _length += span4.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5)
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5)
     {
-        Append(span, span2, span3, span4);
+        Append(span1, span2, span3, span4);
         span5.CopyTo(_buffer[_length..]);
         _length += span5.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6)
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6)
     {
-        Append(span, span2, span3, span4, span5);
+        Append(span1, span2, span3, span4, span5);
         span6.CopyTo(_buffer[_length..]);
         _length += span6.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
         scoped ReadOnlySpan<char> span7)
     {
-        Append(span, span2, span3, span4, span5, span6);
+        Append(span1, span2, span3, span4, span5, span6);
         span7.CopyTo(_buffer[_length..]);
         _length += span7.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
         scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8)
     {
-        Append(span, span2, span3, span4, span5, span6, span7);
+        Append(span1, span2, span3, span4, span5, span6, span7);
         span8.CopyTo(_buffer[_length..]);
         _length += span8.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
         scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8, scoped ReadOnlySpan<char> span9)
     {
-        Append(span, span2, span3, span4, span5, span6, span7, span8);
+        Append(span1, span2, span3, span4, span5, span6, span7, span8);
         span9.CopyTo(_buffer[_length..]);
         _length += span9.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
+    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
         scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8, scoped ReadOnlySpan<char> span9, scoped ReadOnlySpan<char> span10)
     {
-        Append(span, span2, span3, span4, span5, span6, span7, span8, span9);
+        Append(span1, span2, span3, span4, span5, span6, span7, span8, span9);
         span10.CopyTo(_buffer[_length..]);
         _length += span10.Length;
     }
@@ -131,76 +130,157 @@ public ref struct StringBuilder
     public void Append(char c) => _buffer[_length++] = c;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2)
+    public void Append(char char1, char char2)
     {
-        Append(c);
-        _buffer[_length++] = c2;
+        Append(char1);
+        _buffer[_length++] = char2;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3)
+    public void Append(char char1, char char2, char char3)
     {
-        Append(c, c2);
-        _buffer[_length++] = c3;
+        Append(char1, char2);
+        _buffer[_length++] = char3;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4)
+    public void Append(char char1, char char2, char char3, char char4)
     {
-        Append(c, c2, c3);
-        _buffer[_length++] = c4;
+        Append(char1, char2, char3);
+        _buffer[_length++] = char4;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4, char c5)
+    public void Append(char char1, char char2, char char3, char char4, char char5)
     {
-        Append(c, c2, c3, c4);
-        _buffer[_length++] = c5;
+        Append(char1, char2, char3, char4);
+        _buffer[_length++] = char5;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4, char c5, char c6)
+    public void Append(char char1, char char2, char char3, char char4, char char5, char char6)
     {
-        Append(c, c2, c3, c4, c5);
-        _buffer[_length++] = c6;
+        Append(char1, char2, char3, char4, char5);
+        _buffer[_length++] = char6;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4, char c5, char c6, char c7)
+    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7)
     {
-        Append(c, c2, c3, c4, c5, c6);
-        _buffer[_length++] = c7;
+        Append(char1, char2, char3, char4, char5, char6);
+        _buffer[_length++] = char7;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4, char c5, char c6, char c7, char c8)
+    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7, char char8)
     {
-        Append(c, c2, c3, c4, c5, c6, c7);
-        _buffer[_length++] = c8;
+        Append(char1, char2, char3, char4, char5, char6, char7);
+        _buffer[_length++] = char8;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4, char c5, char c6, char c7, char c8, char c9)
+    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7, char char8, char char9)
     {
-        Append(c, c2, c3, c4, c5, c6, c7, c8);
-        _buffer[_length++] = c9;
+        Append(char1, char2, char3, char4, char5, char6, char7, char8);
+        _buffer[_length++] = char9;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c, char c2, char c3, char c4, char c5, char c6, char c7, char c8, char c9, char c10)
+    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7, char char8, char char9, char char10)
     {
-        Append(c, c2, c3, c4, c5, c6, c7, c8, c9);
-        _buffer[_length++] = c10;
+        Append(char1, char2, char3, char4, char5, char6, char7, char8, char9);
+        _buffer[_length++] = char10;
     }
 
-    public void Remove(int index)
+    public void Append(byte value)
     {
-        _buffer[(index + 1).._length].CopyTo(_buffer[index..]);
+        Span<char> chars = stackalloc char[3];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(sbyte value)
+    {
+        Span<char> chars = stackalloc char[4];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(short value)
+    {
+        Span<char> chars = stackalloc char[6];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(ushort value)
+    {
+        Span<char> chars = stackalloc char[5];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(int value)
+    {
+        Span<char> chars = stackalloc char[11];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(uint value)
+    {
+        Span<char> chars = stackalloc char[10];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(long value)
+    {
+        Span<char> chars = stackalloc char[20];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(ulong value)
+    {
+        Span<char> chars = stackalloc char[20];
+        value.TryFormat(chars, out int charsWritten);
+        Append(chars[..charsWritten]);
+    }
+
+    public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        spanFormattable.TryFormat(_buffer[_length..], out int charsWritten, format, formatProvider);
+        _length += charsWritten;
+    }
+
+    public void Remove(int index, int length = 1)
+    {
+        _buffer[(index + length).._length].CopyTo(_buffer[index..]);
         _length--;
     }
 
+    public readonly void Replace(char oldChar, char newChar)
+    {
+        ref char firstChar = ref MemoryMarshal.GetReference(_buffer);
+        for (int i = 0; i < _length; i++)
+        {
+            ref char currentChar = ref Unsafe.Add(ref firstChar, i);
+            if (currentChar == oldChar)
+            {
+                currentChar = newChar;
+            }
+        }
+    }
+
+    public void Clear()
+    {
+        _length = 0;
+    }
+
     [Pure]
-    public override string ToString()
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly string ToString()
     {
         return new(_buffer[.._length]);
     }
