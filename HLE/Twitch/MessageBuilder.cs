@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace HLE.Twitch;
 
 [DebuggerDisplay("{ToString()}")]
-public struct MessageBuilder : IDisposable
+public struct MessageBuilder : IDisposable, IEquatable<MessageBuilder>
 {
     public readonly ref char this[int index] => ref Span[index];
 
@@ -26,7 +26,7 @@ public struct MessageBuilder : IDisposable
 
     public readonly ReadOnlyMemory<char> Message => Memory[.._length];
 
-    private readonly char[] _buffer;
+    private readonly char[] _buffer = Array.Empty<char>();
     private int _length;
 
     private const ushort _maxMessageLength = 500;
@@ -289,14 +289,40 @@ public struct MessageBuilder : IDisposable
     }
 
     [Pure]
-    public readonly bool Equals(MessageBuilder builder, StringComparison comparisonType = default)
+    public readonly bool Equals(MessageBuilder builder, StringComparison comparisonType)
     {
         return ((ReadOnlySpan<char>)Span[.._length]).Equals(builder.Span[..builder._length], comparisonType);
     }
 
     [Pure]
-    public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType = default)
+    public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
     {
         return ((ReadOnlySpan<char>)Span[.._length]).Equals(str, comparisonType);
+    }
+
+    public bool Equals(MessageBuilder other)
+    {
+        return ReferenceEquals(_buffer, other._buffer) && _length == other._length;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is MessageBuilder other && Equals(other);
+    }
+
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly int GetHashCode()
+    {
+        return HashCode.Combine(_buffer, _length);
+    }
+
+    public static bool operator ==(MessageBuilder left, MessageBuilder right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(MessageBuilder left, MessageBuilder right)
+    {
+        return !(left == right);
     }
 }

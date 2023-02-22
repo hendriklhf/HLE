@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -12,7 +13,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// A class that represents a Twitch chat client.
 /// </summary>
-public sealed class TwitchClient : IDisposable
+public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 {
     /// <summary>
     /// The username of the client.
@@ -681,5 +682,20 @@ public sealed class TwitchClient : IDisposable
     public void Dispose()
     {
         _client.Dispose();
+    }
+
+    public bool Equals(TwitchClient? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Username, Channels, _client, _ircHandler, _ircChannels, ClientType);
     }
 }

@@ -103,16 +103,6 @@ public class StringHelperTest
     }
 
     [TestMethod]
-    public void AsSpanTest()
-    {
-        const string str = "hello";
-        Span<char> span = str.AsMutableSpan();
-        span[0] = 'H';
-        Assert.IsTrue(char.IsUpper(str[0]));
-        Assert.AreEqual("Hello", str);
-    }
-
-    [TestMethod]
     public void CharCountTest()
     {
         const string str = "hello";

@@ -13,7 +13,7 @@ namespace HLE.Twitch;
 /// The base class for IRC clients.
 /// This class does not validate input, the overlying <see cref="TwitchClient"/> does that.
 /// </summary>
-public abstract class IrcClient : IDisposable
+public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
 {
     /// <summary>
     /// The username of the client.
@@ -396,4 +396,19 @@ public abstract class IrcClient : IDisposable
 
     /// <inheritdoc cref="IDisposable.Dispose"/>
     public abstract void Dispose();
+
+    public bool Equals(IrcClient? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Username, _oAuthToken, _url);
+    }
 }

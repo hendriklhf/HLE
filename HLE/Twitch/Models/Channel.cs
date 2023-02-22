@@ -7,7 +7,7 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// A class that represents a channel with all its room states.
 /// </summary>
-public sealed class Channel
+public sealed class Channel : IEquatable<Channel>
 {
     /// <summary>
     /// The username of the channel owner. All lower case, without '#'.
@@ -95,5 +95,20 @@ public sealed class Channel
                     throw new ArgumentOutOfRangeException(nameof(roomstate));
             }
         }
+    }
+
+    public bool Equals(Channel? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, Name);
     }
 }

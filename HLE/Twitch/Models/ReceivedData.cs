@@ -13,7 +13,7 @@ namespace HLE.Twitch.Models;
 /// Which also means that the instances or any members of this class should not be cached or persisted in any way after received by an event invocation.
 /// </summary>
 [DebuggerDisplay("{ToString()}")]
-public readonly struct ReceivedData : IDisposable
+public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>
 {
     public ReadOnlySpan<char> Span => ((ReadOnlySpan<char>)_data)[.._dataLength];
 
@@ -21,7 +21,7 @@ public readonly struct ReceivedData : IDisposable
 
     public int Length => _dataLength;
 
-    internal readonly char[] _data;
+    internal readonly char[] _data = Array.Empty<char>();
     private readonly int _dataLength;
 
     private ReceivedData(char[] data, int dataLength)
@@ -52,8 +52,33 @@ public readonly struct ReceivedData : IDisposable
         ArrayPool<char>.Shared.Return(_data);
     }
 
+    public bool Equals(ReceivedData other)
+    {
+        return ReferenceEquals(_data, other._data) && _dataLength == other._dataLength;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is ReceivedData other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_data, _dataLength);
+    }
+
     public override string ToString()
     {
         return new(Span);
+    }
+
+    public static bool operator ==(ReceivedData left, ReceivedData right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ReceivedData left, ReceivedData right)
+    {
+        return !(left == right);
     }
 }

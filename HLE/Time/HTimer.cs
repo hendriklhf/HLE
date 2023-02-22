@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Timers;
 
 namespace HLE.Time;
 
-public sealed class HTimer
+public sealed class HTimer : IEquatable<HTimer>
 {
     public bool AutoReset { get; set; }
 
     public bool Enabled => _timer.Enabled;
 
-    public double Interval => _timer.Interval;
+    public TimeSpan Interval => TimeSpan.FromMilliseconds(_timer.Interval);
 
     public TimeSpan RemainingTime => GetRemainingTime();
 
@@ -18,7 +19,7 @@ public sealed class HTimer
     private readonly Timer _timer;
     private DateTimeOffset _end;
 
-    public HTimer(double interval)
+    public HTimer(TimeSpan interval)
     {
         _timer = new(interval)
         {
@@ -37,7 +38,7 @@ public sealed class HTimer
 
     public void Start()
     {
-        _end = DateTimeOffset.UtcNow.AddMilliseconds(Interval);
+        _end = DateTimeOffset.UtcNow + Interval;
         _timer.Start();
     }
 
@@ -49,11 +50,29 @@ public sealed class HTimer
 
     private TimeSpan GetRemainingTime()
     {
-        if (_end == default)
+        if (_end == default || DateTimeOffset.UtcNow > _end)
         {
             return TimeSpan.Zero;
         }
 
         return _end - DateTimeOffset.UtcNow;
+    }
+
+    [Pure]
+    public bool Equals(HTimer? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    [Pure]
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    [Pure]
+    public override int GetHashCode()
+    {
+        return _timer.GetHashCode();
     }
 }

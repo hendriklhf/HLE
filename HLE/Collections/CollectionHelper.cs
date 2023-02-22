@@ -1,10 +1,12 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE.Collections;
 
@@ -398,7 +400,14 @@ public static class CollectionHelper
     [Pure]
     public static string RandomString(this ReadOnlySpan<char> span, int wordLength)
     {
-        Span<char> result = MemoryHelper.UseStackAlloc<char>(wordLength) ? stackalloc char[wordLength] : new char[wordLength];
+        if (!MemoryHelper.UseStackAlloc<char>(wordLength))
+        {
+            using RentedArray<char> resultArray = ArrayPool<char>.Shared.Rent(wordLength);
+            RandomString(span, resultArray);
+            return new(resultArray[..wordLength]);
+        }
+
+        Span<char> result = stackalloc char[wordLength];
         RandomString(span, result);
         return new(result);
     }

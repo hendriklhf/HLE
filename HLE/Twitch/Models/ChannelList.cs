@@ -85,6 +85,21 @@ public sealed class ChannelList : IEnumerable<Channel>
         return null;
     }
 
+    public bool Equals(ChannelList? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return _channels.GetHashCode();
+    }
+
     public IEnumerator<Channel> GetEnumerator()
     {
         return _channels.Values.GetEnumerator();

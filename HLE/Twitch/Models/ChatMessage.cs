@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -10,7 +9,7 @@ namespace HLE.Twitch.Models;
 /// A class that represents a chat message.
 /// </summary>
 [DebuggerDisplay("{ToString()}")]
-public sealed class ChatMessage
+public sealed class ChatMessage : IEquatable<ChatMessage>
 {
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
@@ -26,7 +25,7 @@ public sealed class ChatMessage
     /// The color of the user's name in a Twitch chat overlay.
     /// If the user does not have a color, the value is "Color.Empty".
     /// </summary>
-    public Color Color { get; }
+    public (byte R, byte G, byte B)? Color { get; }
 
     /// <summary>
     /// The display name of the user with the preferred casing.
@@ -100,9 +99,9 @@ public sealed class ChatMessage
 
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
-    private const string _guidFormat = "D";
 
-    private const char _charAMinus10 = (char)('A' - 10);
+    //private const char _lowerCaseAMinus10 = (char)('a' - 10);
+    private const char _upperCaseAMinus10 = (char)('A' - 10);
     private const char _charZero = '0';
 
     private const string _badgeInfoTag = "badge-info";
@@ -240,9 +239,9 @@ public sealed class ChatMessage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Color GetColor(ReadOnlySpan<char> value)
+    private static (byte R, byte G, byte B)? GetColor(ReadOnlySpan<char> value)
     {
-        return value.Length == 0 ? Color.Empty : ParseHexColor(value[1..]);
+        return value.Length == 0 ? null : ParseHexColor(value[1..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -262,7 +261,7 @@ public sealed class ChatMessage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, _guidFormat);
+    private static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, "D");
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ChatMessageFlag GetIsModerator(ReadOnlySpan<char> value)
@@ -298,15 +297,15 @@ public sealed class ChatMessage
     private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private static Color ParseHexColor(ReadOnlySpan<char> number)
+    private static (byte R, byte G, byte B) ParseHexColor(ReadOnlySpan<char> number)
     {
         char firstChar = number[0];
         char thirdChar = number[2];
         char fifthChar = number[4];
 
-        byte red = (byte)(IsHexLetter(firstChar) ? firstChar - _charAMinus10 : firstChar - _charZero);
-        byte green = (byte)(IsHexLetter(thirdChar) ? thirdChar - _charAMinus10 : thirdChar - _charZero);
-        byte blue = (byte)(IsHexLetter(fifthChar) ? fifthChar - _charAMinus10 : fifthChar - _charZero);
+        byte red = (byte)(IsHexLetter(firstChar) ? firstChar - _upperCaseAMinus10 : firstChar - _charZero);
+        byte green = (byte)(IsHexLetter(thirdChar) ? thirdChar - _upperCaseAMinus10 : thirdChar - _charZero);
+        byte blue = (byte)(IsHexLetter(fifthChar) ? fifthChar - _upperCaseAMinus10 : fifthChar - _charZero);
 
         red <<= 4;
         green <<= 4;
@@ -316,11 +315,11 @@ public sealed class ChatMessage
         char forthChar = number[3];
         char sixthChar = number[5];
 
-        red |= (byte)(IsHexLetter(secondChar) ? secondChar - _charAMinus10 : secondChar - _charZero);
-        green |= (byte)(IsHexLetter(forthChar) ? forthChar - _charAMinus10 : forthChar - _charZero);
-        blue |= (byte)(IsHexLetter(sixthChar) ? sixthChar - _charAMinus10 : sixthChar - _charZero);
+        red |= (byte)(IsHexLetter(secondChar) ? secondChar - _upperCaseAMinus10 : secondChar - _charZero);
+        green |= (byte)(IsHexLetter(forthChar) ? forthChar - _upperCaseAMinus10 : forthChar - _charZero);
+        blue |= (byte)(IsHexLetter(sixthChar) ? sixthChar - _upperCaseAMinus10 : sixthChar - _charZero);
 
-        return Color.FromArgb(0xFF, red, green, blue);
+        return (red, green, blue);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -336,5 +335,25 @@ public sealed class ChatMessage
     public override string ToString()
     {
         return $"<#{Channel}> {Username}: {Message}";
+    }
+
+    public bool Equals(ChatMessage? other)
+    {
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return Id == other?.Id;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, ChannelId, UserId, Message, TmiSentTs);
     }
 }

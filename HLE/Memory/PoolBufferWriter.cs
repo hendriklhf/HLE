@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -9,7 +10,7 @@ namespace HLE.Memory;
 /// Represents an output sink consisting of buffers from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
-public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyable<T>
+public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyable<T>, IEquatable<PoolBufferWriter<T>>
 {
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
@@ -26,9 +27,15 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     /// </summary>
     public int Length => _length;
 
+    public int Capcity => _buffer.Length;
+
     private T[] _buffer;
     private int _length;
     private readonly int _defaultElementGrowth;
+
+    public PoolBufferWriter() : this(5, 10)
+    {
+    }
 
     /// <summary>
     /// Creates a new <see cref="PoolBufferWriter{T}"/> with an initial buffer size and an element growth.
@@ -39,6 +46,11 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     {
         _buffer = ArrayPool<T>.Shared.Rent(initialSize);
         _defaultElementGrowth = defaultElementGrowth;
+    }
+
+    ~PoolBufferWriter()
+    {
+        ArrayPool<T>.Shared.Return(_buffer);
     }
 
     /// <inheritdoc/>
@@ -59,6 +71,11 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     {
         GrowIfNeeded(sizeHint);
         return ((Span<T>)_buffer)[_length..];
+    }
+
+    public void Clear()
+    {
+        _length = 0;
     }
 
     /// <summary>
@@ -95,8 +112,15 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
         }
 
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.Rent(elementGrowth);
-        CopyTo(_buffer);
+        _buffer = ArrayPool<T>.Shared.Rent(_buffer.Length + elementGrowth);
+        CopyWrittenElementsIntoNewBuffer(oldBuffer);
+    }
+
+    private unsafe void CopyWrittenElementsIntoNewBuffer(T[] oldBuffer)
+    {
+        ref byte source = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(oldBuffer));
+        ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(_buffer));
+        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * _length));
     }
 
     public void CopyTo(T[] destination)
@@ -128,6 +152,25 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     /// <inheritdoc/>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         ArrayPool<T>.Shared.Return(_buffer);
+    }
+
+    [Pure]
+    public bool Equals(PoolBufferWriter<T>? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    [Pure]
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    [Pure]
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_defaultElementGrowth);
     }
 }

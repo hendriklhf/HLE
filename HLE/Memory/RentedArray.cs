@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -10,12 +11,12 @@ using System.Runtime.InteropServices;
 namespace HLE.Memory;
 
 /// <summary>
-/// Wraps an <see cref="Array"/> rented from a shared <see cref="ArrayPool{T}"/>
-/// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a try-finally block.
+/// Wraps an <see cref="System.Array"/> rented from a shared <see cref="ArrayPool{T}"/>
+/// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 [DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T>
+public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T>, IEquatable<RentedArray<T>>
 {
     public ref T this[int index] => ref Span[index];
 
@@ -70,27 +71,32 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
         Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * _array.Length));
     }
 
+    [Pure]
     public override bool Equals(object? obj)
     {
-        return obj is RentedArray<T> rentedArray && rentedArray == this;
+        return obj is RentedArray<T> other && Equals(other);
     }
 
-    public bool Equals(RentedArray<T> rentedArray)
+    [Pure]
+    public bool Equals(RentedArray<T> other)
     {
-        return rentedArray == this;
+        return ReferenceEquals(_array, other._array);
     }
 
+    [Pure]
     public bool Equals(T[] array)
     {
         return ReferenceEquals(_array, array);
     }
 
+    [Pure]
     public override int GetHashCode()
     {
         return _array.GetHashCode();
     }
 
     /// <inheritdoc/>
+    [Pure]
     public override string ToString()
     {
         Type thisType = typeof(RentedArray<T>);
@@ -148,7 +154,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public static bool operator ==(RentedArray<T> left, RentedArray<T> right)
     {
-        return ReferenceEquals(left._array, right._array);
+        return left.Equals(right);
     }
 
     public static bool operator !=(RentedArray<T> left, RentedArray<T> right)

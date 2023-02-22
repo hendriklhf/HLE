@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text.RegularExpressions;
+using HLE.Memory;
 
 namespace HLE;
 
@@ -355,17 +356,6 @@ public static class StringHelper
     }
 
     /// <summary>
-    /// With this method you would be able to mutate a <see cref="string"/>. ⚠️ Only use this if you completely know what you are doing and how strings work in C#. ⚠️
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that you will be able to mutate.</param>
-    /// <returns>A <see cref="Span{Char}"/> representation of the passed-in <see cref="string"/>.</returns>
-    [Pure]
-    public static Span<char> AsMutableSpan(this string? str)
-    {
-        return ((ReadOnlySpan<char>)str).AsMutableSpan();
-    }
-
-    /// <summary>
     /// Vectorized char count.
     /// </summary>
     /// <param name="str">The string in which the char will be counted.</param>
@@ -388,6 +378,30 @@ public static class StringHelper
         }
 
         int result = 0;
+        int vector512Count = Vector512<ushort>.Count;
+        if (Vector512.IsHardwareAccelerated && spanLength > vector512Count)
+        {
+            ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
+            Vector512<ushort> equalsVector = Vector512.Create((ushort)charToCount);
+            Vector512<ushort> oneVector = Vector512.Create((ushort)1);
+            while (shortSpan.Length >= vector512Count)
+            {
+                Vector512<ushort> vector = Vector512.Create(shortSpan[..vector512Count]);
+                shortSpan = shortSpan[vector512Count..];
+                Vector512<ushort> equals = Vector512.Equals(vector, equalsVector);
+                Vector512<ushort> and = Vector512.BitwiseAnd(equals, oneVector);
+                result += Vector512.Dot(and, oneVector);
+            }
+
+            for (int i = 0; i < shortSpan.Length; i++)
+            {
+                bool equals = shortSpan[i] == charToCount;
+                result += Unsafe.As<bool, byte>(ref equals);
+            }
+
+            return result;
+        }
+
         int vector256Count = Vector256<ushort>.Count;
         if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
         {
@@ -481,6 +495,29 @@ public static class StringHelper
         }
 
         int result = 0;
+        int vector512Count = Vector512<byte>.Count;
+        if (Vector512.IsHardwareAccelerated && spanLength > vector512Count)
+        {
+            Vector512<byte> equalsVector = Vector512.Create(byteToCount);
+            Vector512<byte> oneVector = Vector512.Create((byte)1);
+            while (span.Length >= vector512Count)
+            {
+                Vector512<byte> vector = Vector512.Create(span[..vector512Count]);
+                span = span[vector512Count..];
+                Vector512<byte> equals = Vector512.Equals(vector, equalsVector);
+                Vector512<byte> and = Vector512.BitwiseAnd(equals, oneVector);
+                result += Vector512.Dot(and, oneVector);
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                bool equals = span[i] == byteToCount;
+                result += Unsafe.As<bool, byte>(ref equals);
+            }
+
+            return result;
+        }
+
         int vector256Count = Vector256<byte>.Count;
         if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
         {
@@ -603,21 +640,41 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<string> strings, char separator, Span<char> result)
     {
-        int length = 0;
+        StringBuilder builder = result;
         int stringsLengthMinus1 = strings.Length - 1;
         ref string firstString = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
             string str = Unsafe.Add(ref firstString, i);
-            str.CopyTo(result[length..]);
-            length += str.Length;
-            result[length++] = separator;
+            builder.Append(str);
+            builder.Append(separator);
         }
 
         string lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
-        lastString.CopyTo(result[length..]);
-        length += lastString.Length;
-        return length;
+        builder.Append(lastString);
+        return builder.Length;
+    }
+
+    public static int Join(Span<ReadOnlyMemory<char>> strings, char separator, Span<char> result)
+    {
+        return Join((ReadOnlySpan<ReadOnlyMemory<char>>)strings, separator, result);
+    }
+
+    public static int Join(ReadOnlySpan<ReadOnlyMemory<char>> strings, char separator, Span<char> result)
+    {
+        StringBuilder builder = result;
+        int stringsLengthMinus1 = strings.Length - 1;
+        ref ReadOnlyMemory<char> firstString = ref MemoryMarshal.GetReference(strings);
+        for (int i = 0; i < stringsLengthMinus1; i++)
+        {
+            ReadOnlyMemory<char> str = Unsafe.Add(ref firstString, i);
+            builder.Append(str.Span);
+            builder.Append(separator);
+        }
+
+        ReadOnlyMemory<char> lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        builder.Append(lastString.Span);
+        return builder.Length;
     }
 
     public static int Join(Span<string> strings, ReadOnlySpan<char> separator, Span<char> result)
@@ -627,22 +684,39 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<string> strings, ReadOnlySpan<char> separator, Span<char> result)
     {
-        int length = 0;
+        StringBuilder builder = result;
         int stringsLengthMinus1 = strings.Length - 1;
         ref string firstString = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
             string str = Unsafe.Add(ref firstString, i);
-            str.CopyTo(result[length..]);
-            length += str.Length;
-            separator.CopyTo(result[length..]);
-            length += separator.Length;
+            builder.Append(str, separator);
         }
 
         string lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
-        lastString.CopyTo(result[length..]);
-        length += lastString.Length;
-        return length;
+        builder.Append(lastString);
+        return builder.Length;
+    }
+
+    public static int Join(Span<ReadOnlyMemory<char>> strings, ReadOnlySpan<char> separator, Span<char> result)
+    {
+        return Join((ReadOnlySpan<ReadOnlyMemory<char>>)strings, separator, result);
+    }
+
+    public static int Join(ReadOnlySpan<ReadOnlyMemory<char>> strings, ReadOnlySpan<char> separator, Span<char> result)
+    {
+        StringBuilder builder = result;
+        int stringsLengthMinus1 = strings.Length - 1;
+        ref ReadOnlyMemory<char> firstString = ref MemoryMarshal.GetReference(strings);
+        for (int i = 0; i < stringsLengthMinus1; i++)
+        {
+            ReadOnlyMemory<char> str = Unsafe.Add(ref firstString, i);
+            builder.Append(str.Span, separator);
+        }
+
+        ReadOnlyMemory<char> lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        builder.Append(lastString.Span);
+        return builder.Length;
     }
 
     public static int Join(Span<char> chars, char separator, Span<char> result)
@@ -652,19 +726,18 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<char> chars, char separator, Span<char> result)
     {
-        int length = 0;
+        StringBuilder builder = result;
         int charsLengthMinus1 = chars.Length - 1;
         ref char firstChar = ref MemoryMarshal.GetReference(chars);
         for (int i = 0; i < charsLengthMinus1; i++)
         {
             char c = Unsafe.Add(ref firstChar, i);
-            result[length++] = c;
-            result[length++] = separator;
+            builder.Append(c, separator);
         }
 
         char lastChar = Unsafe.Add(ref firstChar, charsLengthMinus1);
-        result[length++] = lastChar;
-        return length;
+        builder.Append(lastChar);
+        return builder.Length;
     }
 
     public static int Join(Span<char> chars, ReadOnlySpan<char> separator, Span<char> result)
@@ -674,20 +747,19 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<char> chars, ReadOnlySpan<char> separator, Span<char> result)
     {
-        int length = 0;
+        StringBuilder builder = result;
         int charsLengthMinus1 = chars.Length - 1;
         ref char firstChar = ref MemoryMarshal.GetReference(chars);
         for (int i = 0; i < charsLengthMinus1; i++)
         {
             char c = Unsafe.Add(ref firstChar, i);
-            result[length++] = c;
-            separator.CopyTo(result[length..]);
-            length += separator.Length;
+            builder.Append(c);
+            builder.Append(separator);
         }
 
         char lastChar = Unsafe.Add(ref firstChar, charsLengthMinus1);
-        result[length++] = lastChar;
-        return length;
+        builder.Append(lastChar);
+        return builder.Length;
     }
 
     public static int Concat(Span<string> strings, Span<char> result)
@@ -697,16 +769,34 @@ public static class StringHelper
 
     public static int Concat(ReadOnlySpan<string> strings, Span<char> result)
     {
-        int length = 0;
+        StringBuilder builder = result;
         int stringsLength = strings.Length;
         ref string firstString = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLength; i++)
         {
             string str = Unsafe.Add(ref firstString, i);
-            str.CopyTo(result[length..]);
-            length += str.Length;
+            builder.Append(str);
         }
 
-        return length;
+        return builder.Length;
+    }
+
+    public static int Concat(Span<ReadOnlyMemory<char>> strings, Span<char> result)
+    {
+        return Concat((ReadOnlySpan<ReadOnlyMemory<char>>)strings, result);
+    }
+
+    public static int Concat(ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> result)
+    {
+        StringBuilder builder = result;
+        int stringsLength = strings.Length;
+        ref ReadOnlyMemory<char> firstString = ref MemoryMarshal.GetReference(strings);
+        for (int i = 0; i < stringsLength; i++)
+        {
+            ReadOnlyMemory<char> str = Unsafe.Add(ref firstString, i);
+            builder.Append(str.Span);
+        }
+
+        return builder.Length;
     }
 }

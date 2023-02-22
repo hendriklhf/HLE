@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -12,13 +12,13 @@
     <Product>HLE</Product>
     <Description>A class library containing usefull methods and data lists.</Description>
     <Authors>Hendrik</Authors>
-    <PackageTags>library c# csharp .net7</PackageTags>
+    <PackageTags>library c# csharp .net8 dotnet</PackageTags>
     <OutputType>Library</OutputType>
     <DebugType>embedded</DebugType>
     <RepositoryType>git</RepositoryType>
-    <Version>2.0.10</Version>
-    <PackageVersion>2.0.10</PackageVersion>
-    <AssemblyVersion>2.0.10</AssemblyVersion>
+    <Version>2.1.0</Version>
+    <PackageVersion>2.1.0</PackageVersion>
+    <AssemblyVersion>2.1.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>..\Build\HLE.xml</DocumentationFile>
+    <DocumentationFile>.\bin\Release\HLE.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>;NU1605;Nullable</WarningsAsErrors>
   </PropertyGroup>

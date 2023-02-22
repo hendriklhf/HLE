@@ -6,7 +6,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// A class that handles incoming IRC messages.
 /// </summary>
-public sealed class IrcHandler
+public sealed class IrcHandler : IEquatable<IrcHandler>
 {
     #region Events
 
@@ -104,5 +104,20 @@ public sealed class IrcHandler
         }
 
         return false;
+    }
+
+    public bool Equals(IrcHandler? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(OnChatMessageReceived, OnJoinedChannel, OnLeftChannel, OnRoomstateReceived, OnPingReceived, OnReconnectReceived);
     }
 }

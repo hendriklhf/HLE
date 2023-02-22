@@ -15,6 +15,8 @@ public ref struct StringBuilder
 
     public readonly Span<char> this[Range range] => _buffer[range];
 
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[.._length];
+
     public readonly int Length => _length;
 
     public readonly int Capacity => _buffer.Length;
@@ -257,20 +259,12 @@ public ref struct StringBuilder
     public void Remove(int index, int length = 1)
     {
         _buffer[(index + length).._length].CopyTo(_buffer[index..]);
-        _length--;
+        _length -= length;
     }
 
     public readonly void Replace(char oldChar, char newChar)
     {
-        ref char firstChar = ref MemoryMarshal.GetReference(_buffer);
-        for (int i = 0; i < _length; i++)
-        {
-            ref char currentChar = ref Unsafe.Add(ref firstChar, i);
-            if (currentChar == oldChar)
-            {
-                currentChar = newChar;
-            }
-        }
+        _buffer[.._length].Replace(oldChar, newChar);
     }
 
     public void Clear()

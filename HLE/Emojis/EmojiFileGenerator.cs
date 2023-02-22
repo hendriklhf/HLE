@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using HLE.Memory;
 
 namespace HLE.Emojis;
 
@@ -19,7 +21,7 @@ public sealed class EmojiFileGenerator
 
     public int IndentationSize { get; set; }
 
-    private readonly Dictionary<string, string> _illegalWords = new()
+    private readonly FrozenDictionary<string, string> _illegalWords = new Dictionary<string, string>
     {
         { "100", "Hundred" },
         { "+1", "ThumbUp" },
@@ -31,7 +33,7 @@ public sealed class EmojiFileGenerator
         { "8ball", "EightBall" },
         { "Non-potable_water", "NonPotableWater" },
         { "1234", "OneTwoThreeFour" }
-    };
+    }.ToFrozenDictionary();
 
     private byte[]? _emojiJsonBytes;
 

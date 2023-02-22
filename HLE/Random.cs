@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using HLE.Collections;
+using HLE.Memory;
 
 namespace HLE;
 
@@ -15,11 +16,11 @@ public static class Random
     private static readonly System.Random _weak = new();
     private static readonly RandomNumberGenerator _strong = RandomNumberGenerator.Create();
 
-    private const ushort _minAsciiPrintableChar = 32;
-    private const ushort _maxAsciiPrintableChar = 126;
+    private const char _minAsciiPrintableChar = (char)32;
+    private const char _maxAsciiPrintableChar = (char)126;
 
     [Pure]
-    public static char Char(ushort min = _minAsciiPrintableChar, ushort max = _maxAsciiPrintableChar)
+    public static char Char(char min = _minAsciiPrintableChar, char max = _maxAsciiPrintableChar)
     {
         return (char)UShort(min, max);
     }
@@ -156,16 +157,16 @@ public static class Random
     }
 
     [Pure]
-    public static string String(int length, ushort minChar = _minAsciiPrintableChar, ushort maxChar = _maxAsciiPrintableChar)
+    public static string String(int length, char minChar = _minAsciiPrintableChar, char maxChar = _maxAsciiPrintableChar)
     {
         if (length <= 0)
         {
             return string.Empty;
         }
 
-        ushort count = (ushort)(maxChar - minChar);
-        Span<char> chars = MemoryHelper.UseStackAlloc<char>(count) ? stackalloc char[count] : new char[count];
-        for (int i = 0; i < count; i++)
+        ushort charCount = (ushort)(maxChar - minChar);
+        Span<char> chars = MemoryHelper.UseStackAlloc<char>(charCount) ? stackalloc char[charCount] : new char[charCount];
+        for (int i = 0; i < charCount; i++)
         {
             chars[i] = (char)(i + minChar);
         }
@@ -189,15 +190,18 @@ public static class Random
     [Pure]
     public static unsafe T Struct<T>() where T : struct
     {
-        int sizeT = sizeof(T);
         Unsafe.SkipInit(out T result);
-        ref byte firstByte = ref Unsafe.As<T, byte>(ref result);
-        for (int i = 0; i < sizeT; i++)
-        {
-            Unsafe.Add(ref firstByte, i) = Byte();
-        }
-
+        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
+        _weak.NextBytes(bytes);
         return result;
+    }
+
+    [Pure]
+    public static unsafe void Struct<T>(out T result) where T : struct
+    {
+        Unsafe.SkipInit(out result);
+        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
+        _weak.NextBytes(bytes);
     }
 
     public static unsafe void Write<T>(T* destination, int elementCount) where T : struct
@@ -205,12 +209,10 @@ public static class Random
         Write(ref Unsafe.AsRef<T>(destination), elementCount);
     }
 
-    public static void Write<T>(ref T destination, int elementCount) where T : struct
+    public static unsafe void Write<T>(ref T destination, int elementCount) where T : struct
     {
-        for (int i = 0; i < elementCount; i++)
-        {
-            Unsafe.Add(ref destination, i) = Struct<T>();
-        }
+        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref destination), elementCount * sizeof(T));
+        _weak.NextBytes(span);
     }
 
     [Pure]
@@ -364,6 +366,14 @@ public static class Random
         Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
         _strong.GetBytes(span);
         return result;
+    }
+
+    [Pure]
+    public static unsafe void StrongStruct<T>(out T result) where T : struct
+    {
+        Unsafe.SkipInit(out result);
+        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
+        _strong.GetBytes(span);
     }
 
     public static unsafe void WriteStrong<T>(T* destination, int elementCount) where T : struct

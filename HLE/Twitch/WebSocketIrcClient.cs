@@ -11,7 +11,7 @@ namespace HLE.Twitch;
 /// Provides a Twitch IRC server connection via a <see cref="ClientWebSocket"/>.
 /// This class does not validate input, the overlying <see cref="TwitchClient"/> does that.
 /// </summary>
-public sealed class WebSocketIrcClient : IrcClient
+public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClient>
 {
     /// <summary>
     /// Indicates whether the client is connected or not.
@@ -123,5 +123,20 @@ public sealed class WebSocketIrcClient : IrcClient
     public override void Dispose()
     {
         _webSocket.Dispose();
+    }
+
+    public bool Equals(WebSocketIrcClient? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return ReferenceEquals(this, obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_webSocket, Username, _url, _oAuthToken);
     }
 }

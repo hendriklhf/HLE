@@ -8,7 +8,7 @@ namespace HLE.Twitch.Models;
 /// For example, if emote-only mode has been turned on.<br/>
 /// Since this struct has a instance size bigger than a reference size, it should always be passed by reference.
 /// </summary>
-public readonly struct RoomstateArgs
+public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
 {
     /// <summary>
     /// Indicates whether emote-only mode is turned on or off.
@@ -133,4 +133,30 @@ public readonly struct RoomstateArgs
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
+
+    public bool Equals(RoomstateArgs other)
+    {
+        return ChannelId == other.ChannelId && EmoteOnly == other.EmoteOnly && FollowersOnly == other.FollowersOnly &&
+               R9K == other.R9K && SlowMode == other.SlowMode && SubsOnly == other.SubsOnly && _changedStatesFlags == other._changedStatesFlags;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is RoomstateArgs other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(ChannelId, EmoteOnly, FollowersOnly, R9K, SlowMode, SubsOnly, _changedStatesFlags);
+    }
+
+    public static bool operator ==(RoomstateArgs left, RoomstateArgs right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(RoomstateArgs left, RoomstateArgs right)
+    {
+        return !(left == right);
+    }
 }

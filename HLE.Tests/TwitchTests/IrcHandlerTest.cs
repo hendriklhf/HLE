@@ -30,9 +30,9 @@ public class IrcHandlerTest
             Assert.AreEqual(2, chatMessage.Badges.Length);
             Assert.AreEqual("1", chatMessage.Badges[0].Level);
             Assert.AreEqual("1", chatMessage.Badges[1].Level);
-            Assert.AreEqual(0xC2, chatMessage.Color.R);
-            Assert.AreEqual(0x99, chatMessage.Color.G);
-            Assert.AreEqual(0x00, chatMessage.Color.B);
+            Assert.AreEqual(0xC2, chatMessage.Color!.Value.R);
+            Assert.AreEqual(0x99, chatMessage.Color.Value.G);
+            Assert.AreEqual(0x00, chatMessage.Color.Value.B);
             Assert.AreEqual("Strbhlfe", chatMessage.DisplayName);
             Assert.AreEqual(false, chatMessage.IsFirstMessage);
             Assert.AreEqual(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), chatMessage.Id);

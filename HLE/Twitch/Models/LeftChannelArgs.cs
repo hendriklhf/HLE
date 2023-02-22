@@ -5,7 +5,7 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// Arguments used when a user left a channel.
 /// </summary>
-public readonly struct LeftChannelArgs
+public readonly struct LeftChannelArgs : IEquatable<LeftChannelArgs>
 {
     /// <summary>
     /// The username of the user that left the channel. All lower case.
@@ -28,5 +28,30 @@ public readonly struct LeftChannelArgs
         int indexOfExclamationMark = firstWord.IndexOf('!');
         Username = new(firstWord[1..indexOfExclamationMark]);
         Channel = new(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+    }
+
+    public bool Equals(LeftChannelArgs other)
+    {
+        return Username == other.Username && Channel == other.Channel;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is LeftChannelArgs other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Username, Channel);
+    }
+
+    public static bool operator ==(LeftChannelArgs left, LeftChannelArgs right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(LeftChannelArgs left, LeftChannelArgs right)
+    {
+        return !(left == right);
     }
 }
