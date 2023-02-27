@@ -68,4 +68,16 @@ public class NumberHelperTest
             Assert.AreEqual(i, NumberHelper.CharToDigit(c++));
         }
     }
+
+    [TestMethod]
+    public void ParsePositiveInt32Test()
+    {
+        Assert.AreEqual(7334687, NumberHelper.ParsePositiveInt32("7334687"));
+    }
+
+    [TestMethod]
+    public void ParsePositiveInt32FromBytesTest()
+    {
+        Assert.AreEqual(7334687, NumberHelper.ParsePositiveInt32("7334687"u8));
+    }
 }

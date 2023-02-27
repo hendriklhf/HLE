@@ -24,7 +24,7 @@ public static unsafe class MemoryHelper
     /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool UseStackAlloc<T>(int elementCount) where T : struct
+    public static bool UseStackAlloc<T>(int elementCount)
     {
         int totalByteSize = sizeof(T) * elementCount;
         return totalByteSize <= _maxStackAllocSize;

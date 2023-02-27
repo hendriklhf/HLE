@@ -510,23 +510,15 @@ public static class NumberHelper
         return digits.Length;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char DigitToChar(byte digit)
     {
-        if (digit > 9)
-        {
-            throw new InvalidOperationException("The digit must be a single char value, so can't be larger than 9.");
-        }
-
         return (char)(digit + (byte)'0');
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte CharToDigit(char c)
     {
-        if (c is < '0' or > '9')
-        {
-            throw new InvalidOperationException("The char has to be a digit.");
-        }
-
         return (byte)(c - '0');
     }
 
@@ -542,6 +534,28 @@ public static class NumberHelper
     }
 
     public static int ParsePositiveInt32(ReadOnlySpan<char> number)
+    {
+        int result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = 10 * result + number[i] - '0';
+        }
+
+        return result;
+    }
+
+    public static long ParsePositiveInt64(ReadOnlySpan<byte> number)
+    {
+        long result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = 10 * result + number[i] - '0';
+        }
+
+        return result;
+    }
+
+    public static int ParsePositiveInt32(ReadOnlySpan<byte> number)
     {
         int result = 0;
         for (int i = 0; i < number.Length; i++)

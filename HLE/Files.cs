@@ -9,7 +9,7 @@ namespace HLE;
 
 public static class Files
 {
-    public static void ReadBytes(string filePath, IBufferWriter<byte> bufferWriter)
+    public static void ReadBytes(string filePath, PoolBufferWriter<byte> bufferWriter)
     {
         using FileStream fileStream = File.OpenRead(filePath);
         int bytesRead = fileStream.Read(bufferWriter.GetSpan(1000));

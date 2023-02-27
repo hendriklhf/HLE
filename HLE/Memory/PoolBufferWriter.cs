@@ -27,7 +27,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     /// </summary>
     public int Length => _length;
 
-    public int Capcity => _buffer.Length;
+    public int Capacity => _buffer.Length;
 
     private T[] _buffer;
     private int _length;
@@ -171,6 +171,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     [Pure]
     public override int GetHashCode()
     {
-        return HashCode.Combine(_defaultElementGrowth);
+        // ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
+        return base.GetHashCode();
     }
 }

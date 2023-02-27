@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -107,7 +106,11 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     /// <inheritdoc/>
     public IEnumerator<T> GetEnumerator()
     {
-        return _array.AsEnumerable().GetEnumerator();
+        int length = _array.Length;
+        for (int i = 0; i < length; i++)
+        {
+            yield return Span[i];
+        }
     }
 
     /// <inheritdoc/>

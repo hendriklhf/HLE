@@ -30,7 +30,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
 
     public int Count => _bufferWriter.Length;
 
-    public int Capcity => _bufferWriter.Capcity;
+    public int Capacity => _bufferWriter.Capacity;
 
     public bool IsReadOnly => false;
 
@@ -194,7 +194,10 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
 
     public IEnumerator<T> GetEnumerator()
     {
-        return new PoolBufferListEnumerator<T>(this);
+        for (int i = 0; i < _bufferWriter.Length; i++)
+        {
+            yield return _bufferWriter.WrittenSpan[i];
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator()

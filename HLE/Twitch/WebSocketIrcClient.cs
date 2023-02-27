@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -18,7 +19,7 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
     /// </summary>
     public override bool IsConnected => _webSocket.State is WebSocketState.Open;
 
-    private readonly ClientWebSocket _webSocket = new();
+    private ClientWebSocket _webSocket = new();
 
     /// <summary>
     /// The default constructor of <see cref="WebSocketIrcClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
@@ -32,16 +33,15 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
 
     private protected override async ValueTask Send(ReadOnlyMemory<char> message)
     {
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(message.Length << 1);
         try
         {
-            Memory<byte> bytes = rentedArray;
+            using RentedArray<byte> bytes = ArrayPool<byte>.Shared.Rent(message.Length << 1);
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
-            await _webSocket.SendAsync(bytes[..byteCount], WebSocketMessageType.Text, true, default);
+            await _webSocket.SendAsync(bytes.Memory[..byteCount], WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
         }
-        finally
+        catch (WebSocketException)
         {
-            ArrayPool<byte>.Shared.Return(rentedArray);
+            InvokeOnConnectionException();
         }
     }
 
@@ -52,32 +52,39 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
 
     private async ValueTask StartListeningAsync()
     {
-        Memory<byte> byteBuffer = new byte[4096];
-        Memory<char> charBuffer = new char[4096];
-        int bufferLength = 0;
-        while (IsConnected)
+        try
         {
-            ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer, default);
-            if (result.Count == 0)
+            Memory<byte> byteBuffer = new byte[4096];
+            Memory<char> charBuffer = new char[4096];
+            int bufferLength = 0;
+            while (!_cancellationTokenSource.IsCancellationRequested && IsConnected)
             {
-                continue;
+                ValueWebSocketReceiveResult result = await _webSocket.ReceiveAsync(byteBuffer, _cancellationTokenSource.Token);
+                if (result.Count == 0)
+                {
+                    continue;
+                }
+
+                ReadOnlyMemory<byte> receivedBytes = byteBuffer[..result.Count];
+                int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, charBuffer.Span[bufferLength..]);
+                ReadOnlyMemory<char> receivedChars = charBuffer[..(bufferLength + charCount)];
+
+                bool isEndOfMessage = receivedChars.Span[^2] == _newLine[0] && receivedChars.Span[^1] == _newLine[1];
+                if (isEndOfMessage)
+                {
+                    PassAllLines(receivedChars);
+                    bufferLength = 0;
+                    continue;
+                }
+
+                PassAllLinesExceptLast(ref receivedChars);
+                receivedChars.Span.CopyTo(charBuffer.Span);
+                bufferLength = receivedChars.Length;
             }
-
-            ReadOnlyMemory<byte> receivedBytes = byteBuffer[..result.Count];
-            int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, charBuffer.Span[bufferLength..]);
-            ReadOnlyMemory<char> receivedChars = charBuffer[..(bufferLength + charCount)];
-
-            bool isEndOfMessage = receivedChars.Span[^2] == _newLine[0] && receivedChars.Span[^1] == _newLine[1];
-            if (isEndOfMessage)
-            {
-                PassAllLines(receivedChars);
-                bufferLength = 0;
-                continue;
-            }
-
-            PassAllLinesExceptLast(ref receivedChars);
-            receivedChars.Span.CopyTo(charBuffer.Span);
-            bufferLength = receivedChars.Length;
+        }
+        catch (WebSocketException)
+        {
+            InvokeOnConnectionException();
         }
     }
 
@@ -106,12 +113,26 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
 
     private protected override async ValueTask ConnectClient()
     {
-        await _webSocket.ConnectAsync(new($"{_url.Url}:{_url.Port}"), default);
+        try
+        {
+            await _webSocket.ConnectAsync(new($"{_url.Url}:{_url.Port}"), _cancellationTokenSource.Token);
+        }
+        catch (WebSocketException)
+        {
+            InvokeOnConnectionException();
+        }
     }
 
     private protected override async ValueTask DisconnectClient(string closeMessage)
     {
-        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, default);
+        try
+        {
+            await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _cancellationTokenSource.Token);
+        }
+        catch (WebSocketException)
+        {
+            InvokeOnConnectionException();
+        }
     }
 
     private protected override (string Url, int Port) GetUrl()
@@ -119,10 +140,18 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         return UseSSL ? ("wss://irc-ws.chat.twitch.tv", 443) : ("ws://irc-ws.chat.twitch.tv", 80);
     }
 
+    private protected override void InvokeOnConnectionException()
+    {
+        _webSocket.Dispose();
+        _webSocket = new();
+        base.InvokeOnConnectionException();
+    }
+
     /// <inheritdoc cref="IDisposable.Dispose"/>
     public override void Dispose()
     {
         _webSocket.Dispose();
+        base.Dispose();
     }
 
     public bool Equals(WebSocketIrcClient? other)
@@ -137,6 +166,6 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(_webSocket, Username, _url, _oAuthToken);
+        return HashCode.Combine(Username, _url, _oAuthToken);
     }
 }

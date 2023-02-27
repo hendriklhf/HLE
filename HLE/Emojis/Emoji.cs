@@ -5,7 +5,7 @@
 namespace HLE.Emojis;
 
 /// <summary>
-///     A class that contains (almost) every existing emoji. Generated 01.01.2023 03:56:24 with the <see cref="EmojiFileGenerator"/>.
+/// A class that contains (almost) every existing emoji. Generated 01.01.2023 03:56:24 with the <see cref="EmojiFileGenerator"/>.
 /// </summary>
 public static class Emoji
 {

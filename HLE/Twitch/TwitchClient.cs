@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -90,6 +89,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     private readonly IrcHandler _ircHandler = new();
     private readonly List<string> _ircChannels = new();
     private readonly Memory<char> _pingResponseBuffer = new char[50];
+    private bool _reconnecting;
 
     private static readonly Regex _channelPattern = new(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
     private static readonly Regex _anonymousLoginPattern = new(@"^justinfan[0-9]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
@@ -109,9 +109,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketIrcClient(_anonymousUsername, null, options),
-#if TCP
-            ClientType.Tcp => new TcpIrcClient(_anonymousUsername, null, options),
-#endif
             _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
         IsAnonymousLogin = true;
@@ -134,9 +131,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client = ClientType switch
         {
             ClientType.WebSocket => new WebSocketIrcClient(username, oAuthToken, options),
-#if TCP
-            ClientType.Tcp => new TcpIrcClient(username, oAuthToken, options),
-#endif
             _ => throw new ArgumentOutOfRangeException($"Unknown {nameof(Models.ClientType)}: {ClientType}")
         };
         IsAnonymousLogin = false;
@@ -153,9 +147,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         ClientType = ircClient switch
         {
             WebSocketIrcClient => ClientType.WebSocket,
-#if TCP
-            TcpIrcClient => ClientType.Tcp,
-#endif
             _ => (ClientType)(-1)
         };
         IsAnonymousLogin = _anonymousLoginPattern.IsMatch(ircClient.Username);
@@ -169,6 +160,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
         _client.OnDisconnected += (_, e) => OnDisconnected?.Invoke(this, e);
         _client.OnDataReceived += IrcClient_OnDataReceived;
+        _client.OnConnectionException += (_, _) => { ReconnectAfterConnectionException().Wait(); };
 
         _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
         _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
@@ -214,12 +206,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             throw Exceptions.AnonymousConnection;
         }
 
-        string? prefixedChannel = Channels[channel.Span]?._prefixedName;
-        if (prefixedChannel is null)
-        {
-            throw Exceptions.NotConnectedToTheSpecifiedChannel;
-        }
-
+        string prefixedChannel = (Channels[channel.Span]?._prefixedName) ?? throw Exceptions.NotConnectedToTheSpecifiedChannel;
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -277,12 +264,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             throw Exceptions.AnonymousConnection;
         }
 
-        string? prefixedChannel = Channels[channelId]?._prefixedName;
-        if (prefixedChannel is null)
-        {
-            throw Exceptions.NotConnectedToTheSpecifiedChannel;
-        }
-
+        string prefixedChannel = (Channels[channelId]?._prefixedName) ?? throw Exceptions.NotConnectedToTheSpecifiedChannel;
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -348,12 +330,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    public async Task JoinChannelsAsync(IEnumerable<string> channels)
-    {
-        await JoinChannelsAsync(channels.ToArray().AsMemory());
-    }
-
-    /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async Task JoinChannelsAsync(List<string> channels)
     {
         await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
@@ -376,12 +352,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         {
             await JoinChannelAsync(channels.Span[i]);
         }
-    }
-
-    /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
-    public void JoinChannels(IEnumerable<string> channels)
-    {
-        JoinChannels(channels.ToArray());
     }
 
     /// <inheritdoc cref="JoinChannels(ReadOnlyMemory{string})"/>
@@ -485,12 +455,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
-    public async Task LeaveChannelsAsync(IEnumerable<string> channels)
-    {
-        await LeaveChannelsAsync(channels.ToArray().AsMemory());
-    }
-
-    /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async Task LeaveChannelsAsync(List<string> channels)
     {
         await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
@@ -512,12 +476,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         {
             await LeaveChannelAsync(channels.Span[i]);
         }
-    }
-
-    /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>
-    public void LeaveChannels(IEnumerable<string> channels)
-    {
-        LeaveChannels(channels.ToArray().AsMemory());
     }
 
     /// <inheritdoc cref="LeaveChannels(ReadOnlyMemory{string})"/>
@@ -622,6 +580,27 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         {
             data.Dispose();
         }
+    }
+
+    private async Task ReconnectAfterConnectionException()
+    {
+        if (_reconnecting || IsConnected)
+        {
+            return;
+        }
+
+        _reconnecting = true;
+        try
+        {
+            _client.CancelTasks();
+            await Task.Delay(TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            _reconnecting = false;
+        }
+
+        await _client.ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
     }
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)

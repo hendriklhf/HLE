@@ -70,9 +70,8 @@ public sealed class HTimer : IEquatable<HTimer>
         return ReferenceEquals(this, obj);
     }
 
-    [Pure]
     public override int GetHashCode()
     {
-        return _timer.GetHashCode();
+        return HashCode.Combine(_timer);
     }
 }

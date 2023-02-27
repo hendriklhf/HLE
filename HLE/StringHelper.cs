@@ -799,4 +799,16 @@ public static class StringHelper
 
         return builder.Length;
     }
+
+    [Pure]
+    public static ReadOnlySpan<byte> AsByteSpan(this string? str)
+    {
+        if (str is null || str.Length == 0)
+        {
+            return Array.Empty<byte>();
+        }
+
+        ref char firstChar = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref firstChar), str.Length << 1);
+    }
 }

@@ -344,7 +344,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
             return true;
         }
 
-        return Id == other?.Id;
+        return Id == other?.Id && TmiSentTs == other.TmiSentTs;
     }
 
     public override bool Equals(object? obj)

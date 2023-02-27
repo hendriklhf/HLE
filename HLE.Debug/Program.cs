@@ -1,4 +1,7 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using BenchmarkDotNet.Attributes;
+using HLE.Twitch;
+using HLE.Twitch.Chatterino;
 
 namespace HLE.Debug;
 
@@ -6,6 +9,15 @@ public static class Program
 {
     private static void Main()
     {
+        using TwitchClient client = new();
+        client.JoinChannels(ChatterinoHelper.GetChannels());
+        client.OnDataReceived += (_, d) =>
+        {
+            Console.WriteLine(new string(d.Span));
+            d.Dispose();
+        };
+        client.Connect();
+        Console.ReadKey();
     }
 }
 

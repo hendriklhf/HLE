@@ -124,7 +124,7 @@ public sealed class EmojiFileGenerator
         builder.Append("// ReSharper disable InconsistentNaming", Environment.NewLine, Environment.NewLine);
         builder.Append("namespace ", NamespaceName, ";", Environment.NewLine, Environment.NewLine);
         builder.Append("/// <summary>", Environment.NewLine);
-        builder.Append("///     A class that contains (almost) every existing emoji. Generated ", DateTime.UtcNow.ToString("R"), " with the <see cref=\"", nameof(EmojiFileGenerator), "\"/>.", Environment.NewLine);
+        builder.Append("/// A class that contains (almost) every existing emoji. Generated ", DateTime.UtcNow.ToString("R"), " with the <see cref=\"", nameof(EmojiFileGenerator), "\"/>.", Environment.NewLine);
         builder.Append("/// </summary>", Environment.NewLine);
         builder.Append("public static class Emoji", Environment.NewLine, "{", Environment.NewLine);
     }

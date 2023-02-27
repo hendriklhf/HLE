@@ -153,6 +153,7 @@ public sealed class TcpIrcClient : IrcClient
         _tcpClient.Dispose();
         _reader?.Dispose();
         _writer?.Dispose();
+        base.Dispose();
     }
 }
 #endif

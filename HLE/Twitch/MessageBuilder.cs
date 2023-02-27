@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace HLE.Twitch;
 
@@ -29,14 +28,9 @@ public struct MessageBuilder : IDisposable, IEquatable<MessageBuilder>
     private readonly char[] _buffer = Array.Empty<char>();
     private int _length;
 
-    private const ushort _maxMessageLength = 500;
+    private const ushort _maxChatMessageLength = 500;
 
-    public MessageBuilder()
-    {
-        _buffer = ArrayPool<char>.Shared.Rent(_maxMessageLength);
-    }
-
-    public MessageBuilder(int bufferLength)
+    public MessageBuilder(int bufferLength = _maxChatMessageLength)
     {
         _buffer = ArrayPool<char>.Shared.Rent(bufferLength);
     }
@@ -260,20 +254,12 @@ public struct MessageBuilder : IDisposable, IEquatable<MessageBuilder>
     public void Remove(int index, int length = 1)
     {
         Span[(index + length).._length].CopyTo(Span[index..]);
-        _length--;
+        _length -= length;
     }
 
     public readonly void Replace(char oldChar, char newChar)
     {
-        ref char firstChar = ref MemoryMarshal.GetArrayDataReference(_buffer);
-        for (int i = 0; i < _length; i++)
-        {
-            ref char currentChar = ref Unsafe.Add(ref firstChar, i);
-            if (currentChar == oldChar)
-            {
-                currentChar = newChar;
-            }
-        }
+        Span[.._length].Replace(oldChar, newChar);
     }
 
     public void Clear()

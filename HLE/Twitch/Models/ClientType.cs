@@ -2,6 +2,5 @@
 
 public enum ClientType : sbyte
 {
-    WebSocket,
-    Tcp
+    WebSocket
 }

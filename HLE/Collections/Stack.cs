@@ -12,12 +12,11 @@ public ref struct Stack<T>
     private readonly Span<T> _stack = Span<T>.Empty;
     private int _count;
 
-    public Stack(Span<T> stack)
+    public Stack()
     {
-        _stack = stack;
     }
 
-    public Stack(Span<T> stack, int count)
+    public Stack(Span<T> stack, int count = 0)
     {
         _stack = stack;
         _count = count;
