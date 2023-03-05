@@ -25,7 +25,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     /// The color of the user's name in a Twitch chat overlay.
     /// If the user does not have a color, the value is "Color.Empty".
     /// </summary>
-    public (byte R, byte G, byte B)? Color { get; }
+    public Color Color { get; }
 
     /// <summary>
     /// The display name of the user with the preferred casing.
@@ -239,9 +239,9 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static (byte R, byte G, byte B)? GetColor(ReadOnlySpan<char> value)
+    private static Color GetColor(ReadOnlySpan<char> value)
     {
-        return value.Length == 0 ? null : ParseHexColor(value[1..]);
+        return value.Length == 0 ? Color.Empty : ParseHexColor(value[1..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -297,7 +297,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private static (byte R, byte G, byte B) ParseHexColor(ReadOnlySpan<char> number)
+    private static Color ParseHexColor(ReadOnlySpan<char> number)
     {
         char firstChar = number[0];
         char thirdChar = number[2];
@@ -319,7 +319,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         green |= (byte)(IsHexLetter(forthChar) ? forthChar - _upperCaseAMinus10 : forthChar - _charZero);
         blue |= (byte)(IsHexLetter(sixthChar) ? sixthChar - _upperCaseAMinus10 : sixthChar - _charZero);
 
-        return (red, green, blue);
+        return new(red, green, blue);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -339,21 +339,16 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
 
     public bool Equals(ChatMessage? other)
     {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return Id == other?.Id && TmiSentTs == other.TmiSentTs;
+        return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
     }
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return ReferenceEquals(this, obj) || (obj is ChatMessage other && Equals(other));
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Id, ChannelId, UserId, Message, TmiSentTs);
+        return HashCode.Combine(Id, TmiSentTs);
     }
 }

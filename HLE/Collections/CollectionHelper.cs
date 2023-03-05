@@ -6,6 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -781,4 +782,100 @@ public static class CollectionHelper
 
     [Pure]
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static void FillAscending(Span<int> span, int start = 0)
+    {
+        int vector512Count = Vector512<int>.Count;
+        if (Vector512.IsHardwareAccelerated && span.Length > vector512Count)
+        {
+            var ascendingValueAdditions = Vector512.Create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14, 15);
+            while (span.Length > vector512Count)
+            {
+                Vector512<int> startValues = Vector512.Create(start);
+                Vector512<int> values = Vector512.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector512Count;
+                span = span[vector512Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = start + i;
+            }
+
+            return;
+        }
+
+        int vector256Count = Vector256<int>.Count;
+        if (Vector256.IsHardwareAccelerated && span.Length > vector256Count)
+        {
+            Vector256<int> ascendingValueAdditions = Vector256.Create(0, 1, 2, 3, 4, 5, 6, 7);
+            while (span.Length > vector256Count)
+            {
+                Vector256<int> startValues = Vector256.Create(start);
+                Vector256<int> values = Vector256.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector256Count;
+                span = span[vector256Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = start + i;
+            }
+
+            return;
+        }
+
+        int vector128Count = Vector128<int>.Count;
+        if (Vector128.IsHardwareAccelerated && span.Length > vector128Count)
+        {
+            Vector128<int> ascendingValueAdditions = Vector128.Create(0, 1, 2, 3);
+            while (span.Length > vector128Count)
+            {
+                Vector128<int> startValues = Vector128.Create(start);
+                Vector128<int> values = Vector128.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector128Count;
+                span = span[vector128Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = start + i;
+            }
+
+            return;
+        }
+
+        int vector64Count = Vector64<int>.Count;
+        if (Vector64.IsHardwareAccelerated && span.Length > vector64Count)
+        {
+            Vector64<int> ascendingValueAdditions = Vector64.Create(0, 1);
+            while (span.Length > vector64Count)
+            {
+                Vector64<int> startValues = Vector64.Create(start);
+                Vector64<int> values = Vector64.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector64Count;
+                span = span[vector64Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = start + i;
+            }
+
+            return;
+        }
+
+        int spanLength = span.Length;
+        ref int firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            Unsafe.Add(ref firstItem, i) = start + i;
+        }
+    }
 }

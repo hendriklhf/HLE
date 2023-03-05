@@ -108,7 +108,7 @@ public sealed class EmojiFileGenerator
                     nameBuffer[0] = char.ToUpper(nameBuffer[0]);
                     CheckForIllegalName(nameBuffer, ref nameLength);
 
-                    builder.Append(indentation, _publicConstString, StringHelper.Whitespace, nameBuffer[..nameLength], StringHelper.Whitespace);
+                    builder.Append(indentation, _publicConstString, " ", nameBuffer[..nameLength], " ");
                     builder.Append(_equalSignSpaceQuotation, emojiBuffer[..emojiLength], _quotationSemicolon, Environment.NewLine);
                     break;
                 default:

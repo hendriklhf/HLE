@@ -99,16 +99,16 @@ public sealed class Channel : IEquatable<Channel>
 
     public bool Equals(Channel? other)
     {
-        return ReferenceEquals(this, other);
+        return ReferenceEquals(this, other) || Id == other?.Id;
     }
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is Channel other && Equals(other);
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Id, Name);
+        return Id.GetHashCode();
     }
 }

@@ -28,11 +28,6 @@ public static class Random
     [Pure]
     public static byte Byte(byte min = byte.MinValue, byte max = byte.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < byte.MaxValue)
         {
             max++;
@@ -44,11 +39,6 @@ public static class Random
     [Pure]
     public static sbyte SByte(sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < sbyte.MaxValue)
         {
             max++;
@@ -60,11 +50,6 @@ public static class Random
     [Pure]
     public static short Short(short min = short.MinValue, short max = short.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < short.MaxValue)
         {
             max++;
@@ -76,11 +61,6 @@ public static class Random
     [Pure]
     public static ushort UShort(ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < ushort.MaxValue)
         {
             max++;
@@ -99,11 +79,6 @@ public static class Random
     [Pure]
     public static int Int(int min = int.MinValue, int max = int.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < int.MaxValue)
         {
             max++;
@@ -115,11 +90,6 @@ public static class Random
     [Pure]
     public static uint UInt(uint min = uint.MinValue, uint max = uint.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < uint.MaxValue)
         {
             max++;
@@ -131,11 +101,6 @@ public static class Random
     [Pure]
     public static long Long(long min = long.MinValue, long max = long.MaxValue)
     {
-        if (min > max)
-        {
-            (max, min) = (min, max);
-        }
-
         if (max < long.MaxValue)
         {
             max++;

@@ -73,7 +73,7 @@ public static unsafe class MemoryHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint GetRawDataPointer<T>(T reference) where T : class
+    public static nuint GetRawDataPointer<T>(T reference) where T : class?
     {
         return *(nuint*)(nuint)(&reference);
     }

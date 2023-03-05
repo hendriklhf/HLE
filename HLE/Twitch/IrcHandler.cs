@@ -1,4 +1,5 @@
 ﻿using System;
+using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -118,6 +119,6 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(OnChatMessageReceived, OnJoinedChannel, OnLeftChannel, OnRoomstateReceived, OnPingReceived, OnReconnectReceived);
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
     }
 }
