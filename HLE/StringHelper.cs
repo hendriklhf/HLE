@@ -30,8 +30,6 @@ public static class StringHelper
     /// </summary>
     public const string AntipingChar = "\uDB40\uDC00";
 
-    public const string Whitespace = " ";
-
     [Pure]
     public static string[] Part(this string str, int charCount)
     {
@@ -128,7 +126,7 @@ public static class StringHelper
     [Pure]
     public static string TrimAll(this string str)
     {
-        return _multipleSpacesPattern.Replace(str.Trim(), Whitespace);
+        return _multipleSpacesPattern.Replace(str.Trim(), " ");
     }
 
     [Pure]
@@ -159,12 +157,12 @@ public static class StringHelper
 
         int indicesLength = 0;
         int idx = span.IndexOf(c);
-        int totalIdx = idx;
+        int spanStartIndex = idx;
         while (idx != -1)
         {
-            indices[indicesLength++] = totalIdx;
-            idx = span[++totalIdx..].IndexOf(c);
-            totalIdx += idx;
+            indices[indicesLength++] = spanStartIndex;
+            idx = span[++spanStartIndex..].IndexOf(c);
+            spanStartIndex += idx;
         }
 
         return indicesLength;
@@ -198,13 +196,13 @@ public static class StringHelper
 
         int indicesLength = 0;
         int idx = span.IndexOf(s);
-        int totalIdx = idx;
+        int spanStartIndex = idx;
         while (idx != -1)
         {
-            indices[indicesLength++] = totalIdx;
-            totalIdx += s.Length;
-            idx = span[totalIdx..].IndexOf(s, StringComparison.Ordinal);
-            totalIdx += idx;
+            indices[indicesLength++] = spanStartIndex;
+            spanStartIndex += s.Length;
+            idx = span[spanStartIndex..].IndexOf(s, StringComparison.Ordinal);
+            spanStartIndex += idx;
         }
 
         return indicesLength;
@@ -266,11 +264,11 @@ public static class StringHelper
 
         Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
-        indices = indices[..indicesLength];
-        return GetRangesOfSplit(ranges, indices);
+        return GetRangesOfSplit(ranges, indices[..indicesLength]);
     }
 
-    public static int GetRangesOfSplit(Span<Range> ranges, ReadOnlySpan<int> indices)
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static int GetRangesOfSplit(Span<Range> ranges, ReadOnlySpan<int> indices, int separatorLength = 1)
     {
         switch (ranges.Length)
         {
@@ -281,17 +279,150 @@ public static class StringHelper
                 return 1;
         }
 
-        int start = 0;
-        int rangesLength = 0;
-        while (rangesLength < indices.Length)
+        ref int rangesAsInt = ref Unsafe.As<Range, int>(ref MemoryMarshal.GetReference(ranges));
+
+        int rangesAsIntLength = 0;
+        int vector512Count = Vector512<int>.Count;
+        if (Vector512.IsHardwareAccelerated && indices.Length > vector512Count)
         {
-            int end = indices[rangesLength];
-            ranges[rangesLength++] = start..end;
-            start = end + 1;
+            var separatorLengthVector = Vector512.Create(separatorLength);
+            while (indices.Length > vector512Count)
+            {
+                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
+                var endIndices = Vector512.LoadUnsafe(ref firstIndex);
+                var startIndices = Vector512.Add(endIndices, separatorLengthVector);
+
+                var firstHalf = Vector512.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1], endIndices[2], startIndices[2], endIndices[3], startIndices[3], endIndices[4], startIndices[4],
+                    endIndices[5], startIndices[5], endIndices[6], startIndices[6], endIndices[7], startIndices[7]);
+                var secondHalf = Vector512.Create(endIndices[8], startIndices[8], endIndices[9], startIndices[9], endIndices[10], startIndices[10], endIndices[11], startIndices[11], endIndices[12], startIndices[12],
+                    endIndices[13], startIndices[13], endIndices[14], startIndices[14], endIndices[15], startIndices[15]);
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector512Count + 1));
+
+                indices = indices[vector512Count..];
+                rangesAsIntLength += vector512Count << 1;
+            }
+
+            rangesAsIntLength++;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int index = indices[i];
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
+            }
+
+            Unsafe.Add(ref rangesAsInt, 0) = 0;
+            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
+            return (rangesAsIntLength >> 1) + 1;
         }
 
-        ranges[rangesLength++] = (indices[^1] + 1)..;
-        return rangesLength;
+        int vector256Count = Vector256<int>.Count;
+        if (Vector256.IsHardwareAccelerated && indices.Length > vector256Count)
+        {
+            var separatorLengthVector = Vector256.Create(separatorLength);
+            while (indices.Length > vector256Count)
+            {
+                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
+                var endIndices = Vector256.LoadUnsafe(ref firstIndex);
+                var startIndices = Vector256.Add(endIndices, separatorLengthVector);
+
+                var firstHalf = Vector256.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1], endIndices[2], startIndices[2], endIndices[3], startIndices[3]);
+                var secondHalf = Vector256.Create(endIndices[4], startIndices[4], endIndices[5], startIndices[5], endIndices[6], startIndices[6], endIndices[7], startIndices[7]);
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector256Count + 1));
+
+                indices = indices[vector256Count..];
+                rangesAsIntLength += vector256Count << 1;
+            }
+
+            rangesAsIntLength++;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int index = indices[i];
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
+            }
+
+            Unsafe.Add(ref rangesAsInt, 0) = 0;
+            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
+            return (rangesAsIntLength >> 1) + 1;
+        }
+
+        int vector128Count = Vector128<int>.Count;
+        if (Vector128.IsHardwareAccelerated && indices.Length > vector256Count)
+        {
+            var separatorLengthVector = Vector128.Create(separatorLength);
+            while (indices.Length > vector128Count)
+            {
+                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
+                var endIndices = Vector128.LoadUnsafe(ref firstIndex);
+                var startIndices = Vector128.Add(endIndices, separatorLengthVector);
+
+                var firstHalf = Vector128.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1]);
+                var secondHalf = Vector128.Create(endIndices[2], startIndices[2], endIndices[3], startIndices[3]);
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector128Count + 1));
+
+                indices = indices[vector128Count..];
+                rangesAsIntLength += vector128Count << 1;
+            }
+
+            rangesAsIntLength++;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int index = indices[i];
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
+            }
+
+            Unsafe.Add(ref rangesAsInt, 0) = 0;
+            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
+            return (rangesAsIntLength >> 1) + 1;
+        }
+
+        int vector64Count = Vector64<int>.Count;
+        if (Vector64.IsHardwareAccelerated && indices.Length > vector256Count)
+        {
+            var separatorLengthVector = Vector64.Create(separatorLength);
+            while (indices.Length > vector64Count)
+            {
+                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
+                var endIndices = Vector64.LoadUnsafe(ref firstIndex);
+                var startIndices = Vector64.Add(endIndices, separatorLengthVector);
+
+                var firstHalf = Vector64.Create(endIndices[0], startIndices[0]);
+                var secondHalf = Vector64.Create(endIndices[1], startIndices[1]);
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector64Count + 1));
+
+                indices = indices[vector64Count..];
+                rangesAsIntLength += vector64Count << 1;
+            }
+
+            rangesAsIntLength++;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int index = indices[i];
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
+                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
+            }
+
+            Unsafe.Add(ref rangesAsInt, 0) = 0;
+            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
+            return (rangesAsIntLength >> 1) + 1;
+        }
+
+        rangesAsIntLength++;
+        for (int i = 0; i < indices.Length; i++)
+        {
+            int index = indices[i];
+            Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
+            Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
+        }
+
+        Unsafe.Add(ref rangesAsInt, 0) = 0;
+        Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
+        return (rangesAsIntLength >> 1) + 1;
     }
 
     [Pure]
@@ -328,31 +459,7 @@ public static class StringHelper
         Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int indicesLength = IndicesOf(span, separator, indices);
         ranges = ranges[..(indicesLength + 1)];
-        return GetRangesOfSplit(separator.Length, ranges, indices[..indicesLength]);
-    }
-
-    internal static int GetRangesOfSplit(int separatorLength, Span<Range> ranges, ReadOnlySpan<int> indices)
-    {
-        switch (ranges.Length)
-        {
-            case 0:
-                return 0;
-            case > 0 when indices.Length == 0:
-                ranges[0] = ..;
-                return 1;
-        }
-
-        int start = 0;
-        int rangesLength = 0;
-        while (rangesLength < indices.Length)
-        {
-            int end = indices[rangesLength];
-            ranges[rangesLength++] = start..end;
-            start = end + separatorLength;
-        }
-
-        ranges[rangesLength++] = (indices[^1] + separatorLength)..;
-        return rangesLength;
+        return GetRangesOfSplit(ranges, indices[..indicesLength], separator.Length);
     }
 
     /// <summary>
@@ -387,10 +494,10 @@ public static class StringHelper
             while (shortSpan.Length >= vector512Count)
             {
                 Vector512<ushort> vector = Vector512.Create(shortSpan[..vector512Count]);
-                shortSpan = shortSpan[vector512Count..];
                 Vector512<ushort> equals = Vector512.Equals(vector, equalsVector);
                 Vector512<ushort> and = Vector512.BitwiseAnd(equals, oneVector);
-                result += Vector512.Dot(and, oneVector);
+                result += Vector512.Sum(and);
+                shortSpan = shortSpan[vector512Count..];
             }
 
             for (int i = 0; i < shortSpan.Length; i++)
@@ -411,10 +518,10 @@ public static class StringHelper
             while (shortSpan.Length >= vector256Count)
             {
                 Vector256<ushort> vector = Vector256.Create(shortSpan[..vector256Count]);
-                shortSpan = shortSpan[vector256Count..];
                 Vector256<ushort> equals = Vector256.Equals(vector, equalsVector);
                 Vector256<ushort> and = Vector256.BitwiseAnd(equals, oneVector);
-                result += Vector256.Dot(and, oneVector);
+                result += Vector256.Sum(and);
+                shortSpan = shortSpan[vector256Count..];
             }
 
             for (int i = 0; i < shortSpan.Length; i++)
@@ -435,10 +542,10 @@ public static class StringHelper
             while (shortSpan.Length >= vector128Count)
             {
                 Vector128<ushort> vector = Vector128.Create(shortSpan[..vector128Count]);
-                shortSpan = shortSpan[vector128Count..];
                 Vector128<ushort> equals = Vector128.Equals(vector, equalsVector);
                 Vector128<ushort> and = Vector128.BitwiseAnd(equals, oneVector);
-                result += Vector128.Dot(and, oneVector);
+                result += Vector128.Sum(and);
+                shortSpan = shortSpan[vector128Count..];
             }
 
             for (int i = 0; i < shortSpan.Length; i++)
@@ -459,10 +566,10 @@ public static class StringHelper
             while (shortSpan.Length >= vector64Count)
             {
                 Vector64<ushort> vector = Vector64.Create(shortSpan[..vector64Count]);
-                shortSpan = shortSpan[vector64Count..];
                 Vector64<ushort> equals = Vector64.Equals(vector, equalsVector);
                 Vector64<ushort> and = Vector64.BitwiseAnd(equals, oneVector);
-                result += Vector64.Dot(and, oneVector);
+                result += Vector64.Sum(and);
+                shortSpan = shortSpan[vector64Count..];
             }
 
             for (int i = 0; i < shortSpan.Length; i++)
@@ -506,7 +613,7 @@ public static class StringHelper
                 span = span[vector512Count..];
                 Vector512<byte> equals = Vector512.Equals(vector, equalsVector);
                 Vector512<byte> and = Vector512.BitwiseAnd(equals, oneVector);
-                result += Vector512.Dot(and, oneVector);
+                result += Vector512.Sum(and);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -529,7 +636,7 @@ public static class StringHelper
                 span = span[vector256Count..];
                 Vector256<byte> equals = Vector256.Equals(vector, equalsVector);
                 Vector256<byte> and = Vector256.BitwiseAnd(equals, oneVector);
-                result += Vector256.Dot(and, oneVector);
+                result += Vector256.Sum(and);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -552,7 +659,7 @@ public static class StringHelper
                 span = span[vector128Count..];
                 Vector128<byte> equals = Vector128.Equals(vector, equalsVector);
                 Vector128<byte> and = Vector128.BitwiseAnd(equals, oneVector);
-                result += Vector128.Dot(and, oneVector);
+                result += Vector128.Sum(and);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -575,7 +682,7 @@ public static class StringHelper
                 span = span[vector64Count..];
                 Vector64<byte> equals = Vector64.Equals(vector, equalsVector);
                 Vector64<byte> and = Vector64.BitwiseAnd(equals, oneVector);
-                result += Vector64.Dot(and, oneVector);
+                result += Vector64.Sum(and);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -599,6 +706,7 @@ public static class StringHelper
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
     {
+        // chars to escape: "\\*+?|{[()^$. "
         StringBuilder builder = escapedInput;
         int inputLength = input.Length;
         ref char firstChar = ref MemoryMarshal.GetReference(input);
@@ -805,7 +913,7 @@ public static class StringHelper
     {
         if (str is null || str.Length == 0)
         {
-            return Array.Empty<byte>();
+            return ReadOnlySpan<byte>.Empty;
         }
 
         ref char firstChar = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
