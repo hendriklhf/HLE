@@ -209,8 +209,13 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> message = IsAction ? ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1] : ircMessage[(indicesOfWhitespaces[3] + 2)..];
-        return new(message);
+        if (IsAction)
+        {
+            ircMessage = ircMessage[242..];
+            return new(ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1]);
+        }
+
+        return new(ircMessage[(indicesOfWhitespaces[3] + 2)..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
