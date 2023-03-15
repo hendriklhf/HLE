@@ -9,15 +9,14 @@ public static class Program
 {
     private static void Main()
     {
-        using TwitchClient client = new();
-        client.JoinChannels(ChatterinoHelper.GetChannels());
-        client.OnDataReceived += (_, d) =>
+        ManualConfig config = new()
         {
-            Console.WriteLine(new string(d.Span));
-            d.Dispose();
+            SummaryStyle = new(default, true, SizeUnit.B, TimeUnit.GetBestTimeUnit())
         };
-        client.Connect();
-        Console.ReadKey();
+        config.AddLogger(ConsoleLogger.Default);
+        config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, StatisticColumn.StdDev);
+        config.AddColumnProvider(DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
+        BenchmarkRunner.Run<Bench>(config);
     }
 }
 
@@ -27,7 +26,7 @@ ManualConfig config = new()
     SummaryStyle = new(default, true, SizeUnit.B, TimeUnit.GetBestTimeUnit())
 };
 config.AddLogger(ConsoleLogger.Default);
-config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean);
+config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, StatisticColumn.StdDev);
 config.AddColumnProvider(DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
 BenchmarkRunner.Run<Bench>(config);
 */

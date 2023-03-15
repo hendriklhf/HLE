@@ -1,7 +1,6 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -16,113 +15,6 @@ namespace HLE.Collections;
 /// </summary>
 public static class CollectionHelper
 {
-    public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T> action)
-    {
-        return collection switch
-        {
-            T[] array => ForEach(array, action),
-            List<T> list => ForEach(list, action).ToArray(),
-            _ => ForEach(collection.ToArray(), action)
-        };
-    }
-
-    public static List<T> ForEach<T>(this List<T> list, Action<T> action)
-    {
-        ForEach(CollectionsMarshal.AsSpan(list), action);
-        return list;
-    }
-
-    public static T[] ForEach<T>(this T[] array, Action<T> action)
-    {
-        ForEach((ReadOnlySpan<T>)array, action);
-        return array;
-    }
-
-    public static void ForEach<T>(this Span<T> span, Action<T> action)
-    {
-        ForEach((ReadOnlySpan<T>)span, action);
-    }
-
-    public static void ForEach<T>(this ReadOnlySpan<T> span, Action<T> action)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            action(Unsafe.Add(ref firstItem, i));
-        }
-    }
-
-    public static T[] ForEach<T>(this IEnumerable<T> collection, Action<T, int> action)
-    {
-        return collection switch
-        {
-            T[] array => ForEach(array, action),
-            List<T> list => ForEach(list, action).ToArray(),
-            _ => ForEach(collection.ToArray(), action)
-        };
-    }
-
-    public static List<T> ForEach<T>(this List<T> list, Action<T, int> action)
-    {
-        ForEach(CollectionsMarshal.AsSpan(list), action);
-        return list;
-    }
-
-    public static T[] ForEach<T>(this T[] array, Action<T, int> action)
-    {
-        ForEach((ReadOnlySpan<T>)array, action);
-        return array;
-    }
-
-    public static void ForEach<T>(this Span<T> span, Action<T, int> action)
-    {
-        ForEach((ReadOnlySpan<T>)span, action);
-    }
-
-    public static void ForEach<T>(this ReadOnlySpan<T> span, Action<T, int> action)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return;
-        }
-
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            action(Unsafe.Add(ref firstItem, i), i);
-        }
-    }
-
-    [Pure]
-    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this IEnumerable<T>? collection)
-    {
-        return collection switch
-        {
-            T[] array => array.Length == 0,
-            List<T> list => list.Count == 0,
-            _ => collection is null || !collection.Any()
-        };
-    }
-
-    [Pure]
-    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this List<T>? list)
-    {
-        return list is null or [];
-    }
-
-    [Pure]
-    public static bool IsNullOrEmpty<T>([NotNullWhen(false)] this T[]? array)
-    {
-        return array is null or [];
-    }
-
     /// <summary>
     /// Return a random element from the <paramref name="collection"/>.
     /// </summary>
@@ -598,107 +490,6 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static bool SequenceEqual<T>(this IEnumerable<T> collection, IEnumerable<T> collection2)
-    {
-        return SequenceEqual(collection.ToArray(), collection2.ToArray());
-    }
-
-    [Pure]
-    public static bool SequenceEqual<T>(this List<T> list, List<T> list2)
-    {
-        return SequenceEqual(CollectionsMarshal.AsSpan(list), CollectionsMarshal.AsSpan(list2));
-    }
-
-    [Pure]
-    public static bool SequenceEqual<T>(this T[] array, T[] array2)
-    {
-        return SequenceEqual((ReadOnlySpan<T>)array, array2);
-    }
-
-    [Pure]
-    private static bool SequenceEqual<T>(this Span<T> span, Span<T> span2)
-    {
-        return SequenceEqual((ReadOnlySpan<T>)span, span2);
-    }
-
-    [Pure]
-    private static bool SequenceEqual<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> span2)
-    {
-        return MemoryExtensions.SequenceEqual(span, span2);
-    }
-
-    public static T[] ForRanges<T>(this IEnumerable<T> collection, params (Range Range, Action<T> Action)[] operations)
-    {
-        return ForRanges(collection.ToArray(), operations);
-    }
-
-    public static List<T> ForRanges<T>(this List<T> list, params (Range Range, Action<T> Action)[] operations)
-    {
-        ForRanges(CollectionsMarshal.AsSpan(list), operations);
-        return list;
-    }
-
-    public static T[] ForRanges<T>(this T[] array, params (Range Range, Action<T> Action)[] operations)
-    {
-        ForRanges((ReadOnlySpan<T>)array, operations);
-        return array;
-    }
-
-    public static void ForRanges<T>(this Span<T> span, params (Range Range, Action<T> Action)[] operations)
-    {
-        ForRanges((ReadOnlySpan<T>)span, operations);
-    }
-
-    public static void ForRanges<T>(this ReadOnlySpan<T> span, params (Range Range, Action<T> Action)[] operations)
-    {
-        ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
-        for (int i = 0; i < operations.Length; i++)
-        {
-            var op = Unsafe.Add(ref firstOperation, i);
-            int start = op.Range.Start.Value;
-            int end = op.Range.End.IsFromEnd ? span.Length - op.Range.End.Value - 1 : op.Range.End.Value;
-            for (int j = start; j < end; j++)
-            {
-                op.Action(span[j]);
-            }
-        }
-    }
-
-    public static T[] ForRanges<T>(this IEnumerable<T> collection, params (Range Range, Func<T, T> Func)[] operations)
-    {
-        return ForRanges(collection.ToArray(), operations);
-    }
-
-    public static List<T> ForRanges<T>(this List<T> list, params (Range Range, Func<T, T> Func)[] operations)
-    {
-        ForRanges(CollectionsMarshal.AsSpan(list), operations);
-        return list;
-    }
-
-    public static T[] ForRanges<T>(this T[] array, params (Range Range, Func<T, T> Func)[] operations)
-    {
-        ForRanges((Span<T>)array, operations);
-        return array;
-    }
-
-    public static void ForRanges<T>(this Span<T> span, params (Range Range, Func<T, T> Func)[] operations)
-    {
-        ref var firstOperation = ref MemoryMarshal.GetArrayDataReference(operations);
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < operations.Length; i++)
-        {
-            var op = Unsafe.Add(ref firstOperation, i);
-            int start = op.Range.Start.Value;
-            int end = op.Range.End.IsFromEnd ? span.Length - op.Range.End.Value - 1 : op.Range.End.Value;
-            for (int j = start; j < end; j++)
-            {
-                ref T item = ref Unsafe.Add(ref firstItem, j);
-                item = op.Func(item);
-            }
-        }
-    }
-
-    [Pure]
     public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey Key, TValue Value)> collection) where TKey : notnull
     {
         return collection.ToDictionary(i => i.Key, i => i.Value);
@@ -786,6 +577,7 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(Span<int> span, int start = 0)
     {
+#if NET8_0_OR_GREATER
         int vector512Count = Vector512<int>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length > vector512Count)
         {
@@ -807,6 +599,7 @@ public static class CollectionHelper
 
             return;
         }
+#endif
 
         int vector256Count = Vector256<int>.Count;
         if (Vector256.IsHardwareAccelerated && span.Length > vector256Count)

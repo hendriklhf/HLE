@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace HLE;
@@ -522,6 +523,13 @@ public static class NumberHelper
         return (byte)(c - '0');
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte CharToDigit(byte c)
+    {
+        return (byte)(c - '0');
+    }
+
+    [Pure]
     public static long ParsePositiveInt64(ReadOnlySpan<char> number)
     {
         long result = 0;
@@ -533,6 +541,19 @@ public static class NumberHelper
         return result;
     }
 
+    [Pure]
+    public static ulong ParseUInt64(ReadOnlySpan<char> number)
+    {
+        ulong result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = 10 * result + number[i] - '0';
+        }
+
+        return result;
+    }
+
+    [Pure]
     public static int ParsePositiveInt32(ReadOnlySpan<char> number)
     {
         int result = 0;
@@ -544,6 +565,67 @@ public static class NumberHelper
         return result;
     }
 
+    [Pure]
+    public static uint ParseUInt32(ReadOnlySpan<char> number)
+    {
+        uint result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = 10 * result + number[i] - '0';
+        }
+
+        return result;
+    }
+
+    [Pure]
+    public static short ParsePositiveInt16(ReadOnlySpan<char> number)
+    {
+        short result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = (short)(10 * result + number[i] - '0');
+        }
+
+        return result;
+    }
+
+    [Pure]
+    public static ushort ParseUInt16(ReadOnlySpan<char> number)
+    {
+        ushort result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = (ushort)(10 * result + number[i] - '0');
+        }
+
+        return result;
+    }
+
+    [Pure]
+    public static sbyte ParsePositiveSByte(ReadOnlySpan<char> number)
+    {
+        sbyte result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = (sbyte)(10 * result + number[i] - '0');
+        }
+
+        return result;
+    }
+
+    [Pure]
+    public static byte ParseByte(ReadOnlySpan<char> number)
+    {
+        byte result = 0;
+        for (int i = 0; i < number.Length; i++)
+        {
+            result = (byte)(10 * result + number[i] - '0');
+        }
+
+        return result;
+    }
+
+    [Pure]
     public static long ParsePositiveInt64(ReadOnlySpan<byte> number)
     {
         long result = 0;
@@ -555,6 +637,7 @@ public static class NumberHelper
         return result;
     }
 
+    [Pure]
     public static int ParsePositiveInt32(ReadOnlySpan<byte> number)
     {
         int result = 0;

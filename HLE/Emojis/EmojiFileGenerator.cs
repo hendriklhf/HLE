@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Net.Http;
@@ -21,7 +20,7 @@ public sealed class EmojiFileGenerator
 
     public int IndentationSize { get; set; }
 
-    private readonly FrozenDictionary<string, string> _illegalWords = new Dictionary<string, string>
+    private readonly Dictionary<string, string> _illegalVariableNames = new()
     {
         { "100", "Hundred" },
         { "+1", "ThumbUp" },
@@ -33,7 +32,7 @@ public sealed class EmojiFileGenerator
         { "8ball", "EightBall" },
         { "Non-potable_water", "NonPotableWater" },
         { "1234", "OneTwoThreeFour" }
-    }.ToFrozenDictionary();
+    };
 
     private byte[]? _emojiJsonBytes;
 
@@ -132,15 +131,15 @@ public sealed class EmojiFileGenerator
     private void CheckForIllegalName(Span<char> name, ref int nameLength)
     {
         ReadOnlySpan<char> readOnlyName = name[..nameLength];
-        foreach (var illegalWord in _illegalWords)
+        foreach (var illegalVariableName in _illegalVariableNames)
         {
-            if (!readOnlyName.Equals(illegalWord.Key, StringComparison.Ordinal))
+            if (!readOnlyName.Equals(illegalVariableName.Key, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            illegalWord.Value.CopyTo(name);
-            nameLength = illegalWord.Value.Length;
+            illegalVariableName.Value.CopyTo(name);
+            nameLength = illegalVariableName.Value.Length;
             return;
         }
 

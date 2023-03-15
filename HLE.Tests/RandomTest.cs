@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #pragma warning disable CS8794
@@ -15,7 +15,7 @@ public class RandomTest
         for (int i = 0; i < 100_000; i++)
         {
             char c = Random.Char();
-            Assert.IsTrue(c >= 32 && c <= 126);
+            Assert.IsTrue(c is >= (char)32 and <= (char)126);
         }
     }
 
@@ -36,7 +36,7 @@ public class RandomTest
         {
             string s = Random.String(strLength);
             Assert.AreEqual(strLength, s.Length);
-            Assert.IsTrue(s.All(c => 32 <= c && c <= 126));
+            Assert.IsTrue(s.All(c => c is >= (char)32 and <= (char)126));
         }
     }
 

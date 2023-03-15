@@ -282,6 +282,7 @@ public static class StringHelper
         ref int rangesAsInt = ref Unsafe.As<Range, int>(ref MemoryMarshal.GetReference(ranges));
 
         int rangesAsIntLength = 0;
+#if NET8_0_OR_GREATER
         int vector512Count = Vector512<int>.Count;
         if (Vector512.IsHardwareAccelerated && indices.Length > vector512Count)
         {
@@ -315,6 +316,7 @@ public static class StringHelper
             Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
             return (rangesAsIntLength >> 1) + 1;
         }
+#endif
 
         int vector256Count = Vector256<int>.Count;
         if (Vector256.IsHardwareAccelerated && indices.Length > vector256Count)
@@ -485,6 +487,7 @@ public static class StringHelper
         }
 
         int result = 0;
+#if NET8_0_OR_GREATER
         int vector512Count = Vector512<ushort>.Count;
         if (Vector512.IsHardwareAccelerated && spanLength > vector512Count)
         {
@@ -508,6 +511,7 @@ public static class StringHelper
 
             return result;
         }
+#endif
 
         int vector256Count = Vector256<ushort>.Count;
         if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
@@ -602,6 +606,7 @@ public static class StringHelper
         }
 
         int result = 0;
+#if NET8_0_OR_GREATER
         int vector512Count = Vector512<byte>.Count;
         if (Vector512.IsHardwareAccelerated && spanLength > vector512Count)
         {
@@ -624,6 +629,7 @@ public static class StringHelper
 
             return result;
         }
+#endif
 
         int vector256Count = Vector256<byte>.Count;
         if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)

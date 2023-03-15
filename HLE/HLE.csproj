@@ -1,35 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <NeutralLanguage>en</NeutralLanguage>
-    <SignAssembly>false</SignAssembly>
-    <Product>HLE</Product>
-    <Description>A class library containing usefull methods and data lists.</Description>
-    <Authors>Hendrik</Authors>
-    <PackageTags>library c# csharp .net8 dotnet</PackageTags>
-    <OutputType>Library</OutputType>
-    <DebugType>embedded</DebugType>
-    <RepositoryType>git</RepositoryType>
-    <Version>2.1.1</Version>
-    <PackageVersion>2.1.1</PackageVersion>
-    <AssemblyVersion>2.1.1</AssemblyVersion>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <OutputType>Library</OutputType>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <NeutralLanguage>en</NeutralLanguage>
+        <SignAssembly>false</SignAssembly>
+        <Product>HLE</Product>
+        <Description>A class library containing usefull methods and data lists.</Description>
+        <Authors>Hendrik</Authors>
+        <PackageTags>library c# csharp .net7 dotnet</PackageTags>
+        <DebugType>embedded</DebugType>
+        <RepositoryType>git</RepositoryType>
+        <Version>2.1.2</Version>
+        <PackageVersion>2.1.2</PackageVersion>
+        <AssemblyVersion>2.1.2</AssemblyVersion>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <Optimize>false</Optimize>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DocumentationFile>.\bin\Release\HLE.xml</DocumentationFile>
+        <WarningsAsErrors>NU1605</WarningsAsErrors>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>.\bin\Release\HLE.xml</DocumentationFile>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <WarningsAsErrors>;NU1605;Nullable</WarningsAsErrors>
-  </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
 
 </Project>

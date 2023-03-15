@@ -71,7 +71,7 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
             Index valueEnd = Unsafe.As<int, Index>(ref semicolonIndex);
             ReadOnlySpan<char> key = tags[..equalsSignIndex];
             ReadOnlySpan<char> value = tags[(equalsSignIndex + 1)..valueEnd];
-            tags = semicolonIndex == -1 ? tags[tags.Length..] : tags[(semicolonIndex + 1)..];
+            tags = semicolonIndex == -1 ? ReadOnlySpan<char>.Empty : tags[(semicolonIndex + 1)..];
             equalsSignIndex = tags.IndexOf('=');
 
             if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))

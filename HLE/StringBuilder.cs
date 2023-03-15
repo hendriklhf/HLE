@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -7,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace HLE;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public ref struct StringBuilder
+public ref partial struct StringBuilder
 {
     public readonly ref char this[int index] => ref _buffer[index];
 
@@ -17,9 +18,13 @@ public ref struct StringBuilder
 
     public readonly ReadOnlySpan<char> WrittenSpan => _buffer[.._length];
 
+    public readonly Span<char> FreeBuffer => _buffer[_length..];
+
     public readonly int Length => _length;
 
     public readonly int Capacity => _buffer.Length;
+
+    public readonly int FreeBufferSize => _buffer.Length - _length;
 
     private readonly Span<char> _buffer = Span<char>.Empty;
     private int _length = 0;
@@ -45,215 +50,93 @@ public ref struct StringBuilder
         _buffer = MemoryMarshal.CreateSpan(ref reference, length);
     }
 
+    public void Advance(int length)
+    {
+        if (length < 0)
+        {
+            throw new ArgumentException($"Parameter {nameof(length)} must be a positive number.", nameof(length));
+        }
+
+        _length += length;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(scoped ReadOnlySpan<char> span)
     {
-        span.CopyTo(_buffer[_length..]);
+        span.CopyTo(FreeBuffer);
         _length += span.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2)
+    public void Append(char c)
     {
-        Append(span1);
-        span2.CopyTo(_buffer[_length..]);
-        _length += span2.Length;
+        _buffer[_length++] = c;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3)
+    public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2);
-        span3.CopyTo(_buffer[_length..]);
-        _length += span3.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4)
+    public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3);
-        span4.CopyTo(_buffer[_length..]);
-        _length += span4.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5)
+    public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3, span4);
-        span5.CopyTo(_buffer[_length..]);
-        _length += span5.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6)
+    public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3, span4, span5);
-        span6.CopyTo(_buffer[_length..]);
-        _length += span6.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
-        scoped ReadOnlySpan<char> span7)
+    public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3, span4, span5, span6);
-        span7.CopyTo(_buffer[_length..]);
-        _length += span7.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
-        scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8)
+    public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3, span4, span5, span6, span7);
-        span8.CopyTo(_buffer[_length..]);
-        _length += span8.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
-        scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8, scoped ReadOnlySpan<char> span9)
+    public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3, span4, span5, span6, span7, span8);
-        span9.CopyTo(_buffer[_length..]);
-        _length += span9.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(scoped ReadOnlySpan<char> span1, scoped ReadOnlySpan<char> span2, scoped ReadOnlySpan<char> span3, scoped ReadOnlySpan<char> span4, scoped ReadOnlySpan<char> span5, scoped ReadOnlySpan<char> span6,
-        scoped ReadOnlySpan<char> span7, scoped ReadOnlySpan<char> span8, scoped ReadOnlySpan<char> span9, scoped ReadOnlySpan<char> span10)
+    public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(span1, span2, span3, span4, span5, span6, span7, span8, span9);
-        span10.CopyTo(_buffer[_length..]);
-        _length += span10.Length;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c) => _buffer[_length++] = c;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2)
+    public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(char1);
-        _buffer[_length++] = char2;
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3)
+    public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        Append(char1, char2);
-        _buffer[_length++] = char3;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4)
-    {
-        Append(char1, char2, char3);
-        _buffer[_length++] = char4;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4, char char5)
-    {
-        Append(char1, char2, char3, char4);
-        _buffer[_length++] = char5;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4, char char5, char char6)
-    {
-        Append(char1, char2, char3, char4, char5);
-        _buffer[_length++] = char6;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7)
-    {
-        Append(char1, char2, char3, char4, char5, char6);
-        _buffer[_length++] = char7;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7, char char8)
-    {
-        Append(char1, char2, char3, char4, char5, char6, char7);
-        _buffer[_length++] = char8;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7, char char8, char char9)
-    {
-        Append(char1, char2, char3, char4, char5, char6, char7, char8);
-        _buffer[_length++] = char9;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char char1, char char2, char char3, char char4, char char5, char char6, char char7, char char8, char char9, char char10)
-    {
-        Append(char1, char2, char3, char4, char5, char6, char7, char8, char9);
-        _buffer[_length++] = char10;
-    }
-
-    public void Append(byte value)
-    {
-        Span<char> chars = stackalloc char[3];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(sbyte value)
-    {
-        Span<char> chars = stackalloc char[4];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(short value)
-    {
-        Span<char> chars = stackalloc char[6];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(ushort value)
-    {
-        Span<char> chars = stackalloc char[5];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(int value)
-    {
-        Span<char> chars = stackalloc char[11];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(uint value)
-    {
-        Span<char> chars = stackalloc char[10];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(long value)
-    {
-        Span<char> chars = stackalloc char[20];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
-    }
-
-    public void Append(ulong value)
-    {
-        Span<char> chars = stackalloc char[20];
-        value.TryFormat(chars, out int charsWritten);
-        Append(chars[..charsWritten]);
+        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
     public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        spanFormattable.TryFormat(_buffer[_length..], out int charsWritten, format, formatProvider);
-        _length += charsWritten;
+        spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
     }
 
     public void Remove(int index, int length = 1)
@@ -262,10 +145,12 @@ public ref struct StringBuilder
         _length -= length;
     }
 
+#if NET8_0_OR_GREATER
     public readonly void Replace(char oldChar, char newChar)
     {
         _buffer[.._length].Replace(oldChar, newChar);
     }
+#endif
 
     public void Clear()
     {
@@ -277,6 +162,11 @@ public ref struct StringBuilder
     public override readonly string ToString()
     {
         return new(_buffer[.._length]);
+    }
+
+    public readonly char[] ToCharArray()
+    {
+        return _buffer[.._length].ToArray();
     }
 
     [Pure]

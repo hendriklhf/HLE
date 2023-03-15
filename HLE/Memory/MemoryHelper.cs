@@ -31,12 +31,14 @@ public static unsafe class MemoryHelper
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
     {
         return *(Span<T>*)&span;
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
     {
         return *(Memory<T>*)&memory;
@@ -76,5 +78,12 @@ public static unsafe class MemoryHelper
     public static nuint GetRawDataPointer<T>(T reference) where T : class?
     {
         return *(nuint*)(nuint)(&reference);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T? GetReferenceFromRawDataPointer<T>(nuint pointer) where T : class?
+    {
+        return *(T*)&pointer;
     }
 }

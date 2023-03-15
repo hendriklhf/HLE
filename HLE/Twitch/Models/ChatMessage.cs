@@ -100,7 +100,6 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private const string _actionPrefix = ":\u0001ACTION";
     private const string _nameWithSpaceEnding = "\\s";
 
-    //private const char _lowerCaseAMinus10 = (char)('a' - 10);
     private const char _upperCaseAMinus10 = (char)('A' - 10);
     private const char _charZero = '0';
 
@@ -187,7 +186,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         }
 
         _flags |= GetIsAction(ircMessage, indicesOfWhitespace);
-        Username = DisplayName.ToLowerInvariant();
+        Username = GetUsername(ircMessage, indicesOfWhitespace);
         Channel = new(ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..]);
         Message = GetMessage(ircMessage, indicesOfWhitespace);
     }
@@ -207,14 +206,25 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private string GetUsername(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    {
+        Debug.Assert(DisplayName is not null);
+        ReadOnlySpan<char> username = ircMessage[(indicesOfWhitespaces[0] + 2)..][..DisplayName.Length];
+        return new(username);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         if (IsAction)
         {
-            ircMessage = ircMessage[242..];
+            // skipping chars to speed up .IndexOf
+            const int maximumOfCharsThatCanBeIgnored = 242;
+            ircMessage = ircMessage[maximumOfCharsThatCanBeIgnored..];
             return new(ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1]);
         }
 
+        Debug.Assert(!ircMessage.Contains(" :\u0001ACTION", StringComparison.Ordinal));
         return new(ircMessage[(indicesOfWhitespaces[3] + 2)..]);
     }
 
@@ -233,7 +243,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         {
             int indexOfComma = value.IndexOf(',');
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
-            value = indexOfComma == -1 ? value[value.Length..] : value[(indexOfComma + 1)..];
+            value = indexOfComma == -1 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
             string name = new(info[..slashIndex]);
             string level = new(info[(slashIndex + 1)..]);
@@ -246,7 +256,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Color GetColor(ReadOnlySpan<char> value)
     {
-        return value.Length == 0 ? Color.Empty : ParseHexColor(value[1..]);
+        return value.Length == 0 ? Color.Empty : ParseHexColor(ref MemoryMarshal.GetReference(value[1..]));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -302,27 +312,37 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private static Color ParseHexColor(ReadOnlySpan<char> number)
+    private static Color ParseHexColor(ref char number)
     {
-        char firstChar = number[0];
-        char thirdChar = number[2];
-        char fifthChar = number[4];
+        const byte charAAndZeroDiff = _upperCaseAMinus10 - _charZero;
 
-        byte red = (byte)(IsHexLetter(firstChar) ? firstChar - _upperCaseAMinus10 : firstChar - _charZero);
-        byte green = (byte)(IsHexLetter(thirdChar) ? thirdChar - _upperCaseAMinus10 : thirdChar - _charZero);
-        byte blue = (byte)(IsHexLetter(fifthChar) ? fifthChar - _upperCaseAMinus10 : fifthChar - _charZero);
+        char firstChar = Unsafe.Add(ref number, 0);
+        char thirdChar = Unsafe.Add(ref number, 2);
+        char fifthChar = Unsafe.Add(ref number, 4);
+
+        bool isFirstCharHexLetter = IsHexLetter(firstChar);
+        bool isThirdCharHexLetter = IsHexLetter(thirdChar);
+        bool isFifthCharHexLetter = IsHexLetter(fifthChar);
+
+        byte red = (byte)(firstChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFirstCharHexLetter))));
+        byte green = (byte)(thirdChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isThirdCharHexLetter))));
+        byte blue = (byte)(fifthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFifthCharHexLetter))));
 
         red <<= 4;
         green <<= 4;
         blue <<= 4;
 
-        char secondChar = number[1];
-        char forthChar = number[3];
-        char sixthChar = number[5];
+        char secondChar = Unsafe.Add(ref number, 1);
+        char forthChar = Unsafe.Add(ref number, 3);
+        char sixthChar = Unsafe.Add(ref number, 5);
 
-        red |= (byte)(IsHexLetter(secondChar) ? secondChar - _upperCaseAMinus10 : secondChar - _charZero);
-        green |= (byte)(IsHexLetter(forthChar) ? forthChar - _upperCaseAMinus10 : forthChar - _charZero);
-        blue |= (byte)(IsHexLetter(sixthChar) ? sixthChar - _upperCaseAMinus10 : sixthChar - _charZero);
+        bool isSecondCharHexLetter = IsHexLetter(secondChar);
+        bool isForthCharHexLetter = IsHexLetter(forthChar);
+        bool isSixthCharHexLetter = IsHexLetter(sixthChar);
+
+        red |= (byte)(secondChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSecondCharHexLetter))));
+        green |= (byte)(forthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isForthCharHexLetter))));
+        blue |= (byte)(sixthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSixthCharHexLetter))));
 
         return new(red, green, blue);
     }
@@ -339,7 +359,9 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     /// <returns>The message in a readable format.</returns>
     public override string ToString()
     {
-        return $"<#{Channel}> {Username}: {Message}";
+        StringBuilder builder = stackalloc char[Channel.Length + Username.Length + Message.Length + 6];
+        builder.Append("<#", Channel, "> ", Username, ": ", Message);
+        return builder.ToString();
     }
 
     public bool Equals(ChatMessage? other)

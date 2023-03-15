@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using HLE.Memory;
 
 namespace HLE;
@@ -18,11 +19,13 @@ public static class StringManipulations
     /// <param name="str">The <see cref="string"/> that you will be able to mutate.</param>
     /// <returns>A <see cref="Span{Char}"/> representation of the passed-in <see cref="string"/>.</returns>
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<char> AsMutableSpan(string? str)
     {
         return ((ReadOnlySpan<char>)str).AsMutableSpan();
     }
 
+#if NET8_0_OR_GREATER
     public static void Replace(string? str, char oldChar, char newChar)
     {
         Replace((ReadOnlySpan<char>)str, oldChar, newChar);
@@ -37,6 +40,7 @@ public static class StringManipulations
     {
         span.Replace(oldChar, newChar);
     }
+#endif
 
     public static void ToLower(string? str, CultureInfo? cultureInfo = null)
     {

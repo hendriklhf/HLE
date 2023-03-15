@@ -10,49 +10,6 @@ namespace HLE.Tests.CollectionsTests;
 public class CollectionHelperTest
 {
     [TestMethod]
-    public void ForEachTest()
-    {
-        int idx = 0;
-        const int arraySize = 50;
-        int[] arr = new int[arraySize];
-        for (int i = 0; i < arr.Length; i++)
-        {
-            arr[i] = i;
-        }
-
-        arr.ForEach(_ => idx++);
-        Assert.AreEqual(arraySize, idx);
-        Assert.AreEqual(0, arr[0]);
-        Assert.AreEqual(arraySize - 1, arr[^1]);
-
-        for (int i = 0; i < arr.Length; i++)
-        {
-            Assert.AreEqual(i, arr[i]);
-        }
-    }
-
-    [TestMethod]
-    public void IsNullOrEmptyTest()
-    {
-        int[]? arrNull = null;
-        Assert.IsTrue(arrNull.IsNullOrEmpty());
-        int[] arr = new int[10];
-        Assert.IsFalse(arr.IsNullOrEmpty());
-        int[] arrFull =
-        {
-            1,
-            2,
-            3
-        };
-        Assert.IsFalse(arrFull.IsNullOrEmpty());
-        List<int>? listNull = null;
-        Assert.IsTrue(listNull.IsNullOrEmpty());
-        // ReSharper disable once CollectionNeverUpdated.Local
-        List<int> listEmpty = new();
-        Assert.IsTrue(listEmpty.IsNullOrEmpty());
-    }
-
-    [TestMethod]
     public void RandomTest()
     {
         const int arrLength = 10;
@@ -164,56 +121,6 @@ public class CollectionHelperTest
         const string str = "test string";
         int[] indices = str.IndicesOf(c => c is 's');
         Assert.IsTrue(indices is [2, 5]);
-    }
-
-    [TestMethod]
-    public void ContentEqualsTest()
-    {
-        int[] arr1 =
-        {
-            1,
-            2,
-            3
-        };
-
-        int[] arr2 =
-        {
-            1,
-            2,
-            3
-        };
-        Assert.IsTrue(arr1.SequenceEqual(arr2));
-        arr2[1] = 1;
-        Assert.IsFalse(arr1.SequenceEqual(arr2));
-
-        string s1 = "hello";
-        const string s2 = "hello";
-        Assert.IsTrue(CollectionHelper.SequenceEqual(s1, s2));
-
-        s1 = "hallo";
-        Assert.IsFalse(CollectionHelper.SequenceEqual(s1, s2));
-    }
-
-    [TestMethod]
-    public void ForEachByRangeFuncTest()
-    {
-        char[] arr = "hello".ToCharArray();
-
-        arr = arr.ForRanges((..2, _ => 'x'), (2..4, _ => 'y'));
-        Assert.AreEqual("xxyyo", arr.ConcatToString());
-    }
-
-    [TestMethod]
-    public void ForEachByRangeActionTest()
-    {
-        char[] arr = "hello".ToCharArray();
-        List<char> list = new();
-
-        void Action(char c) => list.Add(c);
-
-        arr.ForRanges((2..4, Action), (..2, Action));
-        Assert.AreEqual(4, list.Count);
-        Assert.IsTrue(list is ['l', 'l', 'h', 'e']);
     }
 
     [TestMethod]

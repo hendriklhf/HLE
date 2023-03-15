@@ -12,10 +12,11 @@ public class StringBuilderTest
         builder.Append("aaa", "www");
         builder.Append('.', '_', '+');
         builder.Append("abc");
+        builder.Append(23);
         string str = builder.ToString();
-        Assert.AreEqual("aaawww._+abc", str);
+        Assert.AreEqual("aaawww._+abc23", str);
         builder.Remove(6);
         str = builder.ToString();
-        Assert.AreEqual("aaawww_+abc", str);
+        Assert.AreEqual("aaawww_+abc23", str);
     }
 }
