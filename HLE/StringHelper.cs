@@ -297,8 +297,8 @@ public static class StringHelper
                     endIndices[5], startIndices[5], endIndices[6], startIndices[6], endIndices[7], startIndices[7]);
                 var secondHalf = Vector512.Create(endIndices[8], startIndices[8], endIndices[9], startIndices[9], endIndices[10], startIndices[10], endIndices[11], startIndices[11], endIndices[12], startIndices[12],
                     endIndices[13], startIndices[13], endIndices[14], startIndices[14], endIndices[15], startIndices[15]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector512Count + 1));
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector512Count + 1));
 
                 indices = indices[vector512Count..];
                 rangesAsIntLength += vector512Count << 1;
@@ -330,8 +330,8 @@ public static class StringHelper
 
                 var firstHalf = Vector256.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1], endIndices[2], startIndices[2], endIndices[3], startIndices[3]);
                 var secondHalf = Vector256.Create(endIndices[4], startIndices[4], endIndices[5], startIndices[5], endIndices[6], startIndices[6], endIndices[7], startIndices[7]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector256Count + 1));
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector256Count + 1));
 
                 indices = indices[vector256Count..];
                 rangesAsIntLength += vector256Count << 1;
@@ -351,7 +351,7 @@ public static class StringHelper
         }
 
         int vector128Count = Vector128<int>.Count;
-        if (Vector128.IsHardwareAccelerated && indices.Length > vector256Count)
+        if (Vector128.IsHardwareAccelerated && indices.Length > vector128Count)
         {
             var separatorLengthVector = Vector128.Create(separatorLength);
             while (indices.Length > vector128Count)
@@ -362,8 +362,8 @@ public static class StringHelper
 
                 var firstHalf = Vector128.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1]);
                 var secondHalf = Vector128.Create(endIndices[2], startIndices[2], endIndices[3], startIndices[3]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector128Count + 1));
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector128Count + 1));
 
                 indices = indices[vector128Count..];
                 rangesAsIntLength += vector128Count << 1;
@@ -383,7 +383,7 @@ public static class StringHelper
         }
 
         int vector64Count = Vector64<int>.Count;
-        if (Vector64.IsHardwareAccelerated && indices.Length > vector256Count)
+        if (Vector64.IsHardwareAccelerated && indices.Length > vector64Count)
         {
             var separatorLengthVector = Vector64.Create(separatorLength);
             while (indices.Length > vector64Count)
@@ -394,8 +394,8 @@ public static class StringHelper
 
                 var firstHalf = Vector64.Create(endIndices[0], startIndices[0]);
                 var secondHalf = Vector64.Create(endIndices[1], startIndices[1]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, vector64Count + 1));
+                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
+                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector64Count + 1));
 
                 indices = indices[vector64Count..];
                 rangesAsIntLength += vector64Count << 1;
