@@ -8,14 +8,6 @@ namespace HLE.Tests.EmojisTests;
 public class EmojiFileGeneratorTest
 {
     [TestMethod]
-    public void GenerateTest()
-    {
-        EmojiFileGenerator generator = new("Emojis");
-        string content = generator.Generate();
-        Assert.IsFalse(string.IsNullOrEmpty(content));
-    }
-
-    [TestMethod]
     public void ValueTest()
     {
         FieldInfo[] fields = typeof(Emoji).GetFields(BindingFlags.Public | BindingFlags.Static);

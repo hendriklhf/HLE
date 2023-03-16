@@ -60,7 +60,7 @@ public readonly struct UnitPrefix : IEquatable<UnitPrefix>
     /// <summary>
     /// The representation of no unit prefix.
     /// </summary>
-    public static ref readonly UnitPrefix Null => ref _null;
+    public static ref readonly UnitPrefix None => ref _none;
 
     /// <summary>
     /// The representation of the unit prefix Deci.
@@ -122,7 +122,7 @@ public readonly struct UnitPrefix : IEquatable<UnitPrefix>
     private static readonly UnitPrefix _kilo = new("Kilo", "k", 1e3);
     private static readonly UnitPrefix _hecto = new("Hecto", "h", 1e2);
     private static readonly UnitPrefix _deca = new("Deca", "da", 1e1);
-    private static readonly UnitPrefix _null = new(string.Empty, string.Empty, 1e0);
+    private static readonly UnitPrefix _none = new(string.Empty, string.Empty, 1e0);
     private static readonly UnitPrefix _deci = new("Deci", "d", 1e-1);
     private static readonly UnitPrefix _centi = new("Centi", "c", 1e-2);
     private static readonly UnitPrefix _milli = new("Milli", "m", 1e-3);
