@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -13,6 +15,7 @@ namespace HLE.SourceGenerators;
 [Generator]
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
+    private byte[]? _emojiJsonBytes;
     private readonly Dictionary<string, string> _illegalVariableNames = new()
     {
         { "100", "Hundred" },
@@ -27,10 +30,12 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         { "1234", "OneTwoThreeFour" }
     };
 
-    private static byte[]? _emojiJsonBytes;
+    private static readonly TimeSpan _cacheTime = TimeSpan.FromDays(1);
 
+    private const string _httpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
     private const int _indentationSize = 4;
     private const char _indentationChar = ' ';
+    private const string _cacheDirectory = "HLE.SourceGenerators.EmojiFileGenerator\\";
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -39,10 +44,58 @@ public sealed class EmojiFileGenerator : ISourceGenerator
             return;
         }
 
+        if (TryGetEmojiJsonBytesFromCache(out _emojiJsonBytes))
+        {
+            return;
+        }
+
         using HttpClient httpClient = new();
-        Task<byte[]> task = httpClient.GetByteArrayAsync("https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json");
+        Task<byte[]> task = httpClient.GetByteArrayAsync(_httpRequestUrl);
         task.Wait();
         _emojiJsonBytes = task.Result;
+        WriteBytesToCacheFile(_emojiJsonBytes);
+    }
+
+    [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
+    private static bool TryGetEmojiJsonBytesFromCache(out byte[]? emojiJsonBytes)
+    {
+        string cacheDirectory = Path.GetTempPath() + _cacheDirectory;
+        if (!Directory.Exists(cacheDirectory))
+        {
+            emojiJsonBytes = null;
+            return false;
+        }
+
+        string[] files = Directory.GetFiles(cacheDirectory);
+        string? emojiFilePath = files.FirstOrDefault(f =>
+        {
+            string fileName = Path.GetFileName(f);
+            DateTimeOffset creationTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(fileName));
+            DateTimeOffset invalidationTime = creationTime + _cacheTime;
+            return DateTimeOffset.UtcNow < invalidationTime;
+        });
+
+        if (emojiFilePath is null)
+        {
+            emojiJsonBytes = null;
+            return false;
+        }
+
+        emojiJsonBytes = File.ReadAllBytes(emojiFilePath);
+        return true;
+    }
+
+    [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
+    private static void WriteBytesToCacheFile(byte[] emojiJsonBytes)
+    {
+        string cacheDirectory = Path.GetTempPath() + _cacheDirectory;
+        if (!Directory.Exists(cacheDirectory))
+        {
+            Directory.CreateDirectory(cacheDirectory);
+        }
+
+        string emojiJsonPath = cacheDirectory + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        File.WriteAllBytes(emojiJsonPath, emojiJsonBytes);
     }
 
     public void Execute(GeneratorExecutionContext context)
