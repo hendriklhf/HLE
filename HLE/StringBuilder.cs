@@ -133,6 +133,18 @@ public ref partial struct StringBuilder
         Advance(charsWritten);
     }
 
+    public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        dateTime.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
+    }
+
+    public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        timeSpan.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        Advance(charsWritten);
+    }
+
     public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
         spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);

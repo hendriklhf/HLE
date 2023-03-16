@@ -109,6 +109,12 @@ public ref struct Queue<T>
         _dequeueIndex = 0;
     }
 
+    [Pure]
+    public readonly T[] ToArray()
+    {
+        return _queue[_dequeueIndex.._enqueueIndex].ToArray();
+    }
+
     public static implicit operator Queue<T>(Span<T> queue) => new(queue);
 
     public static implicit operator Queue<T>(T[] queue) => new(queue);

@@ -176,12 +176,13 @@ public partial struct MessageBuilder : IDisposable, IEquatable<MessageBuilder>
         return ((ReadOnlySpan<char>)Span[.._length]).Equals(str, comparisonType);
     }
 
-    public bool Equals(MessageBuilder other)
+    public readonly bool Equals(MessageBuilder other)
     {
         return ReferenceEquals(_buffer, other._buffer) && _length == other._length;
     }
 
-    public override bool Equals(object? obj)
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly bool Equals(object? obj)
     {
         return obj is MessageBuilder other && Equals(other);
     }

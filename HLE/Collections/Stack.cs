@@ -66,6 +66,12 @@ public ref struct Stack<T>
 
     public void Clear() => _count = 0;
 
+    [Pure]
+    public readonly T[] ToArray()
+    {
+        return _stack[.._count].ToArray();
+    }
+
     public static implicit operator Stack<T>(Span<T> stack) => new(stack);
 
     public static implicit operator Stack<T>(T[] stack) => new(stack);
