@@ -135,53 +135,44 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
             int equalsSignIndex = tag.IndexOf('=');
             ReadOnlySpan<char> key = tag[..equalsSignIndex];
             ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
-            if (key.Equals(_badgeInfoTag, StringComparison.Ordinal))
+            switch (key)
             {
-                _badgeInfo = GetBadges(value);
-            }
-            else if (key.Equals(_badgesTag, StringComparison.Ordinal))
-            {
-                _badges = GetBadges(value);
-            }
-            else if (key.Equals(_colorTag, StringComparison.Ordinal))
-            {
-                Color = GetColor(value);
-            }
-            else if (key.Equals(_displayNameTag, StringComparison.Ordinal))
-            {
-                DisplayName = GetDisplayName(value);
-            }
-            else if (key.Equals(_firstMsgTag, StringComparison.Ordinal))
-            {
-                _flags |= GetIsFirstMsg(value);
-            }
-            else if (key.Equals(_idTag, StringComparison.Ordinal))
-            {
-                Id = GetId(value);
-            }
-            else if (key.Equals(_modTag, StringComparison.Ordinal))
-            {
-                _flags |= GetIsModerator(value);
-            }
-            else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
-            {
-                ChannelId = GetChannelId(value);
-            }
-            else if (key.Equals(_subscriberTag, StringComparison.Ordinal))
-            {
-                _flags |= GetIsSubscriber(value);
-            }
-            else if (key.Equals(_tmiSentTsTag, StringComparison.Ordinal))
-            {
-                TmiSentTs = GetTmiSentTs(value);
-            }
-            else if (key.Equals(_turboTag, StringComparison.Ordinal))
-            {
-                _flags |= GetIsTurboUser(value);
-            }
-            else if (key.Equals(_userIdTag, StringComparison.Ordinal))
-            {
-                UserId = GetUserId(value);
+                case _badgeInfoTag:
+                    _badgeInfo = GetBadges(value);
+                    break;
+                case _badgesTag:
+                    _badges = GetBadges(value);
+                    break;
+                case _colorTag:
+                    Color = GetColor(value);
+                    break;
+                case _displayNameTag:
+                    DisplayName = GetDisplayName(value);
+                    break;
+                case _firstMsgTag:
+                    _flags |= GetIsFirstMsg(value);
+                    break;
+                case _idTag:
+                    Id = GetId(value);
+                    break;
+                case _modTag:
+                    _flags |= GetIsModerator(value);
+                    break;
+                case _roomIdTag:
+                    ChannelId = GetChannelId(value);
+                    break;
+                case _subscriberTag:
+                    _flags |= GetIsSubscriber(value);
+                    break;
+                case _tmiSentTsTag:
+                    TmiSentTs = GetTmiSentTs(value);
+                    break;
+                case _turboTag:
+                    _flags |= GetIsTurboUser(value);
+                    break;
+                case _userIdTag:
+                    UserId = GetUserId(value);
+                    break;
             }
         }
 
