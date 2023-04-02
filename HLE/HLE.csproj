@@ -17,9 +17,9 @@
         <PackageTags>library c# csharp .net7 dotnet</PackageTags>
         <DebugType>embedded</DebugType>
         <RepositoryType>git</RepositoryType>
-        <Version>2.1.2.1</Version>
-        <PackageVersion>2.1.2.1</PackageVersion>
-        <AssemblyVersion>2.1.2.1</AssemblyVersion>
+        <Version>2.1.4</Version>
+        <PackageVersion>2.1.4</PackageVersion>
+        <AssemblyVersion>2.1.4</AssemblyVersion>
         <WarningsAsErrors>Nullable</WarningsAsErrors>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     </PropertyGroup>
