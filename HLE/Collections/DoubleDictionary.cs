@@ -14,12 +14,29 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public TValue this[TSecondaryKey key] => _values[_secondaryKeyTranslations[key]];
 
+    public TValue this[TPrimaryKey primaryKey, TSecondaryKey secondaryKey]
+    {
+        set
+        {
+            TValue oldValue = _values[primaryKey];
+            _values[primaryKey] = value;
+
+            if (!_secondaryKeyTranslations[secondaryKey].Equals(primaryKey))
+            {
+                _values[primaryKey] = oldValue;
+                throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
+            }
+
+            _secondaryKeyTranslations[secondaryKey] = primaryKey;
+        }
+    }
+
     public int Count => _values.Count;
 
     public IEnumerable<TValue> Values => _values.Values;
 
-    private readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations = new();
-    private readonly Dictionary<TPrimaryKey, TValue> _values = new();
+    internal readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations = new();
+    internal readonly Dictionary<TPrimaryKey, TValue> _values = new();
 
     public DoubleDictionary()
     {
@@ -77,14 +94,21 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         return false;
     }
 
-    public bool Remove(TPrimaryKey key)
+    public bool Remove(TPrimaryKey primaryKey, TSecondaryKey secondaryKey)
     {
-        return _values.Remove(key);
-    }
+        if (!_values.Remove(primaryKey, out TValue? value))
+        {
+            return false;
+        }
 
-    public bool Remove(TSecondaryKey key)
-    {
-        return _secondaryKeyTranslations.Remove(key, out TPrimaryKey? primaryKey) && _values.Remove(primaryKey);
+        if (!_secondaryKeyTranslations[secondaryKey].Equals(primaryKey))
+        {
+            _values.Add(primaryKey, value);
+            return false;
+        }
+
+        _secondaryKeyTranslations.Remove(secondaryKey);
+        return true;
     }
 
     public void Clear()
@@ -94,9 +118,15 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     }
 
     [Pure]
-    public bool ContainsPrimaryKey(TPrimaryKey key)
+    public bool ContainsKey(TPrimaryKey key)
     {
         return _values.ContainsKey(key);
+    }
+
+    [Pure]
+    public bool ContainsKey(TSecondaryKey key)
+    {
+        return _secondaryKeyTranslations.ContainsKey(key);
     }
 
     [Pure]
@@ -105,10 +135,10 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         return _values.ContainsValue(value);
     }
 
-    public int EnsureCapacity(int capacity)
+    public void EnsureCapacity(int capacity)
     {
         _secondaryKeyTranslations.EnsureCapacity(capacity);
-        return _values.EnsureCapacity(capacity);
+        _values.EnsureCapacity(capacity);
     }
 
     public IEnumerator<TValue> GetEnumerator()

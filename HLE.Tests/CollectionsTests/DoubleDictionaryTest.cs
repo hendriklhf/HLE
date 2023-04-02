@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -33,6 +34,41 @@ public class DoubleDictionaryTest
         });
 
         Assert.AreEqual(1, dictionary.Count);
+
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
+    }
+
+    [TestMethod]
+    public void SetTest()
+    {
+        DoubleDictionary<int, string, string> dictionary = new();
+        const string value = "xd";
+        dictionary.Add(1, "a", value);
+
+        Assert.AreEqual(value, dictionary[1]);
+        Assert.AreEqual(value, dictionary["a"]);
+
+        Assert.ThrowsException<KeyNotFoundException>(() =>
+        {
+            dictionary[1, "b"] = value;
+        });
+
+        Assert.ThrowsException<KeyNotFoundException>(() =>
+        {
+            dictionary[2, "a"] = value;
+        });
+
+        Assert.ThrowsException<KeyNotFoundException>(() =>
+        {
+            dictionary[2, "b"] = value;
+        });
+
+        Assert.AreEqual(1, dictionary.Count);
+        dictionary[1, "a"] = "abc";
+        Assert.AreEqual("abc", dictionary[1]);
+        Assert.AreEqual("abc", dictionary["a"]);
+
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
 
     [TestMethod]
@@ -48,6 +84,8 @@ public class DoubleDictionaryTest
 
         Assert.IsTrue(dictionary.TryAdd(2, "b", value));
         Assert.AreEqual(2, dictionary.Count);
+
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
 
     [TestMethod]
@@ -72,6 +110,8 @@ public class DoubleDictionaryTest
         success = dictionary.TryGetValue("b", out retrievedValue);
         Assert.IsFalse(success);
         Assert.IsNull(retrievedValue);
+
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
 
     [TestMethod]
@@ -83,15 +123,17 @@ public class DoubleDictionaryTest
         dictionary.Add(2, "b", value);
         dictionary.Add(3, "c", value);
 
-        Assert.IsTrue(dictionary.Remove(3));
-        Assert.IsFalse(dictionary.Remove(3));
+        Assert.IsFalse(dictionary.Remove(3, "b"));
+        Assert.IsTrue(dictionary.ContainsKey(3) && dictionary.ContainsKey("b"));
+        Assert.IsTrue(dictionary.Remove(3, "c"));
 
-        Assert.IsTrue(dictionary.Remove("b"));
-        Assert.IsFalse(dictionary.Remove("b"));
-
-        Assert.AreEqual(1, dictionary.Count);
+        Assert.AreEqual(2, dictionary.Count);
         Assert.AreEqual(value, dictionary[1]);
         Assert.AreEqual(value, dictionary["a"]);
+
+        Assert.IsTrue(dictionary.TryAdd(3, "c", value));
+
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
 
     [TestMethod]
@@ -105,6 +147,8 @@ public class DoubleDictionaryTest
 
         dictionary.Clear();
         Assert.AreEqual(0, dictionary.Count);
+
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
 
     [TestMethod]
@@ -114,23 +158,15 @@ public class DoubleDictionaryTest
         const string value = "xd";
         dictionary.Add(1, "a", value);
 
-        Assert.IsTrue(dictionary.ContainsPrimaryKey(1));
-        Assert.IsFalse(dictionary.ContainsPrimaryKey(2));
+        Assert.IsTrue(dictionary.ContainsKey(1));
+        Assert.IsFalse(dictionary.ContainsKey(2));
+
+        Assert.IsTrue(dictionary.ContainsKey("a"));
+        Assert.IsFalse(dictionary.ContainsKey("b"));
 
         Assert.IsTrue(dictionary.ContainsValue(value));
         Assert.IsFalse(dictionary.ContainsValue("abc"));
-    }
 
-    [TestMethod]
-    [DataRow(5)]
-    [DataRow(10)]
-    [DataRow(50)]
-    public void CapacityTest(int capacity)
-    {
-        DoubleDictionary<int, string, string> dictionary = new();
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
-
-        Assert.IsTrue(dictionary.EnsureCapacity(capacity) >= capacity);
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
 }
