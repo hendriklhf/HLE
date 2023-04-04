@@ -15,7 +15,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 [DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T>, IEquatable<RentedArray<T>>
+public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T>, IEquatable<RentedArray<T>>, IEquatable<T[]>
 {
     public ref T this[int index] => ref Span[index];
 
@@ -37,6 +37,11 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public RentedArray()
     {
+    }
+
+    public RentedArray(int size)
+    {
+        _array = ArrayPool<T>.Shared.Rent(size);
     }
 
     public RentedArray(T[] array)
@@ -83,7 +88,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     }
 
     [Pure]
-    public bool Equals(T[] array)
+    public bool Equals(T[]? array)
     {
         return ReferenceEquals(_array, array);
     }
