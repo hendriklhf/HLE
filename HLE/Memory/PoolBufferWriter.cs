@@ -123,14 +123,14 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
         Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * _length));
     }
 
-    public void CopyTo(T[] destination)
+    public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo((Span<T>)destination);
+        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(destination.Span);
+        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
     }
 
     public void CopyTo(Span<T> destination)
@@ -171,7 +171,6 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     [Pure]
     public override int GetHashCode()
     {
-        // ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
-        return base.GetHashCode();
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
     }
 }

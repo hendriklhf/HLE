@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
+using HLE.Strings;
 
 namespace HLE.Resources;
 
@@ -21,7 +22,7 @@ public sealed class ResourceReader : ICopyable<string>, IEquatable<ResourceReade
     public ResourceReader(Assembly assembly, bool readAllResourcesOnInit = true)
     {
         _assembly = assembly;
-        _assemblyName = _assembly.GetName().Name ?? throw new NullReferenceException("Assembly name is null.");
+        _assemblyName = _assembly.GetName().Name ?? throw new ArgumentNullException(nameof(assembly), "Assembly name is null.");
         if (readAllResourcesOnInit)
         {
             ReadAllResources();
@@ -31,11 +32,11 @@ public sealed class ResourceReader : ICopyable<string>, IEquatable<ResourceReade
     [Pure]
     public string? Read(ReadOnlySpan<char> resourceName)
     {
-        StringBuilder pathBuilder = stackalloc char[1 + _assemblyName.Length + resourceName.Length];
+        ValueStringBuilder pathBuilder = stackalloc char[1 + _assemblyName.Length + resourceName.Length];
         pathBuilder.Append(_assemblyName);
         pathBuilder.Append('.');
         pathBuilder.Append(resourceName);
-        return ReadResourceFromPath(pathBuilder.ToString());
+        return ReadResourceFromPath(StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan));
     }
 
     private void ReadAllResources()
@@ -68,14 +69,14 @@ public sealed class ResourceReader : ICopyable<string>, IEquatable<ResourceReade
         return resource;
     }
 
-    public void CopyTo(string[] destination)
+    public void CopyTo(string[] destination, int offset = 0)
     {
-        CopyTo((Span<string>)destination);
+        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
     }
 
     public void CopyTo(Memory<string> destination)
     {
-        CopyTo(destination.Span);
+        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
     }
 
     public void CopyTo(Span<string> destination)

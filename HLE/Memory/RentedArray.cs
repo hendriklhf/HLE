@@ -49,14 +49,14 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
         _array = array;
     }
 
-    public void CopyTo(T[] destination)
+    public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo((Span<T>)destination);
+        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), 0));
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(destination.Span);
+        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
     }
 
     public void CopyTo(Span<T> destination)
