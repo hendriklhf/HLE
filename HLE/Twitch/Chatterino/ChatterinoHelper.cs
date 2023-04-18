@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.IO;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -25,7 +24,6 @@ public static class ChatterinoHelper
     public static string[] GetChannels()
     {
         string windowLayoutPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Chatterino2\Settings\window-layout.json";
-        using FileStream fileStream = File.OpenRead(windowLayoutPath);
         using PoolBufferWriter<byte> fileContentWriter = new(5000, 5000);
         Files.ReadBytes(windowLayoutPath, fileContentWriter);
 
