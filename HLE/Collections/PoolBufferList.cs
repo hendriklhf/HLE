@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
@@ -26,7 +25,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
         set => _bufferWriter.WrittenSpan[index] = value;
     }
 
-    public ReadOnlySpan<T> this[Range range] => _bufferWriter.WrittenSpan[range];
+    public Span<T> this[Range range] => _bufferWriter.WrittenSpan[range];
 
     public int Count => _bufferWriter.Length;
 
@@ -90,7 +89,11 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
                 AddRange(list);
                 break;
             default:
-                AddRange(items.ToArray());
+                foreach (T item in items)
+                {
+                    Add(item);
+                }
+
                 break;
         }
     }
@@ -161,19 +164,14 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
         _bufferWriter.Advance(-1);
     }
 
-    public void CopyTo(T[] destination, int destinationStartIndex)
+    public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo(((Span<T>)destination)[destinationStartIndex..]);
-    }
-
-    public void CopyTo(T[] destination)
-    {
-        CopyTo((Span<T>)destination);
+        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(destination.Span);
+        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
     }
 
     public void CopyTo(Span<T> destination)
@@ -226,6 +224,6 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     [Pure]
     public override int GetHashCode()
     {
-        return _bufferWriter.GetHashCode();
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
     }
 }
