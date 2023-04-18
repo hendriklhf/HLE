@@ -682,4 +682,105 @@ public static class CollectionHelper
             Unsafe.Add(ref firstItem, i) = start + i;
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static void FillAscending(Span<ushort> span, ushort start = 0)
+    {
+#if NET8_0_OR_GREATER
+        ushort vector512Count = (ushort)Vector512<ushort>.Count;
+        if (Vector512.IsHardwareAccelerated && span.Length > vector512Count)
+        {
+            Vector512<ushort> ascendingValueAdditions = Vector512.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+                30, 31);
+            while (span.Length > vector512Count)
+            {
+                Vector512<ushort> startValues = Vector512.Create(start);
+                Vector512<ushort> values = Vector512.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector512Count;
+                span = span[vector512Count..];
+            }
+
+            for (ushort i = 0; i < span.Length; i++)
+            {
+                span[i] = (ushort)(start + i);
+            }
+
+            return;
+        }
+#endif
+
+        ushort vector256Count = (ushort)Vector256<ushort>.Count;
+        if (Vector256.IsHardwareAccelerated && span.Length > vector256Count)
+        {
+            Vector256<ushort> ascendingValueAdditions = Vector256.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14, 15);
+            while (span.Length > vector256Count)
+            {
+                Vector256<ushort> startValues = Vector256.Create(start);
+                Vector256<ushort> values = Vector256.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector256Count;
+                span = span[vector256Count..];
+            }
+
+            for (ushort i = 0; i < span.Length; i++)
+            {
+                span[i] = (ushort)(start + i);
+            }
+
+            return;
+        }
+
+        ushort vector128Count = (ushort)Vector128<ushort>.Count;
+        if (Vector128.IsHardwareAccelerated && span.Length > vector128Count)
+        {
+            Vector128<ushort> ascendingValueAdditions = Vector128.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7);
+            while (span.Length > vector128Count)
+            {
+                Vector128<ushort> startValues = Vector128.Create(start);
+                Vector128<ushort> values = Vector128.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector128Count;
+                span = span[vector128Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = (ushort)(start + i);
+            }
+
+            return;
+        }
+
+        ushort vector64Count = (ushort)Vector64<ushort>.Count;
+        if (Vector64.IsHardwareAccelerated && span.Length > vector64Count)
+        {
+            Vector64<ushort> ascendingValueAdditions = Vector64.Create((ushort)0, 1, 2, 3);
+            while (span.Length > vector64Count)
+            {
+                Vector64<ushort> startValues = Vector64.Create(start);
+                Vector64<ushort> values = Vector64.Add(startValues, ascendingValueAdditions);
+                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
+                start += vector64Count;
+                span = span[vector64Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = (ushort)(start + i);
+            }
+
+            return;
+        }
+
+        int spanLength = span.Length;
+        ref ushort firstItem = ref MemoryMarshal.GetReference(span);
+        for (int i = 0; i < spanLength; i++)
+        {
+            Unsafe.Add(ref firstItem, i) = (ushort)(start + i);
+        }
+    }
 }
