@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
@@ -40,7 +41,7 @@ public ref struct Stack<T>
         return true;
     }
 
-    public bool TryPop(out T? item)
+    public bool TryPop([MaybeNullWhen(false)] out T item)
     {
         if (_count <= 0)
         {
@@ -52,7 +53,7 @@ public ref struct Stack<T>
         return true;
     }
 
-    public readonly bool TryPeek(out T? item)
+    public readonly bool TryPeek([MaybeNullWhen(false)] out T item)
     {
         if (_count <= 0)
         {

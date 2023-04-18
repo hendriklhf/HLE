@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
@@ -78,7 +79,7 @@ public ref struct Queue<T>
         return true;
     }
 
-    public bool TryDequeue(out T? item)
+    public bool TryDequeue([MaybeNullWhen(false)] out T item)
     {
         if (_count <= 0)
         {
@@ -90,7 +91,7 @@ public ref struct Queue<T>
         return true;
     }
 
-    public readonly bool TryPeek(out T? item)
+    public readonly bool TryPeek([MaybeNullWhen(false)] out T item)
     {
         if (_count <= 0)
         {
