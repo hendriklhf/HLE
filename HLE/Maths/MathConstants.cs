@@ -4,7 +4,7 @@
 /// A class in which contains all sorts of constants.<br />
 /// Source: <a href="https://en.wikipedia.org/wiki/List_of_physical_constants">List of physical constants</a>
 /// </summary>
-public static class MathConstant
+public static class MathConstants
 {
     /// <summary>
     /// The atomic mass constant in kg.
@@ -84,12 +84,12 @@ public static class MathConstant
     /// <summary>
     /// The first radiation constant in W * m^2.
     /// </summary>
-    public const double FirstRadiationConsant = 3.741771852e-16;
+    public const double FirstRadiationConstant = 3.741771852e-16;
 
     /// <summary>
     /// The first radiation constant for spectral radiance in W * m^2 * sr^-1.
     /// </summary>
-    public const double FirstRadiationConsantForSpectralRadiance = 1.191042972e-16;
+    public const double FirstRadiationConstantForSpectralRadiance = 1.191042972e-16;
 
     /// <summary>
     /// The Newtonian constant of gravitation G in m^3 * kg^-1 * s^-2.
