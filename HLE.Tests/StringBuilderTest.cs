@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using HLE.Strings;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests;
 
@@ -8,7 +9,7 @@ public class StringBuilderTest
     [TestMethod]
     public void BuildTest()
     {
-        StringBuilder builder = stackalloc char[50];
+        ValueStringBuilder builder = stackalloc char[50];
         builder.Append("aaa", "www");
         builder.Append('.', '_', '+');
         builder.Append("abc");

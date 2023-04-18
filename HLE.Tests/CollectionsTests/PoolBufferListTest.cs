@@ -15,7 +15,7 @@ public class PoolBufferListTest
         Assert.AreEqual('h', list[0]);
         Assert.AreEqual('o', list[4]);
         Assert.AreEqual('X', list[^2]);
-        Assert.IsTrue(list[..3].Equals("hel", StringComparison.Ordinal));
+        Assert.IsTrue(list[..3].SequenceEqual("hel".AsSpan()));
     }
 
     [TestMethod]
