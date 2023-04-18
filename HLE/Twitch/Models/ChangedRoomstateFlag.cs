@@ -3,7 +3,7 @@ using System;
 namespace HLE.Twitch.Models;
 
 [Flags]
-internal enum ChangedRoomstate : byte
+internal enum ChangedRoomstateFlag : byte
 {
     EmoteOnly = 1 << 0,
     FollowersOnly = 1 << 1,

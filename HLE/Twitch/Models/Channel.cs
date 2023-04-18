@@ -48,7 +48,7 @@ public sealed class Channel : IEquatable<Channel>
 
     internal readonly string _prefixedName;
 
-    private static readonly ChangedRoomstate[] _roomstates = Enum.GetValues<ChangedRoomstate>();
+    private static readonly ChangedRoomstateFlag[] _roomstates = Enum.GetValues<ChangedRoomstateFlag>();
 
     internal Channel(in RoomstateArgs args)
     {
@@ -64,35 +64,35 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in RoomstateArgs args)
     {
-        ref ChangedRoomstate firstRoomstate = ref MemoryMarshal.GetArrayDataReference(_roomstates);
+        ref ChangedRoomstateFlag firstRoomstateFlag = ref MemoryMarshal.GetArrayDataReference(_roomstates);
         for (int i = 0; i < _roomstates.Length; i++)
         {
-            ChangedRoomstate roomstate = Unsafe.Add(ref firstRoomstate, i);
-            bool roomstateChanged = (args._changedStatesFlags & roomstate) == roomstate;
+            ChangedRoomstateFlag roomstateFlag = Unsafe.Add(ref firstRoomstateFlag, i);
+            bool roomstateChanged = (args._changedStatesFlags & roomstateFlag) == roomstateFlag;
             if (!roomstateChanged)
             {
                 continue;
             }
 
-            switch (roomstate)
+            switch (roomstateFlag)
             {
-                case ChangedRoomstate.EmoteOnly:
+                case ChangedRoomstateFlag.EmoteOnly:
                     EmoteOnly = args.EmoteOnly;
                     break;
-                case ChangedRoomstate.FollowersOnly:
+                case ChangedRoomstateFlag.FollowersOnly:
                     FollowersOnly = args.FollowersOnly;
                     break;
-                case ChangedRoomstate.R9K:
+                case ChangedRoomstateFlag.R9K:
                     R9K = args.R9K;
                     break;
-                case ChangedRoomstate.SlowMode:
+                case ChangedRoomstateFlag.SlowMode:
                     SlowMode = args.SlowMode;
                     break;
-                case ChangedRoomstate.SubsOnly:
+                case ChangedRoomstateFlag.SubsOnly:
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(roomstate));
+                    throw new ArgumentOutOfRangeException(nameof(roomstateFlag));
             }
         }
     }
