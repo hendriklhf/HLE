@@ -40,8 +40,8 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     {
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
-        sourceBuilder.AppendLine("namespace HLE;").AppendLine();
-        sourceBuilder.AppendLine("public ref partial struct StringBuilder");
+        sourceBuilder.AppendLine("namespace HLE.Strings;").AppendLine();
+        sourceBuilder.AppendLine("public ref partial struct ValueStringBuilder");
         sourceBuilder.AppendLine("{");
         foreach (string[] argumentTypes in _arguments)
         {
@@ -50,15 +50,15 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         }
 
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.StringBuilder.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Strings.ValueStringBuilder.g.cs", sourceBuilder.ToString());
     }
 
     private void GenerateMessageBuilderMethods(GeneratorExecutionContext context)
     {
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
-        sourceBuilder.AppendLine("namespace HLE.Twitch;").AppendLine();
-        sourceBuilder.AppendLine("public partial struct MessageBuilder");
+        sourceBuilder.AppendLine("namespace HLE.Strings;").AppendLine();
+        sourceBuilder.AppendLine("public partial struct PoolBufferStringBuilder");
         sourceBuilder.AppendLine("{");
         foreach (string[] argumentTypes in _arguments)
         {
@@ -67,7 +67,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         }
 
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Twitch.MessageBuilder.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Strings.PoolBufferStringBuilder.g.cs", sourceBuilder.ToString());
     }
 
     private static string CreateAppendMethod(ReadOnlySpan<string> argumentTypes)
