@@ -5,16 +5,18 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace HLE;
+namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public ref partial struct StringBuilder
+public ref partial struct ValueStringBuilder
 {
     public readonly ref char this[int index] => ref _buffer[index];
 
     public readonly ref char this[Index index] => ref _buffer[index];
 
     public readonly Span<char> this[Range range] => _buffer[range];
+
+    public readonly Span<char> Buffer => _buffer;
 
     public readonly ReadOnlySpan<char> WrittenSpan => _buffer[.._length];
 
@@ -29,34 +31,29 @@ public ref partial struct StringBuilder
     private readonly Span<char> _buffer = Span<char>.Empty;
     private int _length = 0;
 
-    public static StringBuilder Empty => new();
+    public static ValueStringBuilder Empty => new();
 
-    public StringBuilder()
+    public ValueStringBuilder()
     {
     }
 
-    public StringBuilder(Span<char> buffer)
+    public ValueStringBuilder(Span<char> buffer)
     {
         _buffer = buffer;
     }
 
-    public unsafe StringBuilder(char* pointer, int length)
+    public unsafe ValueStringBuilder(char* pointer, int length)
     {
         _buffer = new(pointer, length);
     }
 
-    public StringBuilder(ref char reference, int length)
+    public ValueStringBuilder(ref char reference, int length)
     {
         _buffer = MemoryMarshal.CreateSpan(ref reference, length);
     }
 
     public void Advance(int length)
     {
-        if (length < 0)
-        {
-            throw new ArgumentException($"Parameter {nameof(length)} must be a positive number.", nameof(length));
-        }
-
         _length += length;
     }
 
@@ -75,79 +72,131 @@ public ref partial struct StringBuilder
 
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(value));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        dateTime.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!dateTime.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(dateTime));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        timeSpan.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!timeSpan.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(timeSpan));
+        }
+
         Advance(charsWritten);
     }
 
     public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider);
+        if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(spanFormattable));
+        }
+
         Advance(charsWritten);
     }
 
@@ -176,24 +225,65 @@ public ref partial struct StringBuilder
         return new(_buffer[.._length]);
     }
 
+    [Pure]
     public readonly char[] ToCharArray()
     {
         return _buffer[.._length].ToArray();
     }
 
     [Pure]
-    public readonly bool Equals(StringBuilder builder, StringComparison comparisonType = default)
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly bool Equals(object? obj)
     {
-        return ((ReadOnlySpan<char>)_buffer[.._length]).Equals(builder._buffer[..builder._length], comparisonType);
+        return false;
     }
 
     [Pure]
-    public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType = default)
+    public readonly bool Equals(ValueStringBuilder other)
     {
-        return ((ReadOnlySpan<char>)_buffer[.._length]).Equals(str, comparisonType);
+        return Unsafe.AreSame(ref MemoryMarshal.GetReference(_buffer), ref MemoryMarshal.GetReference(other._buffer)) && _length == other._length;
     }
 
-    public static implicit operator StringBuilder(Span<char> buffer) => new(buffer);
+    [Pure]
+    public readonly bool Equals(ValueStringBuilder other, StringComparison comparisonType)
+    {
+        return WrittenSpan.Equals(other.WrittenSpan, comparisonType);
+    }
 
-    public static implicit operator StringBuilder(char[] buffer) => new(buffer);
+    [Pure]
+    public readonly bool Equals(ReadOnlySpan<char> span, StringComparison comparisonType)
+    {
+        return WrittenSpan.Equals(span, comparisonType);
+    }
+
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly unsafe int GetHashCode()
+    {
+        return HashCode.Combine((nuint)Unsafe.AsPointer(ref MemoryMarshal.GetReference(_buffer)), _length);
+    }
+
+    [Pure]
+    public readonly int GetHashCode(StringComparison comparisonType)
+    {
+        return string.GetHashCode(WrittenSpan, comparisonType);
+    }
+
+    private static ArgumentException NotEnoughSpaceException(string paramName)
+    {
+        return new("There was not enough space left in the buffer to write the provided value to the buffer.", paramName);
+    }
+
+    public static implicit operator ValueStringBuilder(Span<char> buffer) => new(buffer);
+
+    public static implicit operator ValueStringBuilder(char[] buffer) => new(buffer);
+
+    public static bool operator ==(ValueStringBuilder left, ValueStringBuilder right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ValueStringBuilder left, ValueStringBuilder right)
+    {
+        return !(left == right);
+    }
 }

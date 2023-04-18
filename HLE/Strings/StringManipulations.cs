@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using HLE.Memory;
 
-namespace HLE;
+namespace HLE.Strings;
 
 /// <summary>
 /// Provides methods for <see cref="string"/> manipulation.
