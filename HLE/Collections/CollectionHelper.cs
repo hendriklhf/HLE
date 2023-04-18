@@ -783,4 +783,9 @@ public static class CollectionHelper
             Unsafe.Add(ref firstItem, i) = (ushort)(start + i);
         }
     }
+
+    public static void AddOrSet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
+    {
+        CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out _) = value;
+    }
 }
