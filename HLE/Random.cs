@@ -110,6 +110,33 @@ public static class Random
     }
 
     [Pure]
+    public static ulong ULong()
+    {
+        Unsafe.SkipInit(out ulong result);
+        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<ulong, byte>(ref result), sizeof(ulong));
+        _weak.NextBytes(span);
+        return result;
+    }
+
+    [Pure]
+    public static unsafe Int128 Int128()
+    {
+        Unsafe.SkipInit(out Int128 result);
+        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<Int128, byte>(ref result), sizeof(UInt128));
+        _weak.NextBytes(span);
+        return result;
+    }
+
+    [Pure]
+    public static unsafe UInt128 UInt128()
+    {
+        Unsafe.SkipInit(out UInt128 result);
+        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<UInt128, byte>(ref result), sizeof(UInt128));
+        _weak.NextBytes(span);
+        return result;
+    }
+
+    [Pure]
     public static double Double()
     {
         return _weak.NextDouble();
@@ -122,7 +149,7 @@ public static class Random
     }
 
     [Pure]
-    public static string String(int length, char minChar = _minAsciiPrintableChar, char maxChar = _maxAsciiPrintableChar)
+    public static unsafe string String(int length, char minChar = _minAsciiPrintableChar, char maxChar = _maxAsciiPrintableChar)
     {
         if (length <= 0)
         {
@@ -130,19 +157,27 @@ public static class Random
         }
 
         ushort charCount = (ushort)(maxChar - minChar);
-        Span<char> chars = MemoryHelper.UseStackAlloc<char>(charCount) ? stackalloc char[charCount] : new char[charCount];
-        for (int i = 0; i < charCount; i++)
+        Span<ushort> chars = MemoryHelper.UseStackAlloc<ushort>(charCount) ? stackalloc ushort[charCount] : new ushort[charCount];
+        CollectionHelper.FillAscending(chars, minChar);
+
+        if (!MemoryHelper.UseStackAlloc<ushort>(length))
         {
-            chars[i] = (char)(i + minChar);
+            using RentedArray<ushort> bufferResult = new(length);
+            for (int i = 0; i < length; i++)
+            {
+                bufferResult[i] = chars.Random();
+            }
+
+            return new((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bufferResult.Span)), 0, length);
         }
 
-        Span<char> result = MemoryHelper.UseStackAlloc<char>(length) ? stackalloc char[length] : new char[length];
+        ushort* result = stackalloc ushort[length];
         for (int i = 0; i < length; i++)
         {
             result[i] = chars.Random();
         }
 
-        return new(result);
+        return new((char*)result, 0, length);
     }
 
     [Pure]
@@ -346,11 +381,8 @@ public static class Random
         WriteStrong(ref Unsafe.AsRef<T>(destination), elementCount);
     }
 
-    public static void WriteStrong<T>(ref T destination, int elementCount) where T : struct
+    public static unsafe void WriteStrong<T>(ref T destination, int elementCount) where T : struct
     {
-        for (int i = 0; i < elementCount; i++)
-        {
-            Unsafe.Add(ref destination, i) = StrongStruct<T>();
-        }
+        _strong.GetBytes(MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref destination), elementCount * sizeof(T)));
     }
 }
