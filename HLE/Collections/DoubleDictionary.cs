@@ -2,7 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Collections;
 
@@ -18,16 +21,29 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     {
         set
         {
-            TValue oldValue = _values[primaryKey];
-            _values[primaryKey] = value;
-
-            if (!_secondaryKeyTranslations[secondaryKey].Equals(primaryKey))
+            ref TValue valueRef = ref CollectionsMarshal.GetValueRefOrNullRef(_values, primaryKey);
+            if (Unsafe.IsNullRef(ref valueRef))
             {
-                _values[primaryKey] = oldValue;
+                throw new KeyNotFoundException("The primary key could not be found.");
+            }
+
+            TValue oldValue = valueRef;
+            valueRef = value;
+
+            ref TPrimaryKey primaryKeyRef = ref CollectionsMarshal.GetValueRefOrNullRef(_secondaryKeyTranslations, secondaryKey);
+            if (Unsafe.IsNullRef(ref primaryKeyRef))
+            {
+                valueRef = oldValue;
+                throw new KeyNotFoundException("The secondary key could not be found.");
+            }
+
+            if (!primaryKeyRef.Equals(primaryKey))
+            {
+                valueRef = oldValue;
                 throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
             }
 
-            _secondaryKeyTranslations[secondaryKey] = primaryKey;
+            primaryKeyRef = primaryKey;
         }
     }
 
@@ -78,12 +94,38 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         return false;
     }
 
-    public bool TryGetValue(TPrimaryKey key, out TValue? value)
+    public void AddOrSet(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
+    {
+        ref TValue? valueRef = ref CollectionsMarshal.GetValueRefOrAddDefault(_values, primaryKey, out bool primaryKeyExists);
+        ref TPrimaryKey? primaryKeyRef = ref CollectionsMarshal.GetValueRefOrAddDefault(_secondaryKeyTranslations, secondaryKey, out bool secondaryKeyExists);
+
+        bool bothKeysExistAndOldPrimaryKeyEqualsNewPrimaryKey = primaryKeyExists && secondaryKeyExists && primaryKey.Equals(primaryKeyRef);
+        bool bothKeysDontExist = !primaryKeyExists && !secondaryKeyExists;
+        if (!bothKeysExistAndOldPrimaryKeyEqualsNewPrimaryKey && !bothKeysDontExist)
+        {
+            if (!primaryKeyExists)
+            {
+                _values.Remove(primaryKey);
+            }
+
+            if (!secondaryKeyExists)
+            {
+                _secondaryKeyTranslations.Remove(secondaryKey);
+            }
+
+            throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
+        }
+
+        valueRef = value;
+        primaryKeyRef = primaryKey;
+    }
+
+    public bool TryGetValue(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         return _values.TryGetValue(key, out value);
     }
 
-    public bool TryGetValue(TSecondaryKey key, out TValue? value)
+    public bool TryGetValue(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         if (_secondaryKeyTranslations.TryGetValue(key, out TPrimaryKey? primaryKey))
         {
