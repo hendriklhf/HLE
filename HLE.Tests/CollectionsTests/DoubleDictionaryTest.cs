@@ -89,6 +89,39 @@ public class DoubleDictionaryTest
     }
 
     [TestMethod]
+    public void AddOrSetTest()
+    {
+        DoubleDictionary<int, string, string> dictionary = new();
+        const string value = "xd";
+
+        dictionary.AddOrSet(1, "a", value);
+        Assert.AreEqual(dictionary[1], value);
+        Assert.AreEqual(dictionary["a"], value);
+        Assert.AreEqual(1, dictionary.Count);
+
+        dictionary.AddOrSet(1, "a", "abc");
+        Assert.AreEqual(dictionary[1], "abc");
+        Assert.AreEqual(dictionary["a"], "abc");
+        Assert.AreEqual(1, dictionary.Count);
+
+        Assert.ThrowsException<KeyNotFoundException>(() =>
+        {
+            dictionary.AddOrSet(1, "b", value);
+        });
+
+        Assert.ThrowsException<KeyNotFoundException>(() =>
+        {
+            dictionary.AddOrSet(2, "a", value);
+        });
+
+        dictionary.AddOrSet(2, "b", value);
+        Assert.AreEqual(dictionary[2], value);
+        Assert.AreEqual(dictionary["b"], value);
+        Assert.AreEqual(2, dictionary.Count);
+        Assert.IsTrue(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
+    }
+
+    [TestMethod]
     public void TryGetValueTest()
     {
         DoubleDictionary<int, string, string> dictionary = new();
