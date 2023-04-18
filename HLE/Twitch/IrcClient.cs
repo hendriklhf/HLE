@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Memory;
+using HLE.Strings;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -132,20 +133,20 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         StartListening();
         OnConnected?.Invoke(this, EventArgs.Empty);
 
-        using MessageBuilder messageBuilder = new(_capReqMessage.Length);
+        using PoolBufferStringBuilder messageBuilder = new(_capReqMessage.Length);
         if (_oAuthToken is not null)
         {
             messageBuilder.Append(_passPrefix, _oAuthToken);
-            await Send(messageBuilder.Message);
+            await Send(messageBuilder.WrittenMemory);
         }
 
         messageBuilder.Clear();
         messageBuilder.Append(_nickPrefix, Username);
-        await Send(messageBuilder.Message);
+        await Send(messageBuilder.WrittenMemory);
 
         messageBuilder.Clear();
         messageBuilder.Append(_capReqMessage);
-        await Send(messageBuilder.Message);
+        await Send(messageBuilder.WrittenMemory);
 
         await JoinChannelsThrottled(channels);
     }
@@ -237,9 +238,9 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// </summary>
     /// <param name="channel">The channel the message will be sent to.</param>
     /// <param name="builder">The builder that contains the message that will be sent.</param>
-    public async Task SendMessageAsync(ReadOnlyMemory<char> channel, MessageBuilder builder)
+    public async Task SendMessageAsync(ReadOnlyMemory<char> channel, PoolBufferStringBuilder builder)
     {
-        await SendMessageAsync(channel, builder.Message);
+        await SendMessageAsync(channel, builder.WrittenMemory);
     }
 
     /// <summary>
@@ -249,9 +250,9 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="message">The message that will be sent to the channel.</param>
     public async Task SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
-        using MessageBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
+        using PoolBufferStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
         messageBuilder.Append(_privMsgPrefix, channel.Span, _spaceColon, message.Span);
-        await Send(messageBuilder.Message);
+        await Send(messageBuilder.WrittenMemory);
     }
 
     /// <inheritdoc cref="JoinChannel(ReadOnlyMemory{char})"/>
@@ -281,9 +282,9 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="channel">The channel the client will join.</param>
     public async Task JoinChannelAsync(ReadOnlyMemory<char> channel)
     {
-        using MessageBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
+        using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_joinPrefix, channel.Span);
-        await Send(messageBuilder.Message);
+        await Send(messageBuilder.WrittenMemory);
     }
 
     /// <inheritdoc cref="LeaveChannel(ReadOnlyMemory{char})"/>
@@ -313,9 +314,9 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="channel">The channel the client will leave.</param>
     public async Task LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
-        using MessageBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
+        using PoolBufferStringBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_partPrefix, channel.Span);
-        await Send(messageBuilder.Message);
+        await Send(messageBuilder.WrittenMemory);
     }
 
     private async ValueTask JoinChannelsThrottled(ReadOnlyMemory<string> channels)
@@ -328,7 +329,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         int maxJoinsInPeriod = _isVerifiedBot ? 200 : 20;
         TimeSpan period = TimeSpan.FromSeconds(10);
 
-        using MessageBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
+        using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         DateTimeOffset start = DateTimeOffset.UtcNow;
         for (int i = 0; i < channels.Length && !_cancellationTokenSource.IsCancellationRequested; i++)
         {
@@ -344,7 +345,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
             }
 
             messageBuilder.Append(_joinPrefix, channels.Span[i]);
-            await Send(messageBuilder.Message);
+            await Send(messageBuilder.WrittenMemory);
             messageBuilder.Clear();
         }
     }
