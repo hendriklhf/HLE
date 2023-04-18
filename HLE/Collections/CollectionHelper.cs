@@ -107,11 +107,12 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static T[] Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
+    public static IEnumerable<T> Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
     {
-        T[] array = collection.ToArray();
-        Replace((Span<T>)array, condition, replacement);
-        return array;
+        foreach (T item in collection)
+        {
+            yield return condition(item) ? replacement : item;
+        }
     }
 
     [Pure]
@@ -148,14 +149,6 @@ public static class CollectionHelper
                 item = replacement;
             }
         }
-    }
-
-    [Pure]
-    public static unsafe T[] Replace<T>(this IEnumerable<T> collection, delegate*<T, bool> condition, T replacement)
-    {
-        T[] array = collection.ToArray();
-        Replace((Span<T>)array, condition, replacement);
-        return array;
     }
 
     [Pure]
@@ -318,7 +311,19 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
     {
-        return IndicesOf(collection.ToArray(), condition);
+        using PoolBufferList<int> indices = new(50, 25);
+        int index = 0;
+        foreach (T item in collection)
+        {
+            if (condition(item))
+            {
+                indices.Add(index);
+            }
+
+            index++;
+        }
+
+        return indices.ToArray();
     }
 
     [Pure]
@@ -371,12 +376,6 @@ public static class CollectionHelper
         }
 
         return length;
-    }
-
-    [Pure]
-    public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> condition)
-    {
-        return IndicesOf(collection.ToArray(), condition);
     }
 
     [Pure]
@@ -434,7 +433,19 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item)
     {
-        return collection.ToArray().IndicesOf(item);
+        using PoolBufferList<int> indices = new(50, 25);
+        int index = 0;
+        foreach (T t in collection)
+        {
+            if (t?.Equals(item) == true)
+            {
+                indices.Add(index);
+            }
+
+            index++;
+        }
+
+        return indices.ToArray();
     }
 
     [Pure]
