@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
@@ -47,7 +48,7 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
     /// </summary>
     public bool SubsOnly { get; init; }
 
-    internal readonly ChangedRoomstate _changedStatesFlags = 0;
+    internal readonly ChangedRoomstateFlag _changedStatesFlags = 0;
 
     private const string _emoteOnlyTag = "emote-only";
     private const string _followersOnlyTag = "followers-only";
@@ -77,17 +78,17 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
             if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))
             {
                 EmoteOnly = GetEmoteOnly(value);
-                _changedStatesFlags |= ChangedRoomstate.EmoteOnly;
+                _changedStatesFlags |= ChangedRoomstateFlag.EmoteOnly;
             }
             else if (key.Equals(_followersOnlyTag, StringComparison.Ordinal))
             {
                 FollowersOnly = GetFollowersOnly(value);
-                _changedStatesFlags |= ChangedRoomstate.FollowersOnly;
+                _changedStatesFlags |= ChangedRoomstateFlag.FollowersOnly;
             }
             else if (key.Equals(_r9KTag, StringComparison.Ordinal))
             {
                 R9K = GetR9K(value);
-                _changedStatesFlags |= ChangedRoomstate.R9K;
+                _changedStatesFlags |= ChangedRoomstateFlag.R9K;
             }
             else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
             {
@@ -96,16 +97,16 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
             else if (key.Equals(_slowModeTag, StringComparison.Ordinal))
             {
                 SlowMode = GetSlowMode(value);
-                _changedStatesFlags |= ChangedRoomstate.SlowMode;
+                _changedStatesFlags |= ChangedRoomstateFlag.SlowMode;
             }
             else if (key.Equals(_subsOnlyTag, StringComparison.Ordinal))
             {
                 SubsOnly = GetSubsOnly(value);
-                _changedStatesFlags |= ChangedRoomstate.SubsOnly;
+                _changedStatesFlags |= ChangedRoomstateFlag.SubsOnly;
             }
         }
 
-        Channel = new(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+        Channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

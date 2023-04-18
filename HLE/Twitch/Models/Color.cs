@@ -26,7 +26,7 @@ public readonly struct Color : IEquatable<Color>
         Blue = blue;
     }
 
-    private Color(System.Drawing.Color color)
+    public Color(System.Drawing.Color color)
     {
         if (color.IsEmpty)
         {

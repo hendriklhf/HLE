@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using HLE.Collections;
 
 namespace HLE.Twitch.Models;
 
@@ -31,7 +30,7 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     public int Count => _channels.Count;
 
-    private readonly Dictionary<long, Channel> _channels = new();
+    private readonly DoubleDictionary<long, int, Channel> _channels = new();
 
     internal void Update(in RoomstateArgs args)
     {
@@ -39,7 +38,8 @@ public sealed class ChannelList : IEnumerable<Channel>
         if (channel is null)
         {
             channel = new(in args);
-            _channels.Add(channel.Id, channel);
+            int channelNameHash = string.GetHashCode(channel.Name, StringComparison.OrdinalIgnoreCase);
+            _channels.Add(channel.Id, channelNameHash, channel);
         }
         else
         {
@@ -50,10 +50,13 @@ public sealed class ChannelList : IEnumerable<Channel>
     internal void Remove(ReadOnlySpan<char> channelName)
     {
         Channel? channel = Get(channelName);
-        if (channel is not null)
+        if (channel is null)
         {
-            _channels.Remove(channel.Id);
+            return;
         }
+
+        int channelNameHash = string.GetHashCode(channel.Name, StringComparison.OrdinalIgnoreCase);
+        _channels.Remove(channel.Id, channelNameHash);
     }
 
     internal void Clear()
@@ -63,8 +66,7 @@ public sealed class ChannelList : IEnumerable<Channel>
 
     private Channel? Get(long channelId)
     {
-        ref Channel channel = ref CollectionsMarshal.GetValueRefOrNullRef(_channels, channelId);
-        return Unsafe.IsNullRef(ref channel) ? null : channel;
+        return _channels.TryGetValue(channelId, out Channel? channel) ? channel : null;
     }
 
     private Channel? Get(ReadOnlySpan<char> name)
@@ -74,15 +76,8 @@ public sealed class ChannelList : IEnumerable<Channel>
             name = name[1..];
         }
 
-        foreach (Channel channel in _channels.Values)
-        {
-            if (name.Equals(channel.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                return channel;
-            }
-        }
-
-        return null;
+        int channelNameHash = string.GetHashCode(name, StringComparison.OrdinalIgnoreCase);
+        return _channels.TryGetValue(channelNameHash, out Channel? channel) ? channel : null;
     }
 
     public bool Equals(ChannelList? other)

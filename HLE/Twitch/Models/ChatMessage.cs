@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
@@ -178,7 +179,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
 
         _flags |= GetIsAction(ircMessage, indicesOfWhitespace);
         Username = GetUsername(ircMessage, indicesOfWhitespace);
-        Channel = new(ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..]);
+        Channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..]);
         Message = GetMessage(ircMessage, indicesOfWhitespace);
     }
 
@@ -199,9 +200,9 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string GetUsername(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        Debug.Assert(DisplayName is not null);
+        Debug.Assert(DisplayName is not null && DisplayName.Length > 0);
         ReadOnlySpan<char> username = ircMessage[(indicesOfWhitespaces[0] + 2)..][..DisplayName.Length];
-        return new(username);
+        return StringPool.Shared.GetOrAdd(username);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -236,8 +237,8 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
             value = indexOfComma == -1 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
-            string name = new(info[..slashIndex]);
-            string level = new(info[(slashIndex + 1)..]);
+            string name = StringPool.Shared.GetOrAdd(info[..slashIndex]);
+            string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..]);
             Unsafe.Add(ref firstBadge, badgeCount++) = new(name, level);
         }
 
@@ -255,7 +256,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     {
         bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
         byte asByte = (byte)(Unsafe.As<bool, byte>(ref isBackSlash) << 1);
-        return new(value[..^asByte]);
+        return StringPool.Shared.GetOrAdd(value[..^asByte]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -350,7 +351,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     /// <returns>The message in a readable format.</returns>
     public override string ToString()
     {
-        StringBuilder builder = stackalloc char[Channel.Length + Username.Length + Message.Length + 6];
+        ValueStringBuilder builder = stackalloc char[Channel.Length + Username.Length + Message.Length + 6];
         builder.Append("<#", Channel, "> ", Username, ": ", Message);
         return builder.ToString();
     }
@@ -362,7 +363,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj) || (obj is ChatMessage other && Equals(other));
+        return ReferenceEquals(this, obj) || obj is ChatMessage other && Equals(other);
     }
 
     public override int GetHashCode()
