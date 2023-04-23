@@ -10,27 +10,27 @@ namespace HLE;
 
 public static class Files
 {
-    public static void ReadBytes(string filePath, PoolBufferWriter<byte> bufferWriter)
+    public static void ReadBytes<TWriter>(string filePath, TWriter writer) where TWriter : IBufferWriter<byte>
     {
         using FileStream fileStream = File.OpenRead(filePath);
-        int bytesRead = fileStream.Read(bufferWriter.GetSpan(1000));
-        bufferWriter.Advance(bytesRead);
+        int bytesRead = fileStream.Read(writer.GetSpan(1000));
+        writer.Advance(bytesRead);
         while (bytesRead > 0)
         {
-            bytesRead = fileStream.Read(bufferWriter.GetSpan(1000));
-            bufferWriter.Advance(bytesRead);
+            bytesRead = fileStream.Read(writer.GetSpan(1000));
+            writer.Advance(bytesRead);
         }
     }
 
-    public static async ValueTask ReadBytesAsync(string filePath, PoolBufferWriter<byte> bufferWriter)
+    public static async ValueTask ReadBytesAsync<TWriter>(string filePath, TWriter writer) where TWriter : IBufferWriter<byte>
     {
         await using FileStream fileStream = File.OpenRead(filePath);
-        int bytesRead = await fileStream.ReadAsync(bufferWriter.GetMemory(1000));
-        bufferWriter.Advance(bytesRead);
+        int bytesRead = await fileStream.ReadAsync(writer.GetMemory(1000));
+        writer.Advance(bytesRead);
         while (bytesRead > 0)
         {
-            bytesRead = await fileStream.ReadAsync(bufferWriter.GetMemory(1000));
-            bufferWriter.Advance(bytesRead);
+            bytesRead = await fileStream.ReadAsync(writer.GetMemory(1000));
+            writer.Advance(bytesRead);
         }
     }
 

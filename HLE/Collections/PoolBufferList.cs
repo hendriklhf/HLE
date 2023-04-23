@@ -78,7 +78,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
         _bufferWriter.Advance(1);
     }
 
-    public void AddRange(IEnumerable<T> items)
+    public void AddRange<TCollection>(TCollection items) where TCollection : IEnumerable<T>
     {
         switch (items)
         {
