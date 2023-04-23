@@ -118,6 +118,10 @@ public class StringHelperTest
         Span<char> buffer = stackalloc char[str.Length << 1];
         int length = StringHelper.RegexEscape(str, buffer);
         Assert.AreEqual(@"\\\*\+\?\|\{\[\(\)\^\$\.\sawdawdawdawd", new(buffer[..length]));
+
+        const string str2 = "hello";
+        length = StringHelper.RegexEscape(str2, buffer);
+        Assert.AreEqual(str2, new(buffer[..length]));
     }
 
     [TestMethod]
