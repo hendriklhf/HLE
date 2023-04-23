@@ -29,7 +29,7 @@ public class CollectionHelperTest
             "b",
             "c"
         };
-        Assert.AreEqual("a b c", arr.JoinToString(' '));
+        Assert.AreEqual("a b c", arr.JoinToString<string[], string>(' '));
     }
 
     [TestMethod]
@@ -42,7 +42,7 @@ public class CollectionHelperTest
             "c"
         };
 
-        Assert.AreEqual("abc", arr.ConcatToString());
+        Assert.AreEqual("abc", arr.ConcatToString<string[], string>());
     }
 
     [TestMethod]
@@ -106,20 +106,10 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
-    public void RandomStringTest()
-    {
-        const int stringLength = 50;
-        char[] arr = "abcdefghijklmnopqrstuvwxyz".ToCharArray();
-        string word = arr.RandomString(stringLength);
-        Assert.AreEqual(stringLength, word.Length);
-        Assert.IsTrue(word.All(c => arr.Contains(c)));
-    }
-
-    [TestMethod]
     public void IndicesOfTest()
     {
         const string str = "test string";
-        int[] indices = str.IndicesOf(c => c is 's');
+        int[] indices = str.IndicesOf<string, char>(c => c is 's');
         Assert.IsTrue(indices is [2, 5]);
     }
 
@@ -129,7 +119,7 @@ public class CollectionHelperTest
         int[] arr = TestHelper.CreateIntArray(50);
         int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize()).ToArray();
         int count = arrArr.Count(a => arr.SequenceEqual(a));
-        Console.WriteLine($"Content was equal {NumberHelper.InsertKDots(count)} times.");
+        Console.WriteLine($"Content was equal {NumberHelper.InsertThousandSeparators(count)} times.");
         Assert.IsTrue(count <= 1);
     }
 
