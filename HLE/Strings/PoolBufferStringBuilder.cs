@@ -202,7 +202,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
         Advance(charsWritten);
     }
 
-    public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default) where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
         if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
         {

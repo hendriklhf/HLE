@@ -190,7 +190,7 @@ public ref partial struct ValueStringBuilder
         Advance(charsWritten);
     }
 
-    public void Append(ISpanFormattable spanFormattable, ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default) where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
         if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
         {
@@ -209,7 +209,7 @@ public ref partial struct ValueStringBuilder
 #if NET8_0_OR_GREATER
     public readonly void Replace(char oldChar, char newChar)
     {
-        _buffer[.._length].Replace(oldChar, newChar);
+        WrittenSpan.Replace(oldChar, newChar);
     }
 #endif
 
@@ -256,6 +256,7 @@ public ref partial struct ValueStringBuilder
         return WrittenSpan.Equals(span, comparisonType);
     }
 
+    [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly unsafe int GetHashCode()
     {
