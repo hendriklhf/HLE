@@ -180,6 +180,39 @@ public static class Random
         return new((char*)result, 0, length);
     }
 
+    public static string String(int length, ReadOnlySpan<char> chars)
+    {
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+
+        if (!MemoryHelper.UseStackAlloc<int>(length))
+        {
+            using RentedArray<char> resultBuffer = new(length);
+            using RentedArray<int> randomIndicesBuffer = new(length);
+            Fill(randomIndicesBuffer.Span);
+            for (int i = 0; i < length; i++)
+            {
+                int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % chars.Length;
+                resultBuffer[i] = chars[randomIndex];
+            }
+
+            return new(resultBuffer[..length]);
+        }
+
+        Span<char> result = stackalloc char[length];
+        Span<int> randomIndices = stackalloc int[length];
+        Fill(randomIndices);
+        for (int i = 0; i < length; i++)
+        {
+            int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % chars.Length;
+            result[i] = chars[randomIndex];
+        }
+
+        return new(result);
+    }
+
     [Pure]
     public static bool Bool()
     {
@@ -215,10 +248,15 @@ public static class Random
         _weak.NextBytes(span);
     }
 
+    public static void Fill<T>(Span<T> span) where T : struct
+    {
+        Write(ref MemoryMarshal.GetReference(span), span.Length);
+    }
+
     [Pure]
     public static bool StrongBool()
     {
-        byte result = (byte)(StrongByte() & 1);
+        byte result = StrongByte();
         return Unsafe.As<byte, bool>(ref result);
     }
 
