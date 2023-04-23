@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -36,8 +35,13 @@ public static class StringManipulations
         Replace(span.AsMutableSpan(), oldChar, newChar);
     }
 
-    internal static void Replace(Span<char> span, char oldChar, char newChar)
+    private static void Replace(Span<char> span, char oldChar, char newChar)
     {
+        if (span.Length == 0)
+        {
+            return;
+        }
+
         span.Replace(oldChar, newChar);
     }
 #endif
@@ -52,11 +56,16 @@ public static class StringManipulations
         ToLower(span.AsMutableSpan(), cultureInfo);
     }
 
-    internal static void ToLower(Span<char> span, CultureInfo? cultureInfo = null)
+    private static void ToLower(Span<char> span, CultureInfo? cultureInfo = null)
     {
+        if (span.Length == 0)
+        {
+            return;
+        }
+
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
-            using RentedArray<char> copyArrayBuffer = ArrayPool<char>.Shared.Rent(span.Length);
+            using RentedArray<char> copyArrayBuffer = new(span.Length);
             span.CopyTo(copyArrayBuffer);
             MemoryExtensions.ToLower(copyArrayBuffer[..span.Length], span, cultureInfo);
             return;
@@ -77,11 +86,11 @@ public static class StringManipulations
         ToUpper(span.AsMutableSpan(), cultureInfo);
     }
 
-    internal static void ToUpper(Span<char> span, CultureInfo? cultureInfo = null)
+    private static void ToUpper(Span<char> span, CultureInfo? cultureInfo = null)
     {
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
-            using RentedArray<char> copyArrayBuffer = ArrayPool<char>.Shared.Rent(span.Length);
+            using RentedArray<char> copyArrayBuffer = new(span.Length);
             span.CopyTo(copyArrayBuffer);
             MemoryExtensions.ToUpper(copyArrayBuffer[..span.Length], span, cultureInfo);
             return;
