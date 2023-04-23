@@ -284,7 +284,7 @@ public static class StringHelper
         int rangesAsIntLength = 0;
 #if NET8_0_OR_GREATER
         int vector512Count = Vector512<int>.Count;
-        if (Vector512.IsHardwareAccelerated && indices.Length > vector512Count)
+        if (Vector512.IsHardwareAccelerated && indices.Length >= vector512Count)
         {
             var separatorLengthVector = Vector512.Create(separatorLength);
             while (indices.Length > vector512Count)
@@ -319,7 +319,7 @@ public static class StringHelper
 #endif
 
         int vector256Count = Vector256<int>.Count;
-        if (Vector256.IsHardwareAccelerated && indices.Length > vector256Count)
+        if (Vector256.IsHardwareAccelerated && indices.Length >= vector256Count)
         {
             var separatorLengthVector = Vector256.Create(separatorLength);
             while (indices.Length > vector256Count)
@@ -351,7 +351,7 @@ public static class StringHelper
         }
 
         int vector128Count = Vector128<int>.Count;
-        if (Vector128.IsHardwareAccelerated && indices.Length > vector128Count)
+        if (Vector128.IsHardwareAccelerated && indices.Length >= vector128Count)
         {
             var separatorLengthVector = Vector128.Create(separatorLength);
             while (indices.Length > vector128Count)
@@ -383,7 +383,7 @@ public static class StringHelper
         }
 
         int vector64Count = Vector64<int>.Count;
-        if (Vector64.IsHardwareAccelerated && indices.Length > vector64Count)
+        if (Vector64.IsHardwareAccelerated && indices.Length >= vector64Count)
         {
             var separatorLengthVector = Vector64.Create(separatorLength);
             while (indices.Length > vector64Count)
@@ -489,7 +489,7 @@ public static class StringHelper
         int result = 0;
 #if NET8_0_OR_GREATER
         int vector512Count = Vector512<ushort>.Count;
-        if (Vector512.IsHardwareAccelerated && spanLength > vector512Count)
+        if (Vector512.IsHardwareAccelerated && spanLength >= vector512Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector512<ushort> equalsVector = Vector512.Create((ushort)charToCount);
@@ -514,7 +514,7 @@ public static class StringHelper
 #endif
 
         int vector256Count = Vector256<ushort>.Count;
-        if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
+        if (Vector256.IsHardwareAccelerated && spanLength >= vector256Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector256<ushort> equalsVector = Vector256.Create((ushort)charToCount);
@@ -538,7 +538,7 @@ public static class StringHelper
         }
 
         int vector128Count = Vector128<ushort>.Count;
-        if (Vector128.IsHardwareAccelerated && spanLength > vector128Count)
+        if (Vector128.IsHardwareAccelerated && spanLength >= vector128Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector128<ushort> equalsVector = Vector128.Create((ushort)charToCount);
@@ -562,7 +562,7 @@ public static class StringHelper
         }
 
         int vector64Count = Vector64<ushort>.Count;
-        if (Vector64.IsHardwareAccelerated && spanLength > vector64Count)
+        if (Vector64.IsHardwareAccelerated && spanLength >= vector64Count)
         {
             ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
             Vector64<ushort> equalsVector = Vector64.Create((ushort)charToCount);
@@ -608,7 +608,7 @@ public static class StringHelper
         int result = 0;
 #if NET8_0_OR_GREATER
         int vector512Count = Vector512<byte>.Count;
-        if (Vector512.IsHardwareAccelerated && spanLength > vector512Count)
+        if (Vector512.IsHardwareAccelerated && spanLength >= vector512Count)
         {
             Vector512<byte> equalsVector = Vector512.Create(byteToCount);
             Vector512<byte> oneVector = Vector512.Create((byte)1);
@@ -632,7 +632,7 @@ public static class StringHelper
 #endif
 
         int vector256Count = Vector256<byte>.Count;
-        if (Vector256.IsHardwareAccelerated && spanLength > vector256Count)
+        if (Vector256.IsHardwareAccelerated && spanLength >= vector256Count)
         {
             Vector256<byte> equalsVector = Vector256.Create(byteToCount);
             Vector256<byte> oneVector = Vector256.Create((byte)1);
@@ -655,7 +655,7 @@ public static class StringHelper
         }
 
         int vector128Count = Vector128<byte>.Count;
-        if (Vector128.IsHardwareAccelerated && spanLength > vector128Count)
+        if (Vector128.IsHardwareAccelerated && spanLength >= vector128Count)
         {
             Vector128<byte> equalsVector = Vector128.Create(byteToCount);
             Vector128<byte> oneVector = Vector128.Create((byte)1);
@@ -678,7 +678,7 @@ public static class StringHelper
         }
 
         int vector64Count = Vector64<ushort>.Count;
-        if (Vector64.IsHardwareAccelerated && spanLength > vector64Count)
+        if (Vector64.IsHardwareAccelerated && spanLength >= vector64Count)
         {
             Vector64<byte> equalsVector = Vector64.Create(byteToCount);
             Vector64<byte> oneVector = Vector64.Create((byte)1);
