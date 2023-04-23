@@ -27,6 +27,8 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public Memory<T> Memory => _array;
 
+    public ArraySegment<T> ArraySegment => _array;
+
     public T[] Array => _array;
 
     public int Length => _array.Length;
@@ -151,6 +153,11 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     }
 
     public static implicit operator ReadOnlyMemory<T>(RentedArray<T> rentedArray)
+    {
+        return rentedArray._array;
+    }
+
+    public static implicit operator ArraySegment<T>(RentedArray<T> rentedArray)
     {
         return rentedArray._array;
     }
