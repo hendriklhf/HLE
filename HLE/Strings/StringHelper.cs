@@ -927,7 +927,29 @@ public static class StringHelper
             return ReadOnlySpan<byte>.Empty;
         }
 
-        ref char firstChar = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref firstChar), str.Length << 1);
+        ref char charPointer = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref charPointer), str.Length << 1);
+    }
+
+    public static void CopyTo(this string str, char[] destination, int offset = 0)
+    {
+        ref char destinationPointer = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset);
+        str.CopyTo(ref destinationPointer);
+    }
+
+    public static void CopyTo(this string str, Memory<char> destination)
+    {
+        str.CopyTo(ref MemoryMarshal.GetReference(destination.Span));
+    }
+
+    public static unsafe void CopyTo(this string str, ref char destination)
+    {
+        str.CopyTo((char*)Unsafe.AsPointer(ref destination));
+    }
+
+    public static unsafe void CopyTo(this string str, char* destination)
+    {
+        byte* source = (byte*)Unsafe.AsPointer(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str)));
+        Unsafe.CopyBlock(destination, source, (uint)(str.Length << 2));
     }
 }
