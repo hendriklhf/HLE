@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -15,19 +14,13 @@ namespace HLE.Collections;
 /// </summary>
 public static class CollectionHelper
 {
-    /// <summary>
-    /// Return a random element from the <paramref name="collection"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the <paramref name="collection"/>.</typeparam>
-    /// <param name="collection">The collection the random element will be taken from.</param>
-    /// <returns>A random element or the default type value if the <paramref name="collection"/> doesn't contain any elements.</returns>
     [Pure]
-    public static T? Random<T>(this IEnumerable<T> collection)
+    public static TContent? Random<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
     {
         return collection switch
         {
-            T[] array => Random(array),
-            List<T> list => Random(list),
+            TContent[] array => Random(array),
+            List<TContent> list => Random(list),
             _ => Random(collection.ToArray())
         };
     }
@@ -71,45 +64,27 @@ public static class CollectionHelper
     /// <param name="separator">The separator <see cref="char"/>.</param>
     /// <returns>Returns the <paramref name="collection"/> as a <see cref="string"/>.</returns>
     [Pure]
-    public static string JoinToString(this IEnumerable<string> collection, char separator)
+    public static string JoinToString<TCollection, TContent>(this TCollection collection, char separator) where TCollection : IEnumerable<TContent>
     {
         return string.Join(separator, collection);
     }
 
     [Pure]
-    public static string JoinToString(this IEnumerable<string> collection, string separator)
+    public static string JoinToString<TCollection, TContent>(this TCollection collection, string separator) where TCollection : IEnumerable<TContent>
     {
         return string.Join(separator, collection);
     }
 
     [Pure]
-    public static string JoinToString(this IEnumerable<char> collection, char separator)
-    {
-        return string.Join(separator, collection);
-    }
-
-    [Pure]
-    public static string JoinToString(this IEnumerable<char> collection, string separator)
-    {
-        return string.Join(separator, collection);
-    }
-
-    [Pure]
-    public static string ConcatToString(this IEnumerable<char> collection)
+    public static string ConcatToString<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
     {
         return string.Concat(collection);
     }
 
     [Pure]
-    public static string ConcatToString(this IEnumerable<string> collection)
+    public static IEnumerable<TContent> Replace<TCollection, TContent>(this TCollection collection, Func<TContent, bool> condition, TContent replacement) where TCollection : IEnumerable<TContent>
     {
-        return string.Concat(collection);
-    }
-
-    [Pure]
-    public static IEnumerable<T> Replace<T>(this IEnumerable<T> collection, Func<T, bool> condition, T replacement)
-    {
-        foreach (T item in collection)
+        foreach (TContent item in collection)
         {
             yield return condition(item) ? replacement : item;
         }
@@ -152,6 +127,14 @@ public static class CollectionHelper
     }
 
     [Pure]
+    public static unsafe TContent[] Replace<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> condition, TContent replacement) where TCollection : IEnumerable<TContent>
+    {
+        TContent[] array = collection.ToArray();
+        Replace((Span<TContent>)array, condition, replacement);
+        return array;
+    }
+
+    [Pure]
     public static unsafe List<T> Replace<T>(this List<T> list, delegate*<T, bool> condition, T replacement)
     {
         List<T> copy = new(list);
@@ -188,7 +171,7 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static T[][] Split<T>(this IEnumerable<T> collection, T separator)
+    public static TContent[][] Split<TCollection, TContent>(this TCollection collection, TContent separator) where TCollection : IEnumerable<TContent>
     {
         return Split(collection.ToArray(), separator);
     }
@@ -255,65 +238,11 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static string RandomString(this IEnumerable<char> collection, int wordLength)
-    {
-        return RandomString(collection.ToArray(), wordLength);
-    }
-
-    [Pure]
-    public static string RandomString(this List<char> list, int wordLength)
-    {
-        return RandomString(CollectionsMarshal.AsSpan(list), wordLength);
-    }
-
-    [Pure]
-    public static string RandomString(this char[] array, int wordLength)
-    {
-        return RandomString((ReadOnlySpan<char>)array, wordLength);
-    }
-
-    [Pure]
-    public static string RandomString(this Span<char> span, int wordLength)
-    {
-        return RandomString((ReadOnlySpan<char>)span, wordLength);
-    }
-
-    public static void RandomString(this Span<char> span, Span<char> randomString)
-    {
-        RandomString((ReadOnlySpan<char>)span, randomString);
-    }
-
-    [Pure]
-    public static string RandomString(this ReadOnlySpan<char> span, int wordLength)
-    {
-        if (!MemoryHelper.UseStackAlloc<char>(wordLength))
-        {
-            using RentedArray<char> resultArray = ArrayPool<char>.Shared.Rent(wordLength);
-            RandomString(span, resultArray);
-            return new(resultArray[..wordLength]);
-        }
-
-        Span<char> result = stackalloc char[wordLength];
-        RandomString(span, result);
-        return new(result);
-    }
-
-    public static void RandomString(this ReadOnlySpan<char> span, Span<char> randomString)
-    {
-        int randomStringLength = randomString.Length;
-        ref char firstChar = ref MemoryMarshal.GetReference(randomString);
-        for (int i = 0; i < randomStringLength; i++)
-        {
-            Unsafe.Add(ref firstChar, i) = span.Random();
-        }
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> condition)
+    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, Func<TContent, bool> condition) where TCollection : IEnumerable<TContent>
     {
         using PoolBufferList<int> indices = new(50, 25);
         int index = 0;
-        foreach (T item in collection)
+        foreach (TContent item in collection)
         {
             if (condition(item))
             {
@@ -379,6 +308,12 @@ public static class CollectionHelper
     }
 
     [Pure]
+    public static unsafe int[] IndicesOf<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> condition) where TCollection : IEnumerable<TContent>
+    {
+        return IndicesOf(collection.ToArray(), condition);
+    }
+
+    [Pure]
     public static unsafe int[] IndicesOf<T>(this List<T> list, delegate*<T, bool> condition)
     {
         return IndicesOf(CollectionsMarshal.AsSpan(list), condition);
@@ -431,11 +366,11 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item)
+    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, TContent item) where TCollection : IEnumerable<TContent>
     {
         using PoolBufferList<int> indices = new(50, 25);
         int index = 0;
-        foreach (T t in collection)
+        foreach (TContent t in collection)
         {
             if (t?.Equals(item) == true)
             {
@@ -451,13 +386,13 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this List<T> list, T item)
     {
-        return CollectionsMarshal.AsSpan(list).IndicesOf(item);
+        return IndicesOf(CollectionsMarshal.AsSpan(list), item);
     }
 
     [Pure]
     public static int[] IndicesOf<T>(this T[] array, T item)
     {
-        return array.AsSpan().IndicesOf(item);
+        return IndicesOf((Span<T>)array, item);
     }
 
     [Pure]
@@ -501,15 +436,17 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey Key, TValue Value)> collection) where TKey : notnull
+    public static Dictionary<TKey, TValue> ToDictionary<TCollection, TKey, TValue>(this TCollection collection) where TCollection : IEnumerable<(TKey, TValue)> where TKey : notnull
     {
-        return collection.ToDictionary(i => i.Key, i => i.Value);
+        return collection.ToDictionary(i => i.Item1, i => i.Item2);
     }
 
     [Pure]
-    public static T[] Randomize<T>(this IEnumerable<T> collection)
+    public static TContent[] Randomize<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
     {
-        return Randomize(collection.ToArray());
+        TContent[] array = collection.ToArray();
+        Randomize((Span<TContent>)array);
+        return array;
     }
 
     [Pure]
@@ -547,7 +484,7 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static T[] RandomCollection<T>(this IEnumerable<T> collection, int length)
+    public static TContent[] RandomCollection<TCollection, TContent>(this TCollection collection, int length) where TCollection : IEnumerable<TContent>
     {
         return RandomCollection(collection.ToArray(), length);
     }
