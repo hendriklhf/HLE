@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Strings;
@@ -208,16 +209,16 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string GetMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        if (IsAction)
+        if (!IsAction)
         {
-            // skipping chars to speed up .IndexOf
-            const int maximumOfCharsThatCanBeIgnored = 242;
-            ircMessage = ircMessage[maximumOfCharsThatCanBeIgnored..];
-            return new(ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1]);
+            Debug.Assert(!ircMessage.Contains(" :\u0001ACTION", StringComparison.Ordinal));
+            return new(ircMessage[(indicesOfWhitespaces[3] + 2)..]);
         }
 
-        Debug.Assert(!ircMessage.Contains(" :\u0001ACTION", StringComparison.Ordinal));
-        return new(ircMessage[(indicesOfWhitespaces[3] + 2)..]);
+        // skipping chars to speed up .IndexOf
+        const int maximumOfCharsThatCanBeIgnored = 242;
+        ircMessage = ircMessage[maximumOfCharsThatCanBeIgnored..];
+        return new(ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -279,7 +280,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ChatMessageFlag GetIsSubscriber(ReadOnlySpan<char> value)
@@ -290,7 +291,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetTmiSentTs(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
+    private static long GetTmiSentTs(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ChatMessageFlag GetIsTurboUser(ReadOnlySpan<char> value)
@@ -301,7 +302,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
+    private static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private static Color ParseHexColor(ref char number)
@@ -349,6 +350,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     /// Returns the message in the following format: "&lt;#Channel&gt; Username: Message".
     /// </summary>
     /// <returns>The message in a readable format.</returns>
+    [Pure]
     public override string ToString()
     {
         ValueStringBuilder builder = stackalloc char[Channel.Length + Username.Length + Message.Length + 6];
@@ -356,18 +358,31 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         return builder.ToString();
     }
 
+    [Pure]
     public bool Equals(ChatMessage? other)
     {
         return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
     }
 
+    [Pure]
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj) || obj is ChatMessage other && Equals(other);
+        return obj is ChatMessage other && Equals(other);
     }
 
+    [Pure]
     public override int GetHashCode()
     {
         return HashCode.Combine(Id, TmiSentTs);
+    }
+
+    public static bool operator ==(ChatMessage? left, ChatMessage? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(ChatMessage? left, ChatMessage? right)
+    {
+        return !(left == right);
     }
 }

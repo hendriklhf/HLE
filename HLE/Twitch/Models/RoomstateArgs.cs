@@ -120,17 +120,17 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
             return -1;
         }
 
-        return NumberHelper.ParsePositiveInt32(value);
+        return NumberHelper.ParsePositiveNumber<int>(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetR9K(ReadOnlySpan<char> value) => value[0] == '1';
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt64(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetSlowMode(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveInt32(value);
+    private static int GetSlowMode(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<int>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
