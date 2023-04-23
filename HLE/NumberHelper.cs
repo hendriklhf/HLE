@@ -1,514 +1,107 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace HLE;
 
 public static class NumberHelper
 {
-    public static byte GetNumberLength(byte number)
+    [Pure]
+    public static string InsertThousandSeparators<T>(T number, char separator = '.') where T : INumber<T>
     {
-        const byte one = 1;
-        return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
+        Span<char> resultBuffer = stackalloc char[30];
+        int length = InsertThousandSeparators(number, separator, resultBuffer);
+        return new(resultBuffer[..length]);
     }
 
-    public static byte[] GetDigits(byte number)
-    {
-        Span<byte> digits = stackalloc byte[3];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(byte number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        int digitCount = 0;
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            digitCount++;
-            number /= 10;
-        }
-
-        digits[^digitCount..].CopyTo(digits);
-        return digitCount;
-    }
-
-    public static byte GetNumberLength(sbyte number)
-    {
-        byte length = (byte)(number == 0 ? 1 : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1));
-        return number < 0 ? ++length : length;
-    }
-
-    public static byte[] GetDigits(sbyte number)
-    {
-        Span<byte> digits = stackalloc byte[4];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(sbyte number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        number = Math.Abs(number);
-        int digitCount = 0;
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            digitCount++;
-            number /= 10;
-        }
-
-        digits[^digitCount..].CopyTo(digits);
-        return digitCount;
-    }
-
-    public static string InsertKDots(short number, char kchar = '.')
+    public static int InsertThousandSeparators<T>(T number, char separator, Span<char> resultBuffer) where T : INumber<T>
     {
         int numberLength = GetNumberLength(number);
         if (numberLength < 4)
         {
-            return number.ToString();
-        }
-
-        bool isNegative = number < 0;
-        number = Math.Abs(number);
-        Span<char> chars = stackalloc char[numberLength];
-        number.TryFormat(chars, out int length);
-        chars = chars[..length];
-
-        int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
-        int total = isNegative ? numberLength + dotCount + 1 : numberLength + dotCount;
-        Span<char> result = stackalloc char[total];
-        int start = isNegative ? (numberLength % 3) + 1 : numberLength % 3;
-        if (start == (isNegative ? 1 : 0))
-        {
-            start += 3;
-        }
-
-        int nextDot = start;
-        for (int i = isNegative ? 1 : 0; i < total; i++)
-        {
-            if (i == nextDot)
+            bool success = number.TryFormat(resultBuffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
+            if (!success)
             {
-                result[i] = kchar;
-                nextDot += 4;
+                throw new ArgumentException("There was not enough space left in the buffer to write the provided value to the buffer.", nameof(resultBuffer));
             }
-            else
-            {
-                result[i] = chars[isNegative ? i - 1 - ((nextDot - start) >> 2) : i - ((nextDot - start) >> 2)];
-            }
+
+            return charsWritten;
         }
 
-        if (isNegative)
-        {
-            result[0] = '-';
-        }
-
-        return new(result);
-    }
-
-    public static byte GetNumberLength(short number)
-    {
-        const byte one = 1;
-        byte length = number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
-        return number < 0 ? ++length : length;
-    }
-
-    public static byte[] GetDigits(short number)
-    {
-        Span<byte> digits = stackalloc byte[5];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(short number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        number = Math.Abs(number);
-        int digitCount = 0;
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            digitCount++;
-            number /= 10;
-        }
-
-        digits[^digitCount..].CopyTo(digits);
-        return digitCount;
-    }
-
-    public static string InsertKDots(ushort number, char kchar = '.')
-    {
-        int numberLength = GetNumberLength(number);
-        if (numberLength < 4)
-        {
-            return number.ToString();
-        }
-
-        Span<char> chars = stackalloc char[numberLength];
-        number.TryFormat(chars, out int length);
-        chars = chars[..length];
-
-        int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
-        int total = numberLength + dotCount;
-        Span<char> result = stackalloc char[total];
-        int start = numberLength % 3;
-        if (start == 0)
-        {
-            start += 3;
-        }
-
-        int nextDot = start;
-        for (int i = 0; i < total; i++)
-        {
-            if (i == nextDot)
-            {
-                result[i] = kchar;
-                nextDot += 4;
-            }
-            else
-            {
-                result[i] = chars[i - ((nextDot - start) >> 2)];
-            }
-        }
-
-        return new(result);
-    }
-
-    public static byte GetNumberLength(ushort number)
-    {
-        const byte one = 1;
-        return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
-    }
-
-    public static byte[] GetDigits(ushort number)
-    {
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(ushort number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            number /= 10;
-        }
-
-        return digits.Length;
-    }
-
-    public static string InsertKDots(int number, char kchar = '.')
-    {
-        int numberLength = GetNumberLength(number);
-        if (numberLength < 4)
-        {
-            return number.ToString();
-        }
-
-        bool isNegative = number < 0;
-        number = Math.Abs(number);
-        Span<char> chars = stackalloc char[numberLength];
-        number.TryFormat(chars, out int length);
-        chars = chars[..length];
-
-        int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
-        int total = isNegative ? numberLength + dotCount + 1 : numberLength + dotCount;
-        Span<char> result = stackalloc char[total];
-        int start = isNegative ? (numberLength % 3) + 1 : numberLength % 3;
-        if (start == (isNegative ? 1 : 0))
-        {
-            start += 3;
-        }
-
-        int nextDot = start;
-        for (int i = isNegative ? 1 : 0; i < total; i++)
-        {
-            if (i == nextDot)
-            {
-                result[i] = kchar;
-                nextDot += 4;
-            }
-            else
-            {
-                result[i] = chars[isNegative ? i - 1 - ((nextDot - start) >> 2) : i - ((nextDot - start) >> 2)];
-            }
-        }
-
-        if (isNegative)
-        {
-            result[0] = '-';
-        }
-
-        return new(result);
-    }
-
-    public static byte GetNumberLength(int number)
-    {
-        const byte one = 1;
-        return number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
-    }
-
-    public static byte[] GetDigits(int number)
-    {
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(int number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        number = Math.Abs(number);
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            number /= 10;
-        }
-
-        return digits.Length;
-    }
-
-    public static string InsertKDots(uint number, char kchar = '.')
-    {
-        int numberLength = GetNumberLength(number);
-        if (numberLength < 4)
-        {
-            return number.ToString();
-        }
-
-        Span<char> chars = stackalloc char[numberLength];
-        number.TryFormat(chars, out int length);
-        chars = chars[..length];
-
-        int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
-        int total = numberLength + dotCount;
-        Span<char> result = stackalloc char[total];
-        int start = numberLength % 3;
-        if (start == 0)
-        {
-            start += 3;
-        }
-
-        int nextDot = start;
-        for (int i = 0; i < total; i++)
-        {
-            if (i == nextDot)
-            {
-                result[i] = kchar;
-                nextDot += 4;
-            }
-            else
-            {
-                result[i] = chars[i - ((nextDot - start) >> 2)];
-            }
-        }
-
-        return new(result);
-    }
-
-    public static byte GetNumberLength(uint number)
-    {
-        const byte one = 1;
-        return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
-    }
-
-    public static byte[] GetDigits(uint number)
-    {
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(uint number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            number /= 10;
-        }
-
-        return digits.Length;
-    }
-
-    public static string InsertKDots(long number, char kchar = '.')
-    {
-        int numberLength = GetNumberLength(number);
-        if (numberLength < 4)
-        {
-            return number.ToString();
-        }
-
-        bool isNegative = number < 0;
+        bool isNegative = number < T.Zero;
         byte isNegativeAsByte = Unsafe.As<bool, byte>(ref isNegative);
         number = isNegative ? -number : number;
         Span<char> numberChars = stackalloc char[numberLength];
-        number.TryFormat(numberChars, out int length);
+        number.TryFormat(numberChars, out int length, ReadOnlySpan<char>.Empty, null);
         numberChars = numberChars[..length];
 
-        const byte amountOfNumbersGroupedByDots = 3;
-        bool isLengthDivisibleBy3 = numberLength % amountOfNumbersGroupedByDots == 0;
+        const byte amountOfNumbersGroupedBySeparator = 3;
+        bool isLengthDivisibleBy3 = numberLength % amountOfNumbersGroupedBySeparator == 0;
         byte isLengthDivisibleBy3AsByte = Unsafe.As<bool, byte>(ref isLengthDivisibleBy3);
 
-        int countOfDotsInNumber = (numberLength / amountOfNumbersGroupedByDots) - isLengthDivisibleBy3AsByte;
+        int countOfDotsInNumber = (numberLength / amountOfNumbersGroupedBySeparator) - isLengthDivisibleBy3AsByte;
         int totalLengthOfResult = numberLength + countOfDotsInNumber + isNegativeAsByte;
-        Span<char> result = stackalloc char[totalLengthOfResult];
 
-        int startIndexInSpan = (numberLength % amountOfNumbersGroupedByDots) + isNegativeAsByte;
-        startIndexInSpan += amountOfNumbersGroupedByDots * isNegativeAsByte;
+        int startIndexInSpan = (numberLength % amountOfNumbersGroupedBySeparator) + isNegativeAsByte;
+        startIndexInSpan += amountOfNumbersGroupedBySeparator * isNegativeAsByte;
         int indexOfTheNextDotInSpan = startIndexInSpan;
+        int resultLength = 0;
         for (int i = isNegativeAsByte; i < totalLengthOfResult; i++)
         {
             if (i == indexOfTheNextDotInSpan)
             {
-                result[i] = kchar;
-                indexOfTheNextDotInSpan += amountOfNumbersGroupedByDots + 1;
+                resultBuffer[resultLength++] = separator;
+                indexOfTheNextDotInSpan += amountOfNumbersGroupedBySeparator + 1;
             }
             else
             {
-                result[i] = numberChars[i - isNegativeAsByte - ((indexOfTheNextDotInSpan - startIndexInSpan) >> 2)];
+                resultBuffer[resultLength++] = numberChars[i - isNegativeAsByte - ((indexOfTheNextDotInSpan - startIndexInSpan) >> 2)];
             }
         }
 
         if (isNegative)
         {
-            result[0] = '-';
+            resultBuffer[0] = '-';
         }
 
-        return new(result);
+        return resultLength;
     }
 
-    public static byte GetNumberLength(long number)
+    [Pure]
+    public static int GetNumberLength<T>(T number) where T : INumber<T>
     {
-        const byte one = 1;
-        return number == 0 ? one : (byte)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
+        return number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(double.CreateTruncating(number)) + 1);
     }
 
-    public static byte[] GetDigits(long number)
+    [Pure]
+    public static byte[] GetDigits<T>(T number) where T : INumber<T>
     {
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
+        Span<byte> digits = stackalloc byte[30];
         int length = GetDigits(number, digits);
         return digits[..length].ToArray();
     }
 
-    public static int GetDigits(long number, Span<byte> digits)
+    public static int GetDigits<T>(T number, Span<byte> digits) where T : INumber<T>
     {
-        if (number == 0)
+        if (number == T.Zero)
         {
             digits[0] = 0;
             return 1;
         }
 
-        number = Math.Abs(number);
-        for (int i = digits.Length - 1; number > 0; i--)
+        int writtenDigits = 0;
+        T ten = T.CreateTruncating(10);
+        for (int i = digits.Length - 1; number > T.Zero; i--)
         {
-            digits[i] = (byte)(number % 10);
-            number /= 10;
+            digits[i] = byte.CreateTruncating(number % ten);
+            writtenDigits++;
+            number /= ten;
         }
 
-        return digits.Length;
-    }
-
-    public static string InsertKDots(ulong number, char kchar = '.')
-    {
-        int numberLength = GetNumberLength(number);
-        if (numberLength < 4)
-        {
-            return number.ToString();
-        }
-
-        Span<char> chars = stackalloc char[numberLength];
-        number.TryFormat(chars, out int length);
-        chars = chars[..length];
-
-        int dotCount = numberLength % 3 == 0 ? (numberLength / 3) - 1 : numberLength / 3;
-        int total = numberLength + dotCount;
-        Span<char> result = stackalloc char[total];
-        int start = numberLength % 3;
-        if (start == 0)
-        {
-            start += 3;
-        }
-
-        int nextDot = start;
-        for (int i = 0; i < total; i++)
-        {
-            if (i == nextDot)
-            {
-                result[i] = kchar;
-                nextDot += 4;
-            }
-            else
-            {
-                result[i] = chars[i - ((nextDot - start) >> 2)];
-            }
-        }
-
-        return new(result);
-    }
-
-    public static byte GetNumberLength(ulong number)
-    {
-        const byte one = 1;
-        return number == 0 ? one : (byte)Math.Floor(Math.Log10(number) + 1);
-    }
-
-    public static byte[] GetDigits(ulong number)
-    {
-        Span<byte> digits = stackalloc byte[GetNumberLength(number)];
-        int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
-    }
-
-    public static int GetDigits(ulong number, Span<byte> digits)
-    {
-        if (number == 0)
-        {
-            digits[0] = 0;
-            return 1;
-        }
-
-        for (int i = digits.Length - 1; number > 0; i--)
-        {
-            digits[i] = (byte)(number % 10);
-            number /= 10;
-        }
-
-        return digits.Length;
+        digits[^writtenDigits..].CopyTo(digits);
+        return writtenDigits;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -530,122 +123,42 @@ public static class NumberHelper
     }
 
     [Pure]
-    public static long ParsePositiveInt64(ReadOnlySpan<char> number)
+    public static T ParsePositiveNumber<T>(ReadOnlySpan<char> number) where T : INumberBase<T>
     {
-        long result = 0;
+        T result = default!;
+        T ten = T.CreateTruncating(10);
+        T charZero = T.CreateTruncating('0');
         for (int i = 0; i < number.Length; i++)
         {
-            result = 10 * result + number[i] - '0';
+            result = ten * result + T.CreateTruncating(number[i]) - charZero;
         }
 
         return result;
     }
 
     [Pure]
-    public static ulong ParseUInt64(ReadOnlySpan<char> number)
+    public static T ParsePositiveNumber<T>(ReadOnlySpan<byte> number) where T : INumberBase<T>
     {
-        ulong result = 0;
+        T result = default!;
+        T ten = T.CreateTruncating(10);
+        T charZero = T.CreateTruncating('0');
         for (int i = 0; i < number.Length; i++)
         {
-            result = 10 * result + number[i] - '0';
+            result = ten * result + T.CreateTruncating(number[i]) - charZero;
         }
 
         return result;
     }
 
-    [Pure]
-    public static int ParsePositiveInt32(ReadOnlySpan<char> number)
+    public static unsafe T SetSignBitToZero<T>(T number) where T : ISignedNumber<T>, IBitwiseOperators<T, T, T>
     {
-        int result = 0;
-        for (int i = 0; i < number.Length; i++)
+        return sizeof(T) switch
         {
-            result = 10 * result + number[i] - '0';
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static uint ParseUInt32(ReadOnlySpan<char> number)
-    {
-        uint result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = 10 * result + number[i] - '0';
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static short ParsePositiveInt16(ReadOnlySpan<char> number)
-    {
-        short result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = (short)(10 * result + number[i] - '0');
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static ushort ParseUInt16(ReadOnlySpan<char> number)
-    {
-        ushort result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = (ushort)(10 * result + number[i] - '0');
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static sbyte ParsePositiveSByte(ReadOnlySpan<char> number)
-    {
-        sbyte result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = (sbyte)(10 * result + number[i] - '0');
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static byte ParseByte(ReadOnlySpan<char> number)
-    {
-        byte result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = (byte)(10 * result + number[i] - '0');
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static long ParsePositiveInt64(ReadOnlySpan<byte> number)
-    {
-        long result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = 10 * result + number[i] - '0';
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static int ParsePositiveInt32(ReadOnlySpan<byte> number)
-    {
-        int result = 0;
-        for (int i = 0; i < number.Length; i++)
-        {
-            result = 10 * result + number[i] - '0';
-        }
-
-        return result;
+            sizeof(long) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFFFFFFFFFFFFFF),
+            sizeof(int) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFFFFFF),
+            sizeof(short) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFF),
+            sizeof(sbyte) => T.CreateTruncating(number) & T.CreateTruncating(0x7F),
+            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+        };
     }
 }

@@ -9,26 +9,26 @@ public class NumberHelperTest
     public void InsertKDotsTest()
     {
         const int number1 = 1234567890;
-        Assert.AreEqual("1.234.567.890", NumberHelper.InsertKDots(number1));
+        Assert.AreEqual("1.234.567.890", NumberHelper.InsertThousandSeparators(number1));
         const int number2 = 123456789;
-        Assert.AreEqual("123.456.789", NumberHelper.InsertKDots(number2));
+        Assert.AreEqual("123.456.789", NumberHelper.InsertThousandSeparators(number2));
         const int number3 = 12345678;
-        Assert.AreEqual("12.345.678", NumberHelper.InsertKDots(number3));
+        Assert.AreEqual("12.345.678", NumberHelper.InsertThousandSeparators(number3));
         const int number4 = 1234567;
-        Assert.AreEqual("1.234.567", NumberHelper.InsertKDots(number4));
+        Assert.AreEqual("1.234.567", NumberHelper.InsertThousandSeparators(number4));
         const int number5 = 123;
-        Assert.AreEqual("123", NumberHelper.InsertKDots(number5));
+        Assert.AreEqual("123", NumberHelper.InsertThousandSeparators(number5));
 
         const int nnumber1 = -1234567890;
-        Assert.AreEqual("-1.234.567.890", NumberHelper.InsertKDots(nnumber1));
+        Assert.AreEqual("-1.234.567.890", NumberHelper.InsertThousandSeparators(nnumber1));
         const int nnumber2 = -123456789;
-        Assert.AreEqual("-123.456.789", NumberHelper.InsertKDots(nnumber2));
+        Assert.AreEqual("-123.456.789", NumberHelper.InsertThousandSeparators(nnumber2));
         const int nnumber3 = -12345678;
-        Assert.AreEqual("-12.345.678", NumberHelper.InsertKDots(nnumber3));
+        Assert.AreEqual("-12.345.678", NumberHelper.InsertThousandSeparators(nnumber3));
         const int nnumber4 = -1234567;
-        Assert.AreEqual("-1.234.567", NumberHelper.InsertKDots(nnumber4));
+        Assert.AreEqual("-1.234.567", NumberHelper.InsertThousandSeparators(nnumber4));
         const int nnumber5 = -123;
-        Assert.AreEqual("-123", NumberHelper.InsertKDots(nnumber5));
+        Assert.AreEqual("-123", NumberHelper.InsertThousandSeparators(nnumber5));
     }
 
     [TestMethod]
@@ -72,12 +72,12 @@ public class NumberHelperTest
     [TestMethod]
     public void ParsePositiveInt32Test()
     {
-        Assert.AreEqual(7334687, NumberHelper.ParsePositiveInt32("7334687"));
+        Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"));
     }
 
     [TestMethod]
     public void ParsePositiveInt32FromBytesTest()
     {
-        Assert.AreEqual(7334687, NumberHelper.ParsePositiveInt32("7334687"u8));
+        Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
     }
 }
