@@ -914,6 +914,11 @@ public static class StringHelper
         return builder.Length;
     }
 
+    /// <summary>
+    /// Returns the UTF-16 bytes of a string by reinterpreting the chars the string consists of.
+    /// </summary>
+    /// <param name="str">The string the bytes will be returned of.</param>
+    /// <returns>A span of UTF-16 bytes of the string.</returns>
     [Pure]
     public static ReadOnlySpan<byte> AsByteSpan(this string? str)
     {
