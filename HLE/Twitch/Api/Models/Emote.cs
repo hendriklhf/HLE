@@ -1,48 +1,50 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using HLE.Twitch.Api.JsonConverters;
 
 namespace HLE.Twitch.Api.Models;
 
-public sealed class Emote : IEquatable<Emote>
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("\"{Name}\"")]
+public abstract class Emote
 {
-    [JsonPropertyName("id")]
-    [JsonConverter(typeof(Int64StringConverter))]
-    public required long Id { get; init; }
-
     [JsonPropertyName("name")]
     public required string Name { get; init; }
 
-    [JsonPropertyName("images")]
-    //TODO: needs converter
-    public required string[] Images { get; init; }
-
     [JsonPropertyName("format")]
-    //TODO: needs converter
-    public required ImageFormatsFlag ImageFormatsFlags { get; init; }
+    [JsonConverter(typeof(EmoteImageFormatConverter))]
+    public required EmoteImageFormats Formats { get; init; }
 
-    public bool Equals(Emote? other)
-    {
-        return ReferenceEquals(this, other) || Id == other?.Id;
-    }
+    [JsonPropertyName("scale")]
+    [JsonConverter(typeof(EmoteScaleJsonConverter))]
+    public required EmoteScales Scales { get; init; }
 
-    public override bool Equals(object? obj)
-    {
-        return obj is Emote other && Equals(other);
-    }
+    [JsonPropertyName("theme_mode")]
+    [JsonConverter(typeof(EmoteThemeJsonConverter))]
+    public required EmoteThemes Themes { get; init; }
 
-    public override int GetHashCode()
+    internal static Dictionary<EmoteImageFormats, string> ImageFormatValues { get; } = new()
     {
-        return Id.GetHashCode();
-    }
+        { EmoteImageFormats.Static, "static" },
+        { EmoteImageFormats.Animated, "animated" }
+    };
 
-    public static bool operator ==(Emote? left, Emote? right)
+    internal static Dictionary<EmoteScales, string> ScaleValues { get; } = new()
     {
-        return Equals(left, right);
-    }
+        { EmoteScales.One, "1.0" },
+        { EmoteScales.Two, "2.0" },
+        { EmoteScales.Three, "3.0" }
+    };
 
-    public static bool operator !=(Emote? left, Emote? right)
+    internal static Dictionary<EmoteThemes, string> ThemeValues { get; } = new()
     {
-        return !(left == right);
+        { EmoteThemes.Light, "light" },
+        { EmoteThemes.Dark, "dark" }
+    };
+
+    public override string ToString()
+    {
+        return Name;
     }
 }

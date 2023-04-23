@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using HLE.Twitch.Api.JsonConverters;
+using HLE.Twitch.Api.Models.Cache;
 
 namespace HLE.Twitch.Api.Models;
 
@@ -9,11 +10,11 @@ namespace HLE.Twitch.Api.Models;
 public sealed class Stream : CachedModel, IEquatable<Stream>
 {
     [JsonPropertyName("id")]
-    [JsonConverter(typeof(Int64StringConverter))]
+    [JsonConverter(typeof(Int64StringJsonConverter))]
     public required long Id { get; init; }
 
     [JsonPropertyName("user_id")]
-    [JsonConverter(typeof(Int64StringConverter))]
+    [JsonConverter(typeof(Int64StringJsonConverter))]
     public required long UserId { get; init; }
 
     [JsonPropertyName("user_login")]
@@ -23,7 +24,7 @@ public sealed class Stream : CachedModel, IEquatable<Stream>
     public required string DisplayName { get; init; }
 
     [JsonPropertyName("game_id")]
-    [JsonConverter(typeof(Int64StringConverter))]
+    [JsonConverter(typeof(Int64StringJsonConverter))]
     public required long GameId { get; init; }
 
     [JsonPropertyName("game_name")]

@@ -1,6 +1,6 @@
 ﻿namespace HLE.Twitch.Api.Models;
 
-public enum BroadcasterType : byte
+public enum BroadcasterType
 {
     Normal,
     Affiliate,

@@ -7,11 +7,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Memory;
 using HLE.Twitch.Api.Models;
-using HLE.Twitch.Api.Models.Responses;
 
 namespace HLE.Twitch.Api;
 
-public sealed partial class TwitchApi
+public sealed partial class TwitchApi : IEquatable<TwitchApi>
 {
     public TwitchApiCache? Cache { get; set; }
 
@@ -100,5 +99,30 @@ public sealed partial class TwitchApi
         }
 
         return new(httpContentBuffer, contentLength);
+    }
+
+    public bool Equals(TwitchApi? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is TwitchApi other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+    }
+
+    public static bool operator ==(TwitchApi? left, TwitchApi? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(TwitchApi? left, TwitchApi? right)
+    {
+        return !(left == right);
     }
 }

@@ -2,7 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.Text.Json.Serialization;
 
-namespace HLE.Twitch.Api.Models;
+namespace HLE.Twitch.Api.Models.Cache;
 
 public abstract class CachedModel
 {

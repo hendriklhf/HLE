@@ -22,10 +22,6 @@ internal struct UrlBuilder : IDisposable
         }
 
         _stringBuilder.Append(endpoint);
-        if (endpoint[^1] != '?')
-        {
-            _stringBuilder.Append('?');
-        }
     }
 
     public readonly void Dispose()
@@ -35,11 +31,7 @@ internal struct UrlBuilder : IDisposable
 
     public void AppendParameter(ReadOnlySpan<char> key, ReadOnlySpan<char> value)
     {
-        if (_stringBuilder.WrittenSpan[^1] != '?')
-        {
-            _stringBuilder.Append('&');
-        }
-
+        _stringBuilder.Append(ParameterCount == 0 ? '?' : '&');
         _stringBuilder.Append(key);
         _stringBuilder.Append('=');
         _stringBuilder.Append(value);
@@ -48,11 +40,7 @@ internal struct UrlBuilder : IDisposable
 
     public void AppendParameter(ReadOnlySpan<char> key, long value)
     {
-        if (_stringBuilder.WrittenSpan[^1] != '?')
-        {
-            _stringBuilder.Append('&');
-        }
-
+        _stringBuilder.Append(ParameterCount == 0 ? '?' : '&');
         _stringBuilder.Append(key);
         _stringBuilder.Append('=');
         _stringBuilder.Append(value);

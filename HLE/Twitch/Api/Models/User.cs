@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using HLE.Twitch.Api.JsonConverters;
+using HLE.Twitch.Api.Models.Cache;
 
 namespace HLE.Twitch.Api.Models;
 
@@ -9,7 +10,7 @@ namespace HLE.Twitch.Api.Models;
 public sealed class User : CachedModel, IEquatable<User>
 {
     [JsonPropertyName("id")]
-    [JsonConverter(typeof(Int64StringConverter))]
+    [JsonConverter(typeof(Int64StringJsonConverter))]
     public required long Id { get; init; }
 
     [JsonPropertyName("login")]

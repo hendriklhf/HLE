@@ -23,13 +23,13 @@ public sealed partial class TwitchApi
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "streams", _apiBaseUrl.Length + "streams".Length + 50);
         urlBuilder.AppendParameter("user_id", userId);
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetStreamsResponse getStreamsResponse = JsonSerializer.Deserialize<GetStreamsResponse>(response.Bytes.Span);
-        if (getStreamsResponse.Streams.Length == 0)
+        GetResponse<Stream> getResponse = JsonSerializer.Deserialize<GetResponse<Stream>>(response.Bytes.Span);
+        if (getResponse.Items.Length == 0)
         {
             return null;
         }
 
-        stream = getStreamsResponse.Streams[0];
+        stream = getResponse.Items[0];
         Cache?.AddStream(stream);
         return stream;
     }
@@ -49,13 +49,13 @@ public sealed partial class TwitchApi
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "streams", _apiBaseUrl.Length + "streams".Length + 50);
         urlBuilder.AppendParameter("user_login", username.Span);
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetStreamsResponse getStreamsResponse = JsonSerializer.Deserialize<GetStreamsResponse>(response.Bytes.Span);
-        if (getStreamsResponse.Streams.Length == 0)
+        GetResponse<Stream> getResponse = JsonSerializer.Deserialize<GetResponse<Stream>>(response.Bytes.Span);
+        if (getResponse.Items.Length == 0)
         {
             return null;
         }
 
-        stream = getStreamsResponse.Streams[0];
+        stream = getResponse.Items[0];
         Cache?.AddStream(stream);
         return stream;
     }
@@ -165,11 +165,11 @@ public sealed partial class TwitchApi
         }
 
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetStreamsResponse getStreamsResponse = JsonSerializer.Deserialize<GetStreamsResponse>(response.Bytes.Span);
-        int deserializedStreamCount = getStreamsResponse.Streams.Length;
+        GetResponse<Stream> getResponse = JsonSerializer.Deserialize<GetResponse<Stream>>(response.Bytes.Span);
+        int deserializedStreamCount = getResponse.Items.Length;
         if (deserializedStreamCount > 0)
         {
-            getStreamsResponse.Streams.CopyTo(resultBuffer.Span[cachedStreamCount..]);
+            getResponse.Items.CopyTo(resultBuffer.Span[cachedStreamCount..]);
         }
 
         Cache?.AddStreams(resultBuffer.Span[cachedStreamCount..(cachedStreamCount + deserializedStreamCount)]);

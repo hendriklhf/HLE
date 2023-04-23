@@ -9,7 +9,7 @@ public sealed class TimeOfExpirationJsonConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        int expiresInSeconds = NumberHelper.ParsePositiveInt32(reader.ValueSpan);
+        int expiresInSeconds = NumberHelper.ParsePositiveNumber<int>(reader.ValueSpan);
         TimeSpan expiresIn = TimeSpan.FromMilliseconds(expiresInSeconds);
         return DateTime.UtcNow + expiresIn;
     }

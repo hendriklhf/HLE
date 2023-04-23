@@ -1,7 +1,7 @@
 ﻿using System;
 using HLE.Memory;
 
-namespace HLE.Twitch.Api.Models.Responses;
+namespace HLE.Twitch.Api;
 
 internal readonly struct HttpResponse : IDisposable
 {

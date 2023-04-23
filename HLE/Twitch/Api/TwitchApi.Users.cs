@@ -23,13 +23,13 @@ public sealed partial class TwitchApi
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "users", _apiBaseUrl.Length + "users".Length + 50);
         urlBuilder.AppendParameter("id", userId);
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetUsersResponse getUsersResponse = JsonSerializer.Deserialize<GetUsersResponse>(response.Bytes.Span);
-        if (getUsersResponse.Users.Length == 0)
+        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Bytes.Span);
+        if (getResponse.Items.Length == 0)
         {
             return null;
         }
 
-        user = getUsersResponse.Users[0];
+        user = getResponse.Items[0];
         Cache?.AddUser(user);
         return user;
     }
@@ -49,13 +49,13 @@ public sealed partial class TwitchApi
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "users", _apiBaseUrl.Length + "users".Length + 50);
         urlBuilder.AppendParameter("login", username.Span);
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetUsersResponse getUsersResponse = JsonSerializer.Deserialize<GetUsersResponse>(response.Bytes.Span);
-        if (getUsersResponse.Users.Length == 0)
+        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Bytes.Span);
+        if (getResponse.Items.Length == 0)
         {
             return null;
         }
 
-        user = getUsersResponse.Users[0];
+        user = getResponse.Items[0];
         Cache?.AddUser(user);
         return user;
     }
@@ -165,11 +165,11 @@ public sealed partial class TwitchApi
         }
 
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetUsersResponse getUsersResponse = JsonSerializer.Deserialize<GetUsersResponse>(response.Bytes.Span);
-        int deserializedUserCount = getUsersResponse.Users.Length;
+        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Bytes.Span);
+        int deserializedUserCount = getResponse.Items.Length;
         if (deserializedUserCount > 0)
         {
-            getUsersResponse.Users.CopyTo(resultBuffer.Span[cachedUserCount..]);
+            getResponse.Items.CopyTo(resultBuffer.Span[cachedUserCount..]);
         }
 
         Cache?.AddUsers(resultBuffer.Span[cachedUserCount..(cachedUserCount + deserializedUserCount)]);

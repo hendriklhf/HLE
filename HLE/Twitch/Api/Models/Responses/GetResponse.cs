@@ -3,12 +3,12 @@ using System.Text.Json.Serialization;
 
 namespace HLE.Twitch.Api.Models.Responses;
 
-internal readonly struct GetUsersResponse
+internal readonly struct GetResponse<T>
 {
     [JsonPropertyName("data")]
-    public required User[] Users { get; init; } = Array.Empty<User>();
+    public required T[] Items { get; init; } = Array.Empty<T>();
 
-    public GetUsersResponse()
+    public GetResponse()
     {
     }
 }

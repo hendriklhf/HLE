@@ -25,7 +25,7 @@ internal sealed class UserTypeJsonConverter : JsonConverter<UserType>
 
     public override void Write(Utf8JsonWriter writer, UserType value, JsonSerializerOptions options)
     {
-        writer.WriteString("type"u8, value switch
+        writer.WriteStringValue(value switch
         {
             UserType.Admin => "admin",
             UserType.GlobalMod => "global_mod",

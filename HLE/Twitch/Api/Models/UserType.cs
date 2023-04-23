@@ -1,6 +1,6 @@
 ﻿namespace HLE.Twitch.Api.Models;
 
-public enum UserType : byte
+public enum UserType
 {
     Normal,
     Admin,
