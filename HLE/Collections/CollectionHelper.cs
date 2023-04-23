@@ -527,7 +527,7 @@ public static class CollectionHelper
     {
 #if NET8_0_OR_GREATER
         int vector512Count = Vector512<int>.Count;
-        if (Vector512.IsHardwareAccelerated && span.Length > vector512Count)
+        if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
             var ascendingValueAdditions = Vector512.Create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15);
@@ -550,7 +550,7 @@ public static class CollectionHelper
 #endif
 
         int vector256Count = Vector256<int>.Count;
-        if (Vector256.IsHardwareAccelerated && span.Length > vector256Count)
+        if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
         {
             Vector256<int> ascendingValueAdditions = Vector256.Create(0, 1, 2, 3, 4, 5, 6, 7);
             while (span.Length > vector256Count)
@@ -571,7 +571,7 @@ public static class CollectionHelper
         }
 
         int vector128Count = Vector128<int>.Count;
-        if (Vector128.IsHardwareAccelerated && span.Length > vector128Count)
+        if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
             Vector128<int> ascendingValueAdditions = Vector128.Create(0, 1, 2, 3);
             while (span.Length > vector128Count)
@@ -592,7 +592,7 @@ public static class CollectionHelper
         }
 
         int vector64Count = Vector64<int>.Count;
-        if (Vector64.IsHardwareAccelerated && span.Length > vector64Count)
+        if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
             Vector64<int> ascendingValueAdditions = Vector64.Create(0, 1);
             while (span.Length > vector64Count)
@@ -625,7 +625,7 @@ public static class CollectionHelper
     {
 #if NET8_0_OR_GREATER
         ushort vector512Count = (ushort)Vector512<ushort>.Count;
-        if (Vector512.IsHardwareAccelerated && span.Length > vector512Count)
+        if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
             Vector512<ushort> ascendingValueAdditions = Vector512.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
@@ -650,7 +650,7 @@ public static class CollectionHelper
 #endif
 
         ushort vector256Count = (ushort)Vector256<ushort>.Count;
-        if (Vector256.IsHardwareAccelerated && span.Length > vector256Count)
+        if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
         {
             Vector256<ushort> ascendingValueAdditions = Vector256.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15);
@@ -672,7 +672,7 @@ public static class CollectionHelper
         }
 
         ushort vector128Count = (ushort)Vector128<ushort>.Count;
-        if (Vector128.IsHardwareAccelerated && span.Length > vector128Count)
+        if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
             Vector128<ushort> ascendingValueAdditions = Vector128.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7);
             while (span.Length > vector128Count)
@@ -693,7 +693,7 @@ public static class CollectionHelper
         }
 
         ushort vector64Count = (ushort)Vector64<ushort>.Count;
-        if (Vector64.IsHardwareAccelerated && span.Length > vector64Count)
+        if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
             Vector64<ushort> ascendingValueAdditions = Vector64.Create((ushort)0, 1, 2, 3);
             while (span.Length > vector64Count)
