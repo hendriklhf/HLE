@@ -1,4 +1,4 @@
-﻿namespace HLE.Maths;
+﻿namespace HLE.Numerics;
 
 /// <summary>
 /// A class in which contains all sorts of constants.<br />

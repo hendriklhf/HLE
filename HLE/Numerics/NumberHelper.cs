@@ -4,7 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace HLE;
+namespace HLE.Numerics;
 
 public static class NumberHelper
 {
@@ -18,47 +18,35 @@ public static class NumberHelper
 
     public static int InsertThousandSeparators<T>(T number, char separator, Span<char> resultBuffer) where T : INumber<T>
     {
-        int numberLength = GetNumberLength(number);
-        if (numberLength < 4)
-        {
-            bool success = number.TryFormat(resultBuffer, out int charsWritten, ReadOnlySpan<char>.Empty, null);
-            if (!success)
-            {
-                throw new ArgumentException("There was not enough space left in the buffer to write the provided value to the buffer.", nameof(resultBuffer));
-            }
-
-            return charsWritten;
-        }
+        Span<byte> digits = stackalloc byte[30];
+        int digitsLength = GetDigits(number, digits);
 
         bool isNegative = number < T.Zero;
-        byte isNegativeAsByte = Unsafe.As<bool, byte>(ref isNegative);
-        number = isNegative ? -number : number;
-        Span<char> numberChars = stackalloc char[numberLength];
-        number.TryFormat(numberChars, out int length, ReadOnlySpan<char>.Empty, null);
-        numberChars = numberChars[..length];
+        int isNegativeAsByte = Unsafe.As<bool, byte>(ref isNegative);
 
-        const byte amountOfNumbersGroupedBySeparator = 3;
-        bool isLengthDivisibleBy3 = numberLength % amountOfNumbersGroupedBySeparator == 0;
-        byte isLengthDivisibleBy3AsByte = Unsafe.As<bool, byte>(ref isLengthDivisibleBy3);
+        bool isDivisibleBy3 = digitsLength % 3 == 0;
+        int isDivisibleBy3AsByte = Unsafe.As<bool, byte>(ref isDivisibleBy3);
 
-        int countOfDotsInNumber = (numberLength / amountOfNumbersGroupedBySeparator) - isLengthDivisibleBy3AsByte;
-        int totalLengthOfResult = numberLength + countOfDotsInNumber + isNegativeAsByte;
-
-        int startIndexInSpan = (numberLength % amountOfNumbersGroupedBySeparator) + isNegativeAsByte;
-        startIndexInSpan += amountOfNumbersGroupedBySeparator * isNegativeAsByte;
-        int indexOfTheNextDotInSpan = startIndexInSpan;
+        int countOfDotsInNumber = (digitsLength / 3) - isDivisibleBy3AsByte;
+        int totalNumberLength = digitsLength + countOfDotsInNumber;
         int resultLength = 0;
-        for (int i = isNegativeAsByte; i < totalLengthOfResult; i++)
+        int digitIndex = digitsLength - 1;
+        int writeIndex = totalNumberLength + isNegativeAsByte - 1;
+        int writtenSeparatorCount = 0;
+        while (resultLength < totalNumberLength)
         {
-            if (i == indexOfTheNextDotInSpan)
+            resultBuffer[writeIndex--] = DigitToChar(digits[digitIndex--]);
+            resultLength++;
+
+            bool needsToWriteSeparator = resultLength > 0 && resultLength + 1 < totalNumberLength && (resultLength - writtenSeparatorCount) % 3 == 0;
+            if (!needsToWriteSeparator)
             {
-                resultBuffer[resultLength++] = separator;
-                indexOfTheNextDotInSpan += amountOfNumbersGroupedBySeparator + 1;
+                continue;
             }
-            else
-            {
-                resultBuffer[resultLength++] = numberChars[i - isNegativeAsByte - ((indexOfTheNextDotInSpan - startIndexInSpan) >> 2)];
-            }
+
+            resultBuffer[writeIndex--] = separator;
+            writtenSeparatorCount++;
+            resultLength++;
         }
 
         if (isNegative)
@@ -66,13 +54,13 @@ public static class NumberHelper
             resultBuffer[0] = '-';
         }
 
-        return resultLength;
+        return resultLength + isNegativeAsByte;
     }
 
     [Pure]
     public static int GetNumberLength<T>(T number) where T : INumber<T>
     {
-        return number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(double.CreateTruncating(number)) + 1);
+        return number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(Math.Abs(double.CreateTruncating(number))) + 1);
     }
 
     [Pure]
@@ -89,6 +77,11 @@ public static class NumberHelper
         {
             digits[0] = 0;
             return 1;
+        }
+
+        if (number < T.Zero)
+        {
+            number = T.Abs(number);
         }
 
         int writtenDigits = 0;
@@ -125,7 +118,7 @@ public static class NumberHelper
     [Pure]
     public static T ParsePositiveNumber<T>(ReadOnlySpan<char> number) where T : INumberBase<T>
     {
-        T result = default!;
+        T result = T.Zero;
         T ten = T.CreateTruncating(10);
         T charZero = T.CreateTruncating('0');
         for (int i = 0; i < number.Length; i++)
@@ -139,9 +132,9 @@ public static class NumberHelper
     [Pure]
     public static T ParsePositiveNumber<T>(ReadOnlySpan<byte> number) where T : INumberBase<T>
     {
-        T result = default!;
+        T result = T.Zero;
         T ten = T.CreateTruncating(10);
-        T charZero = T.CreateTruncating('0');
+        T charZero = T.CreateTruncating((int)'0');
         for (int i = 0; i < number.Length; i++)
         {
             result = ten * result + T.CreateTruncating(number[i]) - charZero;
@@ -150,6 +143,7 @@ public static class NumberHelper
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T SetSignBitToZero<T>(T number) where T : ISignedNumber<T>, IBitwiseOperators<T, T, T>
     {
         return sizeof(T) switch

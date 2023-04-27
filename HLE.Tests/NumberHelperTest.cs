@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using HLE.Numerics;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests;
 
@@ -6,7 +7,7 @@ namespace HLE.Tests;
 public class NumberHelperTest
 {
     [TestMethod]
-    public void InsertKDotsTest()
+    public void InsertThousandsSeparatorTest()
     {
         const int number1 = 1234567890;
         Assert.AreEqual("1.234.567.890", NumberHelper.InsertThousandSeparators(number1));

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HLE.Collections;
+using HLE.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.CollectionsTests;
