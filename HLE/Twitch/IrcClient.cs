@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,7 +130,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
     public async Task ConnectAsync(ReadOnlyMemory<string> channels)
     {
-        await ConnectClient();
+        await ConnectClientAsync();
         StartListening();
         OnConnected?.Invoke(this, EventArgs.Empty);
 
@@ -137,18 +138,18 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         if (_oAuthToken is not null)
         {
             messageBuilder.Append(_passPrefix, _oAuthToken);
-            await Send(messageBuilder.WrittenMemory);
+            await SendAsync(messageBuilder.WrittenMemory);
         }
 
         messageBuilder.Clear();
         messageBuilder.Append(_nickPrefix, Username);
-        await Send(messageBuilder.WrittenMemory);
+        await SendAsync(messageBuilder.WrittenMemory);
 
         messageBuilder.Clear();
         messageBuilder.Append(_capReqMessage);
-        await Send(messageBuilder.WrittenMemory);
+        await SendAsync(messageBuilder.WrittenMemory);
 
-        await JoinChannelsThrottled(channels);
+        await JoinChannelsThrottledAsync(channels);
     }
 
     /// <summary>
@@ -158,7 +159,6 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     public void Disconnect(string closeMessage = "Manually closed")
     {
         DisconnectAsync(closeMessage);
-        OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -167,7 +167,8 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="closeMessage">A close message or reason.</param>
     public async Task DisconnectAsync(string closeMessage = "Manually closed")
     {
-        await DisconnectClient(closeMessage);
+        await DisconnectClientAsync(closeMessage);
+        OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
     internal void Reconnect(ReadOnlyMemory<string> channels)
@@ -199,7 +200,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
     public async Task SendRawAsync(string rawMessage)
     {
-        await Send(rawMessage.AsMemory());
+        await SendAsync(rawMessage.AsMemory());
     }
 
     /// <summary>
@@ -208,7 +209,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="rawMessage">The IRC message.</param>
     public async Task SendRawAsync(ReadOnlyMemory<char> rawMessage)
     {
-        await Send(rawMessage);
+        await SendAsync(rawMessage);
     }
 
     /// <inheritdoc cref="SendMessage(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -252,7 +253,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     {
         using PoolBufferStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
         messageBuilder.Append(_privMsgPrefix, channel.Span, _spaceColon, message.Span);
-        await Send(messageBuilder.WrittenMemory);
+        await SendAsync(messageBuilder.WrittenMemory);
     }
 
     /// <inheritdoc cref="JoinChannel(ReadOnlyMemory{char})"/>
@@ -284,7 +285,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     {
         using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_joinPrefix, channel.Span);
-        await Send(messageBuilder.WrittenMemory);
+        await SendAsync(messageBuilder.WrittenMemory);
     }
 
     /// <inheritdoc cref="LeaveChannel(ReadOnlyMemory{char})"/>
@@ -316,17 +317,18 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     {
         using PoolBufferStringBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_partPrefix, channel.Span);
-        await Send(messageBuilder.WrittenMemory);
+        await SendAsync(messageBuilder.WrittenMemory);
     }
 
-    private async ValueTask JoinChannelsThrottled(ReadOnlyMemory<string> channels)
+    private async ValueTask JoinChannelsThrottledAsync(ReadOnlyMemory<string> channels)
     {
         if (channels.Length == 0)
         {
             return;
         }
 
-        int maxJoinsInPeriod = _isVerifiedBot ? 200 : 20;
+        bool isVerifiedBot = _isVerifiedBot;
+        int maxJoinsInPeriod = 20 + 180 * Unsafe.As<bool, byte>(ref isVerifiedBot);
         TimeSpan period = TimeSpan.FromSeconds(10);
 
         using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
@@ -345,7 +347,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
             }
 
             messageBuilder.Append(_joinPrefix, channels.Span[i]);
-            await Send(messageBuilder.WrittenMemory);
+            await SendAsync(messageBuilder.WrittenMemory);
             messageBuilder.Clear();
         }
     }
@@ -373,13 +375,13 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         _cancellationTokenSource = new();
     }
 
-    private protected abstract ValueTask Send(ReadOnlyMemory<char> message);
+    private protected abstract ValueTask SendAsync(ReadOnlyMemory<char> message);
 
     private protected abstract void StartListening();
 
-    private protected abstract ValueTask ConnectClient();
+    private protected abstract ValueTask ConnectClientAsync();
 
-    private protected abstract ValueTask DisconnectClient(string closeMessage);
+    private protected abstract ValueTask DisconnectClientAsync(string closeMessage);
 
     private protected abstract (string Url, int Port) GetUrl();
 

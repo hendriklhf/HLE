@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HLE.Memory;
-using HLE.Strings;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -178,23 +177,16 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    public async Task SendAsync(string channel, PoolBufferStringBuilder builder)
-    {
-        await SendAsync(channel.AsMemory(), builder.WrittenMemory);
-    }
-
-    /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
     public async Task SendAsync(string channel, ReadOnlyMemory<char> message)
     {
         await SendAsync(channel.AsMemory(), message);
     }
 
     /// <summary>
-    /// Asynchronously sends a chat messages.
+    /// Asynchronously sends a chat message.
     /// </summary>
     /// <param name="channel">The username of the channel owner</param>
     /// <param name="message">The message that will be sent</param>
-    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="channel"/> is in the wrong format.</exception>
     public async Task SendAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
         if (!IsConnected)
@@ -209,6 +201,16 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
         string prefixedChannel = (Channels[channel.Span]?._prefixedName) ?? throw ThrowHelper.NotConnectedToTheSpecifiedChannel;
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
+    }
+
+    /// <summary>
+    /// Sends a chat message.
+    /// </summary>
+    /// <param name="channel">The username of the channel owner</param>
+    /// <param name="message">The message that will be sent</param>
+    public void Send(string channel, string message)
+    {
+        SendAsync(channel.AsMemory(), message.AsMemory());
     }
 
     /// <inheritdoc cref="Send(long,ReadOnlyMemory{char})"/>
@@ -231,21 +233,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     public async Task SendAsync(long channelId, string message)
     {
         await SendAsync(channelId, message.AsMemory());
-    }
-
-    /// <summary>
-    /// Asynchronously sends a chat message and also disposes the <see cref="PoolBufferStringBuilder"/> by default.
-    /// </summary>
-    /// <param name="channelId">The user id of the channel owner.</param>
-    /// <param name="builder">The builder that contains the message that will be sent.</param>
-    /// <param name="disposeBuilder">If true, disposes the builder after the message was sent.</param>
-    public async Task SendAsync(long channelId, PoolBufferStringBuilder builder, bool disposeBuilder = true)
-    {
-        await SendAsync(channelId, builder.WrittenMemory);
-        if (disposeBuilder)
-        {
-            builder.Dispose();
-        }
     }
 
     /// <summary>

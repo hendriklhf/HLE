@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,11 +30,11 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
     {
     }
 
-    private protected override async ValueTask Send(ReadOnlyMemory<char> message)
+    private protected override async ValueTask SendAsync(ReadOnlyMemory<char> message)
     {
         try
         {
-            using RentedArray<byte> bytes = ArrayPool<byte>.Shared.Rent(message.Length << 1);
+            using RentedArray<byte> bytes = new(message.Length << 1);
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
             await _webSocket.SendAsync(bytes.Memory[..byteCount], WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
         }
@@ -111,7 +110,7 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         }
     }
 
-    private protected override async ValueTask ConnectClient()
+    private protected override async ValueTask ConnectClientAsync()
     {
         try
         {
@@ -123,7 +122,7 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         }
     }
 
-    private protected override async ValueTask DisconnectClient(string closeMessage)
+    private protected override async ValueTask DisconnectClientAsync(string closeMessage)
     {
         try
         {
@@ -166,6 +165,6 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Username, _url, _oAuthToken);
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
     }
 }
