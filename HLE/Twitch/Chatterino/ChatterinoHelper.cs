@@ -29,7 +29,9 @@ public static class ChatterinoHelper
 
         Utf8JsonReader jsonReader = new(fileContentWriter.WrittenSpan);
         using PoolBufferList<string> channels = new(20, 15);
-        HashSet<string> channelHashes = new(20);
+        HashSet<int> channelHashes = new(20);
+        Span<char> charBuffer = stackalloc char[30];
+
         ReadOnlySpan<byte> dataProperty = "data"u8;
         ReadOnlySpan<byte> nameProperty = "name"u8;
         ReadOnlySpan<byte> typeProperty = "type"u8;
@@ -60,14 +62,13 @@ public static class ChatterinoHelper
                         continue;
                     }
 
-                    string channelName = Encoding.UTF8.GetString(channelNameAsBytes);
-                    bool added = channelHashes.Add(channelName);
-                    if (!added)
+                    int channelLength = Encoding.UTF8.GetChars(channelNameAsBytes, charBuffer);
+                    int channelHash = string.GetHashCode(charBuffer[..channelLength], StringComparison.OrdinalIgnoreCase);
+                    if (channelHashes.Add(channelHash))
                     {
-                        continue;
+                        channels.Add(new(charBuffer[..channelLength]));
                     }
 
-                    channels.Add(channelName);
                     break;
                 default:
                     continue;

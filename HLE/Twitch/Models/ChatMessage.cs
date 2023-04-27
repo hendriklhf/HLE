@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Memory;
+using HLE.Numerics;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
@@ -194,7 +196,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
 
         ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespace[3] + 1)..indicesOfWhitespace[4]];
         bool isAction = actionPrefix.Equals(_actionPrefix, StringComparison.Ordinal);
-        byte asByte = Unsafe.As<bool, byte>(ref isAction);
+        int asByte = Unsafe.As<bool, byte>(ref isAction);
         return (ChatMessageFlag)(asByte << 4);
     }
 
@@ -222,7 +224,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Badge[] GetBadges(ReadOnlySpan<char> value)
+    private static unsafe Badge[] GetBadges(ReadOnlySpan<char> value)
     {
         if (value.Length == 0)
         {
@@ -230,7 +232,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         }
 
         Badge[] result = new Badge[value.CharCount(',') + 1];
-        ref Badge firstBadge = ref MemoryMarshal.GetArrayDataReference(result);
+        Badge* badges = result.GetPointer();
         int badgeCount = 0;
         while (value.Length > 0)
         {
@@ -240,7 +242,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
             int slashIndex = info.IndexOf('/');
             string name = StringPool.Shared.GetOrAdd(info[..slashIndex]);
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..]);
-            Unsafe.Add(ref firstBadge, badgeCount++) = new(name, level);
+            badges[badgeCount++] = new(name, level);
         }
 
         return result;
@@ -256,7 +258,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static string GetDisplayName(ReadOnlySpan<char> value)
     {
         bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
-        byte asByte = (byte)(Unsafe.As<bool, byte>(ref isBackSlash) << 1);
+        int asByte = Unsafe.As<bool, byte>(ref isBackSlash) << 1;
         return StringPool.Shared.GetOrAdd(value[..^asByte]);
     }
 
@@ -264,7 +266,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static ChatMessageFlag GetIsFirstMsg(ReadOnlySpan<char> value)
     {
         bool isFirstMessage = value[0] == '1';
-        byte asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
+        int asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
         return (ChatMessageFlag)asByte;
     }
 
@@ -275,7 +277,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static ChatMessageFlag GetIsModerator(ReadOnlySpan<char> value)
     {
         bool isModerator = value[0] == '1';
-        byte asByte = Unsafe.As<bool, byte>(ref isModerator);
+        int asByte = Unsafe.As<bool, byte>(ref isModerator);
         return (ChatMessageFlag)(asByte << 1);
     }
 
@@ -286,7 +288,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static ChatMessageFlag GetIsSubscriber(ReadOnlySpan<char> value)
     {
         bool isSubscriber = value[0] == '1';
-        byte asByte = Unsafe.As<bool, byte>(ref isSubscriber);
+        int asByte = Unsafe.As<bool, byte>(ref isSubscriber);
         return (ChatMessageFlag)(asByte << 2);
     }
 
@@ -297,7 +299,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     private static ChatMessageFlag GetIsTurboUser(ReadOnlySpan<char> value)
     {
         bool isTurboUser = value[0] == '1';
-        byte asByte = Unsafe.As<bool, byte>(ref isTurboUser);
+        int asByte = Unsafe.As<bool, byte>(ref isTurboUser);
         return (ChatMessageFlag)(asByte << 3);
     }
 
@@ -317,9 +319,9 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         bool isThirdCharHexLetter = IsHexLetter(thirdChar);
         bool isFifthCharHexLetter = IsHexLetter(fifthChar);
 
-        byte red = (byte)(firstChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFirstCharHexLetter))));
-        byte green = (byte)(thirdChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isThirdCharHexLetter))));
-        byte blue = (byte)(fifthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFifthCharHexLetter))));
+        int red = firstChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFirstCharHexLetter)));
+        int green = thirdChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isThirdCharHexLetter)));
+        int blue = fifthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFifthCharHexLetter)));
 
         red <<= 4;
         green <<= 4;
@@ -333,11 +335,11 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         bool isForthCharHexLetter = IsHexLetter(forthChar);
         bool isSixthCharHexLetter = IsHexLetter(sixthChar);
 
-        red |= (byte)(secondChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSecondCharHexLetter))));
-        green |= (byte)(forthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isForthCharHexLetter))));
-        blue |= (byte)(sixthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSixthCharHexLetter))));
+        red |= secondChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSecondCharHexLetter)));
+        green |= forthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isForthCharHexLetter)));
+        blue |= sixthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSixthCharHexLetter)));
 
-        return new(red, green, blue);
+        return new((byte)red, (byte)green, (byte)blue);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

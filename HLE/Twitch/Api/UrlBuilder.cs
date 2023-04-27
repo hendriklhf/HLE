@@ -16,7 +16,7 @@ internal struct UrlBuilder : IDisposable
     {
         _stringBuilder = new(initialBufferLength);
         _stringBuilder.Append(baseUrl);
-        if (endpoint[0] != '/')
+        if (baseUrl[^1] != '/' && endpoint[0] != '/')
         {
             _stringBuilder.Append('/');
         }
@@ -38,12 +38,12 @@ internal struct UrlBuilder : IDisposable
         ParameterCount++;
     }
 
-    public void AppendParameter(ReadOnlySpan<char> key, long value)
+    public void AppendParameter<T>(ReadOnlySpan<char> key, T value) where T : ISpanFormattable
     {
         _stringBuilder.Append(ParameterCount == 0 ? '?' : '&');
         _stringBuilder.Append(key);
         _stringBuilder.Append('=');
-        _stringBuilder.Append(value);
+        _stringBuilder.Append<T, IFormatProvider>(value);
         ParameterCount++;
     }
 
