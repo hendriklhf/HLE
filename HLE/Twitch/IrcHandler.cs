@@ -1,6 +1,6 @@
 ﻿using System;
-using HLE.Collections;
 using HLE.Memory;
+using HLE.Strings;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;

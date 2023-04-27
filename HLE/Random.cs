@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using HLE.Collections;
 using HLE.Memory;
+using HLE.Numerics;
 
 namespace HLE;
 
