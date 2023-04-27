@@ -1,7 +1,0 @@
-{
-  "profiles": {
-    "HLE.Debug": {
-      "commandName": "Project"
-    }
-  }
-}
