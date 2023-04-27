@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using HLE.Memory;
+using HLE.Numerics;
 
 namespace HLE.Collections;
 
@@ -171,31 +172,31 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static TContent[][] Split<TCollection, TContent>(this TCollection collection, TContent separator) where TCollection : IEnumerable<TContent>
+    public static TContent[][] Split<TCollection, TContent>(this TCollection collection, TContent separator) where TCollection : IEnumerable<TContent> where TContent : IEquatable<TContent>
     {
-        return Split(collection.ToArray(), separator);
+        return Split((ReadOnlySpan<TContent>)collection.ToArray(), separator);
     }
 
     [Pure]
-    public static T[][] Split<T>(this List<T> list, T separator)
+    public static T[][] Split<T>(this List<T> list, T separator) where T : IEquatable<T>
     {
         return Split(CollectionsMarshal.AsSpan(list), separator);
     }
 
     [Pure]
-    public static T[][] Split<T>(this T[] array, T separator)
+    public static T[][] Split<T>(this T[] array, T separator) where T : IEquatable<T>
     {
         return Split((ReadOnlySpan<T>)array, separator);
     }
 
     [Pure]
-    public static T[][] Split<T>(this Span<T> span, T separator)
+    public static T[][] Split<T>(this Span<T> span, T separator) where T : IEquatable<T>
     {
         return Split((ReadOnlySpan<T>)span, separator);
     }
 
     [Pure]
-    public static T[][] Split<T>(this ReadOnlySpan<T> span, T separator)
+    public static T[][] Split<T>(this ReadOnlySpan<T> span, T separator) where T : IEquatable<T>
     {
         if (span.Length == 0)
         {
@@ -346,33 +347,33 @@ public static class CollectionHelper
 
     public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition, Span<int> indices)
     {
-        int length = 0;
         int spanLength = span.Length;
         if (spanLength == 0)
         {
             return 0;
         }
 
+        int length = 0;
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            if (condition(Unsafe.Add(ref firstItem, i)))
-            {
-                indices[length++] = i;
-            }
+            bool equals = condition(Unsafe.Add(ref firstItem, i));
+            int equalsAsByte = Unsafe.As<bool, byte>(ref equals);
+            indices[length] = i;
+            length += equalsAsByte;
         }
 
         return length;
     }
 
     [Pure]
-    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, TContent item) where TCollection : IEnumerable<TContent>
+    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, TContent item) where TCollection : IEnumerable<TContent> where TContent : IEquatable<TContent>
     {
         using PoolBufferList<int> indices = new(50, 25);
         int index = 0;
         foreach (TContent t in collection)
         {
-            if (t?.Equals(item) == true)
+            if (t.Equals(item))
             {
                 indices.Add(index);
             }
@@ -384,55 +385,54 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this List<T> list, T item)
+    public static int[] IndicesOf<T>(this List<T> list, T item) where T : IEquatable<T>
     {
         return IndicesOf(CollectionsMarshal.AsSpan(list), item);
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this T[] array, T item)
+    public static int[] IndicesOf<T>(this T[] array, T item) where T : IEquatable<T>
     {
         return IndicesOf((Span<T>)array, item);
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this Span<T> span, T item)
+    public static int[] IndicesOf<T>(this Span<T> span, T item) where T : IEquatable<T>
     {
         return IndicesOf((ReadOnlySpan<T>)span, item);
     }
 
-    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> indices)
+    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> indices) where T : IEquatable<T>
     {
         return IndicesOf((ReadOnlySpan<T>)span, item, indices);
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item)
+    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item) where T : IEquatable<T>
     {
         Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
         int length = IndicesOf(span, item, indices);
         return indices[..length].ToArray();
     }
 
-    public static int IndicesOf<T>(this ReadOnlySpan<T> span, T item, Span<int> indices)
+    public static int IndicesOf<T>(this ReadOnlySpan<T> span, T item, Span<int> indices) where T : IEquatable<T>
     {
-        int spanLength = span.Length;
-        if (spanLength == 0)
+        if (span.Length == 0)
         {
             return 0;
         }
 
-        int length = 0;
-        ref T firstIndex = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
+        int indicesLength = 0;
+        int idx = span.IndexOf(item);
+        int spanStartIndex = idx;
+        while (idx != -1)
         {
-            bool equals = Unsafe.Add(ref firstIndex, i)?.Equals(item) == true;
-            byte asByte = Unsafe.As<bool, byte>(ref equals);
-            indices[length] = i;
-            length += asByte;
+            indices[indicesLength++] = spanStartIndex;
+            idx = span[++spanStartIndex..].IndexOf(item);
+            spanStartIndex += idx;
         }
 
-        return length;
+        return indicesLength;
     }
 
     [Pure]
@@ -510,10 +510,25 @@ public static class CollectionHelper
         }
 
         T[] result = new T[length];
-        ref T firstItem = ref MemoryMarshal.GetArrayDataReference(result);
+        if (!MemoryHelper.UseStackAlloc<int>(length))
+        {
+            using RentedArray<int> randomIndicesBuffer = new(length);
+            HLE.Random.Fill(randomIndicesBuffer.Span);
+            for (int i = 0; i < length; i++)
+            {
+                int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % span.Length;
+                result[i] = span[randomIndex];
+            }
+
+            return result;
+        }
+
+        Span<int> randomIndices = stackalloc int[length];
+        HLE.Random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
-            Unsafe.Add(ref firstItem, i) = span.Random()!;
+            int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % span.Length;
+            result[i] = span[randomIndex];
         }
 
         return result;
