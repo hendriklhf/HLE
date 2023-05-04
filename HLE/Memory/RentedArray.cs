@@ -80,7 +80,12 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     [Pure]
     public override bool Equals(object? obj)
     {
-        return obj is RentedArray<T> other && Equals(other);
+        return obj switch
+        {
+            RentedArray<T> rentedArray => Equals(rentedArray),
+            T[] array => Equals(array),
+            _ => false
+        };
     }
 
     [Pure]

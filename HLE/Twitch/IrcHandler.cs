@@ -10,8 +10,6 @@ namespace HLE.Twitch;
 /// </summary>
 public sealed class IrcHandler : IEquatable<IrcHandler>
 {
-    #region Events
-
     /// <summary>
     /// Is invoked if a JOIN message has been received.
     /// </summary>
@@ -35,8 +33,6 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     internal event EventHandler? OnReconnectReceived;
 
     internal event EventHandler<ReceivedData>? OnPingReceived;
-
-    #endregion Events
 
     private const string _joinCommand = "JOIN";
     private const string _roomstateCommand = "ROOMSTATE";
@@ -115,7 +111,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is IrcHandler other && ReferenceEquals(this, other);
     }
 
     public override int GetHashCode()

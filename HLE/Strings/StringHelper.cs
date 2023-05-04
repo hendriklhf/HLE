@@ -13,7 +13,7 @@ namespace HLE.Strings;
 /// </summary>
 public static class StringHelper
 {
-    private static readonly Regex _multipleSpacesPattern = new(@"\s{2,}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _multipleSpacesPattern = RegexPool.Shared.GetOrAdd(@"\s{2,}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
 
     /// <summary>
     /// Is invisible in Twitch chat.

@@ -155,4 +155,10 @@ public static class NumberHelper
             _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
         };
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsOnlyOneBitSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
+    {
+        return (number & (number - T.One)) == T.Zero && number != T.Zero;
+    }
 }

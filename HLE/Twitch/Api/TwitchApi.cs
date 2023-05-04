@@ -95,7 +95,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>
         ReadOnlyMemory<byte> httpContent = await GetHttpContentBytes(httpResponse, httpContentBuffer, contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"The request failed with code {httpResponse.StatusCode} and delivered: {Encoding.UTF8.GetString(httpContent.Span)}");
+            throw new InvalidOperationException($"The request ({url}) failed with code {httpResponse.StatusCode} and delivered: {Encoding.UTF8.GetString(httpContent.Span)}");
         }
 
         return new(httpContentBuffer, contentLength);

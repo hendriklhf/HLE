@@ -51,6 +51,6 @@ internal struct UrlBuilder : IDisposable
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString()
     {
-        return _stringBuilder.ToString();
+        return ParameterCount == 0 ? StringPool.Shared.GetOrAdd(_stringBuilder.WrittenSpan) : _stringBuilder.ToString();
     }
 }
