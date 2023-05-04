@@ -1,7 +1,8 @@
-﻿using HLE.Numerics;
+﻿using System.Collections.Generic;
+using HLE.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests;
+namespace HLE.Tests.Numerics;
 
 [TestClass]
 public class NumberHelperTest
@@ -35,14 +36,14 @@ public class NumberHelperTest
     [TestMethod]
     public void GetNumberLengthTest()
     {
-        for (int i = 1; i <= 1000000000; i *= 10)
+        for (int i = 0; i <= 10_000_000; i++)
         {
             Assert.AreEqual(i.ToString().Length, NumberHelper.GetNumberLength(i));
         }
     }
 
     [TestMethod]
-    public void NumberToDigitArrayTest()
+    public void GetDigitsTest()
     {
         Assert.IsTrue(NumberHelper.GetDigits(1234567) is [1, 2, 3, 4, 5, 6, 7]);
         Assert.IsTrue(NumberHelper.GetDigits(-1234567) is [1, 2, 3, 4, 5, 6, 7]);
@@ -51,7 +52,7 @@ public class NumberHelperTest
     }
 
     [TestMethod]
-    public void CharToDigitTest()
+    public void DigitToCharTest()
     {
         byte digit = 0;
         for (char c = '0'; c < '9' + 1; c++)
@@ -61,7 +62,7 @@ public class NumberHelperTest
     }
 
     [TestMethod]
-    public void DigitToCharTest()
+    public void CharToDigitTest()
     {
         char c = '0';
         for (byte i = 0; i < 10; i++)
@@ -71,14 +72,36 @@ public class NumberHelperTest
     }
 
     [TestMethod]
-    public void ParsePositiveInt32Test()
+    public void ParsePositiveNumberTest()
     {
         Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"));
     }
 
     [TestMethod]
-    public void ParsePositiveInt32FromBytesTest()
+    public void ParsePositiveNumberFromBytesTest()
     {
         Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
+    }
+
+    [TestMethod]
+    public void IsOnlyOneBitSetTest()
+    {
+        HashSet<int> numbersWithOnlyBitSet = new(32);
+        for (int i = 0; i <= 32; i++)
+        {
+            numbersWithOnlyBitSet.Add(1 << i);
+        }
+
+        for (int i = 0; i < int.MaxValue; i++)
+        {
+            if (numbersWithOnlyBitSet.Contains(i))
+            {
+                Assert.IsTrue(NumberHelper.IsOnlyOneBitSet(i));
+            }
+            else
+            {
+                Assert.IsFalse(NumberHelper.IsOnlyOneBitSet(i));
+            }
+        }
     }
 }

@@ -2,10 +2,10 @@
 using HLE.Emojis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.EmojisTests;
+namespace HLE.Tests.Emojis;
 
 [TestClass]
-public class EmojiFileGeneratorTest
+public class EmojiFileTest
 {
     [TestMethod]
     public void ValueTest()

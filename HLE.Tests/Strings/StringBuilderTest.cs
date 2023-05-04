@@ -1,7 +1,7 @@
 ﻿using HLE.Strings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests;
+namespace HLE.Tests.Strings;
 
 [TestClass]
 public class StringBuilderTest

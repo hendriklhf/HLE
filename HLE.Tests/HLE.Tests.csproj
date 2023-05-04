@@ -22,9 +22,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="ResourcesTests\Resource1" />
-        <EmbeddedResource Include="ResourcesTests\Resource2" />
-        <EmbeddedResource Include="ResourcesTests\Resource3" />
+        <EmbeddedResource Include="Resources\Resource1" />
+        <EmbeddedResource Include="Resources\Resource2" />
+        <EmbeddedResource Include="Resources\Resource3" />
     </ItemGroup>
 
 </Project>

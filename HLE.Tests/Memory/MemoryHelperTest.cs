@@ -2,7 +2,7 @@
 using HLE.Memory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.MemoryTests;
+namespace HLE.Tests.Memory;
 
 [TestClass]
 public class MemoryHelperTest
@@ -20,7 +20,7 @@ public class MemoryHelperTest
     {
         ReadOnlyMemory<char> str = "hello".AsMemory();
         Memory<char> memory = str.AsMutableMemory();
-        Assert.IsTrue(memory.Span.SequenceEqual("hello"));
+        Assert.IsTrue(memory.Span is "hello");
     }
 
     [TestMethod]
@@ -28,7 +28,7 @@ public class MemoryHelperTest
     {
         Span<char> span = "hello".ToCharArray();
         Memory<char> memory = span.AsMemoryDangerous();
-        Assert.IsTrue(memory.Span.SequenceEqual("hello"));
+        Assert.IsTrue(memory.Span is "hello");
     }
 
     [TestMethod]
@@ -39,9 +39,7 @@ public class MemoryHelperTest
         rawData += 2;
         Assert.AreEqual(str.Length, *rawData);
         char* chars = (char*)++rawData;
-        for (int i = 0; i < str.Length; i++)
-        {
-            Assert.AreEqual(str[i], chars[i]);
-        }
+        ReadOnlySpan<char> span = new(chars, str.Length);
+        Assert.IsTrue(span is str);
     }
 }

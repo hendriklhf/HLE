@@ -4,7 +4,7 @@ using System.Reflection;
 using HLE.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.ResourcesTests;
+namespace HLE.Tests.Resources;
 
 [TestClass]
 public class ResourceReaderTest

@@ -1,7 +1,7 @@
 ﻿using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.CollectionsTests;
+namespace HLE.Tests.Collections;
 
 [TestClass]
 public class QueueTest

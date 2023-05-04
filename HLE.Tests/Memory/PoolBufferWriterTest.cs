@@ -2,7 +2,7 @@
 using HLE.Memory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.MemoryTests;
+namespace HLE.Tests.Memory;
 
 [TestClass]
 public class PoolBufferWriterTest
@@ -14,7 +14,7 @@ public class PoolBufferWriterTest
         "hello".CopyTo(writer.GetSpan(5));
         writer.Advance(5);
         Assert.AreEqual(5, writer.Length);
-        Assert.IsTrue(writer.WrittenSpan.SequenceEqual("hello"));
+        Assert.IsTrue(writer.WrittenSpan is "hello");
     }
 
     [TestMethod]
@@ -24,7 +24,7 @@ public class PoolBufferWriterTest
         "hello".CopyTo(writer.GetMemory(5).Span);
         writer.Advance(5);
         Assert.AreEqual(5, writer.Length);
-        Assert.IsTrue(writer.WrittenSpan.SequenceEqual("hello"));
+        Assert.IsTrue(writer.WrittenSpan is "hello");
     }
 
     [TestMethod]
@@ -54,7 +54,7 @@ public class PoolBufferWriterTest
 
         writer.Clear();
         Assert.IsTrue(writer.Length == 0);
-        Assert.IsTrue(writer.WrittenSpan.SequenceEqual(""));
+        Assert.IsTrue(writer.WrittenSpan is "");
     }
 
     [TestMethod]

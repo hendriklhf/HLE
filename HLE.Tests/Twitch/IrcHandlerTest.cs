@@ -2,7 +2,7 @@
 using HLE.Twitch;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.TwitchTests;
+namespace HLE.Tests.Twitch;
 
 [TestClass]
 public class IrcHandlerTest
