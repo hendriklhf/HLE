@@ -4,17 +4,11 @@ namespace HLE.Twitch.Models;
 
 /// <summary>
 /// Options for <see cref="TwitchClient"/>. By default:<br/>
-/// <see cref="ClientType"/> = <see cref="Models.ClientType.WebSocket"/><br/>
 /// <see cref="UseSSL"/> = false<br/>
 /// <see cref="IsVerifiedBot"/> = false<br/>
 /// </summary>
 public readonly struct ClientOptions : IEquatable<ClientOptions>
 {
-    /// <summary>
-    /// The client type. Can be either a websocket or TCP connection.
-    /// </summary>
-    public ClientType ClientType { get; init; } = ClientType.WebSocket;
-
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
@@ -32,7 +26,7 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
 
     public bool Equals(ClientOptions other)
     {
-        return ClientType == other.ClientType && UseSSL == other.UseSSL && IsVerifiedBot == other.IsVerifiedBot;
+        return UseSSL == other.UseSSL && IsVerifiedBot == other.IsVerifiedBot;
     }
 
     public override bool Equals(object? obj)
@@ -42,7 +36,7 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(ClientType, UseSSL, IsVerifiedBot);
+        return HashCode.Combine(UseSSL, IsVerifiedBot);
     }
 
     public static bool operator ==(ClientOptions left, ClientOptions right)

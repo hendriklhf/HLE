@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -85,41 +84,14 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         _url = GetUrl();
     }
 
-    /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
-    public void Connect(IEnumerable<string> channels)
-    {
-        Connect(channels.ToArray().AsMemory());
-    }
-
-    /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
-    public void Connect(string[] channels)
-    {
-        Connect(channels.AsMemory());
-    }
-
-    /// <inheritdoc cref="Connect(ReadOnlyMemory{string})"/>
-    public void Connect(List<string> channels)
-    {
-        Connect(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
-    }
-
-    /// <summary>
-    /// Connects the client to the Twitch IRC server.
-    /// </summary>
-    /// <param name="channels">The collection of channels the client will join on connect.</param>
-    public void Connect(ReadOnlyMemory<string> channels)
-    {
-        ConnectAsync(channels);
-    }
-
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
-    public async Task ConnectAsync(string[] channels)
+    public async ValueTask ConnectAsync(string[] channels)
     {
         await ConnectAsync(channels.AsMemory());
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
-    public async Task ConnectAsync(List<string> channels)
+    public async ValueTask ConnectAsync(List<string> channels)
     {
         await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
@@ -128,7 +100,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// Asynchronously connects the client to the Twitch IRC server.
     /// </summary>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
-    public async Task ConnectAsync(ReadOnlyMemory<string> channels)
+    public async ValueTask ConnectAsync(ReadOnlyMemory<string> channels)
     {
         await ConnectClientAsync();
         StartListening();
@@ -153,52 +125,23 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     }
 
     /// <summary>
-    /// Disconnects the client.
-    /// </summary>
-    /// <param name="closeMessage">A close message or reason.</param>
-    public void Disconnect(string closeMessage = "Manually closed")
-    {
-        DisconnectAsync(closeMessage);
-    }
-
-    /// <summary>
     /// Asynchronously disconnects the client.
     /// </summary>
     /// <param name="closeMessage">A close message or reason.</param>
-    public async Task DisconnectAsync(string closeMessage = "Manually closed")
+    public async ValueTask DisconnectAsync(string closeMessage = "Manually closed")
     {
         await DisconnectClientAsync(closeMessage);
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
-    internal void Reconnect(ReadOnlyMemory<string> channels)
-    {
-        ReconnectAsync(channels);
-    }
-
-    internal async Task ReconnectAsync(ReadOnlyMemory<string> channels)
+    internal async ValueTask ReconnectAsync(ReadOnlyMemory<string> channels)
     {
         await DisconnectAsync();
         await ConnectAsync(channels);
     }
 
-    /// <inheritdoc cref="SendRaw(ReadOnlyMemory{char})"/>
-    public void SendRaw(string rawMessage)
-    {
-        SendRaw(rawMessage.AsMemory());
-    }
-
-    /// <summary>
-    /// Sends a raw message to the Twitch IRC server.
-    /// </summary>
-    /// <param name="rawMessage">The IRC message.</param>
-    public void SendRaw(ReadOnlyMemory<char> rawMessage)
-    {
-        SendRawAsync(rawMessage);
-    }
-
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
-    public async Task SendRawAsync(string rawMessage)
+    public async ValueTask SendRawAsync(string rawMessage)
     {
         await SendAsync(rawMessage.AsMemory());
     }
@@ -207,29 +150,13 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// Asynchronously sends a raw message to the Twitch IRC server.
     /// </summary>
     /// <param name="rawMessage">The IRC message.</param>
-    public async Task SendRawAsync(ReadOnlyMemory<char> rawMessage)
+    public async ValueTask SendRawAsync(ReadOnlyMemory<char> rawMessage)
     {
         await SendAsync(rawMessage);
     }
 
-    /// <inheritdoc cref="SendMessage(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    public void SendMessage(string channel, string message)
-    {
-        SendMessage(channel.AsMemory(), message.AsMemory());
-    }
-
-    /// <summary>
-    /// Sends a chat message to a channel.
-    /// </summary>
-    /// <param name="channel">The channel the message will be sent to.</param>
-    /// <param name="message">The message that will be sent to the channel.</param>
-    public void SendMessage(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
-    {
-        SendMessageAsync(channel, message);
-    }
-
     /// <inheritdoc cref="SendMessageAsync(System.ReadOnlyMemory{char},System.ReadOnlyMemory{char})"/>
-    public async Task SendMessageAsync(string channel, string message)
+    public async ValueTask SendMessageAsync(string channel, string message)
     {
         await SendMessageAsync(channel.AsMemory(), message.AsMemory());
     }
@@ -239,7 +166,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// </summary>
     /// <param name="channel">The channel the message will be sent to.</param>
     /// <param name="builder">The builder that contains the message that will be sent.</param>
-    public async Task SendMessageAsync(ReadOnlyMemory<char> channel, PoolBufferStringBuilder builder)
+    public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, PoolBufferStringBuilder builder)
     {
         await SendMessageAsync(channel, builder.WrittenMemory);
     }
@@ -249,30 +176,15 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// </summary>
     /// <param name="channel">The channel the message will be sent to.</param>
     /// <param name="message">The message that will be sent to the channel.</param>
-    public async Task SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
+    public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
         using PoolBufferStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
         messageBuilder.Append(_privMsgPrefix, channel.Span, _spaceColon, message.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
-    /// <inheritdoc cref="JoinChannel(ReadOnlyMemory{char})"/>
-    public void JoinChannel(string channel)
-    {
-        JoinChannel(channel.AsMemory());
-    }
-
-    /// <summary>
-    /// Joins one channel.
-    /// </summary>
-    /// <param name="channel">The channel the client will join.</param>
-    public void JoinChannel(ReadOnlyMemory<char> channel)
-    {
-        JoinChannelAsync(channel);
-    }
-
     /// <inheritdoc cref="JoinChannelAsync(ReadOnlyMemory{char})"/>
-    public async Task JoinChannelAsync(string channel)
+    public async ValueTask JoinChannelAsync(string channel)
     {
         await JoinChannelAsync(channel.AsMemory());
     }
@@ -281,30 +193,15 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// Asynchronously joins one channel.
     /// </summary>
     /// <param name="channel">The channel the client will join.</param>
-    public async Task JoinChannelAsync(ReadOnlyMemory<char> channel)
+    public async ValueTask JoinChannelAsync(ReadOnlyMemory<char> channel)
     {
         using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_joinPrefix, channel.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
-    /// <inheritdoc cref="LeaveChannel(ReadOnlyMemory{char})"/>
-    public void LeaveChannel(string channel)
-    {
-        LeaveChannel(channel.AsMemory());
-    }
-
-    /// <summary>
-    /// Leaves one channel.
-    /// </summary>
-    /// <param name="channel">The channel the client will leave.</param>
-    public void LeaveChannel(ReadOnlyMemory<char> channel)
-    {
-        LeaveChannelAsync(channel);
-    }
-
     /// <inheritdoc cref="LeaveChannelAsync(ReadOnlyMemory{char})"/>
-    public async Task LeaveChannelAsync(string channel)
+    public async ValueTask LeaveChannelAsync(string channel)
     {
         await LeaveChannelAsync(channel.AsMemory());
     }
@@ -313,7 +210,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// Asynchronously leaves one channel.
     /// </summary>
     /// <param name="channel">The channel the client will leave.</param>
-    public async Task LeaveChannelAsync(ReadOnlyMemory<char> channel)
+    public async ValueTask LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
         using PoolBufferStringBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_partPrefix, channel.Span);

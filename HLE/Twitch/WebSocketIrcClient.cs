@@ -49,7 +49,7 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         StartListeningAsync();
     }
 
-    private async ValueTask StartListeningAsync()
+    private async Task StartListeningAsync()
     {
         try
         {
