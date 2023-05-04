@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Text.Json.Serialization;
-using HLE.Strings;
 using HLE.Twitch.Api.JsonConverters;
 
 namespace HLE.Twitch.Api.Models;
 
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("\"{Name}\"")]
 public sealed class ChannelEmote : Emote, IEquatable<ChannelEmote>
 {
-    [JsonPropertyName("id")]
-    public required string Id { get; init; }
-
     [JsonPropertyName("emote_type")]
     [JsonConverter(typeof(EmoteTypeJsonConverter))]
     public required EmoteType Type { get; init; }
@@ -22,49 +21,19 @@ public sealed class ChannelEmote : Emote, IEquatable<ChannelEmote>
     [JsonConverter(typeof(EmoteTierJsonConverter))]
     public required EmoteTier Tier { get; init; }
 
-    public bool TryGetImageUrl(EmoteImageFormats format, EmoteThemes theme, EmoteScales scale, [MaybeNullWhen(false)] out string url)
-    {
-        url = null;
-        ValueStringBuilder urlBuilder = stackalloc char[250];
-        urlBuilder.Append("https://static-cdn.jtvnw.net/emoticons/v2/");
-        if ((Formats & format) != format)
-        {
-            return false;
-        }
-
-        urlBuilder.Append(Id);
-        urlBuilder.Append('/');
-        urlBuilder.Append(ImageFormatValues[format]);
-
-        if ((Themes & theme) != theme)
-        {
-            return false;
-        }
-
-        urlBuilder.Append('/');
-        urlBuilder.Append(ThemeValues[theme]);
-
-        if ((Scales & scale) != scale)
-        {
-            return false;
-        }
-
-        urlBuilder.Append('/');
-        urlBuilder.Append(ScaleValues[scale]);
-        url = StringPool.Shared.GetOrAdd(urlBuilder.WrittenSpan);
-        return true;
-    }
-
+    [Pure]
     public bool Equals(ChannelEmote? other)
     {
         return ReferenceEquals(this, other) || Id == other?.Id;
     }
 
+    [Pure]
     public override bool Equals(object? obj)
     {
         return obj is ChannelEmote other && Equals(other);
     }
 
+    [Pure]
     public override int GetHashCode()
     {
         return Id.GetHashCode();

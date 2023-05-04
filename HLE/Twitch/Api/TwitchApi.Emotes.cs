@@ -9,16 +9,16 @@ namespace HLE.Twitch.Api;
 
 public sealed partial class TwitchApi
 {
-    public async ValueTask<GlobalEmote[]> GetGlobalEmotesAsync()
+    public async ValueTask<Emote[]> GetGlobalEmotesAsync()
     {
-        if (TryGetGlobalEmotes(out GlobalEmote[]? emotes))
+        if (TryGetGlobalEmotes(out Emote[]? emotes))
         {
             return emotes;
         }
 
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "chat/emotes/global");
         using HttpResponse response = await ExecuteRequest(urlBuilder.ToString());
-        GetResponse<GlobalEmote> getResponse = JsonSerializer.Deserialize<GetResponse<GlobalEmote>>(response.Bytes.Span);
+        GetResponse<Emote> getResponse = JsonSerializer.Deserialize<GetResponse<Emote>>(response.Bytes.Span);
         if (getResponse.Items.Length == 0)
         {
             throw new InvalidOperationException("An unknown error occurred. The response contained zero emotes.");
@@ -45,7 +45,7 @@ public sealed partial class TwitchApi
         return emotes;
     }
 
-    private bool TryGetGlobalEmotes([MaybeNullWhen(false)] out GlobalEmote[] globalEmotes)
+    private bool TryGetGlobalEmotes([MaybeNullWhen(false)] out Emote[] globalEmotes)
     {
         if (Cache is not null)
         {

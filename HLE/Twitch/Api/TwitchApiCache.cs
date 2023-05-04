@@ -13,7 +13,7 @@ public sealed class TwitchApiCache
 
     private readonly DoubleDictionary<long, int, User> _userCache = new();
     private readonly DoubleDictionary<long, int, Stream> _streamCache = new();
-    private CacheEntry<GlobalEmote[]> _globalEmoteCache = CacheEntry<GlobalEmote[]>.Empty;
+    private CacheEntry<Emote[]> _globalEmoteCache = CacheEntry<Emote[]>.Empty;
     private readonly Dictionary<long, CacheEntry<ChannelEmote[]>> _channelEmoteCache = new();
 
     public TwitchApiCache(CacheOptions options)
@@ -71,14 +71,14 @@ public sealed class TwitchApiCache
         return _streamCache.TryGetValue(usernameHash, out stream) && stream.IsValid(Options.StreamCacheTime);
     }
 
-    public void AddGlobalEmotes(GlobalEmote[] emotes)
+    public void AddGlobalEmotes(Emote[] emotes)
     {
         _globalEmoteCache = new(emotes);
     }
 
-    public bool TryGetGlobalEmotes([MaybeNullWhen(false)] out GlobalEmote[] emotes)
+    public bool TryGetGlobalEmotes([MaybeNullWhen(false)] out Emote[] emotes)
     {
-        if (_globalEmoteCache != CacheEntry<GlobalEmote[]>.Empty && _globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
+        if (_globalEmoteCache != CacheEntry<Emote[]>.Empty && _globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
         {
             emotes = _globalEmoteCache.Value!;
             return true;
