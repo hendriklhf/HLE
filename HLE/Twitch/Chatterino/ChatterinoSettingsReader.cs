@@ -6,14 +6,25 @@ using System.Text;
 using System.Text.Json;
 using HLE.Collections;
 using HLE.Memory;
+using HLE.Strings;
 
 namespace HLE.Twitch.Chatterino;
 
 /// <summary>
-/// A class to help with the application <a href="https://www.chatterino.com">Chatterino</a>.
+/// Reads settings of the application <a href="https://www.chatterino.com">Chatterino</a>.
 /// </summary>
-public static class ChatterinoHelper
+public sealed class ChatterinoSettingsReader : IDisposable
 {
+    private readonly PoolBufferWriter<byte> _settings = new(5000, 5000);
+
+    public ChatterinoSettingsReader()
+    {
+        using PoolBufferStringBuilder pathBuilder = new(100);
+        pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
+        string windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
+        Files.ReadBytes(windowLayoutPath, _settings);
+    }
+
     /// <summary>
     /// Gets all channels of all your tabs from the Chatterino settings.
     /// </summary>
@@ -21,13 +32,9 @@ public static class ChatterinoHelper
     /// <exception cref="JsonException">Will be thrown if the JSON settings file is not of the expected format.</exception>
     [Pure]
     [SupportedOSPlatform("windows")]
-    public static string[] GetChannels()
+    public string[] GetChannels()
     {
-        string windowLayoutPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Chatterino2\Settings\window-layout.json";
-        using PoolBufferWriter<byte> fileContentWriter = new(5000, 5000);
-        Files.ReadBytes(windowLayoutPath, fileContentWriter);
-
-        Utf8JsonReader jsonReader = new(fileContentWriter.WrittenSpan);
+        Utf8JsonReader jsonReader = new(_settings.WrittenSpan);
         using PoolBufferList<string> channels = new(20, 15);
         HashSet<int> channelHashes = new(20);
         Span<char> charBuffer = stackalloc char[30];
@@ -76,5 +83,10 @@ public static class ChatterinoHelper
         }
 
         return channels.ToArray();
+    }
+
+    public void Dispose()
+    {
+        _settings.Dispose();
     }
 }
