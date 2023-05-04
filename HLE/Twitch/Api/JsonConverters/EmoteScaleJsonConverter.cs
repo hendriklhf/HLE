@@ -34,17 +34,17 @@ public sealed class EmoteScaleJsonConverter : JsonConverter<EmoteScales>
         writer.WriteStartArray();
         if ((value & EmoteScales.One) == EmoteScales.One)
         {
-            writer.WriteStringValue(Emote.ScaleValues[EmoteScales.One]);
+            writer.WriteStringValue(Emote._scaleValues[EmoteScales.One]);
         }
 
         if ((value & EmoteScales.Two) == EmoteScales.Two)
         {
-            writer.WriteStringValue(Emote.ScaleValues[EmoteScales.Two]);
+            writer.WriteStringValue(Emote._scaleValues[EmoteScales.Two]);
         }
 
         if ((value & EmoteScales.Three) == EmoteScales.Three)
         {
-            writer.WriteStringValue(Emote.ScaleValues[EmoteScales.Three]);
+            writer.WriteStringValue(Emote._scaleValues[EmoteScales.Three]);
         }
 
         writer.WriteEndArray();

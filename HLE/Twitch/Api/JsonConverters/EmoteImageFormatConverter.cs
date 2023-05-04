@@ -33,12 +33,12 @@ public sealed class EmoteImageFormatConverter : JsonConverter<EmoteImageFormats>
         writer.WriteStartArray();
         if ((value & EmoteImageFormats.Static) == EmoteImageFormats.Static)
         {
-            writer.WriteStringValue(Emote.ImageFormatValues[EmoteImageFormats.Static]);
+            writer.WriteStringValue(Emote._imageFormatValues[EmoteImageFormats.Static]);
         }
 
         if ((value & EmoteImageFormats.Animated) == EmoteImageFormats.Animated)
         {
-            writer.WriteStringValue(Emote.ImageFormatValues[EmoteImageFormats.Animated]);
+            writer.WriteStringValue(Emote._imageFormatValues[EmoteImageFormats.Animated]);
         }
 
         writer.WriteEndArray();

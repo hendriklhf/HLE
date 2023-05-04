@@ -33,12 +33,12 @@ public sealed class EmoteThemeJsonConverter : JsonConverter<EmoteThemes>
         writer.WriteStartArray();
         if ((value & EmoteThemes.Light) == EmoteThemes.Light)
         {
-            writer.WriteStringValue(Emote.ThemeValues[EmoteThemes.Light]);
+            writer.WriteStringValue(Emote._themeValues[EmoteThemes.Light]);
         }
 
         if ((value & EmoteThemes.Dark) == EmoteThemes.Dark)
         {
-            writer.WriteStringValue(Emote.ThemeValues[EmoteThemes.Dark]);
+            writer.WriteStringValue(Emote._themeValues[EmoteThemes.Dark]);
         }
 
         writer.WriteEndArray();
