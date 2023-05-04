@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -62,7 +63,7 @@ public sealed class StringPool : IEquatable<StringPool>
         }
 
         value = null;
-        return _buckets.TryGetValue(span.Length, out Bucket bucket) && bucket.TryGet(span, out value);
+        return TryGetBucket(span.Length, out Bucket bucket) && bucket.TryGet(span, out value);
     }
 
     public bool TryGet(ReadOnlySpan<byte> bytes, Encoding encoding, [MaybeNullWhen(false)] out string value)
@@ -81,13 +82,13 @@ public sealed class StringPool : IEquatable<StringPool>
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
             ReadOnlySpan<char> chars = rentedCharBuffer[..charsWritten];
-            return _buckets.TryGetValue(chars.Length, out bucket) && bucket.TryGet(chars, out value);
+            return TryGetBucket(chars.Length, out bucket) && bucket.TryGet(chars, out value);
         }
 
         Span<char> charBuffer = stackalloc char[bytes.Length];
         charsWritten = encoding.GetChars(bytes, charBuffer);
         charBuffer = charBuffer[..charsWritten];
-        return _buckets.TryGetValue(charBuffer.Length, out bucket) && bucket.TryGet(charBuffer, out value);
+        return TryGetBucket(charBuffer.Length, out bucket) && bucket.TryGet(charBuffer, out value);
     }
 
     [Pure]
@@ -98,7 +99,7 @@ public sealed class StringPool : IEquatable<StringPool>
             return false;
         }
 
-        return _buckets.TryGetValue(span.Length, out Bucket bucket) && bucket.Contains(span);
+        return TryGetBucket(span.Length, out Bucket bucket) && bucket.Contains(span);
     }
 
     [Pure]
@@ -116,29 +117,45 @@ public sealed class StringPool : IEquatable<StringPool>
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
             ReadOnlySpan<char> chars = rentedCharBuffer[..charsWritten];
-            return _buckets.TryGetValue(chars.Length, out bucket) && bucket.Contains(chars);
+            return TryGetBucket(chars.Length, out bucket) && bucket.Contains(chars);
         }
 
         Span<char> charBuffer = stackalloc char[bytes.Length];
         charsWritten = encoding.GetChars(bytes, charBuffer);
         charBuffer = charBuffer[..charsWritten];
-        return _buckets.TryGetValue(charBuffer.Length, out bucket) && bucket.Contains(charBuffer);
+        return TryGetBucket(charsWritten, out bucket) && bucket.Contains(charBuffer);
     }
 
     public void Reset()
     {
-        _buckets.Clear();
+        lock (_buckets)
+        {
+            _buckets.Clear();
+        }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetOrAddBucket(int stringLength)
     {
-        ref Bucket bucket = ref CollectionsMarshal.GetValueRefOrAddDefault(_buckets, stringLength, out bool bucketExists);
-        if (!bucketExists)
+        if (TryGetBucket(stringLength, out Bucket bucket))
         {
-            bucket = new();
+            return bucket;
+        }
+
+        bucket = new();
+        lock (_buckets)
+        {
+            _buckets.AddOrSet(stringLength, bucket);
         }
 
         return bucket;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool TryGetBucket(int stringLength, out Bucket bucket)
+    {
+        // ReSharper disable once InconsistentlySynchronizedField
+        return _buckets.TryGetValue(stringLength, out bucket);
     }
 
     [Pure]
@@ -180,21 +197,29 @@ public sealed class StringPool : IEquatable<StringPool>
         public string GetOrAdd(ReadOnlySpan<char> span)
         {
             int spanHash = string.GetHashCode(span);
-            ref string? str = ref CollectionsMarshal.GetValueRefOrAddDefault(_strings, spanHash, out bool stringExists);
-            if (stringExists)
+            if (_strings.TryGetValue(spanHash, out string? str))
             {
                 Debug.Assert(str is not null);
                 return str;
             }
 
             str = new(span);
+            lock (_strings)
+            {
+                _strings.AddOrSet(spanHash, str);
+            }
+
+            Debug.Assert(str is not null);
             return str;
         }
 
         public void Add(string value)
         {
             int spanHash = string.GetHashCode(value);
-            _strings.TryAdd(spanHash, value);
+            lock (_strings)
+            {
+                _strings.AddOrSet(spanHash, value);
+            }
         }
 
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
