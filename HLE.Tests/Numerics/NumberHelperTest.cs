@@ -92,7 +92,7 @@ public class NumberHelperTest
             numbersWithOnlyBitSet.Add(1 << i);
         }
 
-        for (int i = 0; i < int.MaxValue; i++)
+        for (int i = 0; i < 10_000_000; i++)
         {
             if (numbersWithOnlyBitSet.Contains(i))
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -739,5 +740,13 @@ public static class CollectionHelper
     public static void AddOrSet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
     {
         CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out _) = value;
+    }
+
+    public static void AddOrSet<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
+    {
+        if (!dictionary.TryAdd(key, value))
+        {
+            dictionary[key] = value;
+        }
     }
 }

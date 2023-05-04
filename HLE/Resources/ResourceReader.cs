@@ -13,7 +13,7 @@ namespace HLE.Resources;
 
 public sealed class ResourceReader : ICopyable<string>, IEquatable<ResourceReader>
 {
-    public int Count { get; private set; }
+    public int Count => _resources.Count;
 
     private readonly Assembly _assembly;
     private readonly string _assemblyName;
@@ -63,7 +63,6 @@ public sealed class ResourceReader : ICopyable<string>, IEquatable<ResourceReade
             return null;
         }
 
-        Count++;
         using StreamReader reader = new(stream);
         resource = reader.ReadToEnd();
         return resource;

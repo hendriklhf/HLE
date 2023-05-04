@@ -55,6 +55,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     private protected readonly string? _oAuthToken;
     private protected readonly (string Url, int Port) _url;
 
+    // ReSharper disable once InconsistentNaming
     private protected const string _newLine = "\r\n";
 
     private readonly bool _isVerifiedBot;

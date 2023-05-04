@@ -41,7 +41,11 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     private const int _minimumGrowth = 100;
 
-    public PoolBufferStringBuilder(int initialBufferSize = 100)
+    public PoolBufferStringBuilder()
+    {
+    }
+
+    public PoolBufferStringBuilder(int initialBufferSize)
     {
         _buffer = ArrayPool<char>.Shared.Rent(initialBufferSize);
     }

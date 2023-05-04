@@ -1,0 +1,61 @@
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Threading.Tasks;
+using HLE.Http;
+using HLE.Strings;
+using HLE.Twitch.Api.Helix.Models;
+using HLE.Twitch.Api.Helix.Models.Responses;
+
+namespace HLE.Twitch.Api.Helix;
+
+public sealed partial class TwitchApi
+{
+    public async ValueTask<Emote[]> GetGlobalEmotesAsync()
+    {
+        if (TryGetGlobalEmotesFromCache(out Emote[]? emotes))
+        {
+            return emotes;
+        }
+
+        using UrlBuilder urlBuilder = new(_apiBaseUrl, "chat/emotes/global");
+        using HttpContentBytes response = await ExecuteRequest(StringPool.Shared.GetOrAdd(urlBuilder.WrittenSpan));
+        GetResponse<Emote> getResponse = JsonSerializer.Deserialize<GetResponse<Emote>>(response.Bytes.Span);
+        if (getResponse.Items.Length == 0)
+        {
+            throw new InvalidOperationException("An unknown error occurred. The response contained zero emotes.");
+        }
+
+        emotes = getResponse.Items;
+        Cache?.AddGlobalEmotes(emotes);
+        return emotes;
+    }
+
+    public async ValueTask<ChannelEmote[]> GetChannelEmotesAsync(long channelId)
+    {
+        if (TryGetChannelEmotesFromCache(channelId, out ChannelEmote[]? emotes))
+        {
+            return emotes;
+        }
+
+        using UrlBuilder urlBuilder = new(_apiBaseUrl, "chat/emotes");
+        urlBuilder.AppendParameter("broadcaster_id", channelId);
+        using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
+        GetResponse<ChannelEmote> getResponse = JsonSerializer.Deserialize<GetResponse<ChannelEmote>>(response.Bytes.Span);
+        emotes = getResponse.Items;
+        Cache?.AddChannelEmotes(channelId, emotes);
+        return emotes;
+    }
+
+    private bool TryGetGlobalEmotesFromCache([MaybeNullWhen(false)] out Emote[] emotes)
+    {
+        emotes = null;
+        return Cache?.TryGetGlobalEmotes(out emotes) == true;
+    }
+
+    private bool TryGetChannelEmotesFromCache(long channelId, [MaybeNullWhen(false)] out ChannelEmote[] emotes)
+    {
+        emotes = null;
+        return Cache?.TryGetChannelEmotes(channelId, out emotes) == true;
+    }
+}

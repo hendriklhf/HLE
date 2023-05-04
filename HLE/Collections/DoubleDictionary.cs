@@ -64,6 +64,18 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         _secondaryKeyTranslations = new(capacity);
     }
 
+    public DoubleDictionary(IEqualityComparer<TPrimaryKey> primaryKeyComparer, IEqualityComparer<TSecondaryKey> secondaryKeyComparer)
+    {
+        _values = new(primaryKeyComparer);
+        _secondaryKeyTranslations = new(secondaryKeyComparer);
+    }
+
+    public DoubleDictionary(int capacity, IEqualityComparer<TPrimaryKey> primaryKeyComparer, IEqualityComparer<TSecondaryKey> secondaryKeyComparer)
+    {
+        _values = new(capacity, primaryKeyComparer);
+        _secondaryKeyTranslations = new(capacity, secondaryKeyComparer);
+    }
+
     public void Add(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
     {
         _values.Add(primaryKey, value);

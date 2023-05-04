@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -11,7 +11,7 @@ namespace HLE.Strings;
 
 public sealed class RegexPool : IEquatable<RegexPool>
 {
-    private readonly Dictionary<int, Bucket> _buckets = new();
+    private readonly ConcurrentDictionary<int, Bucket> _buckets = new();
 
     public static RegexPool Shared { get; } = new();
 
@@ -62,11 +62,7 @@ public sealed class RegexPool : IEquatable<RegexPool>
         }
 
         bucket = new();
-        lock (_buckets)
-        {
-            _buckets.AddOrSet(patternLength, bucket);
-        }
-
+        _buckets.AddOrSet(patternLength, bucket);
         return bucket;
     }
 
@@ -106,7 +102,7 @@ public sealed class RegexPool : IEquatable<RegexPool>
 
     private readonly struct Bucket
     {
-        private readonly Dictionary<int, Regex> _regexes = new();
+        private readonly ConcurrentDictionary<int, Regex> _regexes = new();
 
         public Bucket()
         {
@@ -115,34 +111,25 @@ public sealed class RegexPool : IEquatable<RegexPool>
         public Regex GetOrAdd(string pattern, RegexOptions options, TimeSpan timeout)
         {
             int regexHash = BuildRegexHash(pattern, options, timeout);
-            // ReSharper disable once InconsistentlySynchronizedField
             if (_regexes.TryGetValue(regexHash, out Regex? regex))
             {
                 return regex;
             }
 
             regex = new(pattern, options, timeout);
-            lock (_regexes)
-            {
-                _regexes.AddOrSet(regexHash, regex);
-            }
-
+            _regexes.AddOrSet(regexHash, regex);
             return regex;
         }
 
         public void Add(Regex regex)
         {
             int regexHash = BuildRegexHash(regex);
-            lock (_regexes)
-            {
-                _regexes.AddOrSet(regexHash, regex);
-            }
+            _regexes.AddOrSet(regexHash, regex);
         }
 
         public bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
             int regexHash = BuildRegexHash(pattern, options, timeout);
-            // ReSharper disable once InconsistentlySynchronizedField
             return _regexes.TryGetValue(regexHash, out regex);
         }
 

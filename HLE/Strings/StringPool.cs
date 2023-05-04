@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -128,10 +128,7 @@ public sealed class StringPool : IEquatable<StringPool>
 
     public void Reset()
     {
-        lock (_buckets)
-        {
-            _buckets.Clear();
-        }
+        _buckets.Clear();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,18 +140,13 @@ public sealed class StringPool : IEquatable<StringPool>
         }
 
         bucket = new();
-        lock (_buckets)
-        {
-            _buckets.AddOrSet(stringLength, bucket);
-        }
-
+        _buckets.AddOrSet(stringLength, bucket);
         return bucket;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryGetBucket(int stringLength, out Bucket bucket)
     {
-        // ReSharper disable once InconsistentlySynchronizedField
         return _buckets.TryGetValue(stringLength, out bucket);
     }
 
@@ -188,7 +180,7 @@ public sealed class StringPool : IEquatable<StringPool>
 
     private readonly struct Bucket
     {
-        private readonly Dictionary<int, string> _strings = new();
+        private readonly ConcurrentDictionary<int, string> _strings = new();
 
         public Bucket()
         {
@@ -199,27 +191,18 @@ public sealed class StringPool : IEquatable<StringPool>
             int spanHash = string.GetHashCode(span);
             if (_strings.TryGetValue(spanHash, out string? str))
             {
-                Debug.Assert(str is not null);
                 return str;
             }
 
             str = new(span);
-            lock (_strings)
-            {
-                _strings.AddOrSet(spanHash, str);
-            }
-
-            Debug.Assert(str is not null);
+            _strings.AddOrSet(spanHash, str);
             return str;
         }
 
         public void Add(string value)
         {
             int spanHash = string.GetHashCode(value);
-            lock (_strings)
-            {
-                _strings.AddOrSet(spanHash, value);
-            }
+            _strings.AddOrSet(spanHash, value);
         }
 
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
