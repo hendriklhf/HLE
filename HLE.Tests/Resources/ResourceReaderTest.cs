@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using HLE.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -16,8 +17,8 @@ public class ResourceReaderTest
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            string? resource = reader.Read($"Resources.Resource{i}");
-            resources.Add(resource);
+            byte[]? resource = reader.Read($"Resources.Resource{i}");
+            resources.Add(Encoding.UTF8.GetString(resource!));
         }
 
         Assert.IsTrue(resources.Count(r => r is not null) == 3);
@@ -33,8 +34,8 @@ public class ResourceReaderTest
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            string? resource = reader.Read($"Resources.Resource{i}");
-            resources.Add(resource);
+            byte[]? resource = reader.Read($"Resources.Resource{i}");
+            resources.Add(Encoding.UTF8.GetString(resource!));
         }
 
         Assert.IsTrue(resources.Count(r => r is not null) == 3);
