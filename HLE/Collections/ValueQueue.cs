@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
 
-public ref struct Queue<T>
+public ref struct ValueQueue<T>
 {
     public readonly int Count => _count;
 
@@ -16,11 +16,11 @@ public ref struct Queue<T>
     private int _enqueueIndex;
     private int _dequeueIndex;
 
-    public Queue()
+    public ValueQueue()
     {
     }
 
-    public Queue(Span<T> queue)
+    public ValueQueue(Span<T> queue)
     {
         _queue = queue;
         _lastIndex = queue.Length - 1;
@@ -116,7 +116,7 @@ public ref struct Queue<T>
         return _queue[_dequeueIndex.._enqueueIndex].ToArray();
     }
 
-    public static implicit operator Queue<T>(Span<T> queue) => new(queue);
+    public static implicit operator ValueQueue<T>(Span<T> queue) => new(queue);
 
-    public static implicit operator Queue<T>(T[] queue) => new(queue);
+    public static implicit operator ValueQueue<T>(T[] queue) => new(queue);
 }

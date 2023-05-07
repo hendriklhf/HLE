@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
 
-public ref struct Stack<T>
+public ref struct ValueStack<T>
 {
     public readonly int Count => _count;
 
@@ -13,11 +13,11 @@ public ref struct Stack<T>
     private readonly Span<T> _stack = Span<T>.Empty;
     private int _count;
 
-    public Stack()
+    public ValueStack()
     {
     }
 
-    public Stack(Span<T> stack, int count = 0)
+    public ValueStack(Span<T> stack, int count = 0)
     {
         _stack = stack;
         _count = count;
@@ -73,7 +73,7 @@ public ref struct Stack<T>
         return _stack[.._count].ToArray();
     }
 
-    public static implicit operator Stack<T>(Span<T> stack) => new(stack);
+    public static implicit operator ValueStack<T>(Span<T> stack) => new(stack);
 
-    public static implicit operator Stack<T>(T[] stack) => new(stack);
+    public static implicit operator ValueStack<T>(T[] stack) => new(stack);
 }

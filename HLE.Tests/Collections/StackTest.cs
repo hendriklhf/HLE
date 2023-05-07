@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,7 +10,7 @@ public class StackTest
     [TestMethod]
     public void PushTest()
     {
-        Stack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = stackalloc int[5];
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
@@ -20,7 +20,7 @@ public class StackTest
     [TestMethod]
     public void PopTest()
     {
-        Stack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = stackalloc int[5];
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
@@ -34,7 +34,7 @@ public class StackTest
     [TestMethod]
     public void PeekTest()
     {
-        Stack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = stackalloc int[5];
         stack.Push(5);
         Assert.AreEqual(5, stack.Peek());
         Assert.AreEqual(1, stack.Count);
@@ -43,7 +43,7 @@ public class StackTest
     [TestMethod]
     public void ClearTest()
     {
-        Stack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = stackalloc int[5];
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
@@ -54,7 +54,7 @@ public class StackTest
     [TestMethod]
     public void PushAndPopTest()
     {
-        Stack<int> stack = stackalloc int[50];
+        ValueStack<int> stack = stackalloc int[50];
         for (int i = 0; i < 10_000; i++)
         {
             int count = Random.Shared.Next(0, 50);

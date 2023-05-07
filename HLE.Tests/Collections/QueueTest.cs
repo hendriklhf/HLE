@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,7 +10,7 @@ public class QueueTest
     [TestMethod]
     public void EnqueueTest()
     {
-        Queue<int> queue = stackalloc int[5];
+        ValueQueue<int> queue = stackalloc int[5];
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
@@ -20,7 +20,7 @@ public class QueueTest
     [TestMethod]
     public void DequeueTest()
     {
-        Queue<int> queue = stackalloc int[5];
+        ValueQueue<int> queue = stackalloc int[5];
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
@@ -38,7 +38,7 @@ public class QueueTest
     [TestMethod]
     public void PeekTest()
     {
-        Queue<int> queue = stackalloc int[1];
+        ValueQueue<int> queue = stackalloc int[1];
         queue.Enqueue(1);
 
         Assert.AreEqual(1, queue.Peek());
@@ -48,7 +48,7 @@ public class QueueTest
     [TestMethod]
     public void ClearTest()
     {
-        Queue<int> queue = stackalloc int[5];
+        ValueQueue<int> queue = stackalloc int[5];
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
@@ -61,7 +61,7 @@ public class QueueTest
     [TestMethod]
     public void EnqueueAndDequeueTest()
     {
-        Queue<int> queue = stackalloc int[50];
+        ValueQueue<int> queue = stackalloc int[50];
         for (int i = 0; i < 10_000; i++)
         {
             int count = Random.Shared.Next(0, 50);
