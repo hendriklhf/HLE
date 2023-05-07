@@ -55,7 +55,7 @@ public static class CollectionHelper
         }
 
         ref T firstItem = ref MemoryMarshal.GetReference(span);
-        int randomIdx = HLE.Random.Int(0, spanLength - 1);
+        int randomIdx = System.Random.Shared.Next(0, spanLength);
         return ref Unsafe.Add(ref firstItem, randomIdx)!;
     }
 
@@ -474,11 +474,10 @@ public static class CollectionHelper
             return;
         }
 
-        int maxIdx = span.Length - 1;
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < span.Length; i++)
         {
-            int randomIdx = HLE.Random.Int(0, maxIdx);
+            int randomIdx = System.Random.Shared.Next(0, span.Length);
             ref T item = ref Unsafe.Add(ref firstItem, i);
             (item, span[randomIdx]) = (span[randomIdx], item);
         }
@@ -514,7 +513,7 @@ public static class CollectionHelper
         if (!MemoryHelper.UseStackAlloc<int>(length))
         {
             using RentedArray<int> randomIndicesBuffer = new(length);
-            HLE.Random.Fill(randomIndicesBuffer.Span);
+            System.Random.Shared.Fill(randomIndicesBuffer.Span);
             for (int i = 0; i < length; i++)
             {
                 int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % span.Length;
@@ -525,7 +524,7 @@ public static class CollectionHelper
         }
 
         Span<int> randomIndices = stackalloc int[length];
-        HLE.Random.Fill(randomIndices);
+        System.Random.Shared.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
             int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % span.Length;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
@@ -80,12 +79,5 @@ public static unsafe class MemoryHelper
     public static T? GetReferenceFromRawDataPointer<T>(nuint pointer) where T : class?
     {
         return *(T*)&pointer;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T* GetPointer<T>(this T[] array, int offset = 0)
-    {
-        return (T*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(array)) + offset;
     }
 }

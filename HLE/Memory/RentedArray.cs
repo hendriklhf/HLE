@@ -31,6 +31,10 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public T[] Array => _array;
 
+    public ref T Ref => ref MemoryMarshal.GetArrayDataReference(_array);
+
+    public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref Ref);
+
     public int Length => _array.Length;
 
     private readonly T[] _array = System.Array.Empty<T>();
@@ -53,7 +57,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), 0));
+        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
     }
 
     public void CopyTo(Memory<T> destination)

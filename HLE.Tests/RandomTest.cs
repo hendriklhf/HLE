@@ -1,30 +1,24 @@
+using System;
 using System.Linq;
+using System.Security.Cryptography;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-#pragma warning disable CS8794
-#pragma warning disable CS0183
 
 namespace HLE.Tests;
 
 [TestClass]
 public class RandomTest
 {
+    private readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
+
+    private const int _loopIterations = 100_000;
+
     [TestMethod]
     public void CharTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            char c = Random.Char();
-            Assert.IsTrue(c is >= (char)32 and <= (char)126);
-        }
-    }
-
-    [TestMethod]
-    public void BoolTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.Bool() is true or false);
+            char c = Random.Shared.NextChar((char)32, (char)127);
+            Assert.IsTrue(c is >= (char)32 and < (char)127);
         }
     }
 
@@ -32,209 +26,147 @@ public class RandomTest
     public void StringTest()
     {
         const byte strLength = 100;
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            string s = Random.String(strLength);
+            string s = Random.Shared.NextString(strLength, (char)32, (char)127);
             Assert.AreEqual(strLength, s.Length);
-            Assert.IsTrue(s.All(c => c is >= (char)32 and <= (char)126));
+            Assert.IsTrue(s.All(c => c is >= (char)32 and < (char)127));
         }
     }
 
     [TestMethod]
     public void ByteTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.Byte() is byte);
+            Assert.IsTrue(Random.Shared.NextUInt8(20, 150) is >= 20 and < 150);
         }
     }
 
     [TestMethod]
     public void SByteTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.SByte() is sbyte);
+            Assert.IsTrue(Random.Shared.NextInt8(-50, 120) is >= -50 and < 120);
         }
     }
 
     [TestMethod]
     public void ShortTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.Short() is short);
+            Assert.IsTrue(Random.Shared.NextInt16(-50, 20200) is >= -50 and < 20200);
         }
     }
 
     [TestMethod]
     public void UShortTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.UShort() is ushort);
-        }
-    }
-
-    [TestMethod]
-    public void IntTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.Int() is int);
+            Assert.IsTrue(Random.Shared.NextUInt16(1000, 55555) is >= 1000 and < 55555);
         }
     }
 
     [TestMethod]
     public void UIntTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.UInt() is uint);
-        }
-    }
-
-    [TestMethod]
-    public void LongTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.Long() is long);
-        }
-    }
-
-    [TestMethod]
-    public void FloatTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.Float() is float);
-        }
-    }
-
-    [TestMethod]
-    public void DoubleTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.Double() is double);
-        }
-    }
-
-    [TestMethod]
-    public void StrongBoolTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.StrongBool() is bool);
+            Assert.IsTrue(Random.Shared.NextUInt32(100_000, 4_000_000) is >= 100_000 and < 4_000_000);
         }
     }
 
     [TestMethod]
     public void StrongByteTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongByte() is byte);
+            Assert.IsTrue(_rng.GetUInt8(55, 220) is >= 55 and < 220);
         }
     }
 
     [TestMethod]
     public void StrongSByteTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongSByte() is sbyte);
+            Assert.IsTrue(_rng.GetInt8(-120, 5) is >= -120 and < 5);
         }
     }
 
     [TestMethod]
     public void StrongShortTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongShort() is short);
+            Assert.IsTrue(_rng.GetInt16(-20_000, 20000) is >= -20_000 and < 20_000);
         }
     }
 
     [TestMethod]
     public void StrongUShortTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongUShort() is ushort);
+            Assert.IsTrue(_rng.GetUInt16(20_000, 60_000) is >= 20_000 and < 60_000);
         }
     }
 
     [TestMethod]
     public void StrongIntTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongInt() is int);
+            Assert.IsTrue(_rng.GetInt32(-2_000_000, 1000) is >= -2_000_000 and < 1000);
         }
     }
 
     [TestMethod]
     public void StrongUIntTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongUInt() is uint);
+            Assert.IsTrue(_rng.GetUInt32(20_000_000) is >= 20_000_000 and < uint.MaxValue);
         }
     }
 
     [TestMethod]
     public void StrongLongTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongLong() is long);
+            long value = _rng.GetInt64(-500, 500);
+            Assert.IsTrue(value is >= -500 and < 500);
         }
     }
 
     [TestMethod]
     public void StrongULongTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongULong() is ulong);
-        }
-    }
-
-    [TestMethod]
-    public void StrongFloatTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.StrongFloat() is float);
-        }
-    }
-
-    [TestMethod]
-    public void StrongDoubleTest()
-    {
-        for (int i = 0; i < 100_000; i++)
-        {
-            Assert.IsTrue(Random.StrongDouble() is double);
+            Assert.IsTrue(_rng.GetUInt64(0, 50) < 50);
         }
     }
 
     [TestMethod]
     public void StrongCharTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.IsTrue(Random.StrongChar() is char);
+            Assert.IsTrue(_rng.GetChar((char)32, (char)127) is >= (char)32 and < (char)127);
         }
     }
 
     [TestMethod]
     public void StrongStringTest()
     {
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < _loopIterations; i++)
         {
-            string str = Random.StrongString(50);
+            string str = _rng.GetString(50);
             Assert.AreEqual(50, str.Length);
         }
     }

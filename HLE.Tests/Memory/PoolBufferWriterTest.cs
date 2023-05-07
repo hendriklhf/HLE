@@ -68,7 +68,7 @@ public class PoolBufferWriterTest
                 writer.Clear();
             }
 
-            string str = Random.String(Random.Int(25, 2000));
+            string str = Random.Shared.NextString(Random.Shared.Next(25, 2000), (char)32, (char)126);
             str.CopyTo(writer.GetSpan(str.Length));
             writer.Advance(str.Length);
         }

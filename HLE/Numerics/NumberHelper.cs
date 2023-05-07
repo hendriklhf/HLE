@@ -144,7 +144,7 @@ public static class NumberHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe T SetSignBitToZero<T>(T number) where T : ISignedNumber<T>, IBitwiseOperators<T, T, T>
+    public static unsafe T SetSignBitToZero<T>(T number) where T : IBinaryInteger<T>, ISignedNumber<T>
     {
         return sizeof(T) switch
         {
@@ -160,5 +160,55 @@ public static class NumberHelper
     public static bool IsOnlyOneBitSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
     {
         return (number & (number - T.One)) == T.Zero && number != T.Zero;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsOnlyOneBitOrZeroSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
+    {
+        return number == T.Zero || (number & (number - T.One)) == T.Zero;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe T BringNumberIntoRange<T>(T number, T min, T max) where T : INumber<T>
+    {
+        if (min == max)
+        {
+            return min;
+        }
+
+        if (sizeof(T) == sizeof(Int128))
+        {
+            throw new NotSupportedException();
+        }
+
+        switch (sizeof(T))
+        {
+            case sizeof(byte):
+                short numberAsInt16 = short.CreateTruncating(number);
+                short minAsInt16 = short.CreateTruncating(min);
+                short maxAsInt16 = short.CreateTruncating(max);
+                short rangeAsInt16 = short.Abs(short.CreateTruncating(maxAsInt16 - minAsInt16));
+                return T.CreateTruncating(int.Abs(numberAsInt16 % rangeAsInt16) + minAsInt16);
+            case sizeof(short):
+                int numberAsInt32 = int.CreateTruncating(number);
+                int minAsInt32 = int.CreateTruncating(min);
+                int maxAsInt32 = int.CreateTruncating(max);
+                int rangeAsInt32 = int.Abs(int.CreateTruncating(maxAsInt32 - minAsInt32));
+                return T.CreateTruncating(int.Abs(numberAsInt32 % rangeAsInt32) + minAsInt32);
+            case sizeof(int):
+                long numberAsInt64 = long.CreateTruncating(number);
+                long minAsInt64 = long.CreateTruncating(min);
+                long maxAsInt64 = long.CreateTruncating(max);
+                long rangeAsInt64 = long.Abs(long.CreateTruncating(maxAsInt64 - minAsInt64));
+                return T.CreateTruncating(long.Abs(numberAsInt64 % rangeAsInt64) + minAsInt64);
+            case sizeof(long):
+                Int128 numberAsInt128 = Int128.CreateTruncating(number);
+                Int128 minAsInt128 = Int128.CreateTruncating(min);
+                Int128 maxAsInt128 = Int128.CreateTruncating(max);
+                Int128 rangeAsInt128 = Int128.Abs(Int128.CreateTruncating(maxAsInt128 - minAsInt128));
+                return T.CreateTruncating(Int128.Abs(numberAsInt128 % rangeAsInt128) + minAsInt128);
+        }
+
+        throw new UnreachableException();
     }
 }

@@ -66,7 +66,6 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     private const string _privMsgPrefix = "PRIVMSG ";
     private const string _joinPrefix = "JOIN ";
     private const string _partPrefix = "PART ";
-    private const string _spaceColon = " :";
     private const byte _maxChannelNameLength = 26; // 25 for the name + 1 for the '#'
     private const ushort _maxMessageLength = 500;
 
@@ -180,7 +179,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
         using PoolBufferStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
-        messageBuilder.Append(_privMsgPrefix, channel.Span, _spaceColon, message.Span);
+        messageBuilder.Append(_privMsgPrefix, channel.Span, " :", message.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
 

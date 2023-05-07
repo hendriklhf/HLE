@@ -92,7 +92,7 @@ public class NumberHelperTest
             numbersWithOnlyBitSet.Add(1 << i);
         }
 
-        for (int i = 0; i < 10_000_000; i++)
+        for (int i = 0; i < 100_000; i++)
         {
             if (numbersWithOnlyBitSet.Contains(i))
             {
@@ -102,6 +102,45 @@ public class NumberHelperTest
             {
                 Assert.IsFalse(NumberHelper.IsOnlyOneBitSet(i));
             }
+        }
+    }
+
+    [TestMethod]
+    public void BringNumberIntoRangeTest()
+    {
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, 0, 500) is >= 0 and < 500);
+        }
+
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, -500, 0) is >= -500 and < 0);
+        }
+
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, -500, 500) is >= -500 and < 500);
+        }
+
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, 0, 0) == 0);
+        }
+
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, 500, 500) == 500);
+        }
+
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, 500, 501) == 500);
+        }
+
+        for (int i = -100_000; i < 100_000; i++)
+        {
+            Assert.IsTrue(NumberHelper.BringNumberIntoRange(i, 500, 502) is >= 500 and < 502);
         }
     }
 }

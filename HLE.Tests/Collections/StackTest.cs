@@ -1,4 +1,5 @@
-﻿using HLE.Collections;
+﻿using System;
+using HLE.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.Collections;
@@ -56,10 +57,10 @@ public class StackTest
         Stack<int> stack = stackalloc int[50];
         for (int i = 0; i < 10_000; i++)
         {
-            int count = Random.Int(0, 50);
+            int count = Random.Shared.Next(0, 50);
             for (int j = 0; j < count; j++)
             {
-                stack.Push(Random.Int());
+                stack.Push(Random.Shared.Next());
             }
 
             for (int j = 0; j < count; j++)

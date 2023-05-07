@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Memory;
 using HLE.Numerics;
 using HLE.Strings;
 
@@ -224,7 +223,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe Badge[] GetBadges(ReadOnlySpan<char> value)
+    private static Badge[] GetBadges(ReadOnlySpan<char> value)
     {
         if (value.Length == 0)
         {
@@ -232,7 +231,6 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         }
 
         Badge[] result = new Badge[value.CharCount(',') + 1];
-        Badge* badges = result.GetPointer();
         int badgeCount = 0;
         while (value.Length > 0)
         {
@@ -242,7 +240,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
             int slashIndex = info.IndexOf('/');
             string name = StringPool.Shared.GetOrAdd(info[..slashIndex]);
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..]);
-            badges[badgeCount++] = new(name, level);
+            result[badgeCount++] = new(name, level);
         }
 
         return result;
