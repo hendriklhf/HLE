@@ -915,7 +915,8 @@ public static class StringHelper
     }
 
     /// <summary>
-    /// Returns the UTF-16 bytes of a string by reinterpreting the chars the string consists of.
+    /// Returns the UTF-16 bytes of a string by reinterpreting the chars the string consists of.<br/>
+    /// Basically returns the same as <i>Encoding.Unicode.GetBytes(str)</i> without allocating.
     /// </summary>
     /// <param name="str">The string the bytes will be returned of.</param>
     /// <returns>A span of UTF-16 bytes of the string.</returns>

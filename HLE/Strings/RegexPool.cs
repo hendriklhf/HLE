@@ -17,7 +17,7 @@ public sealed class RegexPool : IEquatable<RegexPool>
 
     public Regex GetOrAdd([StringSyntax(StringSyntaxAttribute.Regex)] string pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
     {
-        if (timeout == default)
+        if (timeout <= TimeSpan.Zero)
         {
             timeout = Regex.InfiniteMatchTimeout;
         }

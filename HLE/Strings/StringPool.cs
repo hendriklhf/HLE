@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -12,7 +11,7 @@ namespace HLE.Strings;
 
 public sealed class StringPool : IEquatable<StringPool>
 {
-    private readonly Dictionary<int, Bucket> _buckets = new();
+    private readonly ConcurrentDictionary<int, Bucket> _buckets = new();
 
     public static StringPool Shared { get; } = new();
 

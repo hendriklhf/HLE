@@ -11,7 +11,8 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>> where TPrimaryKey : notnull where TSecondaryKey : notnull
+public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+    where TPrimaryKey : notnull where TSecondaryKey : notnull
 {
     public TValue this[TPrimaryKey key] => _values[key];
 
