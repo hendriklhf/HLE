@@ -1,4 +1,4 @@
-﻿namespace HLE.Twitch.Api.Helix.Models;
+namespace HLE.Twitch.Api.Helix.Models;
 
 public enum EmoteTier
 {

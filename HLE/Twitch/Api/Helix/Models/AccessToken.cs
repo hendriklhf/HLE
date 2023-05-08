@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text.Json.Serialization;
 using HLE.Twitch.Api.JsonConverters;
 
