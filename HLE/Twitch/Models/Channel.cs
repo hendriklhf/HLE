@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -92,7 +93,7 @@ public sealed class Channel : IEquatable<Channel>
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(roomstateFlag));
+                    throw new InvalidEnumArgumentException(nameof(roomstateFlag), (int)roomstateFlag, typeof(ChangedRoomstateFlag));
             }
         }
     }

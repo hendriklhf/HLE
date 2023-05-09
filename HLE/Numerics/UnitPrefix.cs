@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace HLE.Numerics;
 
 /// <summary>
-/// A struct that represents a unit prefix.
+/// A class that represents a unit prefix.
 /// </summary>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("{Name}")]
@@ -164,12 +164,12 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
         return HashCode.Combine(Name, Symbol, Value);
     }
 
-    public static bool operator ==(UnitPrefix left, UnitPrefix right)
+    public static bool operator ==(UnitPrefix? left, UnitPrefix? right)
     {
-        return left.Equals(right);
+        return Equals(left, right);
     }
 
-    public static bool operator !=(UnitPrefix left, UnitPrefix right)
+    public static bool operator !=(UnitPrefix? left, UnitPrefix? right)
     {
         return !(left == right);
     }

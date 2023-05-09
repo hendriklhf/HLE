@@ -5,7 +5,9 @@ namespace HLE.Http;
 
 public readonly struct HttpContentBytes : IDisposable, IEquatable<HttpContentBytes>
 {
-    public ReadOnlyMemory<byte> Bytes => _contentBuffer.Memory[.._contentLength];
+    public ReadOnlySpan<byte> Span => _contentBuffer[.._contentLength];
+
+    public ReadOnlyMemory<byte> Memory => _contentBuffer.Memory[.._contentLength];
 
     private readonly RentedArray<byte> _contentBuffer = RentedArray<byte>.Empty;
     private readonly int _contentLength;

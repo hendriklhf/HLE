@@ -53,10 +53,10 @@ public sealed class BttvApi : IEquatable<BttvApi>
 
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Bytes.Span);
+            throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Span);
         }
 
-        GetUserResponse userResponse = JsonSerializer.Deserialize<GetUserResponse>(httpContentBytes.Bytes.Span);
+        GetUserResponse userResponse = JsonSerializer.Deserialize<GetUserResponse>(httpContentBytes.Span);
         if (userResponse.ChannelEmotes.Length == 0 && userResponse.SharedEmotes.Length == 0)
         {
             return Array.Empty<Emote>();
@@ -90,10 +90,10 @@ public sealed class BttvApi : IEquatable<BttvApi>
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytes(contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Bytes.Span);
+            throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Span);
         }
 
-        emotes = JsonSerializer.Deserialize<Emote[]>(httpContentBytes.Bytes.Span) ?? throw new InvalidOperationException("The deserialization of the global emotes response failed and returned null.");
+        emotes = JsonSerializer.Deserialize<Emote[]>(httpContentBytes.Span) ?? throw new InvalidOperationException("The deserialization of the global emotes response failed and returned null.");
         Cache?.AddGlobalEmotes(emotes);
         return emotes;
     }

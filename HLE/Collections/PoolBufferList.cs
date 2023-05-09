@@ -218,7 +218,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     [Pure]
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is PoolBufferList<T> other && Equals(other);
     }
 
     [Pure]

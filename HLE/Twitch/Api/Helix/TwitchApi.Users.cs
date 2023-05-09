@@ -24,7 +24,7 @@ public sealed partial class TwitchApi
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "users", _apiBaseUrl.Length + "users".Length + 50);
         urlBuilder.AppendParameter("id", userId);
         using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
-        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Bytes.Span);
+        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Span);
         if (getResponse.Items.Length == 0)
         {
             return null;
@@ -50,7 +50,7 @@ public sealed partial class TwitchApi
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "users", _apiBaseUrl.Length + "users".Length + 50);
         urlBuilder.AppendParameter("login", username.Span);
         using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
-        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Bytes.Span);
+        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Span);
         if (getResponse.Items.Length == 0)
         {
             return null;
@@ -166,7 +166,7 @@ public sealed partial class TwitchApi
         }
 
         using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
-        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Bytes.Span);
+        GetResponse<User> getResponse = JsonSerializer.Deserialize<GetResponse<User>>(response.Span);
         int deserializedUserCount = getResponse.Items.Length;
         if (deserializedUserCount > 0)
         {

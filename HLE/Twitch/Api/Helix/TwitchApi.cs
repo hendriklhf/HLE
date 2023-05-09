@@ -61,7 +61,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         }
 
         HttpContentBytes httpContentBytes = await httpResponse.GetContentBytes(contentLength);
-        return JsonSerializer.Deserialize<AccessToken>(httpContentBytes.Bytes.Span);
+        return JsonSerializer.Deserialize<AccessToken>(httpContentBytes.Span);
     }
 
     private async ValueTask EnsureValidAccessToken()
@@ -87,7 +87,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         HttpContentBytes httpContentBytes = await httpResponse.GetContentBytes(contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"The request ({url}) failed with code {httpResponse.StatusCode} and delivered: {Encoding.UTF8.GetString(httpContentBytes.Bytes.Span)}");
+            throw new InvalidOperationException($"The request ({url}) failed with code {httpResponse.StatusCode} and delivered: {Encoding.UTF8.GetString(httpContentBytes.Span)}");
         }
 
         return httpContentBytes;
