@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
-namespace HLE.Collections;
+namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
@@ -22,29 +21,23 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     {
         set
         {
-            ref TValue valueRef = ref CollectionsMarshal.GetValueRefOrNullRef(_values, primaryKey);
-            if (Unsafe.IsNullRef(ref valueRef))
+            if (!_values.ContainsKey(primaryKey))
             {
                 throw new KeyNotFoundException("The primary key could not be found.");
             }
 
-            TValue oldValue = valueRef;
-            valueRef = value;
-
-            ref TPrimaryKey primaryKeyRef = ref CollectionsMarshal.GetValueRefOrNullRef(_secondaryKeyTranslations, secondaryKey);
-            if (Unsafe.IsNullRef(ref primaryKeyRef))
+            if (!_secondaryKeyTranslations.TryGetValue(secondaryKey, out TPrimaryKey? secondaryKeyPartner))
             {
-                valueRef = oldValue;
                 throw new KeyNotFoundException("The secondary key could not be found.");
             }
 
-            if (!primaryKeyRef.Equals(primaryKey))
+            if (!secondaryKeyPartner.Equals(primaryKey))
             {
-                valueRef = oldValue;
                 throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
             }
 
-            primaryKeyRef = primaryKey;
+            _values[primaryKey] = value;
+            _secondaryKeyTranslations[secondaryKey] = primaryKey;
         }
     }
 
@@ -52,33 +45,31 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public IEnumerable<TValue> Values => _values.Values;
 
-    internal readonly Dictionary<TPrimaryKey, TValue> _values;
-    internal readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
+    internal readonly ConcurrentDictionary<TPrimaryKey, TValue> _values;
+    internal readonly ConcurrentDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
 
-    public DoubleDictionary(int capacity, IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+    public ConcurrentDoubleDictionary()
     {
-        _values = new(capacity, primaryKeyComparer);
-        _secondaryKeyTranslations = new(capacity, secondaryKeyComparer);
+        _values = new();
+        _secondaryKeyTranslations = new();
     }
 
-    public DoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+    public ConcurrentDoubleDictionary(int concurrencyLevel, int capacity, IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
     {
-        _values = new(primaryKeyComparer);
-        _secondaryKeyTranslations = new(secondaryKeyComparer);
+        _values = new(concurrencyLevel, capacity, primaryKeyComparer);
+        _secondaryKeyTranslations = new(concurrencyLevel, capacity, secondaryKeyComparer);
     }
 
-    public void Add(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
+    public ConcurrentDoubleDictionary(int capacity, IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
     {
-        _values.Add(primaryKey, value);
-        try
-        {
-            _secondaryKeyTranslations.Add(secondaryKey, primaryKey);
-        }
-        catch
-        {
-            _values.Remove(primaryKey);
-            throw;
-        }
+        _values = new(Environment.ProcessorCount, capacity, primaryKeyComparer);
+        _secondaryKeyTranslations = new(Environment.ProcessorCount, capacity, secondaryKeyComparer);
+    }
+
+    public ConcurrentDoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+    {
+        _values = new(Environment.ProcessorCount, 0, primaryKeyComparer);
+        _secondaryKeyTranslations = new(Environment.ProcessorCount, 0, secondaryKeyComparer);
     }
 
     public bool TryAdd(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
@@ -93,34 +84,23 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
             return true;
         }
 
-        _values.Remove(primaryKey);
+        _values.Remove(primaryKey, out _);
         return false;
     }
 
     public void AddOrSet(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
     {
-        ref TValue? valueRef = ref CollectionsMarshal.GetValueRefOrAddDefault(_values, primaryKey, out bool primaryKeyExists);
-        ref TPrimaryKey? primaryKeyRef = ref CollectionsMarshal.GetValueRefOrAddDefault(_secondaryKeyTranslations, secondaryKey, out bool secondaryKeyExists);
-
-        bool bothKeysExistAndOldPrimaryKeyEqualsNewPrimaryKey = primaryKeyExists && secondaryKeyExists && primaryKey.Equals(primaryKeyRef);
+        bool primaryKeyExists = _values.ContainsKey(primaryKey);
+        bool secondaryKeyExists = _secondaryKeyTranslations.TryGetValue(secondaryKey, out TPrimaryKey? secondaryKeyPartner);
+        bool bothKeysExistAndOldPrimaryKeyEqualsNewPrimaryKey = primaryKeyExists && secondaryKeyExists && primaryKey.Equals(secondaryKeyPartner);
         bool bothKeysDontExist = !primaryKeyExists && !secondaryKeyExists;
-        if (!bothKeysExistAndOldPrimaryKeyEqualsNewPrimaryKey && !bothKeysDontExist)
+        if (!bothKeysDontExist && !bothKeysExistAndOldPrimaryKeyEqualsNewPrimaryKey)
         {
-            if (!primaryKeyExists)
-            {
-                _values.Remove(primaryKey);
-            }
-
-            if (!secondaryKeyExists)
-            {
-                _secondaryKeyTranslations.Remove(secondaryKey);
-            }
-
             throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
         }
 
-        valueRef = value;
-        primaryKeyRef = primaryKey;
+        _values.AddOrSet(primaryKey, value);
+        _secondaryKeyTranslations.AddOrSet(secondaryKey, primaryKey);
     }
 
     public bool TryGetValue(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
@@ -148,11 +128,11 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
         if (!_secondaryKeyTranslations[secondaryKey].Equals(primaryKey))
         {
-            _values.Add(primaryKey, value);
+            _values.TryAdd(primaryKey, value);
             return false;
         }
 
-        _secondaryKeyTranslations.Remove(secondaryKey);
+        _secondaryKeyTranslations.Remove(secondaryKey, out _);
         return true;
     }
 
@@ -174,18 +154,6 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         return _secondaryKeyTranslations.ContainsKey(key);
     }
 
-    [Pure]
-    public bool ContainsValue(TValue value)
-    {
-        return _values.ContainsValue(value);
-    }
-
-    public void EnsureCapacity(int capacity)
-    {
-        _secondaryKeyTranslations.EnsureCapacity(capacity);
-        _values.EnsureCapacity(capacity);
-    }
-
     public IEnumerator<TValue> GetEnumerator()
     {
         return Values.GetEnumerator();
@@ -197,7 +165,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     }
 
     [Pure]
-    public bool Equals(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
+    public bool Equals(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
     {
         return ReferenceEquals(this, other);
     }
@@ -205,7 +173,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     [Pure]
     public override bool Equals(object? obj)
     {
-        return Equals(obj as DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>);
+        return obj is ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> other && Equals(other);
     }
 
     [Pure]
