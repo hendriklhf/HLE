@@ -19,12 +19,7 @@ public static class CollectionHelper
     [Pure]
     public static TContent? Random<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
     {
-        return collection switch
-        {
-            TContent[] array => Random(array),
-            List<TContent> list => Random(list),
-            _ => Random(collection.ToArray())
-        };
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? Random(span) : Random(collection.ToArray());
     }
 
     [Pure]
@@ -84,32 +79,32 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static IEnumerable<TContent> Replace<TCollection, TContent>(this TCollection collection, Func<TContent, bool> condition, TContent replacement) where TCollection : IEnumerable<TContent>
+    public static IEnumerable<TContent> Replace<TCollection, TContent>(this TCollection collection, Func<TContent, bool> predicate, TContent replacement) where TCollection : IEnumerable<TContent>
     {
         foreach (TContent item in collection)
         {
-            yield return condition(item) ? replacement : item;
+            yield return predicate(item) ? replacement : item;
         }
     }
 
     [Pure]
-    public static List<T> Replace<T>(this List<T> list, Func<T, bool> condition, T replacement)
+    public static List<T> Replace<T>(this List<T> list, Func<T, bool> predicate, T replacement)
     {
         List<T> copy = new(list);
-        Replace(CollectionsMarshal.AsSpan(copy), condition, replacement);
+        Replace(CollectionsMarshal.AsSpan(copy), predicate, replacement);
         return copy;
     }
 
     [Pure]
-    public static T[] Replace<T>(this T[] array, Func<T, bool> condition, T replacement)
+    public static T[] Replace<T>(this T[] array, Func<T, bool> predicate, T replacement)
     {
         T[] copy = new T[array.Length];
         Array.Copy(array, copy, array.Length);
-        Replace((Span<T>)copy, condition, replacement);
+        Replace((Span<T>)copy, predicate, replacement);
         return copy;
     }
 
-    public static void Replace<T>(this Span<T> span, Func<T, bool> condition, T replacement)
+    public static void Replace<T>(this Span<T> span, Func<T, bool> predicate, T replacement)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -121,7 +116,7 @@ public static class CollectionHelper
         for (int i = 0; i < spanLength; i++)
         {
             ref T item = ref Unsafe.Add(ref firstItem, i);
-            if (condition(item))
+            if (predicate(item))
             {
                 item = replacement;
             }
@@ -129,31 +124,31 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static unsafe TContent[] Replace<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> condition, TContent replacement) where TCollection : IEnumerable<TContent>
+    public static unsafe TContent[] Replace<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> predicate, TContent replacement) where TCollection : IEnumerable<TContent>
     {
         TContent[] array = collection.ToArray();
-        Replace((Span<TContent>)array, condition, replacement);
+        Replace((Span<TContent>)array, predicate, replacement);
         return array;
     }
 
     [Pure]
-    public static unsafe List<T> Replace<T>(this List<T> list, delegate*<T, bool> condition, T replacement)
+    public static unsafe List<T> Replace<T>(this List<T> list, delegate*<T, bool> predicate, T replacement)
     {
         List<T> copy = new(list);
-        Replace(CollectionsMarshal.AsSpan(copy), condition, replacement);
+        Replace(CollectionsMarshal.AsSpan(copy), predicate, replacement);
         return copy;
     }
 
     [Pure]
-    public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> condition, T replacement)
+    public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> predicate, T replacement)
     {
         T[] copy = new T[array.Length];
         Array.Copy(array, copy, array.Length);
-        Replace((Span<T>)copy, condition, replacement);
+        Replace((Span<T>)copy, predicate, replacement);
         return copy;
     }
 
-    public static unsafe void Replace<T>(this Span<T> span, delegate*<T, bool> condition, T replacement)
+    public static unsafe void Replace<T>(this Span<T> span, delegate*<T, bool> predicate, T replacement)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -165,7 +160,7 @@ public static class CollectionHelper
         for (int i = 0; i < spanLength; i++)
         {
             ref T item = ref Unsafe.Add(ref firstItem, i);
-            if (condition(item))
+            if (predicate(item))
             {
                 item = replacement;
             }
@@ -175,13 +170,13 @@ public static class CollectionHelper
     [Pure]
     public static TContent[][] Split<TCollection, TContent>(this TCollection collection, TContent separator) where TCollection : IEnumerable<TContent> where TContent : IEquatable<TContent>
     {
-        return Split((ReadOnlySpan<TContent>)collection.ToArray(), separator);
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? Split(span, separator) : Split((ReadOnlySpan<TContent>)collection.ToArray(), separator);
     }
 
     [Pure]
     public static T[][] Split<T>(this List<T> list, T separator) where T : IEquatable<T>
     {
-        return Split(CollectionsMarshal.AsSpan(list), separator);
+        return Split((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), separator);
     }
 
     [Pure]
@@ -240,13 +235,18 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, Func<TContent, bool> condition) where TCollection : IEnumerable<TContent>
+    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, Func<TContent, bool> predicate) where TCollection : IEnumerable<TContent>
     {
+        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span))
+        {
+            return IndicesOf(span, predicate);
+        }
+
         using PoolBufferList<int> indices = new(50, 25);
         int index = 0;
         foreach (TContent item in collection)
         {
-            if (condition(item))
+            if (predicate(item))
             {
                 indices.Add(index);
             }
@@ -258,37 +258,37 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this List<T> list, Func<T, bool> condition)
+    public static int[] IndicesOf<T>(this List<T> list, Func<T, bool> predicate)
     {
-        return IndicesOf(CollectionsMarshal.AsSpan(list), condition);
+        return IndicesOf(CollectionsMarshal.AsSpan(list), predicate);
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this T[] array, Func<T, bool> condition)
+    public static int[] IndicesOf<T>(this T[] array, Func<T, bool> predicate)
     {
-        return IndicesOf((ReadOnlySpan<T>)array, condition);
+        return IndicesOf((ReadOnlySpan<T>)array, predicate);
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this Span<T> span, Func<T, bool> condition)
+    public static int[] IndicesOf<T>(this Span<T> span, Func<T, bool> predicate)
     {
-        return IndicesOf((ReadOnlySpan<T>)span, condition);
+        return IndicesOf((ReadOnlySpan<T>)span, predicate);
     }
 
-    public static int IndicesOf<T>(this Span<T> span, Func<T, bool> condition, Span<int> indices)
+    public static int IndicesOf<T>(this Span<T> span, Func<T, bool> predicate, Span<int> indices)
     {
-        return IndicesOf((ReadOnlySpan<T>)span, condition, indices);
+        return IndicesOf((ReadOnlySpan<T>)span, predicate, indices);
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> condition)
+    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate)
     {
         Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, condition, indices);
+        int length = IndicesOf(span, predicate, indices);
         return indices[..length].ToArray();
     }
 
-    public static int IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> condition, Span<int> indices)
+    public static int IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate, Span<int> indices)
     {
         int length = 0;
         int spanLength = span.Length;
@@ -300,7 +300,7 @@ public static class CollectionHelper
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            if (condition(Unsafe.Add(ref firstItem, i)))
+            if (predicate(Unsafe.Add(ref firstItem, i)))
             {
                 indices[length++] = i;
             }
@@ -310,43 +310,43 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> condition) where TCollection : IEnumerable<TContent>
+    public static unsafe int[] IndicesOf<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> predicate) where TCollection : IEnumerable<TContent>
     {
-        return IndicesOf(collection.ToArray(), condition);
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? IndicesOf(span, predicate) : IndicesOf(collection.ToArray(), predicate);
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<T>(this List<T> list, delegate*<T, bool> condition)
+    public static unsafe int[] IndicesOf<T>(this List<T> list, delegate*<T, bool> predicate)
     {
-        return IndicesOf(CollectionsMarshal.AsSpan(list), condition);
+        return IndicesOf((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), predicate);
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<T>(this T[] array, delegate*<T, bool> condition)
+    public static unsafe int[] IndicesOf<T>(this T[] array, delegate*<T, bool> predicate)
     {
-        return IndicesOf((ReadOnlySpan<T>)array, condition);
+        return IndicesOf((ReadOnlySpan<T>)array, predicate);
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition)
+    public static unsafe int[] IndicesOf<T>(this Span<T> span, delegate*<T, bool> predicate)
     {
-        return IndicesOf((ReadOnlySpan<T>)span, condition);
+        return IndicesOf((ReadOnlySpan<T>)span, predicate);
     }
 
-    public static unsafe int IndicesOf<T>(this Span<T> span, delegate*<T, bool> condition, Span<int> indices)
+    public static unsafe int IndicesOf<T>(this Span<T> span, delegate*<T, bool> predicate, Span<int> indices)
     {
-        return IndicesOf((ReadOnlySpan<T>)span, condition, indices);
+        return IndicesOf((ReadOnlySpan<T>)span, predicate, indices);
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition)
+    public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate)
     {
         Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, condition, indices);
+        int length = IndicesOf(span, predicate, indices);
         return indices[..length].ToArray();
     }
 
-    public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> condition, Span<int> indices)
+    public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate, Span<int> indices)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
@@ -358,7 +358,7 @@ public static class CollectionHelper
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            bool equals = condition(Unsafe.Add(ref firstItem, i));
+            bool equals = predicate(Unsafe.Add(ref firstItem, i));
             int equalsAsByte = Unsafe.As<bool, byte>(ref equals);
             indices[length] = i;
             length += equalsAsByte;
@@ -370,6 +370,11 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, TContent item) where TCollection : IEnumerable<TContent> where TContent : IEquatable<TContent>
     {
+        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span))
+        {
+            return IndicesOf(span, item);
+        }
+
         using PoolBufferList<int> indices = new(50, 25);
         int index = 0;
         foreach (TContent t in collection)
@@ -486,7 +491,7 @@ public static class CollectionHelper
     [Pure]
     public static TContent[] RandomCollection<TCollection, TContent>(this TCollection collection, int length) where TCollection : IEnumerable<TContent>
     {
-        return RandomCollection(collection.ToArray(), length);
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? RandomCollection(span, length) : RandomCollection(collection.ToArray(), length);
     }
 
     [Pure]
@@ -503,6 +508,12 @@ public static class CollectionHelper
 
     [Pure]
     public static T[] RandomCollection<T>(this Span<T> span, int length)
+    {
+        return RandomCollection((ReadOnlySpan<T>)span, length);
+    }
+
+    [Pure]
+    public static T[] RandomCollection<T>(this ReadOnlySpan<T> span, int length)
     {
         if (span.Length == 0)
         {
@@ -747,5 +758,41 @@ public static class CollectionHelper
         {
             dictionary[key] = value;
         }
+    }
+
+    public static bool TryGetReadOnlySpan<T>(this IEnumerable<T> collection, out ReadOnlySpan<T> span)
+    {
+        switch (collection)
+        {
+            case string str:
+                ref char firstChar = ref MemoryMarshal.GetReference(str.AsSpan());
+                span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
+                return true;
+        }
+
+        if (TryGetSpan(collection, out Span<T> mutableSpan))
+        {
+            span = mutableSpan;
+            return true;
+        }
+
+        span = ReadOnlySpan<T>.Empty;
+        return false;
+    }
+
+    public static bool TryGetSpan<T>(this IEnumerable<T> collection, out Span<T> span)
+    {
+        switch (collection)
+        {
+            case List<T> list:
+                span = CollectionsMarshal.AsSpan(list);
+                return true;
+            case T[] array:
+                span = array;
+                return true;
+        }
+
+        span = Span<T>.Empty;
+        return false;
     }
 }
