@@ -9,30 +9,32 @@ namespace HLE.Collections;
 
 public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
 {
-    public static Pool<T> Shared => _sharedInstance ?? throw new InvalidOperationException($"The shared instance has not been initialized yet. Use the {nameof(InitializeSharedInstance)} method to initialize the instance.");
+    public static Pool<T> Shared => _shared ?? throw new InvalidOperationException($"The shared instance has not been initialized yet. Use the {nameof(InitializeSharedInstance)} method to initialize the instance.");
 
     private readonly ConcurrentStack<T> _rentableItems = new();
     private readonly HashSet<T> _rentedItems;
     private readonly SemaphoreSlim _rentedItemsLock = new(1);
     private readonly Func<T> _itemFactory;
+    private readonly Action<T>? _resetItem;
 
-    private static Pool<T>? _sharedInstance;
+    private static Pool<T>? _shared;
 
-    public Pool(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null)
+    public Pool(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
     {
         _itemFactory = itemFactory;
         _rentedItems = new(equalityComparer);
+        _resetItem = onReturn;
     }
 
-    public static void InitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null)
+    public static void InitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
     {
-        _sharedInstance ??= new(itemFactory, equalityComparer);
+        _shared ??= new(itemFactory, equalityComparer, onReturn);
     }
 
-    public static void ReinitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null)
+    public static void ReinitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
     {
-        _sharedInstance?.Dispose();
-        _sharedInstance = new(itemFactory, equalityComparer);
+        _shared?.Dispose();
+        _shared = new(itemFactory, equalityComparer, onReturn);
     }
 
     public void Dispose()
@@ -62,22 +64,20 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
 
     public void Return(T item)
     {
-        bool hasBeenReturned;
         _rentedItemsLock.Wait();
         try
         {
-            hasBeenReturned = _rentedItems.Remove(item);
+            if (!_rentedItems.Remove(item))
+            {
+                return;
+            }
         }
         finally
         {
             _rentedItemsLock.Release();
         }
 
-        if (!hasBeenReturned)
-        {
-            return;
-        }
-
+        _resetItem?.Invoke(item);
         _rentableItems.Push(item);
     }
 
@@ -103,22 +103,20 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
 
     public async ValueTask ReturnAsync(T item)
     {
-        bool hasBeenReturned;
         await _rentedItemsLock.WaitAsync();
         try
         {
-            hasBeenReturned = _rentedItems.Remove(item);
+            if (!_rentedItems.Remove(item))
+            {
+                return;
+            }
         }
         finally
         {
             _rentedItemsLock.Release();
         }
 
-        if (!hasBeenReturned)
-        {
-            return;
-        }
-
+        _resetItem?.Invoke(item);
         _rentableItems.Push(item);
     }
 
