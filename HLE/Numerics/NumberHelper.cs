@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 
 namespace HLE.Numerics;
 
@@ -134,7 +135,7 @@ public static class NumberHelper
     {
         T result = T.Zero;
         T ten = T.CreateTruncating(10);
-        T charZero = T.CreateTruncating((int)'0');
+        T charZero = T.CreateTruncating('0');
         for (int i = 0; i < number.Length; i++)
         {
             result = ten * result + T.CreateTruncating(number[i]) - charZero;
@@ -156,6 +157,60 @@ public static class NumberHelper
         };
     }
 
+#if NET8_0_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe Vector512<T> SetSignBitToZero<T>(Vector512<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+    {
+        return sizeof(T) switch
+        {
+            sizeof(long) => numbers & Vector512.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
+            sizeof(int) => numbers & Vector512.Create(T.CreateTruncating(0x7FFFFFFF)),
+            sizeof(short) => numbers & Vector512.Create(T.CreateTruncating(0x7FFF)),
+            sizeof(sbyte) => numbers & Vector512.Create(T.CreateTruncating(0x7F)),
+            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+        };
+    }
+#endif
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe Vector256<T> SetSignBitToZero<T>(Vector256<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+    {
+        return sizeof(T) switch
+        {
+            sizeof(long) => numbers & Vector256.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
+            sizeof(int) => numbers & Vector256.Create(T.CreateTruncating(0x7FFFFFFF)),
+            sizeof(short) => numbers & Vector256.Create(T.CreateTruncating(0x7FFF)),
+            sizeof(sbyte) => numbers & Vector256.Create(T.CreateTruncating(0x7F)),
+            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe Vector128<T> SetSignBitToZero<T>(Vector128<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+    {
+        return sizeof(T) switch
+        {
+            sizeof(long) => numbers & Vector128.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
+            sizeof(int) => numbers & Vector128.Create(T.CreateTruncating(0x7FFFFFFF)),
+            sizeof(short) => numbers & Vector128.Create(T.CreateTruncating(0x7FFF)),
+            sizeof(sbyte) => numbers & Vector128.Create(T.CreateTruncating(0x7F)),
+            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe Vector64<T> SetSignBitToZero<T>(Vector64<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+    {
+        return sizeof(T) switch
+        {
+            sizeof(long) => numbers & Vector64.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
+            sizeof(int) => numbers & Vector64.Create(T.CreateTruncating(0x7FFFFFFF)),
+            sizeof(short) => numbers & Vector64.Create(T.CreateTruncating(0x7FFF)),
+            sizeof(sbyte) => numbers & Vector64.Create(T.CreateTruncating(0x7F)),
+            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+        };
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsOnlyOneBitSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
     {
@@ -163,7 +218,7 @@ public static class NumberHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsOnlyOneBitOrZeroSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
+    public static bool IsOnlyOneBitOrNoneSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
     {
         return number == T.Zero || (number & (number - T.One)) == T.Zero;
     }
@@ -178,7 +233,7 @@ public static class NumberHelper
 
         if (sizeof(T) == sizeof(Int128))
         {
-            throw new NotSupportedException();
+            throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
         }
 
         switch (sizeof(T))

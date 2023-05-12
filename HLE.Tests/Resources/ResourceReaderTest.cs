@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,8 +18,8 @@ public class ResourceReaderTest
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            byte[]? resource = reader.Read($"Resources.Resource{i}");
-            resources.Add(Encoding.UTF8.GetString(resource!));
+            byte[] resource = reader.Read($"Resources.Resource{i}") ?? throw new InvalidOperationException();
+            resources.Add(Encoding.UTF8.GetString(resource));
         }
 
         Assert.IsTrue(resources.Count(r => r is not null) == 3);
@@ -34,8 +35,8 @@ public class ResourceReaderTest
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            byte[]? resource = reader.Read($"Resources.Resource{i}");
-            resources.Add(Encoding.UTF8.GetString(resource!));
+            byte[] resource = reader.Read($"Resources.Resource{i}") ?? throw new InvalidOperationException();
+            resources.Add(Encoding.UTF8.GetString(resource));
         }
 
         Assert.IsTrue(resources.Count(r => r is not null) == 3);

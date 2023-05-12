@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Collections;
 
@@ -65,7 +66,14 @@ public ref struct ValueStack<T>
         return true;
     }
 
-    public void Clear() => _count = 0;
+    public void Clear()
+    {
+        _count = 0;
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            _stack.Clear();
+        }
+    }
 
     [Pure]
     public readonly T[] ToArray()

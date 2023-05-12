@@ -138,7 +138,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     /// <inheritdoc/>
     public void Dispose()
     {
-        ArrayPool<T>.Shared.Return(_array);
+        ArrayPool<T>.Shared.Return(_array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
     }
 
     public static implicit operator T[](RentedArray<T> rentedArray)

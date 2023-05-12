@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
@@ -39,12 +40,14 @@ public static unsafe class MemoryHelper
     }
 
     /// <summary>
-    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
+    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>.
+    /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
+    ///
     /// </summary>
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    internal static Memory<T> AsMemoryDangerous<T>(this Span<T> span)
+    public static Memory<T> AsMemoryDangerous<T>(this Span<T> span)
     {
         Unsafe.SkipInit(out Memory<T> result);
         byte* spanPointerAsBytePointer = (byte*)&span;
@@ -55,8 +58,7 @@ public static unsafe class MemoryHelper
         int* memoryIndexField = (int*)(memoryPointerAsBytePointer + sizeof(nuint));
         int* memoryLengthField = (int*)(memoryPointerAsBytePointer + sizeof(nuint) + sizeof(int));
 
-        nuint spanReferenceFieldValue = *(nuint*)spanPointerAsBytePointer;
-        spanReferenceFieldValue -= (nuint)(sizeof(nuint) << 1);
+        nuint spanReferenceFieldValue = *(nuint*)spanPointerAsBytePointer - (nuint)(sizeof(nuint) << 1);
         *memoryReferenceField = spanReferenceFieldValue;
 
         *memoryIndexField = 0;
@@ -79,5 +81,12 @@ public static unsafe class MemoryHelper
     public static T? GetReferenceFromRawDataPointer<T>(nuint pointer) where T : class?
     {
         return *(T*)&pointer;
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<byte> GetBytes<T>(in T item) where T : struct
+    {
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref Unsafe.AsRef(in item)), sizeof(T));
     }
 }

@@ -30,7 +30,7 @@ public class CollectionHelperTest
             "b",
             "c"
         };
-        Assert.AreEqual("a b c", arr.JoinToString<string[], string>(' '));
+        Assert.AreEqual("a b c", arr.JoinToString(' '));
     }
 
     [TestMethod]
@@ -43,7 +43,7 @@ public class CollectionHelperTest
             "c"
         };
 
-        Assert.AreEqual("abc", arr.ConcatToString<string[], string>());
+        Assert.AreEqual("abc", arr.ConcatToString());
     }
 
     [TestMethod]
@@ -110,7 +110,7 @@ public class CollectionHelperTest
     public void IndicesOfTest()
     {
         const string str = "test string";
-        int[] indices = str.IndicesOf<string, char>(c => c is 's');
+        int[] indices = str.IndicesOf(c => c is 's');
         Assert.IsTrue(indices is [2, 5]);
     }
 

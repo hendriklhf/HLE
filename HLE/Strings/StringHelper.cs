@@ -287,7 +287,7 @@ public static class StringHelper
         if (Vector512.IsHardwareAccelerated && indices.Length >= vector512Count)
         {
             var separatorLengthVector = Vector512.Create(separatorLength);
-            while (indices.Length > vector512Count)
+            while (indices.Length >= vector512Count)
             {
                 ref int firstIndex = ref MemoryMarshal.GetReference(indices);
                 var endIndices = Vector512.LoadUnsafe(ref firstIndex);
@@ -322,7 +322,7 @@ public static class StringHelper
         if (Vector256.IsHardwareAccelerated && indices.Length >= vector256Count)
         {
             var separatorLengthVector = Vector256.Create(separatorLength);
-            while (indices.Length > vector256Count)
+            while (indices.Length >= vector256Count)
             {
                 ref int firstIndex = ref MemoryMarshal.GetReference(indices);
                 var endIndices = Vector256.LoadUnsafe(ref firstIndex);
@@ -354,7 +354,7 @@ public static class StringHelper
         if (Vector128.IsHardwareAccelerated && indices.Length >= vector128Count)
         {
             var separatorLengthVector = Vector128.Create(separatorLength);
-            while (indices.Length > vector128Count)
+            while (indices.Length >= vector128Count)
             {
                 ref int firstIndex = ref MemoryMarshal.GetReference(indices);
                 var endIndices = Vector128.LoadUnsafe(ref firstIndex);
@@ -386,7 +386,7 @@ public static class StringHelper
         if (Vector64.IsHardwareAccelerated && indices.Length >= vector64Count)
         {
             var separatorLengthVector = Vector64.Create(separatorLength);
-            while (indices.Length > vector64Count)
+            while (indices.Length >= vector64Count)
             {
                 ref int firstIndex = ref MemoryMarshal.GetReference(indices);
                 var endIndices = Vector64.LoadUnsafe(ref firstIndex);

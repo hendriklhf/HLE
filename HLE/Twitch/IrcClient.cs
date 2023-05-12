@@ -296,7 +296,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is IrcClient other && Equals(other);
     }
 
     public override int GetHashCode()

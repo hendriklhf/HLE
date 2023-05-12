@@ -55,12 +55,14 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
     {
         return _bufferWriter.WrittenSpan;
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Memory<T> AsMemory()
     {
         return _bufferWriter.WrittenMemory;

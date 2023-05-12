@@ -111,7 +111,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     public override bool Equals(object? obj)
     {
-        return obj is IrcHandler other && ReferenceEquals(this, other);
+        return obj is IrcHandler other && Equals(other);
     }
 
     public override int GetHashCode()

@@ -8,7 +8,8 @@ using System.Runtime.InteropServices;
 namespace HLE.Twitch.Models;
 
 /// <summary>
-/// Holds received data in an <see cref="Array"/> rented from an <see cref="ArrayPool{T}"/>. If an instance isn't needed anymore, it has to be disposed.
+/// Holds received data in an <see cref="Array"/> rented from an <see cref="ArrayPool{T}"/>.
+/// If an instance isn't needed anymore, it has to be disposed.
 /// Otherwise it will lead to memory leaks.
 /// Which also means that the instances or any members of this class should not be cached or persisted in any way after received by an event invocation.
 /// </summary>

@@ -58,12 +58,14 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
     {
         return _bufferWriter.WrittenSpan;
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Memory<T> AsMemory()
     {
         return _bufferWriter.WrittenMemory;

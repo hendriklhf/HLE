@@ -8,7 +8,7 @@ namespace HLE.Strings;
 
 /// <summary>
 /// Provides methods for <see cref="string"/> manipulation.
-/// ⚠️ Only use this class if you completely know what you are doing and how strings work in C#. ⚠️
+/// ⚠️ Only use this class if you completely know what you are doing and how strings work. ⚠️
 /// </summary>
 public static class StringManipulations
 {

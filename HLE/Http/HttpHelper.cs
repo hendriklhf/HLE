@@ -22,7 +22,7 @@ public static class HttpHelper
     }
 
     [Pure]
-    public static async ValueTask<HttpContentBytes> GetContentBytes(this HttpResponseMessage httpResponse)
+    public static async ValueTask<HttpContentBytes> GetContentBytesAsync(this HttpResponseMessage httpResponse)
     {
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
@@ -30,10 +30,10 @@ public static class HttpHelper
             return HttpContentBytes.Empty;
         }
 
-        return await GetContentBytes(httpResponse, contentLength);
+        return await GetContentBytesAsync(httpResponse, contentLength);
     }
 
-    internal static async ValueTask<HttpContentBytes> GetContentBytes(this HttpResponseMessage httpResponse, int contentLength)
+    internal static async ValueTask<HttpContentBytes> GetContentBytesAsync(this HttpResponseMessage httpResponse, int contentLength)
     {
         RentedArray<byte> buffer = new(contentLength);
         using MemoryStream memoryStream = new(buffer);

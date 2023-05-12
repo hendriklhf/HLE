@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Collections;
 
@@ -108,6 +109,11 @@ public ref struct ValueQueue<T>
         _count = 0;
         _enqueueIndex = 0;
         _dequeueIndex = 0;
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            _queue.Clear();
+        }
     }
 
     [Pure]

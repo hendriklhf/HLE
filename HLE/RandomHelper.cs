@@ -88,7 +88,7 @@ public static class RandomHelper
 
         ushort charCount = (ushort)(maxChar - minChar);
         Span<ushort> chars = MemoryHelper.UseStackAlloc<ushort>(charCount) ? stackalloc ushort[charCount] : new ushort[charCount];
-        CollectionHelper.FillAscending(chars, minChar);
+        chars.FillAscending(minChar);
 
         if (!MemoryHelper.UseStackAlloc<ushort>(length))
         {

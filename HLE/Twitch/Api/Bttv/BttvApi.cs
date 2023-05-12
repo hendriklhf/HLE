@@ -45,7 +45,7 @@ public sealed class BttvApi : IEquatable<BttvApi>
             throw ThrowHelper.EmptyHttpResponseContentBody;
         }
 
-        using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytes(contentLength);
+        using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
         if (httpResponse.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
@@ -87,7 +87,7 @@ public sealed class BttvApi : IEquatable<BttvApi>
             throw ThrowHelper.EmptyHttpResponseContentBody;
         }
 
-        using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytes(contentLength);
+        using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
             throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Span);
