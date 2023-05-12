@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using HLE.Collections;
+using HLE.Collections.Concurrent;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
@@ -82,7 +85,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     private readonly WebSocketIrcClient _client;
     private readonly IrcHandler _ircHandler = new();
-    private readonly List<string> _ircChannels = new();
+    private readonly ConcurrentPoolBufferList<string> _ircChannels = new();
     private readonly Memory<char> _pingResponseBuffer = new char[50];
     private bool _reconnecting;
 
@@ -132,6 +135,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         SetEvents();
     }
 
+    ~TwitchClient()
+    {
+        _client.Dispose();
+        _ircChannels.Dispose();
+    }
+
     private void SetEvents()
     {
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
@@ -144,7 +153,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
-        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(_ircChannels.AsMemory());
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -237,12 +246,23 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        await ConnectAsync(_ircChannels);
+        await ConnectAsync(_ircChannels.AsMemory());
     }
 
-    private async ValueTask ConnectAsync(List<string> ircChannels)
+    private async ValueTask ConnectAsync(ReadOnlyMemory<string> ircChannels)
     {
         await _client.ConnectAsync(ircChannels);
+    }
+
+    /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
+    public async ValueTask JoinChannelsAsync(IEnumerable<string> channels)
+    {
+        if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<string> channelsMemory))
+        {
+            await JoinChannelsAsync(channelsMemory);
+        }
+
+        await JoinChannelsAsync(channels.ToArray());
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
@@ -252,7 +272,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    public async ValueTask JoinChannelsAsync(string[] channels)
+    public async ValueTask JoinChannelsAsync(params string[] channels)
     {
         await JoinChannelsAsync(channels.AsMemory());
     }
@@ -318,6 +338,17 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
+    public async ValueTask LeaveChannelsAsync(IEnumerable<string> channels)
+    {
+        if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<string> channelsMemory))
+        {
+            await LeaveChannelsAsync(channelsMemory);
+        }
+
+        await LeaveChannelsAsync(channels.ToArray());
+    }
+
+    /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask LeaveChannelsAsync(List<string> channels)
     {
         await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
@@ -348,7 +379,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (IsConnected)
         {
-            await LeaveChannelsAsync(_ircChannels);
+            await LeaveChannelsAsync(_ircChannels.AsMemory());
         }
 
         Channels.Clear();
@@ -426,7 +457,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             _reconnecting = false;
         }
 
-        await _client.ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+        await _client.ConnectAsync(_ircChannels.AsMemory());
     }
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)
@@ -485,7 +516,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         _client.Dispose();
+        _ircChannels.Dispose();
     }
 
     public bool Equals(TwitchClient? other)

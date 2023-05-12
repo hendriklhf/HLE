@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using HLE.Collections;
+using HLE.Collections.Concurrent;
 
 namespace HLE.Twitch.Models;
 
@@ -30,7 +30,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
 
     public int Count => _channels.Count;
 
-    private readonly DoubleDictionary<long, int, Channel> _channels = new();
+    private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();
 
     internal void Update(in RoomstateArgs args)
     {
@@ -39,7 +39,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
         {
             channel = new(in args);
             int channelNameHash = string.GetHashCode(channel.Name, StringComparison.OrdinalIgnoreCase);
-            _channels.Add(channel.Id, channelNameHash, channel);
+            _channels.AddOrSet(channel.Id, channelNameHash, channel);
         }
         else
         {
@@ -87,7 +87,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is ChannelList other && Equals(other);
     }
 
     public override int GetHashCode()
