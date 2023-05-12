@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using HLE.Memory;
 using HLE.Numerics;
+using HLE.Strings;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
@@ -17,9 +19,9 @@ namespace HLE.Collections;
 public static class CollectionHelper
 {
     [Pure]
-    public static TContent? Random<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
+    public static T? Random<T>(this IEnumerable<T> collection)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? Random(span) : Random(collection.ToArray());
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? Random(span) : Random(collection.ToArray());
     }
 
     [Pure]
@@ -54,20 +56,14 @@ public static class CollectionHelper
         return ref Unsafe.Add(ref firstItem, randomIdx)!;
     }
 
-    /// <summary>
-    /// Concatenates every element of the <paramref name="collection"/> separated by the <paramref name="separator"/>.
-    /// </summary>
-    /// <param name="collection">The <see cref="string"/> enumerable that will be converted to a <see cref="string"/>.</param>
-    /// <param name="separator">The separator <see cref="char"/>.</param>
-    /// <returns>Returns the <paramref name="collection"/> as a <see cref="string"/>.</returns>
     [Pure]
-    public static string JoinToString<TCollection, TContent>(this TCollection collection, char separator) where TCollection : IEnumerable<TContent>
+    public static string JoinToString<T>(this IEnumerable<T> collection, char separator)
     {
         return string.Join(separator, collection);
     }
 
     [Pure]
-    public static string JoinToString<TCollection, TContent>(this TCollection collection, string separator) where TCollection : IEnumerable<TContent>
+    public static string JoinToString<T>(this IEnumerable<T> collection, string separator)
     {
         return string.Join(separator, collection);
     }
@@ -105,9 +101,10 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static IEnumerable<TContent> Replace<TCollection, TContent>(this TCollection collection, Func<TContent, bool> predicate, TContent replacement) where TCollection : IEnumerable<TContent>
+    [LinqTunnel]
+    public static IEnumerable<T> Replace<T>([NoEnumeration] this IEnumerable<T> collection, Func<T, bool> predicate, T replacement)
     {
-        foreach (TContent item in collection)
+        foreach (T item in collection)
         {
             yield return predicate(item) ? replacement : item;
         }
@@ -150,10 +147,10 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static unsafe TContent[] Replace<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> predicate, TContent replacement) where TCollection : IEnumerable<TContent>
+    public static unsafe T[] Replace<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate, T replacement)
     {
-        TContent[] array = collection.ToArray();
-        Replace((Span<TContent>)array, predicate, replacement);
+        T[] array = collection.ToArray();
+        Replace((Span<T>)array, predicate, replacement);
         return array;
     }
 
@@ -194,9 +191,9 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static TContent[][] Split<TCollection, TContent>(this TCollection collection, TContent separator) where TCollection : IEnumerable<TContent> where TContent : IEquatable<TContent>
+    public static T[][] Split<T>(this IEnumerable<T> collection, T separator) where T : IEquatable<T>
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? Split(span, separator) : Split((ReadOnlySpan<TContent>)collection.ToArray(), separator);
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? Split(span, separator) : Split((ReadOnlySpan<T>)collection.ToArray(), separator);
     }
 
     [Pure]
@@ -261,32 +258,15 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, Func<TContent, bool> predicate) where TCollection : IEnumerable<TContent>
+    public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
     {
-        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span))
-        {
-            return IndicesOf(span, predicate);
-        }
-
-        using PoolBufferList<int> indices = new(50, 25);
-        int index = 0;
-        foreach (TContent item in collection)
-        {
-            if (predicate(item))
-            {
-                indices.Add(index);
-            }
-
-            index++;
-        }
-
-        return indices.ToArray();
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf((ReadOnlySpan<T>)collection.ToArray(), predicate);
     }
 
     [Pure]
     public static int[] IndicesOf<T>(this List<T> list, Func<T, bool> predicate)
     {
-        return IndicesOf(CollectionsMarshal.AsSpan(list), predicate);
+        return IndicesOf((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), predicate);
     }
 
     [Pure]
@@ -309,8 +289,16 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate)
     {
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, predicate, indices);
+        int length;
+        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        {
+            using RentedArray<int> indicesBuffer = new(span.Length);
+            length = IndicesOf(span, predicate, indicesBuffer);
+            return indicesBuffer[..length].ToArray();
+        }
+
+        Span<int> indices = stackalloc int[span.Length];
+        length = IndicesOf(span, predicate, indices);
         return indices[..length].ToArray();
     }
 
@@ -336,9 +324,9 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<TCollection, TContent>(this TCollection collection, delegate*<TContent, bool> predicate) where TCollection : IEnumerable<TContent>
+    public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? IndicesOf(span, predicate) : IndicesOf(collection.ToArray(), predicate);
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf(collection.ToArray(), predicate);
     }
 
     [Pure]
@@ -367,8 +355,16 @@ public static class CollectionHelper
     [Pure]
     public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate)
     {
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, predicate, indices);
+        int length;
+        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        {
+            using RentedArray<int> indicesBuffer = new(span.Length);
+            length = IndicesOf(span, predicate, indicesBuffer);
+            return indicesBuffer[..length].ToArray();
+        }
+
+        Span<int> indices = stackalloc int[span.Length];
+        length = IndicesOf(span, predicate, indices);
         return indices[..length].ToArray();
     }
 
@@ -394,26 +390,9 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<TCollection, TContent>(this TCollection collection, TContent item) where TCollection : IEnumerable<TContent> where TContent : IEquatable<TContent>
+    public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item) where T : IEquatable<T>
     {
-        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span))
-        {
-            return IndicesOf(span, item);
-        }
-
-        using PoolBufferList<int> indices = new(50, 25);
-        int index = 0;
-        foreach (TContent t in collection)
-        {
-            if (t.Equals(item))
-            {
-                indices.Add(index);
-            }
-
-            index++;
-        }
-
-        return indices.ToArray();
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, item) : IndicesOf(collection.ToArray(), item);
     }
 
     [Pure]
@@ -425,7 +404,7 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this T[] array, T item) where T : IEquatable<T>
     {
-        return IndicesOf((Span<T>)array, item);
+        return IndicesOf((ReadOnlySpan<T>)array, item);
     }
 
     [Pure]
@@ -442,8 +421,16 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item) where T : IEquatable<T>
     {
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, item, indices);
+        int length;
+        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        {
+            using RentedArray<int> indicesBuffer = new(span.Length);
+            length = IndicesOf(span, item, indicesBuffer);
+            return indicesBuffer[..length].ToArray();
+        }
+
+        Span<int> indices = stackalloc int[span.Length];
+        length = IndicesOf(span, item, indices);
         return indices[..length].ToArray();
     }
 
@@ -468,16 +455,16 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static Dictionary<TKey, TValue> ToDictionary<TCollection, TKey, TValue>(this TCollection collection) where TCollection : IEnumerable<(TKey, TValue)> where TKey : notnull
+    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey, TValue)> collection) where TKey : notnull
     {
         return collection.ToDictionary(i => i.Item1, i => i.Item2);
     }
 
     [Pure]
-    public static TContent[] Randomize<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
+    public static T[] Randomize<T>(this IEnumerable<T> collection)
     {
-        TContent[] array = collection.ToArray();
-        Randomize((Span<TContent>)array);
+        T[] array = collection.ToArray();
+        Randomize((Span<T>)array);
         return array;
     }
 
@@ -515,9 +502,9 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static TContent[] RandomCollection<TCollection, TContent>(this TCollection collection, int length) where TCollection : IEnumerable<TContent>
+    public static T[] RandomCollection<T>(this IEnumerable<T> collection, int length)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<TContent> span) ? RandomCollection(span, length) : RandomCollection(collection.ToArray(), length);
+        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? RandomCollection(span, length) : RandomCollection(collection.ToArray(), length);
     }
 
     [Pure]
