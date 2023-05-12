@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
+using HLE.Collections;
 using HLE.Http;
 using HLE.Memory;
 using HLE.Twitch.Api.Helix.Models;
@@ -63,17 +64,36 @@ public sealed partial class TwitchApi
 
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames)
     {
+        if (usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory))
+        {
+            return await GetStreamsAsync(usernamesMemory, ReadOnlyMemory<long>.Empty);
+        }
+
         return await GetStreamsAsync(usernames.ToArray(), ReadOnlyMemory<long>.Empty);
     }
 
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<long> channelIds)
     {
+        if (channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory))
+        {
+            return await GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIdsMemory);
+        }
+
         return await GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIds.ToArray());
     }
 
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames, IEnumerable<long> channelIds)
     {
-        return await GetStreamsAsync(usernames.ToArray(), channelIds.ToArray());
+        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
+        bool channelIdsIsMemory = channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory);
+
+        return usernamesIsMemory switch
+        {
+            true when channelIdsIsMemory => await GetStreamsAsync(usernamesMemory, channelIdsMemory),
+            true when !channelIdsIsMemory => await GetStreamsAsync(usernamesMemory, channelIds.ToArray()),
+            false when channelIdsIsMemory => await GetStreamsAsync(usernamesMemory.ToArray(), channelIdsMemory),
+            _ => await GetStreamsAsync(usernames.ToArray(), channelIds.ToArray())
+        };
     }
 
     public async ValueTask<Stream[]> GetStreamsAsync(List<string> usernames)

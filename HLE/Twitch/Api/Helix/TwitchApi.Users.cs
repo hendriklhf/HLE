@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
+using HLE.Collections;
 using HLE.Http;
 using HLE.Memory;
 using HLE.Twitch.Api.Helix.Models;
@@ -63,17 +64,36 @@ public sealed partial class TwitchApi
 
     public async ValueTask<User[]> GetUsersAsync(IEnumerable<string> usernames)
     {
+        if (usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory))
+        {
+            return await GetUsersAsync(usernamesMemory, ReadOnlyMemory<long>.Empty);
+        }
+
         return await GetUsersAsync(usernames.ToArray(), ReadOnlyMemory<long>.Empty);
     }
 
     public async ValueTask<User[]> GetUsersAsync(IEnumerable<long> userIds)
     {
+        if (userIds.TryGetReadOnlyMemory(out var userIdsMemory))
+        {
+            return await GetUsersAsync(ReadOnlyMemory<string>.Empty, userIdsMemory);
+        }
+
         return await GetUsersAsync(ReadOnlyMemory<string>.Empty, userIds.ToArray());
     }
 
     public async ValueTask<User[]> GetUsersAsync(IEnumerable<string> usernames, IEnumerable<long> userIds)
     {
-        return await GetUsersAsync(usernames.ToArray(), userIds.ToArray());
+        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
+        bool userIdsIsMemory = userIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> userIdsMemory);
+
+        return usernamesIsMemory switch
+        {
+            true when userIdsIsMemory => await GetUsersAsync(usernamesMemory, userIdsMemory),
+            true when !userIdsIsMemory => await GetUsersAsync(usernamesMemory, userIds.ToArray()),
+            false when userIdsIsMemory => await GetUsersAsync(usernamesMemory.ToArray(), userIdsMemory),
+            _ => await GetUsersAsync(usernames.ToArray(), userIds.ToArray())
+        };
     }
 
     public async ValueTask<User[]> GetUsersAsync(List<string> usernames)
