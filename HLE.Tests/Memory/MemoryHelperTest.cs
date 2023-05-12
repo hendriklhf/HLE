@@ -32,14 +32,17 @@ public class MemoryHelperTest
     }
 
     [TestMethod]
-    public unsafe void GetRawDataPointerTest()
+    public unsafe void GetRawDataPointer_GetReferenceFromRawDataPointer_Test()
     {
-        const string str = "hello";
-        int* rawData = (int*)MemoryHelper.GetRawDataPointer(str);
-        rawData += 2;
-        Assert.AreEqual(str.Length, *rawData);
-        char* chars = (char*)++rawData;
-        ReadOnlySpan<char> span = new(chars, str.Length);
-        Assert.IsTrue(span is str);
+        const string hello = "hello";
+        nuint stringToRawPointer = MemoryHelper.GetRawDataPointer(hello);
+        int* lengthPointer = (int*)(stringToRawPointer + (nuint)sizeof(nuint));
+        Assert.AreEqual(hello.Length, *lengthPointer);
+        char* chars = (char*)(stringToRawPointer + (nuint)sizeof(nuint) + sizeof(int));
+        ReadOnlySpan<char> span = new(chars, hello.Length);
+        Assert.IsTrue(span is hello);
+
+        string? stringFromRawPointer = MemoryHelper.GetReferenceFromRawDataPointer<string>(stringToRawPointer);
+        Assert.IsTrue(stringFromRawPointer is hello);
     }
 }
