@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
@@ -19,7 +19,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
 
     private readonly Assembly _assembly;
     private readonly string _assemblyName;
-    private readonly Dictionary<string, byte[]?> _resources = new();
+    private readonly ConcurrentDictionary<string, byte[]?> _resources = new();
 
     public ResourceReader(Assembly assembly, bool readAllResourcesOnInit = true)
     {
@@ -68,8 +68,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
 
     private byte[]? ReadResourceFromPath(string resourcePath)
     {
-        ref byte[]? resource = ref CollectionsMarshal.GetValueRefOrAddDefault(_resources, resourcePath, out bool exists);
-        if (exists)
+        if (_resources.TryGetValue(resourcePath, out byte[]? resource))
         {
             return resource;
         }
@@ -77,18 +76,18 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
         using Stream? stream = _assembly.GetManifestResourceStream(resourcePath);
         if (stream is null)
         {
-            resource = null;
+            _resources.AddOrSet(resourcePath, null);
             return null;
         }
 
         int streamLength = int.CreateChecked(stream.Length);
         using PoolBufferWriter<byte> bufferWriter = new(streamLength, 1000);
-        int bufferWriteSize = streamLength < 1000 ? streamLength : 1000;
-        int bytesRead = stream.Read(bufferWriter.GetSpan(bufferWriteSize));
+        int sizeHint = streamLength < 1000 ? streamLength : 1000;
+        int bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
         bufferWriter.Advance(bytesRead);
         while (bytesRead < streamLength && bytesRead > 0)
         {
-            bytesRead = stream.Read(bufferWriter.GetSpan(bufferWriteSize));
+            bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
             bufferWriter.Advance(bytesRead);
         }
 
