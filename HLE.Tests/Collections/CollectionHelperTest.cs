@@ -163,4 +163,46 @@ public class CollectionHelperTest
             }
         });
     }
+
+    [TestMethod]
+    public void TryGetReadOnlySpanTest()
+    {
+        IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
+        IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
+        IEnumerable<char> str = "hello";
+        IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(_ => Random.Shared.Next()).Where(i => i > 0);
+
+        bool succeeded = array.TryGetReadOnlySpan(out var arraySpan);
+        Assert.IsTrue(succeeded && arraySpan is [0, 1, 2, 3, 4]);
+
+        succeeded = list.TryGetReadOnlySpan(out var listSpan);
+        Assert.IsTrue(succeeded && listSpan is [0, 1, 2, 3, 4]);
+
+        succeeded = str.TryGetReadOnlySpan(out var stringSpan);
+        Assert.IsTrue(succeeded && stringSpan is "hello");
+
+        succeeded = enumerable.TryGetReadOnlySpan(out var enumerableSpan);
+        Assert.IsFalse(succeeded && enumerableSpan.Length == 0);
+    }
+
+    [TestMethod]
+    public void TryGetReadOnlyMemoryTest()
+    {
+        IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
+        IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
+        IEnumerable<char> str = "hello";
+        IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(_ => Random.Shared.Next()).Where(i => i > 0);
+
+        bool succeeded = array.TryGetReadOnlyMemory(out var arrayMemory);
+        Assert.IsTrue(succeeded && arrayMemory.Span is [0, 1, 2, 3, 4]);
+
+        succeeded = list.TryGetReadOnlyMemory(out var listMemory);
+        Assert.IsTrue(succeeded && listMemory.Span is [0, 1, 2, 3, 4]);
+
+        succeeded = str.TryGetReadOnlyMemory(out var stringMemory);
+        Assert.IsTrue(succeeded && stringMemory.Span is "hello");
+
+        succeeded = enumerable.TryGetReadOnlyMemory(out var enumerableMemory);
+        Assert.IsFalse(succeeded && enumerableMemory.Length == 0);
+    }
 }

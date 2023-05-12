@@ -549,7 +549,7 @@ public static class CollectionHelper
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void FillAscending(Span<int> span, int start = 0)
+    public static void FillAscending(this Span<int> span, int start = 0)
     {
 #if NET8_0_OR_GREATER
         int vector512Count = Vector512<int>.Count;
@@ -557,7 +557,7 @@ public static class CollectionHelper
         {
             var ascendingValueAdditions = Vector512.Create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15);
-            while (span.Length > vector512Count)
+            while (span.Length >= vector512Count)
             {
                 Vector512<int> startValues = Vector512.Create(start);
                 Vector512<int> values = Vector512.Add(startValues, ascendingValueAdditions);
@@ -579,7 +579,7 @@ public static class CollectionHelper
         if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
         {
             Vector256<int> ascendingValueAdditions = Vector256.Create(0, 1, 2, 3, 4, 5, 6, 7);
-            while (span.Length > vector256Count)
+            while (span.Length >= vector256Count)
             {
                 Vector256<int> startValues = Vector256.Create(start);
                 Vector256<int> values = Vector256.Add(startValues, ascendingValueAdditions);
@@ -600,7 +600,7 @@ public static class CollectionHelper
         if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
             Vector128<int> ascendingValueAdditions = Vector128.Create(0, 1, 2, 3);
-            while (span.Length > vector128Count)
+            while (span.Length >= vector128Count)
             {
                 Vector128<int> startValues = Vector128.Create(start);
                 Vector128<int> values = Vector128.Add(startValues, ascendingValueAdditions);
@@ -621,7 +621,7 @@ public static class CollectionHelper
         if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
             Vector64<int> ascendingValueAdditions = Vector64.Create(0, 1);
-            while (span.Length > vector64Count)
+            while (span.Length >= vector64Count)
             {
                 Vector64<int> startValues = Vector64.Create(start);
                 Vector64<int> values = Vector64.Add(startValues, ascendingValueAdditions);
@@ -647,7 +647,7 @@ public static class CollectionHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static void FillAscending(Span<ushort> span, ushort start = 0)
+    public static void FillAscending(this Span<ushort> span, ushort start = 0)
     {
 #if NET8_0_OR_GREATER
         ushort vector512Count = (ushort)Vector512<ushort>.Count;
@@ -657,7 +657,7 @@ public static class CollectionHelper
                 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
                 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
                 30, 31);
-            while (span.Length > vector512Count)
+            while (span.Length >= vector512Count)
             {
                 Vector512<ushort> startValues = Vector512.Create(start);
                 Vector512<ushort> values = Vector512.Add(startValues, ascendingValueAdditions);
@@ -680,7 +680,7 @@ public static class CollectionHelper
         {
             Vector256<ushort> ascendingValueAdditions = Vector256.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15);
-            while (span.Length > vector256Count)
+            while (span.Length >= vector256Count)
             {
                 Vector256<ushort> startValues = Vector256.Create(start);
                 Vector256<ushort> values = Vector256.Add(startValues, ascendingValueAdditions);
@@ -701,7 +701,7 @@ public static class CollectionHelper
         if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
             Vector128<ushort> ascendingValueAdditions = Vector128.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7);
-            while (span.Length > vector128Count)
+            while (span.Length >= vector128Count)
             {
                 Vector128<ushort> startValues = Vector128.Create(start);
                 Vector128<ushort> values = Vector128.Add(startValues, ascendingValueAdditions);
@@ -722,7 +722,7 @@ public static class CollectionHelper
         if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
             Vector64<ushort> ascendingValueAdditions = Vector64.Create((ushort)0, 1, 2, 3);
-            while (span.Length > vector64Count)
+            while (span.Length >= vector64Count)
             {
                 Vector64<ushort> startValues = Vector64.Create(start);
                 Vector64<ushort> values = Vector64.Add(startValues, ascendingValueAdditions);
@@ -760,14 +760,15 @@ public static class CollectionHelper
         }
     }
 
-    public static bool TryGetReadOnlySpan<T>(this IEnumerable<T> collection, out ReadOnlySpan<T> span)
+    public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlySpan<T> span)
     {
-        switch (collection)
+        // ReSharper disable once OperatorIsCanBeUsed
+        if (typeof(string) == collection.GetType())
         {
-            case string str:
-                ref char firstChar = ref MemoryMarshal.GetReference(str.AsSpan());
-                span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
-                return true;
+            string str = Unsafe.As<IEnumerable<T>, string>(ref collection);
+            ref char firstChar = ref MemoryMarshal.GetReference(str.AsSpan());
+            span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
+            return true;
         }
 
         if (TryGetSpan(collection, out Span<T> mutableSpan))
@@ -780,19 +781,59 @@ public static class CollectionHelper
         return false;
     }
 
-    public static bool TryGetSpan<T>(this IEnumerable<T> collection, out Span<T> span)
+    public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
     {
-        switch (collection)
+        if (typeof(T[]) == collection.GetType())
         {
-            case List<T> list:
-                span = CollectionsMarshal.AsSpan(list);
-                return true;
-            case T[] array:
-                span = array;
-                return true;
+            span = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
+            return true;
+        }
+
+        if (typeof(List<T>) == collection.GetType())
+        {
+            span = CollectionsMarshal.AsSpan(Unsafe.As<IEnumerable<T>, List<T>>(ref collection));
+            return true;
         }
 
         span = Span<T>.Empty;
+        return false;
+    }
+
+    public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
+    {
+        // ReSharper disable once OperatorIsCanBeUsed
+        if (typeof(string) == collection.GetType())
+        {
+            ReadOnlyMemory<char> stringMemory = Unsafe.As<IEnumerable<T>, string>(ref collection).AsMemory();
+            memory = Unsafe.As<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(ref stringMemory);
+            return true;
+        }
+
+        if (TryGetMemory(collection, out Memory<T> mutableMemory))
+        {
+            memory = mutableMemory;
+            return true;
+        }
+
+        memory = ReadOnlyMemory<T>.Empty;
+        return false;
+    }
+
+    public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
+    {
+        if (typeof(T[]) == collection.GetType())
+        {
+            memory = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
+            return true;
+        }
+
+        if (typeof(List<T>) == collection.GetType())
+        {
+            memory = CollectionsMarshal.AsSpan(Unsafe.As<IEnumerable<T>, List<T>>(ref collection)).AsMemoryDangerous();
+            return true;
+        }
+
+        memory = Memory<T>.Empty;
         return false;
     }
 }
