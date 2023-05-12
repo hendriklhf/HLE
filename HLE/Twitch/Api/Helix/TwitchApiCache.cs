@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using HLE.Collections;
+using HLE.Collections.Concurrent;
 using HLE.Twitch.Api.Helix.Models;
 
 namespace HLE.Twitch.Api.Helix;
@@ -10,8 +11,8 @@ public sealed class TwitchApiCache
 {
     public CacheOptions Options { get; set; }
 
-    private readonly DoubleDictionary<long, int, User> _userCache = new();
-    private readonly DoubleDictionary<long, int, Stream> _streamCache = new();
+    private readonly ConcurrentDoubleDictionary<long, int, User> _userCache = new();
+    private readonly ConcurrentDoubleDictionary<long, int, Stream> _streamCache = new();
     private CacheEntry<Emote[]> _globalEmoteCache = CacheEntry<Emote[]>.Empty;
     private readonly Dictionary<long, CacheEntry<ChannelEmote[]>> _channelEmoteCache = new();
 
