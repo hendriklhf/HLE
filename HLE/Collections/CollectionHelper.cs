@@ -73,8 +73,34 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static string ConcatToString<TCollection, TContent>(this TCollection collection) where TCollection : IEnumerable<TContent>
+    public static string ConcatToString<T>(this IEnumerable<T> collection)
     {
+        if (typeof(T) == typeof(char) && collection.TryGetReadOnlySpan(out ReadOnlySpan<T> spanOfChar))
+        {
+            ref T firstItem = ref MemoryMarshal.GetReference(spanOfChar);
+            ReadOnlySpan<char> charSpan = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, char>(ref firstItem), spanOfChar.Length);
+            return new(charSpan);
+        }
+
+        if (typeof(T) == typeof(string) && collection.TryGetReadOnlySpan(out ReadOnlySpan<T> spanOfString))
+        {
+            ref T firstItem = ref MemoryMarshal.GetReference(spanOfString);
+            ReadOnlySpan<string> stringSpan = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, string>(ref firstItem), spanOfString.Length);
+            if (stringSpan.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            int averageStringLength = (stringSpan[0].Length + stringSpan[stringSpan.Length >> 1].Length + stringSpan[^1].Length) / 3;
+            using PoolBufferStringBuilder builder = new(averageStringLength * stringSpan.Length);
+            for (int i = 0; i < stringSpan.Length; i++)
+            {
+                builder.Append(stringSpan[i]);
+            }
+
+            return builder.ToString();
+        }
+
         return string.Concat(collection);
     }
 
