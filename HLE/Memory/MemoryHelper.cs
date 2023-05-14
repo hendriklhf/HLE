@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -40,9 +40,8 @@ public static unsafe class MemoryHelper
     }
 
     /// <summary>
-    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>.
+    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. Does not allocate any memory. <br/>
     /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
-    ///
     /// </summary>
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
@@ -85,8 +84,41 @@ public static unsafe class MemoryHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<byte> GetBytes<T>(in T item) where T : struct
+    public static Span<byte> GetBytes<T>(ref T item) where T : struct
     {
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref Unsafe.AsRef(in item)), sizeof(T));
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool EqualsBytes<TLeft, TRight>(TLeft left, TRight right) where TLeft : struct where TRight : struct
+    {
+        if (sizeof(TLeft) != sizeof(TRight))
+        {
+            return false;
+        }
+
+        ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
+        ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
+        return leftBytes.SequenceEqual(rightBytes);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool EqualsBytes<TLeft, TRight>(ref TLeft left, ref TRight right) where TLeft : struct where TRight : struct
+    {
+        if (sizeof(TLeft) != sizeof(TRight))
+        {
+            return false;
+        }
+
+        if (Unsafe.AreSame(ref Unsafe.As<TLeft, byte>(ref left), ref Unsafe.As<TRight, byte>(ref right)))
+        {
+            return true;
+        }
+
+        ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
+        ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
+        return leftBytes.SequenceEqual(rightBytes);
     }
 }
