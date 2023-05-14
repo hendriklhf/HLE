@@ -16,7 +16,7 @@ public class StringHelperTest
     public void PartTest()
     {
         const byte charCount = 30;
-        ReadOnlyMemory<char>[] part = _str.Part(charCount).ToArray();
+        ReadOnlyMemory<char>[] part = _str.Chunk(charCount).ToArray();
         Assert.AreEqual(8, part.Length);
         Assert.IsTrue(part[..^1].All(p => p.Length == charCount));
         Assert.IsTrue(part[^1].Length <= charCount);
@@ -26,7 +26,7 @@ public class StringHelperTest
     public void PartTestOnWhitespace()
     {
         const byte charCount = 60;
-        ReadOnlyMemory<char>[] part = _str.Part(charCount, ' ').ToArray();
+        ReadOnlyMemory<char>[] part = _str.Chunk(charCount, ' ').ToArray();
         Assert.AreEqual(4, part.Length);
         Assert.IsTrue(part.All(p =>
         {

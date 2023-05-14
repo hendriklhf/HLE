@@ -31,7 +31,7 @@ public static class StringHelper
     public const string AntipingChar = "\uDB40\uDC00";
 
     [Pure]
-    public static ReadOnlyMemory<char>[] Part(this string str, int charCount)
+    public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount)
     {
         ReadOnlyMemory<char> span = str.AsMemory();
         if (span.Length <= charCount)
@@ -56,7 +56,7 @@ public static class StringHelper
     }
 
     [Pure]
-    public static ReadOnlyMemory<char>[] Part(this string str, int charCount, char separator)
+    public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount, char separator)
     {
         ReadOnlyMemory<char> span = str.AsMemory();
         if (span.Length <= charCount)
