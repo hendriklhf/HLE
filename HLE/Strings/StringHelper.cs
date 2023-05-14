@@ -143,8 +143,16 @@ public static class StringHelper
     [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
     {
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, c, indices);
+        int length;
+        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        {
+            using RentedArray<int> indicesBuffer = new(span.Length);
+            length = IndicesOf(span, c, indicesBuffer);
+            return indicesBuffer[..length].ToArray();
+        }
+
+        Span<int> indices = stackalloc int[span.Length];
+        length = IndicesOf(span, c, indices);
         return indices[..length].ToArray();
     }
 
@@ -182,8 +190,16 @@ public static class StringHelper
     [Pure]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int length = IndicesOf(span, s, indices);
+        int length;
+        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        {
+            using RentedArray<int> indicesBuffer = new(span.Length);
+            length = IndicesOf(span, s, indicesBuffer);
+            return indicesBuffer[..length].ToArray();
+        }
+
+        Span<int> indices = stackalloc int[span.Length];
+        length = IndicesOf(span, s, indices);
         return indices[..length].ToArray();
     }
 
@@ -422,7 +438,7 @@ public static class StringHelper
             Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
         }
 
-        Unsafe.Add(ref rangesAsInt, 0) = 0;
+        rangesAsInt = 0;
         Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
         return (rangesAsIntLength >> 1) + 1;
     }
@@ -928,8 +944,8 @@ public static class StringHelper
             return ReadOnlySpan<byte>.Empty;
         }
 
-        ref char charPointer = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref charPointer), str.Length << 1);
+        ref char chars = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref chars), str.Length << 1);
     }
 
     public static void CopyTo(this string str, char[] destination, int offset = 0)
