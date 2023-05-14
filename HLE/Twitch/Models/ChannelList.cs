@@ -23,7 +23,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
     public Channel? this[ReadOnlyMemory<char> channelName] => Get(channelName.Span);
 
     /// <summary>
-    /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to channel.
+    /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to the channel.
     /// </summary>
     /// <param name="channelName">The channel name, with or without '#'.</param>
     public Channel? this[ReadOnlySpan<char> channelName] => Get(channelName);
@@ -35,16 +35,15 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
     internal void Update(in RoomstateArgs args)
     {
         Channel? channel = Get(args.ChannelId);
-        if (channel is null)
-        {
-            channel = new(in args);
-            int channelNameHash = string.GetHashCode(channel.Name, StringComparison.OrdinalIgnoreCase);
-            _channels.AddOrSet(channel.Id, channelNameHash, channel);
-        }
-        else
+        if (channel is not null)
         {
             channel.Update(in args);
+            return;
         }
+
+        channel = new(in args);
+        int channelNameHash = string.GetHashCode(channel.Name, StringComparison.OrdinalIgnoreCase);
+        _channels.AddOrSet(channel.Id, channelNameHash, channel);
     }
 
     internal void Remove(ReadOnlySpan<char> channelName)
@@ -74,6 +73,11 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
         if (name[0] == '#')
         {
             name = name[1..];
+        }
+
+        if (name.Length == 0)
+        {
+            return null;
         }
 
         int channelNameHash = string.GetHashCode(name, StringComparison.OrdinalIgnoreCase);
