@@ -181,8 +181,15 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
 
         _flags |= GetIsAction(ircMessage, indicesOfWhitespace);
         Username = GetUsername(ircMessage, indicesOfWhitespace);
-        Channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..]);
+        Channel = GetChannel(ircMessage, indicesOfWhitespace);
         Message = GetMessage(ircMessage, indicesOfWhitespace);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static string GetChannel(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
+    {
+        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..];
+        return StringPool.Shared.GetOrAdd(channel);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
