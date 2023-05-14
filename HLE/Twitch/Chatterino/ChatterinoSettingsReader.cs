@@ -13,6 +13,7 @@ namespace HLE.Twitch.Chatterino;
 /// <summary>
 /// Reads settings of the application <a href="https://www.chatterino.com">Chatterino</a>.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class ChatterinoSettingsReader : IDisposable
 {
     private readonly PoolBufferWriter<byte> _settings = new(5000, 5000);
@@ -31,7 +32,6 @@ public sealed class ChatterinoSettingsReader : IDisposable
     /// <returns>A string array of all channels.</returns>
     /// <exception cref="JsonException">Will be thrown if the JSON settings file is not of the expected format.</exception>
     [Pure]
-    [SupportedOSPlatform("windows")]
     public string[] GetChannels()
     {
         Utf8JsonReader jsonReader = new(_settings.WrittenSpan);

@@ -2,10 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Memory;
@@ -80,7 +77,12 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
             return null;
         }
 
-        int streamLength = int.CreateChecked(stream.Length);
+        if (stream.Length > int.MaxValue)
+        {
+            throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
+        }
+
+        int streamLength = (int)stream.Length;
         using PoolBufferWriter<byte> bufferWriter = new(streamLength, 1000);
         int sizeHint = streamLength < 1000 ? streamLength : 1000;
         int bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
@@ -92,6 +94,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
         }
 
         resource = bufferWriter.WrittenSpan.ToArray();
+        _resources.AddOrSet(resourcePath, resource);
         return resource;
     }
 
@@ -109,7 +112,12 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
             return null;
         }
 
-        int streamLength = int.CreateChecked(stream.Length);
+        if (stream.Length > int.MaxValue)
+        {
+            throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
+        }
+
+        int streamLength = (int)stream.Length;
         using PoolBufferWriter<byte> bufferWriter = new(streamLength, 1000);
         int sizeHint = streamLength < 1000 ? streamLength : 1000;
         int bytesRead = await stream.ReadAsync(bufferWriter.GetMemory(sizeHint));
@@ -121,30 +129,8 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
         }
 
         resource = bufferWriter.WrittenSpan.ToArray();
+        _resources.AddOrSet(resourcePath, resource);
         return resource;
-    }
-
-    public void CopyTo(byte[][] destination, int offset = 0)
-    {
-        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
-    }
-
-    public void CopyTo(Memory<byte[]> destination)
-    {
-        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
-    }
-
-    public void CopyTo(Span<byte[]> destination)
-    {
-        CopyTo(ref MemoryMarshal.GetReference(destination));
-    }
-
-    public unsafe void CopyTo(ref byte[] destination)
-    {
-        byte[]?[] resources = _resources.Values.Where(v => v is not null).ToArray();
-        ref byte source = ref Unsafe.As<byte[]?, byte>(ref MemoryMarshal.GetArrayDataReference(resources));
-        ref byte destinationByte = ref Unsafe.As<byte[], byte>(ref destination);
-        Unsafe.CopyBlock(ref destinationByte, ref source, (uint)(resources.Length * sizeof(byte[])));
     }
 
     [Pure]

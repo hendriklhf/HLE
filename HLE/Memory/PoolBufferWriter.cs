@@ -37,6 +37,12 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     {
     }
 
+    public PoolBufferWriter(int initialSize)
+    {
+        _buffer = new(initialSize);
+        _defaultElementGrowth = initialSize << 1;
+    }
+
     /// <summary>
     /// Creates a new <see cref="PoolBufferWriter{T}"/> with an initial buffer size and an element growth.
     /// </summary>

@@ -41,7 +41,12 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     {
     }
 
-    public ConcurrentPoolBufferList(int capacity, int defaultElementGrowth = 10)
+    public ConcurrentPoolBufferList(int capacity)
+    {
+        _bufferWriter = new(capacity, capacity << 1);
+    }
+
+    public ConcurrentPoolBufferList(int capacity, int defaultElementGrowth)
     {
         _bufferWriter = new(capacity, defaultElementGrowth);
     }
@@ -90,6 +95,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AddWithoutLock(T item)
     {
         _bufferWriter.GetSpan()[0] = item;
@@ -103,29 +109,22 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
 
     public void AddRange<TCollection>(TCollection items) where TCollection : IEnumerable<T>
     {
-        switch (items)
+        _bufferWriterLock.Wait();
+        try
         {
-            case T[] array:
-                AddRange(array);
-                break;
-            case List<T> list:
-                AddRange(list);
-                break;
-            default:
-                _bufferWriterLock.Wait();
-                try
-                {
-                    foreach (T item in items)
-                    {
-                        AddWithoutLock(item);
-                    }
-                }
-                finally
-                {
-                    _bufferWriterLock.Release();
-                }
+            if (items.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+            {
+                AddRangeWithoutLock(span);
+            }
 
-                break;
+            foreach (T item in items)
+            {
+                AddWithoutLock(item);
+            }
+        }
+        finally
+        {
+            _bufferWriterLock.Release();
         }
     }
 
@@ -144,14 +143,20 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
         AddRange((ReadOnlySpan<T>)items);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void AddRangeWithoutLock(ReadOnlySpan<T> items)
+    {
+        Span<T> destination = _bufferWriter.GetSpan(items.Length);
+        items.CopyTo(destination);
+        _bufferWriter.Advance(items.Length);
+    }
+
     public void AddRange(ReadOnlySpan<T> items)
     {
         _bufferWriterLock.Wait();
         try
         {
-            Span<T> destination = _bufferWriter.GetSpan(items.Length);
-            items.CopyTo(destination);
-            _bufferWriter.Advance(items.Length);
+            AddRangeWithoutLock(items);
         }
         finally
         {
@@ -285,7 +290,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     [Pure]
     public bool Equals(ConcurrentPoolBufferList<T>? other)
     {
-        return ReferenceEquals(this, other);
+        return ReferenceEquals(_bufferWriter, other?._bufferWriter);
     }
 
     [Pure]
@@ -297,6 +302,6 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     [Pure]
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return _bufferWriter.GetHashCode();
     }
 }

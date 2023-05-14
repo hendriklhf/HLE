@@ -9,7 +9,7 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-[DebuggerDisplay("{ToString()}")]
+[DebuggerDisplay("\"{ToString()}\"")]
 public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBufferStringBuilder>, ICopyable<char>
 {
     public readonly ref char this[int index] => ref BufferSpan[index];
@@ -41,6 +41,8 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     private const int _minimumGrowth = 100;
 
+    public static PoolBufferStringBuilder Empty => new();
+
     public PoolBufferStringBuilder()
     {
     }
@@ -65,9 +67,15 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     public readonly void Dispose()
     {
+        if (ReferenceEquals(_buffer, Array.Empty<char>()))
+        {
+            return;
+        }
+
         ArrayPool<char>.Shared.Return(_buffer);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Advance(int length)
     {
         _length += length;

@@ -39,7 +39,12 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     {
     }
 
-    public PoolBufferList(int capacity, int defaultElementGrowth = 10)
+    public PoolBufferList(int capacity)
+    {
+        _bufferWriter = new(capacity, capacity << 1);
+    }
+
+    public PoolBufferList(int capacity, int defaultElementGrowth)
     {
         _bufferWriter = new(capacity, defaultElementGrowth);
     }
@@ -82,21 +87,15 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
 
     public void AddRange<TCollection>(TCollection items) where TCollection : IEnumerable<T>
     {
-        switch (items)
+        if (items.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
         {
-            case T[] array:
-                AddRange(array);
-                break;
-            case List<T> list:
-                AddRange(list);
-                break;
-            default:
-                foreach (T item in items)
-                {
-                    Add(item);
-                }
+            AddRange(span);
+            return;
+        }
 
-                break;
+        foreach (T item in items)
+        {
+            Add(item);
         }
     }
 
@@ -214,7 +213,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     [Pure]
     public bool Equals(PoolBufferList<T>? other)
     {
-        return ReferenceEquals(this, other);
+        return ReferenceEquals(_bufferWriter, other?._bufferWriter);
     }
 
     [Pure]
@@ -226,6 +225,6 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     [Pure]
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return _bufferWriter.GetHashCode();
     }
 }

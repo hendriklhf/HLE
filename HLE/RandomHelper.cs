@@ -78,7 +78,6 @@ public static class RandomHelper
     }
 
     [Pure]
-    // ReSharper disable once UnusedParameter.Global
     public static unsafe string NextString(this Random random, int length, char minChar = char.MinValue, char maxChar = char.MaxValue)
     {
         if (length <= 0)
@@ -86,25 +85,27 @@ public static class RandomHelper
             return string.Empty;
         }
 
-        ushort charCount = (ushort)(maxChar - minChar);
-        Span<ushort> chars = MemoryHelper.UseStackAlloc<ushort>(charCount) ? stackalloc ushort[charCount] : new ushort[charCount];
-        chars.FillAscending(minChar);
+        ushort charRange = (ushort)(maxChar - minChar);
+        Span<ushort> charsInRange = MemoryHelper.UseStackAlloc<ushort>(charRange) ? stackalloc ushort[charRange] : new ushort[charRange];
+        charsInRange.FillAscending(minChar);
 
         if (!MemoryHelper.UseStackAlloc<ushort>(length))
         {
             using RentedArray<ushort> bufferResult = new(length);
             for (int i = 0; i < length; i++)
             {
-                bufferResult[i] = chars.Random();
+                bufferResult[i] = charsInRange[random.Next(charRange)];
             }
 
-            return new((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bufferResult.Span)), 0, length);
+            ref char firstChar = ref Unsafe.As<ushort, char>(ref MemoryMarshal.GetReference(bufferResult.Span));
+            Span<char> chars = MemoryMarshal.CreateSpan(ref firstChar, length);
+            return new(chars);
         }
 
         ushort* result = stackalloc ushort[length];
         for (int i = 0; i < length; i++)
         {
-            result[i] = chars.Random();
+            result[i] = charsInRange[random.Next(charRange)];
         }
 
         return new((char*)result, 0, length);
@@ -297,17 +298,17 @@ public static class RandomHelper
         }
 
         Span<char> chars = MemoryHelper.UseStackAlloc<char>(length) ? stackalloc char[length] : new char[length];
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(chars)), length * sizeof(char));
+        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(chars)), length << 1);
         random.GetBytes(bytes);
-        return new((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(bytes)), 0, length);
+        return new(chars);
     }
 
     [Pure]
     public static unsafe T GetStruct<T>(this RandomNumberGenerator random) where T : struct
     {
         Unsafe.SkipInit(out T result);
-        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
-        random.GetBytes(span);
+        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
+        random.GetBytes(bytes);
         return result;
     }
 

@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using HLE.Memory;
 
 namespace HLE.Http;
 
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("Length = {_contentLength}")]
 public readonly struct HttpContentBytes : IDisposable, IEquatable<HttpContentBytes>
 {
     public ReadOnlySpan<byte> Span => _contentBuffer[.._contentLength];
