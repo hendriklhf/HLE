@@ -65,9 +65,9 @@ public static class StringManipulations
 
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
-            using RentedArray<char> copyArrayBuffer = new(span.Length);
-            span.CopyTo(copyArrayBuffer);
-            MemoryExtensions.ToLower(copyArrayBuffer[..span.Length], span, cultureInfo);
+            using RentedArray<char> rentedCopyBuffer = new(span.Length);
+            span.CopyTo(rentedCopyBuffer);
+            MemoryExtensions.ToLower(rentedCopyBuffer[..span.Length], span, cultureInfo);
             return;
         }
 
@@ -90,9 +90,9 @@ public static class StringManipulations
     {
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
-            using RentedArray<char> copyArrayBuffer = new(span.Length);
-            span.CopyTo(copyArrayBuffer);
-            MemoryExtensions.ToUpper(copyArrayBuffer[..span.Length], span, cultureInfo);
+            using RentedArray<char> rentedCopyBuffer = new(span.Length);
+            span.CopyTo(rentedCopyBuffer);
+            MemoryExtensions.ToUpper(rentedCopyBuffer[..span.Length], span, cultureInfo);
             return;
         }
 
