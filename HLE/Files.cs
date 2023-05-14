@@ -17,7 +17,7 @@ public static class Files
         using FileStream fileStream = File.OpenRead(filePath);
         int bytesRead = fileStream.Read(writer.GetSpan(defaultSizeHint));
         writer.Advance(bytesRead);
-        while (bytesRead == defaultSizeHint)
+        while (bytesRead > 0)
         {
             bytesRead = fileStream.Read(writer.GetSpan(defaultSizeHint));
             writer.Advance(bytesRead);
@@ -30,7 +30,7 @@ public static class Files
         await using FileStream fileStream = File.OpenRead(filePath);
         int bytesRead = await fileStream.ReadAsync(writer.GetMemory(defaultSizeHint));
         writer.Advance(bytesRead);
-        while (bytesRead == defaultSizeHint)
+        while (bytesRead > 0)
         {
             bytesRead = await fileStream.ReadAsync(writer.GetMemory(defaultSizeHint));
             writer.Advance(bytesRead);
