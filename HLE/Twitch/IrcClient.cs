@@ -249,7 +249,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         }
     }
 
-    private protected void InvokeDataReceived(IrcClient sender, ReceivedData data)
+    private protected void InvokeDataReceived(IrcClient sender, in ReceivedData data)
     {
         if (OnDataReceived is null)
         {
