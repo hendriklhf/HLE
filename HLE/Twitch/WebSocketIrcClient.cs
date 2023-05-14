@@ -71,12 +71,13 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
                 bool isEndOfMessage = receivedChars.Span[^2] == _newLine[0] && receivedChars.Span[^1] == _newLine[1];
                 if (isEndOfMessage)
                 {
-                    PassAllLines(receivedChars);
+                    PassAllLines(receivedChars.Span);
                     bufferLength = 0;
                     continue;
                 }
 
                 PassAllLinesExceptLast(ref receivedChars);
+                // receivedChars now only contains left-over chars, because the last received message didn't end with an new line
                 receivedChars.Span.CopyTo(charBuffer.Span);
                 bufferLength = receivedChars.Length;
             }
@@ -93,19 +94,21 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         while (indexOfLineEnding > -1)
         {
             var lineOfData = receivedChars[..indexOfLineEnding];
-            InvokeDataReceived(this, ReceivedData.Create(lineOfData.Span));
+            ReceivedData receivedData = ReceivedData.Create(lineOfData.Span);
+            InvokeDataReceived(this, in receivedData);
             receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
             indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
         }
     }
 
-    private void PassAllLines(ReadOnlyMemory<char> receivedChars)
+    private void PassAllLines(ReadOnlySpan<char> receivedChars)
     {
         while (receivedChars.Length > 2)
         {
-            int indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
-            ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
-            InvokeDataReceived(this, ReceivedData.Create(lineOfData.Span));
+            int indexOfLineEnding = receivedChars.IndexOf(_newLine);
+            ReadOnlySpan<char> lineOfData = receivedChars[..indexOfLineEnding];
+            ReceivedData receivedData = ReceivedData.Create(lineOfData);
+            InvokeDataReceived(this, in receivedData);
             receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
         }
     }
