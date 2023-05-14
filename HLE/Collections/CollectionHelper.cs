@@ -21,7 +21,7 @@ public static class CollectionHelper
     [Pure]
     public static T? Random<T>(this IEnumerable<T> collection)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? Random(span) : Random(collection.ToArray());
+        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? Random(span) : Random(collection.ToArray());
     }
 
     [Pure]
@@ -59,39 +59,97 @@ public static class CollectionHelper
     [Pure]
     public static string JoinToString<T>(this IEnumerable<T> collection, char separator)
     {
+        if (typeof(char) == typeof(T))
+        {
+            if (!collection.TryGetReadOnlySpan(out ReadOnlySpan<char> chars))
+            {
+                chars = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection).ToArray();
+            }
+
+            if (chars.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            int charsWritten;
+            int calculatedResultLength = chars.Length << 1;
+            if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
+            {
+                using RentedArray<char> rentedBuffer = new(calculatedResultLength);
+                charsWritten = StringHelper.Join(chars, separator, rentedBuffer);
+                return new(rentedBuffer[..charsWritten]);
+            }
+
+            Span<char> buffer = stackalloc char[calculatedResultLength];
+            charsWritten = StringHelper.Join(chars, separator, buffer);
+            return new(buffer[..charsWritten]);
+        }
+
         return string.Join(separator, collection);
     }
 
     [Pure]
     public static string JoinToString<T>(this IEnumerable<T> collection, string separator)
     {
+        if (typeof(char) == typeof(T))
+        {
+            if (!collection.TryGetReadOnlySpan(out ReadOnlySpan<char> chars))
+            {
+                chars = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection).ToArray();
+            }
+
+            if (chars.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            int charsWritten;
+            int calculatedResultLength = chars.Length + separator.Length * chars.Length;
+            if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
+            {
+                using RentedArray<char> rentedBuffer = new(calculatedResultLength);
+                charsWritten = StringHelper.Join(chars, separator, rentedBuffer);
+                return new(rentedBuffer[..charsWritten]);
+            }
+
+            Span<char> buffer = stackalloc char[calculatedResultLength];
+            charsWritten = StringHelper.Join(chars, separator, buffer);
+            return new(buffer[..charsWritten]);
+        }
+
         return string.Join(separator, collection);
     }
 
     [Pure]
     public static string ConcatToString<T>(this IEnumerable<T> collection)
     {
-        if (typeof(T) == typeof(char) && collection.TryGetReadOnlySpan(out ReadOnlySpan<T> spanOfChar))
+        if (typeof(T) == typeof(char))
         {
-            ref T firstItem = ref MemoryMarshal.GetReference(spanOfChar);
-            ReadOnlySpan<char> charSpan = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, char>(ref firstItem), spanOfChar.Length);
-            return new(charSpan);
+            if (!collection.TryGetReadOnlySpan(out ReadOnlySpan<char> chars))
+            {
+                chars = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection).ToArray();
+            }
+
+            return new(chars);
         }
 
-        if (typeof(T) == typeof(string) && collection.TryGetReadOnlySpan(out ReadOnlySpan<T> spanOfString))
+        if (typeof(T) == typeof(string))
         {
-            ref T firstItem = ref MemoryMarshal.GetReference(spanOfString);
-            ReadOnlySpan<string> stringSpan = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, string>(ref firstItem), spanOfString.Length);
-            if (stringSpan.Length == 0)
+            if (!collection.TryGetReadOnlySpan(out ReadOnlySpan<string> strings))
+            {
+                strings = Unsafe.As<IEnumerable<T>, IEnumerable<string>>(ref collection).ToArray();
+            }
+
+            if (strings.Length == 0)
             {
                 return string.Empty;
             }
 
-            int averageStringLength = (stringSpan[0].Length + stringSpan[stringSpan.Length >> 1].Length + stringSpan[^1].Length) / 3;
-            using PoolBufferStringBuilder builder = new(averageStringLength * stringSpan.Length);
-            for (int i = 0; i < stringSpan.Length; i++)
+            int estimatedAverageStringLength = (strings[0].Length + strings[strings.Length >> 1].Length + strings[^1].Length) / 3;
+            using PoolBufferStringBuilder builder = new(estimatedAverageStringLength * strings.Length);
+            for (int i = 0; i < strings.Length; i++)
             {
-                builder.Append(stringSpan[i]);
+                builder.Append(strings[i]);
             }
 
             return builder.ToString();
@@ -193,7 +251,7 @@ public static class CollectionHelper
     [Pure]
     public static T[][] Split<T>(this IEnumerable<T> collection, T separator) where T : IEquatable<T>
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? Split(span, separator) : Split((ReadOnlySpan<T>)collection.ToArray(), separator);
+        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? Split(span, separator) : Split((ReadOnlySpan<T>)collection.ToArray(), separator);
     }
 
     [Pure]
@@ -260,7 +318,7 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf((ReadOnlySpan<T>)collection.ToArray(), predicate);
+        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf((ReadOnlySpan<T>)collection.ToArray(), predicate);
     }
 
     [Pure]
@@ -326,7 +384,7 @@ public static class CollectionHelper
     [Pure]
     public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf(collection.ToArray(), predicate);
+        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf(collection.ToArray(), predicate);
     }
 
     [Pure]
@@ -392,13 +450,13 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item) where T : IEquatable<T>
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, item) : IndicesOf(collection.ToArray(), item);
+        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, item) : IndicesOf(collection.ToArray(), item);
     }
 
     [Pure]
     public static int[] IndicesOf<T>(this List<T> list, T item) where T : IEquatable<T>
     {
-        return IndicesOf(CollectionsMarshal.AsSpan(list), item);
+        return IndicesOf((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), item);
     }
 
     [Pure]
@@ -457,15 +515,35 @@ public static class CollectionHelper
     [Pure]
     public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey, TValue)> collection) where TKey : notnull
     {
-        return collection.ToDictionary(i => i.Item1, i => i.Item2);
+        if (!collection.TryGetReadOnlySpan<(TKey, TValue)>(out ReadOnlySpan<(TKey, TValue)> valuePairs))
+        {
+            return collection.ToDictionary(i => i.Item1, i => i.Item2);
+        }
+
+        Dictionary<TKey, TValue> result = new(valuePairs.Length);
+        for (int i = 0; i < valuePairs.Length; i++)
+        {
+            (TKey, TValue) valuePair = valuePairs[i];
+            result.Add(valuePair.Item1, valuePair.Item2);
+        }
+
+        return result;
     }
 
     [Pure]
     public static T[] Randomize<T>(this IEnumerable<T> collection)
     {
-        T[] array = collection.ToArray();
-        Randomize((Span<T>)array);
-        return array;
+        T[] result;
+        if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+        {
+            result = span.ToArray();
+            Randomize((Span<T>)result);
+            return result;
+        }
+
+        result = collection.ToArray();
+        Randomize((Span<T>)result);
+        return result;
     }
 
     [Pure]
@@ -504,7 +582,7 @@ public static class CollectionHelper
     [Pure]
     public static T[] RandomCollection<T>(this IEnumerable<T> collection, int length)
     {
-        return TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span) ? RandomCollection(span, length) : RandomCollection(collection.ToArray(), length);
+        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? RandomCollection(span, length) : RandomCollection(collection.ToArray(), length);
     }
 
     [Pure]
@@ -784,7 +862,7 @@ public static class CollectionHelper
             return true;
         }
 
-        if (TryGetSpan(collection, out Span<T> mutableSpan))
+        if (TryGetSpan<T>(collection, out Span<T> mutableSpan))
         {
             span = mutableSpan;
             return true;
@@ -792,6 +870,13 @@ public static class CollectionHelper
 
         span = ReadOnlySpan<T>.Empty;
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetReadOnlySpan<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out ReadOnlySpan<TTo> span)
+    {
+        IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
+        return TryGetReadOnlySpan<TTo>(resultCollection, out span);
     }
 
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
@@ -812,6 +897,13 @@ public static class CollectionHelper
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSpan<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out Span<TTo> span)
+    {
+        IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
+        return TryGetSpan<TTo>(resultCollection, out span);
+    }
+
     public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
     {
         // ReSharper disable once OperatorIsCanBeUsed
@@ -822,7 +914,7 @@ public static class CollectionHelper
             return true;
         }
 
-        if (TryGetMemory(collection, out Memory<T> mutableMemory))
+        if (TryGetMemory<T>(collection, out Memory<T> mutableMemory))
         {
             memory = mutableMemory;
             return true;
@@ -830,6 +922,13 @@ public static class CollectionHelper
 
         memory = ReadOnlyMemory<T>.Empty;
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetReadOnlyMemory<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out ReadOnlyMemory<TTo> memory)
+    {
+        IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
+        return TryGetReadOnlyMemory<TTo>(resultCollection, out memory);
     }
 
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
@@ -848,5 +947,12 @@ public static class CollectionHelper
 
         memory = Memory<T>.Empty;
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetMemory<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out Memory<TTo> memory)
+    {
+        IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
+        return TryGetMemory<TTo>(resultCollection, out memory);
     }
 }
