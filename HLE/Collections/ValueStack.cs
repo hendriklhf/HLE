@@ -7,12 +7,11 @@ namespace HLE.Collections;
 
 public ref struct ValueStack<T>
 {
-    public readonly int Count => _count;
+    public int Count { get; private set; }
 
     public readonly int Capacity => _stack.Length;
 
     private readonly Span<T> _stack = Span<T>.Empty;
-    private int _count;
 
     public ValueStack()
     {
@@ -21,19 +20,19 @@ public ref struct ValueStack<T>
     public ValueStack(Span<T> stack, int count = 0)
     {
         _stack = stack;
-        _count = count;
+        Count = count;
     }
 
-    public void Push(T item) => _stack[_count++] = item;
+    public void Push(T item) => _stack[Count++] = item;
 
-    public T Pop() => _stack[--_count];
+    public T Pop() => _stack[--Count];
 
     [Pure]
-    public readonly T Peek() => _stack[_count - 1];
+    public readonly T Peek() => _stack[Count - 1];
 
     public bool TryPush(T item)
     {
-        if (_count >= Capacity)
+        if (Count >= Capacity)
         {
             return false;
         }
@@ -44,7 +43,7 @@ public ref struct ValueStack<T>
 
     public bool TryPop([MaybeNullWhen(false)] out T item)
     {
-        if (_count <= 0)
+        if (Count <= 0)
         {
             item = default;
             return false;
@@ -56,7 +55,7 @@ public ref struct ValueStack<T>
 
     public readonly bool TryPeek([MaybeNullWhen(false)] out T item)
     {
-        if (_count <= 0)
+        if (Count <= 0)
         {
             item = default;
             return false;
@@ -68,7 +67,7 @@ public ref struct ValueStack<T>
 
     public void Clear()
     {
-        _count = 0;
+        Count = 0;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
             _stack.Clear();
@@ -78,7 +77,7 @@ public ref struct ValueStack<T>
     [Pure]
     public readonly T[] ToArray()
     {
-        return _stack[.._count].ToArray();
+        return _stack[..Count].ToArray();
     }
 
     public static implicit operator ValueStack<T>(Span<T> stack) => new(stack);
