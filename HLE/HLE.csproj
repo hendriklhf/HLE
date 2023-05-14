@@ -16,6 +16,8 @@
 
     <PropertyGroup>
         <Product>HLE</Product>
+        <PackageId>HLE</PackageId>
+        <Title>HLE</Title>
         <Version>2.1.5</Version>
         <PackageVersion>2.1.5</PackageVersion>
         <AssemblyVersion>2.1.5</AssemblyVersion>
@@ -31,6 +33,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>.\bin\Release\HLE.xml</DocumentationFile>
         <WarningsAsErrors>NU1605</WarningsAsErrors>
     </PropertyGroup>
