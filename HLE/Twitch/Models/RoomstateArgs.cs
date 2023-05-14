@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 using HLE.Numerics;
 using HLE.Strings;
 
@@ -76,34 +77,31 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
             tags = semicolonIndex == -1 ? ReadOnlySpan<char>.Empty : tags[(semicolonIndex + 1)..];
             equalsSignIndex = tags.IndexOf('=');
 
-            if (key.Equals(_emoteOnlyTag, StringComparison.Ordinal))
+            switch (key)
             {
-                EmoteOnly = GetEmoteOnly(value);
-                _changedStatesFlags |= ChangedRoomstateFlag.EmoteOnly;
-            }
-            else if (key.Equals(_followersOnlyTag, StringComparison.Ordinal))
-            {
-                FollowersOnly = GetFollowersOnly(value);
-                _changedStatesFlags |= ChangedRoomstateFlag.FollowersOnly;
-            }
-            else if (key.Equals(_r9KTag, StringComparison.Ordinal))
-            {
-                R9K = GetR9K(value);
-                _changedStatesFlags |= ChangedRoomstateFlag.R9K;
-            }
-            else if (key.Equals(_roomIdTag, StringComparison.Ordinal))
-            {
-                ChannelId = GetChannelId(value);
-            }
-            else if (key.Equals(_slowModeTag, StringComparison.Ordinal))
-            {
-                SlowMode = GetSlowMode(value);
-                _changedStatesFlags |= ChangedRoomstateFlag.SlowMode;
-            }
-            else if (key.Equals(_subsOnlyTag, StringComparison.Ordinal))
-            {
-                SubsOnly = GetSubsOnly(value);
-                _changedStatesFlags |= ChangedRoomstateFlag.SubsOnly;
+                case _emoteOnlyTag:
+                    EmoteOnly = GetEmoteOnly(value);
+                    _changedStatesFlags |= ChangedRoomstateFlag.EmoteOnly;
+                    break;
+                case _followersOnlyTag:
+                    FollowersOnly = GetFollowersOnly(value);
+                    _changedStatesFlags |= ChangedRoomstateFlag.FollowersOnly;
+                    break;
+                case _r9KTag:
+                    R9K = GetR9K(value);
+                    _changedStatesFlags |= ChangedRoomstateFlag.R9K;
+                    break;
+                case _roomIdTag:
+                    ChannelId = GetChannelId(value);
+                    break;
+                case _slowModeTag:
+                    SlowMode = GetSlowMode(value);
+                    _changedStatesFlags |= ChangedRoomstateFlag.SlowMode;
+                    break;
+                case _subsOnlyTag:
+                    SubsOnly = GetSubsOnly(value);
+                    _changedStatesFlags |= ChangedRoomstateFlag.SubsOnly;
+                    break;
             }
         }
 
@@ -136,10 +134,11 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(RoomstateArgs other)
     {
-        return ChannelId == other.ChannelId && EmoteOnly == other.EmoteOnly && FollowersOnly == other.FollowersOnly &&
-               R9K == other.R9K && SlowMode == other.SlowMode && SubsOnly == other.SubsOnly && _changedStatesFlags == other._changedStatesFlags;
+        ref RoomstateArgs thisRoomstate = ref Unsafe.AsRef(in this);
+        return MemoryHelper.EqualsBytes(ref thisRoomstate, ref other);
     }
 
     public override bool Equals(object? obj)
