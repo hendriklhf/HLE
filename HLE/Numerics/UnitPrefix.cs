@@ -144,6 +144,12 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
         return value * (fromPrefix / toPrefix);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Convert(float value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
+    {
+        return value * (float)(fromPrefix / toPrefix);
+    }
+
     public static implicit operator double(UnitPrefix prefix)
     {
         return prefix.Value;
