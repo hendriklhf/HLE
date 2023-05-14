@@ -64,7 +64,7 @@ public sealed partial class TwitchApi
 
     public async ValueTask<User[]> GetUsersAsync(IEnumerable<string> usernames)
     {
-        if (usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory))
+        if (usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory))
         {
             return await GetUsersAsync(usernamesMemory, ReadOnlyMemory<long>.Empty);
         }
@@ -84,8 +84,8 @@ public sealed partial class TwitchApi
 
     public async ValueTask<User[]> GetUsersAsync(IEnumerable<string> usernames, IEnumerable<long> userIds)
     {
-        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
-        bool userIdsIsMemory = userIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> userIdsMemory);
+        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory);
+        bool userIdsIsMemory = userIds.TryGetReadOnlyMemory<long>(out ReadOnlyMemory<long> userIdsMemory);
 
         return usernamesIsMemory switch
         {

@@ -64,7 +64,7 @@ public sealed partial class TwitchApi
 
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames)
     {
-        if (usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory))
+        if (usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory))
         {
             return await GetStreamsAsync(usernamesMemory, ReadOnlyMemory<long>.Empty);
         }
@@ -74,7 +74,7 @@ public sealed partial class TwitchApi
 
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<long> channelIds)
     {
-        if (channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory))
+        if (channelIds.TryGetReadOnlyMemory<long>(out ReadOnlyMemory<long> channelIdsMemory))
         {
             return await GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIdsMemory);
         }
@@ -84,8 +84,8 @@ public sealed partial class TwitchApi
 
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames, IEnumerable<long> channelIds)
     {
-        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
-        bool channelIdsIsMemory = channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory);
+        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory);
+        bool channelIdsIsMemory = channelIds.TryGetReadOnlyMemory<long>(out ReadOnlyMemory<long> channelIdsMemory);
 
         return usernamesIsMemory switch
         {
