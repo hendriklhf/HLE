@@ -168,6 +168,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         await SendAsync(channel.AsMemory(), message);
     }
 
+    /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
+    public async ValueTask SendAsync(ReadOnlyMemory<char> channel, string message)
+    {
+        await SendAsync(channel, message.AsMemory());
+    }
+
     /// <summary>
     /// Asynchronously sends a chat message.
     /// </summary>
@@ -257,7 +263,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask JoinChannelsAsync(IEnumerable<string> channels)
     {
-        if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<string> channelsMemory))
+        if (channels.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> channelsMemory))
         {
             await JoinChannelsAsync(channelsMemory);
         }
@@ -340,7 +346,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask LeaveChannelsAsync(IEnumerable<string> channels)
     {
-        if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<string> channelsMemory))
+        if (channels.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> channelsMemory))
         {
             await LeaveChannelsAsync(channelsMemory);
         }
@@ -533,6 +539,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Username, Channels, _client, _ircHandler, _ircChannels);
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
     }
 }
