@@ -7,21 +7,27 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-        <NeutralLanguage>en</NeutralLanguage>
-        <SignAssembly>false</SignAssembly>
-        <Product>HLE</Product>
-        <Description>A class library containing usefull methods and data lists.</Description>
-        <Authors>Hendrik</Authors>
-        <PackageTags>library c# csharp .net7 dotnet</PackageTags>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <WarningsAsErrors>Nullable</WarningsAsErrors>
         <DebugType>embedded</DebugType>
-        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Product>HLE</Product>
         <Version>2.1.5</Version>
         <PackageVersion>2.1.5</PackageVersion>
         <AssemblyVersion>2.1.5</AssemblyVersion>
-        <WarningsAsErrors>Nullable</WarningsAsErrors>
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <FileVersion>2.1.5</FileVersion>
+        <Description>A class library containing usefull methods and data lists.</Description>
+        <Authors>Hendrik</Authors>
+        <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
+        <PackageTags>library c# csharp .net7 dotnet</PackageTags>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -30,11 +36,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <None Include="..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
+        <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2022.3.1"/>
     </ItemGroup>
 
 </Project>
