@@ -838,11 +838,13 @@ public static class CollectionHelper
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AddOrSet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
     {
         CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out _) = value;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AddOrSet<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
     {
         if (!dictionary.TryAdd(key, value))
@@ -851,6 +853,7 @@ public static class CollectionHelper
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlySpan<T> span)
     {
         // ReSharper disable once OperatorIsCanBeUsed
@@ -879,6 +882,7 @@ public static class CollectionHelper
         return TryGetReadOnlySpan<TTo>(resultCollection, out span);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
     {
         if (typeof(T[]) == collection.GetType())
@@ -904,6 +908,7 @@ public static class CollectionHelper
         return TryGetSpan<TTo>(resultCollection, out span);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
     {
         // ReSharper disable once OperatorIsCanBeUsed
@@ -931,6 +936,7 @@ public static class CollectionHelper
         return TryGetReadOnlyMemory<TTo>(resultCollection, out memory);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
     {
         if (typeof(T[]) == collection.GetType())
