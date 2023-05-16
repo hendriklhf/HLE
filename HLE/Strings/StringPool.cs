@@ -1,23 +1,32 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
-using HLE.Collections;
+using System.Threading;
 using HLE.Memory;
 
 namespace HLE.Strings;
 
 public sealed class StringPool : IEquatable<StringPool>
 {
-    private readonly ConcurrentDictionary<int, Bucket> _buckets = new();
+    private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
+    private readonly SemaphoreSlim _bucketsLock = new(1);
 
-    public static StringPool Shared { get; } = new();
+    public static StringPool Shared { get; set; } = new();
+
+    private const int _defaultPoolCapacity = 4096;
+    private const int _defaultBucketCapacity = 32;
+
+    public StringPool()
+    {
+        Reset();
+    }
 
     public string GetOrAdd(ReadOnlySpan<char> span)
     {
-        return span.Length == 0 ? string.Empty : GetOrAddBucket(span.Length).GetOrAdd(span);
+        return span.Length == 0 ? string.Empty : GetBucket(span).GetOrAdd(span);
     }
 
     public string GetOrAdd(ReadOnlySpan<byte> bytes, Encoding encoding)
@@ -28,19 +37,16 @@ public sealed class StringPool : IEquatable<StringPool>
         }
 
         int charsWritten;
-        Bucket bucket;
         if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
         {
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
-            bucket = GetOrAddBucket(charsWritten);
-            return bucket.GetOrAdd(rentedCharBuffer[..charsWritten]);
+            return GetOrAdd(rentedCharBuffer[..charsWritten]);
         }
 
         Span<char> charBuffer = stackalloc char[bytes.Length];
         charsWritten = encoding.GetChars(bytes, charBuffer);
-        bucket = GetOrAddBucket(charsWritten);
-        return bucket.GetOrAdd(charBuffer[..charsWritten]);
+        return GetOrAdd(charBuffer[..charsWritten]);
     }
 
     public void Add(string value)
@@ -50,19 +56,18 @@ public sealed class StringPool : IEquatable<StringPool>
             return;
         }
 
-        GetOrAddBucket(value.Length).Add(value);
+        GetBucket(value).Add(value);
     }
 
     public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
     {
-        if (span.Length == 0)
+        if (span.Length != 0)
         {
-            value = string.Empty;
-            return true;
+            return GetBucket(span).TryGet(span, out value);
         }
 
-        value = null;
-        return TryGetBucket(span.Length, out Bucket bucket) && bucket.TryGet(span, out value);
+        value = string.Empty;
+        return true;
     }
 
     public bool TryGet(ReadOnlySpan<byte> bytes, Encoding encoding, [MaybeNullWhen(false)] out string value)
@@ -74,31 +79,23 @@ public sealed class StringPool : IEquatable<StringPool>
         }
 
         value = null;
-        Bucket bucket;
         int charsWritten;
         if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
         {
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
-            ReadOnlySpan<char> chars = rentedCharBuffer[..charsWritten];
-            return TryGetBucket(chars.Length, out bucket) && bucket.TryGet(chars, out value);
+            return TryGet(rentedCharBuffer[..charsWritten], out value);
         }
 
         Span<char> charBuffer = stackalloc char[bytes.Length];
         charsWritten = encoding.GetChars(bytes, charBuffer);
-        charBuffer = charBuffer[..charsWritten];
-        return TryGetBucket(charBuffer.Length, out bucket) && bucket.TryGet(charBuffer, out value);
+        return TryGet(charBuffer[..charsWritten], out value);
     }
 
     [Pure]
     public bool Contains(ReadOnlySpan<char> span)
     {
-        if (span.Length == 0)
-        {
-            return false;
-        }
-
-        return TryGetBucket(span.Length, out Bucket bucket) && bucket.Contains(span);
+        return span.Length != 0 && GetBucket(span).Contains(span);
     }
 
     [Pure]
@@ -109,44 +106,42 @@ public sealed class StringPool : IEquatable<StringPool>
             return false;
         }
 
-        Bucket bucket;
         int charsWritten;
         if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
         {
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
-            ReadOnlySpan<char> chars = rentedCharBuffer[..charsWritten];
-            return TryGetBucket(chars.Length, out bucket) && bucket.Contains(chars);
+            return Contains(rentedCharBuffer[..charsWritten]);
         }
 
         Span<char> charBuffer = stackalloc char[bytes.Length];
         charsWritten = encoding.GetChars(bytes, charBuffer);
-        charBuffer = charBuffer[..charsWritten];
-        return TryGetBucket(charsWritten, out bucket) && bucket.Contains(charBuffer);
+        return Contains(charBuffer[..charsWritten]);
     }
 
     public void Reset()
     {
-        _buckets.Clear();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Bucket GetOrAddBucket(int stringLength)
-    {
-        if (TryGetBucket(stringLength, out Bucket bucket))
+        _bucketsLock.Wait();
+        try
         {
-            return bucket;
+            for (int i = 0; i < _defaultPoolCapacity; i++)
+            {
+                _buckets[i].Dispose();
+                _buckets[i] = new(_defaultBucketCapacity);
+            }
         }
-
-        bucket = new();
-        _buckets.AddOrSet(stringLength, bucket);
-        return bucket;
+        finally
+        {
+            _bucketsLock.Release();
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool TryGetBucket(int stringLength, out Bucket bucket)
+    private Bucket GetBucket(ReadOnlySpan<char> span)
     {
-        return _buckets.TryGetValue(stringLength, out bucket);
+        int hash = string.GetHashCode(span);
+        int index = (int)(Unsafe.As<int, uint>(ref hash) % _defaultPoolCapacity);
+        return _buckets[index];
     }
 
     [Pure]
@@ -177,42 +172,132 @@ public sealed class StringPool : IEquatable<StringPool>
         return !(left == right);
     }
 
-    private readonly struct Bucket
+    private readonly struct Bucket : IDisposable
     {
-        private readonly ConcurrentDictionary<int, string> _strings = new();
+        private readonly string[] _strings;
+        private readonly SemaphoreSlim _stringsLock = new(1);
 
-        public Bucket()
+        public Bucket(int capacity = _defaultBucketCapacity)
         {
+            _strings = new string[capacity];
+            _strings.AsSpan().Fill(string.Empty);
         }
 
+        public void Dispose()
+        {
+            _stringsLock?.Dispose();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string GetOrAdd(ReadOnlySpan<char> span)
         {
-            int spanHash = string.GetHashCode(span);
-            if (_strings.TryGetValue(spanHash, out string? str))
+            if (TryGet(span, out string? value))
             {
-                return str;
+                return value;
             }
 
-            str = new(span);
-            _strings.AddOrSet(spanHash, str);
-            return str;
+            value = new(span);
+            Add(value);
+            return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(string value)
         {
-            int spanHash = string.GetHashCode(value);
-            _strings.AddOrSet(spanHash, value);
+            _stringsLock.Wait();
+            try
+            {
+                Span<string> strings = _strings;
+                strings[..^1].CopyTo(strings[1..]);
+                strings[0] = value;
+            }
+            finally
+            {
+                _stringsLock.Release();
+            }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            int spanHash = string.GetHashCode(span);
-            return _strings.TryGetValue(spanHash, out value);
+            ref string strings = ref MemoryMarshal.GetArrayDataReference(_strings);
+            for (int i = 0; i < _defaultBucketCapacity; i++)
+            {
+                string currentString = Unsafe.Add(ref strings, i);
+                if (!span.SequenceEqual(currentString))
+                {
+                    continue;
+                }
+
+                switch (i)
+                {
+                    case < 4:
+                        break;
+                    case < 8:
+                        Move(i, 3);
+                        break;
+                    case < 12:
+                        Move(i, 6);
+                        break;
+                    case < 16:
+                        Move(i, 9);
+                        break;
+                    case < 20:
+                        Move(i, 12);
+                        break;
+                    case < 24:
+                        Move(i, 15);
+                        break;
+                    case < 28:
+                        Move(i, 18);
+                        break;
+                    default:
+                        Move(i, 21);
+                        break;
+                }
+
+                value = currentString;
+                return true;
+            }
+
+            value = null;
+            return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(ReadOnlySpan<char> span)
         {
-            return _strings.ContainsKey(string.GetHashCode(span));
+            return TryGet(span, out _);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Move(int sourceIndex, int destinationIndex)
+        {
+            if (sourceIndex == destinationIndex)
+            {
+                return;
+            }
+
+            _stringsLock.Wait();
+            try
+            {
+                Span<string> strings = _strings;
+                string value = strings[sourceIndex];
+                if (sourceIndex > destinationIndex)
+                {
+                    strings[destinationIndex..sourceIndex].CopyTo(strings[(destinationIndex + 1)..]);
+                }
+                else
+                {
+                    strings[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(strings[sourceIndex..]);
+                }
+
+                strings[destinationIndex] = value;
+            }
+            finally
+            {
+                _stringsLock.Release();
+            }
         }
     }
 }
