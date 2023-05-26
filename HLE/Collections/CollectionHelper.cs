@@ -961,4 +961,49 @@ public static class CollectionHelper
         IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
         return TryGetMemory<TTo>(resultCollection, out memory);
     }
+
+    /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
+    public static void MoveItem<T>(this List<T> list, int sourceIndex, int destinationIndex)
+    {
+        MoveItem(CollectionsMarshal.AsSpan(list), sourceIndex, destinationIndex);
+    }
+
+    /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
+    public static void MoveItem<T>(this T[] array, int sourceIndex, int destinationIndex)
+    {
+        MoveItem((Span<T>)array, sourceIndex, destinationIndex);
+    }
+
+    /// <summary>
+    /// Moves an item in the collection from the source to the destination index
+    /// and moves the items between the indices to fill the now empty source index.
+    /// </summary>
+    /// <param name="span">The collection the items will be moved in.</param>
+    /// <param name="sourceIndex">The source index of the item that will be moved.</param>
+    /// <param name="destinationIndex">The destination index of the moved item.</param>
+    public static void MoveItem<T>(this Span<T> span, int sourceIndex, int destinationIndex)
+    {
+        if (sourceIndex == destinationIndex)
+        {
+            return;
+        }
+
+        if (Math.Abs(sourceIndex - destinationIndex) == 1)
+        {
+            (span[sourceIndex], span[destinationIndex]) = (span[destinationIndex], span[sourceIndex]);
+            return;
+        }
+
+        T value = span[sourceIndex];
+        if (sourceIndex > destinationIndex)
+        {
+            span[destinationIndex..sourceIndex].CopyTo(span[(destinationIndex + 1)..]);
+        }
+        else
+        {
+            span[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(span[sourceIndex..]);
+        }
+
+        span[destinationIndex] = value;
+    }
 }

@@ -205,4 +205,14 @@ public class CollectionHelperTest
         succeeded = enumerable.TryGetReadOnlyMemory(out var enumerableMemory);
         Assert.IsFalse(succeeded && enumerableMemory.Length == 0);
     }
+
+    [TestMethod]
+    public void MoveTest()
+    {
+        Span<char> chars = "hello".ToCharArray();
+        chars.MoveItem(1, 3);
+        Assert.IsTrue(chars is ['h', 'l', 'l', 'e', 'o']);
+        chars.MoveItem(3, 1);
+        Assert.IsTrue(chars is ['h', 'e', 'l', 'l', 'o']);
+    }
 }
