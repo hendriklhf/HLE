@@ -31,9 +31,9 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public T[] Array => _array;
 
-    public ref T Ref => ref MemoryMarshal.GetArrayDataReference(_array);
+    public ref T Reference => ref MemoryMarshal.GetReference(Span);
 
-    public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref Ref);
+    public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref Reference);
 
     public int Length => _array.Length;
 
@@ -86,7 +86,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     {
         return obj switch
         {
-            RentedArray<T> rentedArray => Equals(rentedArray),
+            RentedArray<T> rentedArray => Equals(rentedArray._array),
             T[] array => Equals(array),
             _ => false
         };
@@ -95,7 +95,7 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     [Pure]
     public bool Equals(RentedArray<T> other)
     {
-        return ReferenceEquals(_array, other._array);
+        return Equals(other._array);
     }
 
     [Pure]
@@ -138,6 +138,11 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     /// <inheritdoc/>
     public void Dispose()
     {
+        if (ReferenceEquals(_array, System.Array.Empty<T>()))
+        {
+            return;
+        }
+
         ArrayPool<T>.Shared.Return(_array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
     }
 

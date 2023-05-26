@@ -128,16 +128,16 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     {
         ReadOnlySpan<char> tags = ircMessage[1..indicesOfWhitespace[0]];
 
-        int semicolonIndex = tags.IndexOf(';');
-        while (semicolonIndex != -1)
+        int equalsSignIndex = tags.IndexOf('=');
+        while (equalsSignIndex > 0)
         {
-            ReadOnlySpan<char> tag = tags[..semicolonIndex];
-            tags = tags[(semicolonIndex + 1)..];
-            semicolonIndex = tags.IndexOf(';');
+            int semicolonIndex = tags.IndexOf(';');
+            ReadOnlySpan<char> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
+            tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : ReadOnlySpan<char>.Empty;
 
-            int equalsSignIndex = tag.IndexOf('=');
             ReadOnlySpan<char> key = tag[..equalsSignIndex];
             ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
+            equalsSignIndex = tags.IndexOf('=');
             switch (key)
             {
                 case _badgeInfoTag:
@@ -201,7 +201,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
         }
 
         ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespace[3] + 1)..indicesOfWhitespace[4]];
-        bool isAction = actionPrefix.Equals(_actionPrefix, StringComparison.Ordinal);
+        bool isAction = actionPrefix.SequenceEqual(_actionPrefix);
         int asByte = Unsafe.As<bool, byte>(ref isAction);
         return (ChatMessageFlag)(asByte << 4);
     }
@@ -211,7 +211,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     {
         Debug.Assert(DisplayName is not null && DisplayName.Length > 0);
         ReadOnlySpan<char> username = ircMessage[(indicesOfWhitespaces[0] + 2)..][..DisplayName.Length];
-        return StringPool.Shared.GetOrAdd(username);
+        return new(username);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -264,7 +264,7 @@ public sealed class ChatMessage : IEquatable<ChatMessage>
     {
         bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
         int asByte = Unsafe.As<bool, byte>(ref isBackSlash) << 1;
-        return StringPool.Shared.GetOrAdd(value[..^asByte]);
+        return new(value[..^asByte]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

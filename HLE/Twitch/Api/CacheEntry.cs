@@ -1,27 +1,31 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Twitch.Api;
 
 internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
 {
-    public T? Value { get; } = default;
+    public T? Value { get; }
 
-    internal readonly DateTime _timeOfRequest = DateTime.UtcNow;
+    internal readonly DateTime _timeOfRequest;
 
-    public static CacheEntry<T> Empty => new();
+    public static CacheEntry<T> Empty => default;
 
     public CacheEntry()
     {
+        Value = default;
         _timeOfRequest = default;
     }
 
     public CacheEntry(T value)
     {
         Value = value;
+        _timeOfRequest = DateTime.UtcNow;
     }
 
     [Pure]
+    [MemberNotNullWhen(true, nameof(Value))]
     public bool IsValid(TimeSpan cacheTime)
     {
         return Value?.Equals(default) == false && _timeOfRequest + cacheTime > DateTime.UtcNow;
@@ -30,7 +34,7 @@ internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
     [Pure]
     public bool Equals(CacheEntry<T> other)
     {
-        return ((Value is null && other.Value is null) || Value?.Equals(other.Value) == true) && _timeOfRequest == other._timeOfRequest;
+        return Value?.Equals(other.Value) == true && _timeOfRequest == other._timeOfRequest;
     }
 
     [Pure]
@@ -42,7 +46,7 @@ internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
     [Pure]
     public override int GetHashCode()
     {
-        return Value?.GetHashCode() ?? 0;
+        return HashCode.Combine(Value, _timeOfRequest);
     }
 
     [Pure]

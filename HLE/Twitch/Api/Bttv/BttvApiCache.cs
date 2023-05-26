@@ -29,7 +29,7 @@ public sealed class BttvApiCache : IEquatable<BttvApiCache>
         if (_channelEmoteCache.TryGetValue(channelId, out var entry) && entry.IsValid(Options.ChannelEmotesCacheTime))
         {
             emotes = entry.Value;
-            return entry.Value is not null;
+            return true;
         }
 
         emotes = null;
@@ -43,10 +43,10 @@ public sealed class BttvApiCache : IEquatable<BttvApiCache>
 
     public bool TryGetGlobalEmotes([MaybeNullWhen(false)] out Emote[] emotes)
     {
-        if (_globalEmoteCache != CacheEntry<Emote[]>.Empty && _globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
+        if (_globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
         {
             emotes = _globalEmoteCache.Value;
-            return emotes is not null;
+            return true;
         }
 
         emotes = null;

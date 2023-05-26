@@ -26,7 +26,7 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
-    public WebSocketIrcClient(string username, string? oAuthToken = null, ClientOptions options = default) : base(username, oAuthToken, options)
+    public WebSocketIrcClient(string username, OAuthToken oAuthToken = default, ClientOptions options = default) : base(username, oAuthToken, options)
     {
     }
 

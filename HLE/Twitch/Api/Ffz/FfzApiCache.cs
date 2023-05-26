@@ -28,7 +28,7 @@ public sealed class FfzApiCache : IEquatable<FfzApiCache>
         if (_channelEmotesCache.TryGetValue(channelId, out CacheEntry<Emote[]> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheTime))
         {
             emotes = emoteEntry.Value;
-            return emotes is not null;
+            return true;
         }
 
         emotes = null;
@@ -41,7 +41,7 @@ public sealed class FfzApiCache : IEquatable<FfzApiCache>
         if (_channelEmotesCache.TryGetValue(channelNameHash, out CacheEntry<Emote[]> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheTime))
         {
             emotes = emoteEntry.Value;
-            return emotes is not null;
+            return true;
         }
 
         emotes = null;

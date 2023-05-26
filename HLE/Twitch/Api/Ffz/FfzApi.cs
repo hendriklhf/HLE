@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Http;
@@ -42,7 +43,7 @@ public sealed class FfzApi : IEquatable<FfzApi>
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
-            throw ThrowHelper.EmptyHttpResponseContentBody;
+            throw new HttpResponseEmptyException();
         }
 
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
@@ -53,7 +54,7 @@ public sealed class FfzApi : IEquatable<FfzApi>
 
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Span);
+            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
         }
 
         Room room = JsonSerializer.Deserialize<GetRoomResponse>(httpContentBytes.Span).Room;
@@ -82,7 +83,7 @@ public sealed class FfzApi : IEquatable<FfzApi>
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
-            throw ThrowHelper.EmptyHttpResponseContentBody;
+            throw new HttpResponseEmptyException();
         }
 
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
@@ -93,7 +94,7 @@ public sealed class FfzApi : IEquatable<FfzApi>
 
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw ThrowHelper.HttpRequestDidntSucceed((int)httpResponse.StatusCode, httpContentBytes.Span);
+            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
         }
 
         Room room = JsonSerializer.Deserialize<GetRoomResponse>(httpContentBytes.Span).Room;

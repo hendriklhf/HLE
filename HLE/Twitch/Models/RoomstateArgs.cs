@@ -105,7 +105,14 @@ public readonly struct RoomstateArgs : IEquatable<RoomstateArgs>
             }
         }
 
-        Channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+        Channel = GetChannel(ircMessage, indicesOfWhitespaces);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static string GetChannel(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    {
+        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespaces[^1] + 2)..];
+        return StringPool.Shared.GetOrAdd(channel);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

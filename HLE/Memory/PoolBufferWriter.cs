@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -10,27 +11,27 @@ namespace HLE.Memory;
 /// Represents an output sink consisting of buffers from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
+[DebuggerDisplay("{ToString()}")]
 public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyable<T>, IEquatable<PoolBufferWriter<T>>
 {
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
-    public Span<T> WrittenSpan => _buffer[.._length];
+    public Span<T> WrittenSpan => _buffer[..Length];
 
     /// <summary>
     /// A <see cref="Memory{T}"/> view over the written elements.
     /// </summary>
-    public Memory<T> WrittenMemory => _buffer.Memory[.._length];
+    public Memory<T> WrittenMemory => _buffer.Memory[..Length];
 
     /// <summary>
     /// The amount of written elements.
     /// </summary>
-    public int Length => _length;
+    public int Length { get; private set; }
 
     public int Capacity => _buffer.Length;
 
     private RentedArray<T> _buffer;
-    private int _length;
     private readonly int _defaultElementGrowth;
 
     public PoolBufferWriter() : this(5, 10)
@@ -62,26 +63,26 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     /// <inheritdoc/>
     public void Advance(int count)
     {
-        _length += count;
+        Length += count;
     }
 
     /// <inheritdoc/>
     public Memory<T> GetMemory(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return ((Memory<T>)_buffer)[_length..];
+        return ((Memory<T>)_buffer)[Length..];
     }
 
     /// <inheritdoc/>
     public Span<T> GetSpan(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return ((Span<T>)_buffer)[_length..];
+        return ((Span<T>)_buffer)[Length..];
     }
 
     public void Clear()
     {
-        _length = 0;
+        Length = 0;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
             _buffer.Span.Clear();
@@ -99,7 +100,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
             sizeHint = 1;
         }
 
-        int freeSpace = _buffer.Length - _length;
+        int freeSpace = _buffer.Length - Length;
         if (freeSpace >= sizeHint)
         {
             return;
@@ -130,7 +131,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     {
         ref byte source = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(oldBuffer));
         ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(_buffer.Span));
-        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * _length));
+        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * Length));
     }
 
     public void CopyTo(T[] destination, int offset = 0)
@@ -156,7 +157,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     public unsafe void CopyTo(T* destination)
     {
         T* source = (T*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(WrittenSpan));
-        Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * _length));
+        Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * Length));
     }
 
     /// <inheritdoc/>
@@ -175,12 +176,27 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     [Pure]
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is PoolBufferWriter<T> other && Equals(other);
     }
 
     [Pure]
     public override int GetHashCode()
     {
         return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+    }
+
+    [Pure]
+    public override string ToString()
+    {
+        if (typeof(char) == typeof(T))
+        {
+            ref char firstChar = ref Unsafe.As<T, char>(ref _buffer.Reference);
+            ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref firstChar, Length);
+            return new(chars);
+        }
+
+        Type thisType = typeof(PoolBufferWriter<T>);
+        Type genericType = typeof(T);
+        return $"{thisType.Name}.{nameof(PoolBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Length}]";
     }
 }

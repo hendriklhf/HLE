@@ -84,7 +84,7 @@ public static unsafe class MemoryHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<byte> GetBytes<T>(ref T item) where T : struct
+    public static Span<byte> GetStructBytes<T>(ref T item) where T : struct
     {
         return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
     }
@@ -98,8 +98,8 @@ public static unsafe class MemoryHelper
             return false;
         }
 
-        ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
-        ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
+        ReadOnlySpan<byte> leftBytes = GetStructBytes(ref left);
+        ReadOnlySpan<byte> rightBytes = GetStructBytes(ref right);
         return leftBytes.SequenceEqual(rightBytes);
     }
 
@@ -117,8 +117,16 @@ public static unsafe class MemoryHelper
             return true;
         }
 
-        ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
-        ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
+        ReadOnlySpan<byte> leftBytes = GetStructBytes(ref left);
+        ReadOnlySpan<byte> rightBytes = GetStructBytes(ref right);
         return leftBytes.SequenceEqual(rightBytes);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<T> ReturnStackAlloced<T>(scoped Span<T> span)
+    {
+#pragma warning disable CS9080
+        return span;
+#pragma warning restore CS9080
     }
 }

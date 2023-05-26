@@ -28,6 +28,9 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
     /// <param name="channelName">The channel name, with or without '#'.</param>
     public Channel? this[ReadOnlySpan<char> channelName] => Get(channelName);
 
+    /// <summary>
+    /// Gets the amount of channels in the list.
+    /// </summary>
     public int Count => _channels.Count;
 
     private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();

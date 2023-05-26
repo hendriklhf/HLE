@@ -264,6 +264,6 @@ public static class NumberHelper
                 return T.CreateTruncating(Int128.Abs(numberAsInt128 % rangeAsInt128) + minAsInt128);
         }
 
-        throw new UnreachableException();
+        throw new UnreachableException("This shouldn't happen, as all number types are covered.");
     }
 }

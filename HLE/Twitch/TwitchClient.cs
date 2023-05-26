@@ -13,7 +13,7 @@ using HLE.Twitch.Models;
 namespace HLE.Twitch;
 
 /// <summary>
-/// A class that represents a Twitch chat client.
+/// Represents a Twitch chat client.
 /// </summary>
 public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 {
@@ -103,7 +103,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public TwitchClient(ClientOptions options = default)
     {
-        _client = new(_anonymousUsername, null, options);
+        _client = new(_anonymousUsername, OAuthToken.Empty, options);
         IsAnonymousLogin = true;
         SetEvents();
     }
@@ -111,14 +111,13 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// The constructor for a normal chat client.
     /// </summary>
-    /// <param name="username">The username of the client</param>
-    /// <param name="oAuthToken">The OAuth token of the client</param>
+    /// <param name="username">The username of the client.</param>
+    /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
-    public TwitchClient(string username, string oAuthToken, ClientOptions options = default)
+    public TwitchClient(string username, OAuthToken oAuthToken, ClientOptions options = default)
     {
         username = FormatChannel(username, false);
-        oAuthToken = ValidateOAuthToken(oAuthToken);
         _client = new(username, oAuthToken, options);
         IsAnonymousLogin = false;
         SetEvents();
@@ -183,15 +182,15 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!IsConnected)
         {
-            throw ThrowHelper.NotConnected;
+            throw new ClientNotConnectedException();
         }
 
         if (IsAnonymousLogin)
         {
-            throw ThrowHelper.AnonymousConnection;
+            throw new AnonymousClientException();
         }
 
-        string prefixedChannel = (Channels[channel.Span]?._prefixedName) ?? throw ThrowHelper.NotConnectedToTheSpecifiedChannel;
+        string prefixedChannel = (Channels[channel.Span]?._prefixedName) ?? throw new NotConnectedToTheChannelException(new string(channel.Span));
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -210,15 +209,15 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!IsConnected)
         {
-            throw ThrowHelper.NotConnected;
+            throw new ClientNotConnectedException();
         }
 
         if (IsAnonymousLogin)
         {
-            throw ThrowHelper.AnonymousConnection;
+            throw new AnonymousClientException();
         }
 
-        string prefixedChannel = (Channels[channelId]?._prefixedName) ?? throw ThrowHelper.NotConnectedToTheSpecifiedChannel;
+        string prefixedChannel = (Channels[channelId]?._prefixedName) ?? throw new NotConnectedToTheChannelException(channelId);
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -236,7 +235,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!IsConnected)
         {
-            throw ThrowHelper.NotConnected;
+            throw new ClientNotConnectedException();
         }
 
         await _client.SendRawAsync(rawMessage);
@@ -501,23 +500,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
         channel.ToLowerInvariant(result);
         return channel.Length;
-    }
-
-    private static string ValidateOAuthToken(string oAuthToken)
-    {
-        Regex oAuthPattern = RegexPool.Shared.GetOrAdd(@"^oauth:[a-zA-Z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-        if (oAuthPattern.IsMatch(oAuthToken))
-        {
-            return oAuthToken.ToLowerInvariant();
-        }
-
-        Regex oAuthPatternNoPrefix = RegexPool.Shared.GetOrAdd(@"^[a-zA-Z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-        if (oAuthPatternNoPrefix.IsMatch(oAuthToken))
-        {
-            return $"oauth:{oAuthToken}".ToLowerInvariant();
-        }
-
-        throw new FormatException("The OAuthToken is in an invalid format.");
     }
 
     public void Dispose()

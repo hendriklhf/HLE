@@ -11,28 +11,26 @@ namespace HLE;
 
 public static class Files
 {
-    public static void ReadBytes<TWriter>(string filePath, TWriter writer) where TWriter : IBufferWriter<byte>
+    public static void ReadBytes<TWriter>(string filePath, TWriter writer, int fileSizeHint = 2500) where TWriter : IBufferWriter<byte>
     {
-        const int defaultSizeHint = 1000;
         using FileStream fileStream = File.OpenRead(filePath);
-        int bytesRead = fileStream.Read(writer.GetSpan(defaultSizeHint));
+        int bytesRead = fileStream.Read(writer.GetSpan(fileSizeHint));
         writer.Advance(bytesRead);
         while (bytesRead > 0)
         {
-            bytesRead = fileStream.Read(writer.GetSpan(defaultSizeHint));
+            bytesRead = fileStream.Read(writer.GetSpan(fileSizeHint));
             writer.Advance(bytesRead);
         }
     }
 
-    public static async ValueTask ReadBytesAsync<TWriter>(string filePath, TWriter writer) where TWriter : IBufferWriter<byte>
+    public static async ValueTask ReadBytesAsync<TWriter>(string filePath, TWriter writer, int fileSizeHint = 2500) where TWriter : IBufferWriter<byte>
     {
-        const int defaultSizeHint = 1000;
         await using FileStream fileStream = File.OpenRead(filePath);
-        int bytesRead = await fileStream.ReadAsync(writer.GetMemory(defaultSizeHint));
+        int bytesRead = await fileStream.ReadAsync(writer.GetMemory(fileSizeHint));
         writer.Advance(bytesRead);
         while (bytesRead > 0)
         {
-            bytesRead = await fileStream.ReadAsync(writer.GetMemory(defaultSizeHint));
+            bytesRead = await fileStream.ReadAsync(writer.GetMemory(fileSizeHint));
             writer.Advance(bytesRead);
         }
     }
@@ -127,7 +125,7 @@ public static class Files
     private static async ValueTask WriteCharsAsync(string filePath, ReadOnlyMemory<char> fileContent, Encoding fileEncoding, bool append)
     {
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
-        using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.Rent(byteCount);
+        using RentedArray<byte> byteBuffer = new(byteCount);
         int bytesWritten = fileEncoding.GetBytes(fileContent.Span, byteBuffer);
         await WriteBytesAsync(filePath, byteBuffer.Memory[..bytesWritten], append);
     }

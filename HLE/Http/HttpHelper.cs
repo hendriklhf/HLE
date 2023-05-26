@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net.Http;
@@ -35,6 +36,7 @@ public static class HttpHelper
 
     internal static async ValueTask<HttpContentBytes> GetContentBytesAsync(this HttpResponseMessage httpResponse, int contentLength)
     {
+        Debug.Assert(contentLength > 0, "contentLength > 0");
         RentedArray<byte> buffer = new(contentLength);
         using MemoryStream memoryStream = new(buffer);
         await httpResponse.Content.LoadIntoBufferAsync(contentLength);

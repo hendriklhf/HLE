@@ -13,7 +13,21 @@ public class StringHelperTest
     private static string Str(int count) => new('*', count);
 
     [TestMethod]
-    public void PartTest()
+    public void FastAllocateStringTest()
+    {
+        for (int i = 1; i <= 10_000; i *= 10)
+        {
+            string str = StringHelper.FastAllocateString(i, out Span<char> chars);
+            Assert.AreEqual(i, str.Length);
+            Assert.AreEqual(i, chars.Length);
+            chars.Fill('*');
+            Assert.AreEqual(Str(i), str);
+            Assert.IsTrue(chars.SequenceEqual(Str(i)));
+        }
+    }
+
+    [TestMethod]
+    public void ChunkTest()
     {
         const byte charCount = 30;
         ReadOnlyMemory<char>[] part = _str.Chunk(charCount).ToArray();
@@ -23,7 +37,7 @@ public class StringHelperTest
     }
 
     [TestMethod]
-    public void PartTestOnWhitespace()
+    public void Chunk_OnWhiteSpace_Test()
     {
         const byte charCount = 60;
         ReadOnlyMemory<char>[] part = _str.Chunk(charCount, ' ').ToArray();
@@ -109,6 +123,8 @@ public class StringHelperTest
         const string str = "hello";
         int count = str.CharCount('l');
         Assert.AreEqual(2, count);
+        count = Str(100).CharCount('*');
+        Assert.AreEqual(100, count);
     }
 
     [TestMethod]
@@ -117,11 +133,13 @@ public class StringHelperTest
         const string str = "\\*+?|{[()^$. awdawdawdawd";
         Span<char> buffer = stackalloc char[str.Length << 1];
         int length = StringHelper.RegexEscape(str, buffer);
-        Assert.AreEqual(@"\\\*\+\?\|\{\[\(\)\^\$\.\sawdawdawdawd", new(buffer[..length]));
+        string escapedString = new(buffer[..length]);
+        Assert.AreEqual(@"\\\*\+\?\|\{\[\(\)\^\$\.\sawdawdawdawd", escapedString);
 
         const string str2 = "hello";
         length = StringHelper.RegexEscape(str2, buffer);
-        Assert.AreEqual(str2, new(buffer[..length]));
+        escapedString = new(buffer[..length]);
+        Assert.AreEqual(str2, escapedString);
     }
 
     [TestMethod]
@@ -141,6 +159,15 @@ public class StringHelperTest
         Span<char> result = stackalloc char[30];
         int length = StringHelper.Concat(strings, result);
         string str = new(result[..length]);
+        Assert.AreEqual("hello", str);
+    }
+
+    [TestMethod]
+    public void TrimAllTest()
+    {
+        string str = "     aaa        aaa aaa                   aaa     ".TrimAll();
+        Assert.AreEqual("aaa aaa aaa aaa", str);
+        str = "hello".TrimAll();
         Assert.AreEqual("hello", str);
     }
 }

@@ -5,7 +5,7 @@ using HLE.Memory;
 
 namespace HLE.Time;
 
-public sealed class HTimer : IEquatable<HTimer>
+public sealed class HTimer : IEquatable<HTimer>, IDisposable
 {
     public bool AutoReset { get; set; }
 
@@ -35,6 +35,11 @@ public sealed class HTimer : IEquatable<HTimer>
                 Start();
             }
         };
+    }
+
+    public void Dispose()
+    {
+        _timer.Dispose();
     }
 
     public void Start()
@@ -68,7 +73,7 @@ public sealed class HTimer : IEquatable<HTimer>
     [Pure]
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is HTimer other && Equals(other);
     }
 
     public override int GetHashCode()

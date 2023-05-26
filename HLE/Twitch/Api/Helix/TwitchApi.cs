@@ -57,7 +57,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
-            throw ThrowHelper.EmptyHttpResponseContentBody;
+            throw new HttpResponseEmptyException();
         }
 
         HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
@@ -81,13 +81,13 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
-            throw ThrowHelper.EmptyHttpResponseContentBody;
+            throw new HttpResponseEmptyException();
         }
 
         HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"The request ({url}) failed with code {httpResponse.StatusCode} and delivered: {Encoding.UTF8.GetString(httpContentBytes.Span)}");
+            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
         }
 
         return httpContentBytes;

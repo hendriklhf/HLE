@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Http;
-using HLE.Strings;
 using HLE.Twitch.Api.Helix.Models;
 using HLE.Twitch.Api.Helix.Models.Responses;
 
@@ -19,7 +18,7 @@ public sealed partial class TwitchApi
         }
 
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "chat/emotes/global");
-        using HttpContentBytes response = await ExecuteRequest(StringPool.Shared.GetOrAdd(urlBuilder.WrittenSpan));
+        using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
         GetResponse<Emote> getResponse = JsonSerializer.Deserialize<GetResponse<Emote>>(response.Span);
         if (getResponse.Items.Length == 0)
         {

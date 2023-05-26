@@ -78,9 +78,9 @@ public sealed class TwitchApiCache
 
     public bool TryGetGlobalEmotes([MaybeNullWhen(false)] out Emote[] emotes)
     {
-        if (_globalEmoteCache != CacheEntry<Emote[]>.Empty && _globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
+        if (_globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
         {
-            emotes = _globalEmoteCache.Value!;
+            emotes = _globalEmoteCache.Value;
             return true;
         }
 
@@ -98,7 +98,7 @@ public sealed class TwitchApiCache
         if (_channelEmoteCache.TryGetValue(channelId, out CacheEntry<ChannelEmote[]> entry) && entry.IsValid(Options.ChannelEmotesCacheTime))
         {
             emotes = entry.Value;
-            return entry.Value is not null;
+            return true;
         }
 
         emotes = null;

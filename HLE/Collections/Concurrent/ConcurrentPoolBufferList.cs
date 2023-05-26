@@ -82,6 +82,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
         return _bufferWriter.WrittenSpan.ToArray();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AddWithLock(T item)
     {
         _bufferWriterLock.Wait();

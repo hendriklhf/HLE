@@ -18,11 +18,14 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
     private readonly string _assemblyName;
     private readonly ConcurrentDictionary<string, byte[]?> _resources = new();
 
-    public ResourceReader(Assembly assembly, bool readAllResourcesOnInit = true)
+    public ResourceReader(Assembly assembly, bool readAllResourcesOnInitialization = true)
     {
         _assembly = assembly;
-        _assemblyName = _assembly.GetName().Name ?? throw new ArgumentNullException(nameof(assembly), "Assembly name is null.");
-        if (readAllResourcesOnInit)
+        string? assemblyName = _assembly.GetName().Name;
+        ArgumentException.ThrowIfNullOrEmpty(assemblyName);
+
+        _assemblyName = assemblyName;
+        if (readAllResourcesOnInitialization)
         {
             ReadAllResources();
         }

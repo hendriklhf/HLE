@@ -1,5 +1,4 @@
 ﻿using System;
-using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
@@ -27,8 +26,8 @@ public readonly struct LeftChannelArgs : IEquatable<LeftChannelArgs>
     {
         ReadOnlySpan<char> firstWord = ircMessage[..indicesOfWhitespaces[0]];
         int indexOfExclamationMark = firstWord.IndexOf('!');
-        Username = StringPool.Shared.GetOrAdd(firstWord[1..indexOfExclamationMark]);
-        Channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+        Username = new(firstWord[1..indexOfExclamationMark]);
+        Channel = new(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
     }
 
     public bool Equals(LeftChannelArgs other)

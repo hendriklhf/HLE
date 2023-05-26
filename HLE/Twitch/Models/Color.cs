@@ -51,7 +51,7 @@ public readonly struct Color : IEquatable<Color>
 
     public bool Equals(Color other)
     {
-        return IsEmpty == other.IsEmpty && Red == other.Red && Green == other.Green && Blue == other.Blue;
+        return IsEmpty && other.IsEmpty || Red == other.Red && Green == other.Green && Blue == other.Blue;
     }
 
     public override bool Equals(object? obj)
@@ -66,7 +66,7 @@ public readonly struct Color : IEquatable<Color>
 
     public override string ToString()
     {
-        return IsEmpty ? "Empty color" : $"#{Red:X}{Green:X}{Blue:X}";
+        return IsEmpty ? string.Empty : $"#{Red:X}{Green:X}{Blue:X}";
     }
 
     public static bool operator ==(Color left, Color right)

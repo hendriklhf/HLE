@@ -14,9 +14,10 @@ namespace HLE.Twitch.Chatterino;
 /// Reads settings of the application <a href="https://www.chatterino.com">Chatterino</a>.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class ChatterinoSettingsReader : IDisposable
+public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<ChatterinoSettingsReader>
 {
     private readonly PoolBufferWriter<byte> _settings = new(5000, 5000);
+    private string[]? _channels;
 
     public ChatterinoSettingsReader()
     {
@@ -27,13 +28,17 @@ public sealed class ChatterinoSettingsReader : IDisposable
     }
 
     /// <summary>
-    /// Gets all channels of all your tabs from the Chatterino settings.
+    /// Gets all distinct channels of all your tabs from the Chatterino settings.
     /// </summary>
     /// <returns>A string array of all channels.</returns>
-    /// <exception cref="JsonException">Will be thrown if the JSON settings file is not of the expected format.</exception>
     [Pure]
     public string[] GetChannels()
     {
+        if (_channels is not null)
+        {
+            return _channels;
+        }
+
         Utf8JsonReader jsonReader = new(_settings.WrittenSpan);
         using PoolBufferList<string> channels = new(20, 15);
         HashSet<int> channelHashes = new(20);
@@ -82,11 +87,36 @@ public sealed class ChatterinoSettingsReader : IDisposable
             }
         }
 
-        return channels.ToArray();
+        return _channels = channels.ToArray();
     }
 
     public void Dispose()
     {
         _settings.Dispose();
+    }
+
+    public bool Equals(ChatterinoSettingsReader? other)
+    {
+        return ReferenceEquals(this, other);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is ChatterinoSettingsReader other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+    }
+
+    public static bool operator ==(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right)
+    {
+        return !(left == right);
     }
 }

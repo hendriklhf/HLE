@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Text.RegularExpressions;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -53,15 +52,14 @@ public static class StringHelper
         }
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[span.Length / charCount + 1];
-        ref ReadOnlyMemory<char> firstResultItem = ref MemoryMarshal.GetArrayDataReference(result);
         int resultLength = 0;
         while (span.Length > charCount)
         {
-            Unsafe.Add(ref firstResultItem, resultLength++) = span[..charCount];
+            result[resultLength++] = span[..charCount];
             span = span[charCount..];
         }
 
-        Unsafe.Add(ref firstResultItem, resultLength++) = span;
+        result[resultLength++] = span;
         return resultLength == result.Length ? result : result[..resultLength];
     }
 
@@ -973,27 +971,5 @@ public static class StringHelper
 
         ref char chars = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
         return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref chars), str.Length << 1);
-    }
-
-    public static void CopyTo(this string str, char[] destination, int offset = 0)
-    {
-        ref char destinationPointer = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset);
-        str.CopyTo(ref destinationPointer);
-    }
-
-    public static void CopyTo(this string str, Memory<char> destination)
-    {
-        str.CopyTo(ref MemoryMarshal.GetReference(destination.Span));
-    }
-
-    public static unsafe void CopyTo(this string str, ref char destination)
-    {
-        str.CopyTo((char*)Unsafe.AsPointer(ref destination));
-    }
-
-    public static unsafe void CopyTo(this string str, char* destination)
-    {
-        byte* source = (byte*)Unsafe.AsPointer(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str)));
-        Unsafe.CopyBlock(destination, source, (uint)(str.Length << 2));
     }
 }

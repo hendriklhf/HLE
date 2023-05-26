@@ -67,12 +67,10 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     public readonly void Dispose()
     {
-        if (ReferenceEquals(_buffer, Array.Empty<char>()))
+        if (!ReferenceEquals(_buffer, Array.Empty<char>()))
         {
-            return;
+            ArrayPool<char>.Shared.Return(_buffer);
         }
-
-        ArrayPool<char>.Shared.Return(_buffer);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -214,7 +212,8 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
         Advance(charsWritten);
     }
 
-    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default) where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
+    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default)
+        where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
         if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
         {

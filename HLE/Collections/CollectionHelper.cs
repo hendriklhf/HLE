@@ -856,10 +856,8 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlySpan<T> span)
     {
-        // ReSharper disable once OperatorIsCanBeUsed
-        if (typeof(string) == collection.GetType())
+        if (collection is string str)
         {
-            string str = Unsafe.As<IEnumerable<T>, string>(ref collection);
             ref char firstChar = ref MemoryMarshal.GetReference(str.AsSpan());
             span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
             return true;
@@ -911,10 +909,9 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
     {
-        // ReSharper disable once OperatorIsCanBeUsed
-        if (typeof(string) == collection.GetType())
+        if (collection is string str)
         {
-            ReadOnlyMemory<char> stringMemory = Unsafe.As<IEnumerable<T>, string>(ref collection).AsMemory();
+            ReadOnlyMemory<char> stringMemory = str.AsMemory();
             memory = Unsafe.As<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(ref stringMemory);
             return true;
         }

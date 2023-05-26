@@ -52,7 +52,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
 
     private protected CancellationTokenSource _cancellationTokenSource = new();
 
-    private protected readonly string? _oAuthToken;
+    private protected readonly OAuthToken _oAuthToken;
     private protected readonly (string Url, int Port) _url;
 
     // ReSharper disable once InconsistentNaming
@@ -75,7 +75,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
-    protected IrcClient(string username, string? oAuthToken = null, ClientOptions options = default)
+    protected IrcClient(string username, OAuthToken oAuthToken = default, ClientOptions options = default)
     {
         Username = username;
         _oAuthToken = oAuthToken;
@@ -107,7 +107,7 @@ public abstract class IrcClient : IDisposable, IEquatable<IrcClient>
         OnConnected?.Invoke(this, EventArgs.Empty);
 
         using PoolBufferStringBuilder messageBuilder = new(_capReqMessage.Length);
-        if (_oAuthToken is not null)
+        if (!_oAuthToken.IsEmpty)
         {
             messageBuilder.Append(_passPrefix, _oAuthToken);
             await SendAsync(messageBuilder.WrittenMemory);
