@@ -23,14 +23,27 @@ public class RandomTest
     }
 
     [TestMethod]
-    public void StringTest()
+    public void NextStringTest()
     {
-        const byte strLength = 100;
+        const byte strLength = 255;
         for (int i = 0; i < _loopIterations; i++)
         {
             string s = Random.Shared.NextString(strLength, (char)32, (char)127);
             Assert.AreEqual(strLength, s.Length);
             Assert.IsTrue(s.All(c => c is >= (char)32 and < (char)127));
+        }
+    }
+
+    [TestMethod]
+    public void NextString_FromChars_Test()
+    {
+        const byte strLength = 255;
+        const string chars = "hello";
+        for (int i = 0; i < _loopIterations; i++)
+        {
+            string s = Random.Shared.NextString(strLength, chars);
+            Assert.AreEqual(strLength, s.Length);
+            Assert.IsTrue(s.All(c => chars.Contains(c)));
         }
     }
 
