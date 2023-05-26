@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.Contracts;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
@@ -13,8 +14,6 @@ namespace HLE.Strings;
 /// </summary>
 public static class StringHelper
 {
-    private static readonly Regex _multipleSpacesPattern = RegexPool.Shared.GetOrAdd(@"\s{2,}", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
-
     /// <summary>
     /// Is invisible in Twitch chat.
     /// </summary>
@@ -29,6 +28,17 @@ public static class StringHelper
     /// Can be placed inside a username, which will not mention the user.
     /// </summary>
     public const string AntipingChar = "\uDB40\uDC00";
+
+    private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe string FastAllocateString(int length, out Span<char> span)
+    {
+        string str = _fastAllocateString(length);
+        span = StringManipulations.AsMutableSpan(str);
+        return str;
+    }
 
     [Pure]
     public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount)
