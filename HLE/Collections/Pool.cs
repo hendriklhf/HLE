@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Memory;
@@ -28,12 +29,6 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
 
     public static void InitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
     {
-        _shared ??= new(itemFactory, equalityComparer, onReturn);
-    }
-
-    public static void ReinitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
-    {
-        _shared?.Dispose();
         _shared = new(itemFactory, equalityComparer, onReturn);
     }
 
@@ -42,6 +37,7 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
         _rentedItemsLock.Dispose();
     }
 
+    [Pure]
     public T Rent()
     {
         if (!_rentableItems.TryPop(out T? item))
@@ -81,6 +77,7 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
         _rentableItems.Push(item);
     }
 
+    [Pure]
     public async ValueTask<T> RentAsync()
     {
         if (!_rentableItems.TryPop(out T? item))
