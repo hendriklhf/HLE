@@ -136,7 +136,24 @@ public static class StringHelper
     [Pure]
     public static string TrimAll(this string str)
     {
-        return _multipleSpacesPattern.Replace(str.Trim(), " ");
+        ReadOnlySpan<char> trimmedString = str.AsSpan().Trim();
+        Span<char> span = stackalloc char[trimmedString.Length];
+        trimmedString.CopyTo(span);
+        int indexOfWhitespaces = span.IndexOf("  ");
+        while (indexOfWhitespaces > -1)
+        {
+            int endOfWhitespaces = span[indexOfWhitespaces..].IndexOfAnyExcept(' ');
+            if (endOfWhitespaces < 1)
+            {
+                continue;
+            }
+
+            span[(indexOfWhitespaces + endOfWhitespaces)..].CopyTo(span[(indexOfWhitespaces + 1)..]);
+            span = span[..^(endOfWhitespaces - 1)];
+            indexOfWhitespaces = span.IndexOf("  ");
+        }
+
+        return new(span);
     }
 
     [Pure]
