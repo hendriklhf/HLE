@@ -42,16 +42,6 @@ public ref partial struct ValueStringBuilder
         _buffer = buffer;
     }
 
-    public unsafe ValueStringBuilder(char* pointer, int length)
-    {
-        _buffer = new(pointer, length);
-    }
-
-    public ValueStringBuilder(ref char reference, int length)
-    {
-        _buffer = MemoryMarshal.CreateSpan(ref reference, length);
-    }
-
     public void Advance(int length)
     {
         _length += length;
@@ -180,6 +170,16 @@ public ref partial struct ValueStringBuilder
         Advance(charsWritten);
     }
 
+    public void Append(DateTimeOffset dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        if (!dateTime.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        {
+            throw NotEnoughSpaceException(nameof(dateTime));
+        }
+
+        Advance(charsWritten);
+    }
+
     public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
         if (!timeSpan.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
@@ -241,7 +241,9 @@ public ref partial struct ValueStringBuilder
     [Pure]
     public readonly bool Equals(ValueStringBuilder other)
     {
-        return Unsafe.AreSame(ref MemoryMarshal.GetReference(_buffer), ref MemoryMarshal.GetReference(other._buffer)) && _length == other._length;
+        ref char bufferReference = ref MemoryMarshal.GetReference(_buffer);
+        ref char otherBufferReference = ref MemoryMarshal.GetReference(other._buffer);
+        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference) && _length == other._length;
     }
 
     [Pure]
