@@ -3,13 +3,13 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using HLE.Collections;
 using HLE.Memory;
 using HLE.Numerics;
+using HLE.Strings;
 
 namespace HLE;
 
-public static class RandomHelper
+public static class RandomExtensions
 {
     [Pure]
     public static char NextChar(this Random random, char min = char.MinValue, char max = char.MaxValue)
@@ -78,37 +78,22 @@ public static class RandomHelper
     }
 
     [Pure]
-    public static unsafe string NextString(this Random random, int length, char minChar = char.MinValue, char maxChar = char.MaxValue)
+    public static string NextString(this Random random, int length, char minChar = char.MinValue, char maxChar = char.MaxValue)
     {
         if (length <= 0)
         {
             return string.Empty;
         }
 
-        ushort charRange = (ushort)(maxChar - minChar);
-        Span<ushort> charsInRange = MemoryHelper.UseStackAlloc<ushort>(charRange) ? stackalloc ushort[charRange] : new ushort[charRange];
-        charsInRange.FillAscending(minChar);
-
-        if (!MemoryHelper.UseStackAlloc<ushort>(length))
-        {
-            using RentedArray<ushort> bufferResult = new(length);
-            for (int i = 0; i < length; i++)
-            {
-                bufferResult[i] = charsInRange[random.Next(charRange)];
-            }
-
-            ref char firstChar = ref Unsafe.As<ushort, char>(ref MemoryMarshal.GetReference(bufferResult.Span));
-            Span<char> chars = MemoryMarshal.CreateSpan(ref firstChar, length);
-            return new(chars);
-        }
-
-        ushort* result = stackalloc ushort[length];
+        string result = StringHelper.FastAllocateString(length, out Span<char> span);
+        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span)), length << 1);
+        random.NextBytes(bytes);
         for (int i = 0; i < length; i++)
         {
-            result[i] = charsInRange[random.Next(charRange)];
+            span[i] = NumberHelper.BringNumberIntoRange(span[i], minChar, maxChar);
         }
 
-        return new((char*)result, 0, length);
+        return result;
     }
 
     public static string NextString(this Random random, int length, ReadOnlySpan<char> chars)
@@ -118,30 +103,29 @@ public static class RandomHelper
             return string.Empty;
         }
 
+        string result = StringHelper.FastAllocateString(length, out Span<char> resultSpan);
         if (!MemoryHelper.UseStackAlloc<int>(length))
         {
-            using RentedArray<char> resultBuffer = new(length);
             using RentedArray<int> randomIndicesBuffer = new(length);
             random.Fill(randomIndicesBuffer.Span);
             for (int i = 0; i < length; i++)
             {
                 int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % chars.Length;
-                resultBuffer[i] = chars[randomIndex];
+                resultSpan[i] = chars[randomIndex];
             }
 
-            return new(resultBuffer[..length]);
+            return result;
         }
 
-        Span<char> result = stackalloc char[length];
         Span<int> randomIndices = stackalloc int[length];
         random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
             int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % chars.Length;
-            result[i] = chars[randomIndex];
+            resultSpan[i] = chars[randomIndex];
         }
 
-        return new(result);
+        return result;
     }
 
     [Pure]
@@ -152,10 +136,10 @@ public static class RandomHelper
     }
 
     [Pure]
-    public static unsafe T NextStruct<T>(this Random random) where T : struct
+    public static T NextStruct<T>(this Random random) where T : struct
     {
         Unsafe.SkipInit(out T result);
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
+        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
         random.NextBytes(bytes);
         return result;
     }
@@ -290,34 +274,34 @@ public static class RandomHelper
     }
 
     [Pure]
-    public static unsafe string GetString(this RandomNumberGenerator random, int length)
+    public static string GetString(this RandomNumberGenerator random, int length)
     {
         if (length <= 0)
         {
             return string.Empty;
         }
 
-        Span<char> chars = MemoryHelper.UseStackAlloc<char>(length) ? stackalloc char[length] : new char[length];
+        string result = StringHelper.FastAllocateString(length, out Span<char> chars);
         Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(chars)), length << 1);
-        random.GetBytes(bytes);
-        return new(chars);
-    }
-
-    [Pure]
-    public static unsafe T GetStruct<T>(this RandomNumberGenerator random) where T : struct
-    {
-        Unsafe.SkipInit(out T result);
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
         random.GetBytes(bytes);
         return result;
     }
 
     [Pure]
-    public static unsafe void GetStruct<T>(this RandomNumberGenerator random, out T result) where T : struct
+    public static T GetStruct<T>(this RandomNumberGenerator random) where T : struct
+    {
+        Unsafe.SkipInit(out T result);
+        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
+        random.GetBytes(bytes);
+        return result;
+    }
+
+    [Pure]
+    public static void GetStruct<T>(this RandomNumberGenerator random, out T result) where T : struct
     {
         Unsafe.SkipInit(out result);
-        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
-        random.GetBytes(span);
+        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
+        random.GetBytes(bytes);
     }
 
     public static unsafe void Write<T>(this RandomNumberGenerator random, T* destination, int elementCount) where T : struct
