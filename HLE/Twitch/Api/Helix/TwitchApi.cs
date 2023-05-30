@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Http;
@@ -43,7 +42,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
 
     private async ValueTask<HttpClient> CreateHttpClientAsync()
     {
-        await EnsureValidAccessToken();
+        await EnsureValidAccessTokenAsync();
         HttpClient httpClient = new();
         httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_accessToken}");
         httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
@@ -64,7 +63,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         return JsonSerializer.Deserialize<AccessToken>(httpContentBytes.Span);
     }
 
-    private async ValueTask EnsureValidAccessToken()
+    private async ValueTask EnsureValidAccessTokenAsync()
     {
         if (_accessToken != AccessToken.Empty && _accessToken.IsValid)
         {
@@ -74,7 +73,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         _accessToken = await GetAccessTokenAsync();
     }
 
-    private async ValueTask<HttpContentBytes> ExecuteRequest(string url)
+    private async ValueTask<HttpContentBytes> ExecuteRequestAsync(string url)
     {
         using HttpClient httpClient = await CreateHttpClientAsync();
         using HttpResponseMessage httpResponse = await httpClient.GetAsync(url);
@@ -87,7 +86,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
         HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
+            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.Span);
         }
 
         return httpContentBytes;

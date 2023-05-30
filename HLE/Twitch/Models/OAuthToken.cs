@@ -94,6 +94,11 @@ public readonly struct OAuthToken : IEquatable<OAuthToken>
         return token._token;
     }
 
+    public static implicit operator OAuthToken(char[] token)
+    {
+        return new(token);
+    }
+
     public static implicit operator OAuthToken(ReadOnlyMemory<char> token)
     {
         return new(token);

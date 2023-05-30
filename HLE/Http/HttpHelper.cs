@@ -34,7 +34,8 @@ public static class HttpHelper
         return await GetContentBytesAsync(httpResponse, contentLength);
     }
 
-    internal static async ValueTask<HttpContentBytes> GetContentBytesAsync(this HttpResponseMessage httpResponse, int contentLength)
+    [Pure]
+    public static async ValueTask<HttpContentBytes> GetContentBytesAsync(this HttpResponseMessage httpResponse, int contentLength)
     {
         Debug.Assert(contentLength > 0, "contentLength > 0");
         RentedArray<byte> buffer = new(contentLength);

@@ -18,7 +18,7 @@ public sealed partial class TwitchApi
         }
 
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "chat/emotes/global");
-        using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
+        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
         GetResponse<Emote> getResponse = JsonSerializer.Deserialize<GetResponse<Emote>>(response.Span);
         if (getResponse.Items.Length == 0)
         {
@@ -39,7 +39,7 @@ public sealed partial class TwitchApi
 
         using UrlBuilder urlBuilder = new(_apiBaseUrl, "chat/emotes");
         urlBuilder.AppendParameter("broadcaster_id", channelId);
-        using HttpContentBytes response = await ExecuteRequest(urlBuilder.ToString());
+        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
         GetResponse<ChannelEmote> getResponse = JsonSerializer.Deserialize<GetResponse<ChannelEmote>>(response.Span);
         emotes = getResponse.Items;
         Cache?.AddChannelEmotes(channelId, emotes);

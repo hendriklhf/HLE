@@ -1,16 +1,20 @@
 using System;
 using System.Net;
+using System.Text;
 
 namespace HLE.Twitch.Api;
 
 public sealed class HttpRequestFailedException : Exception
 {
-    public HttpRequestFailedException(HttpStatusCode statusCode, string responseBody) : this((int)statusCode, responseBody)
+    public byte[] HttpResponseContent { get; }
+
+    public HttpRequestFailedException(HttpStatusCode statusCode, ReadOnlySpan<byte> responseBytes) : this((int)statusCode, responseBytes)
     {
     }
 
-    public HttpRequestFailedException(int statusCode, string responseBody)
-        : base($"The request failed with code {statusCode} and delivered: {responseBody}")
+    public HttpRequestFailedException(int statusCode, ReadOnlySpan<byte> responseBytes)
+        : base($"The request failed with code {statusCode} and delivered: {Encoding.UTF8.GetString(responseBytes)}")
     {
+        HttpResponseContent = responseBytes.ToArray();
     }
 }

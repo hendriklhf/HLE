@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using HLE.Collections;
 using HLE.Collections.Concurrent;
@@ -14,7 +14,7 @@ public sealed class TwitchApiCache
     private readonly ConcurrentDoubleDictionary<long, int, User> _userCache = new();
     private readonly ConcurrentDoubleDictionary<long, int, Stream> _streamCache = new();
     private CacheEntry<Emote[]> _globalEmoteCache = CacheEntry<Emote[]>.Empty;
-    private readonly Dictionary<long, CacheEntry<ChannelEmote[]>> _channelEmoteCache = new();
+    private readonly ConcurrentDictionary<long, CacheEntry<ChannelEmote[]>> _channelEmoteCache = new();
 
     public TwitchApiCache(CacheOptions options)
     {

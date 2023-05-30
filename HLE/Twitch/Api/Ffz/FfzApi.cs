@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Http;
@@ -40,6 +39,11 @@ public sealed class FfzApi : IEquatable<FfzApi>
 
         using HttpClient httpClient = new();
         using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
@@ -47,17 +51,17 @@ public sealed class FfzApi : IEquatable<FfzApi>
         }
 
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
-        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+        if (!httpResponse.IsSuccessStatusCode)
+        {
+            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.Span);
+        }
+
+        Room room = JsonSerializer.Deserialize<GetRoomResponse>(httpContentBytes.Span).Room;
+        if (room == Room.Empty)
         {
             return null;
         }
 
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
-        }
-
-        Room room = JsonSerializer.Deserialize<GetRoomResponse>(httpContentBytes.Span).Room;
         emotes = DeserializeResponse(httpContentBytes.Span);
         Cache?.AddChannelEmotes(channelId, room.TwitchUsername, emotes);
         return emotes;
@@ -80,6 +84,11 @@ public sealed class FfzApi : IEquatable<FfzApi>
 
         using HttpClient httpClient = new();
         using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
@@ -87,20 +96,60 @@ public sealed class FfzApi : IEquatable<FfzApi>
         }
 
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
-        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+        if (!httpResponse.IsSuccessStatusCode)
+        {
+            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.Span);
+        }
+
+        Room room = JsonSerializer.Deserialize<GetRoomResponse>(httpContentBytes.Span).Room;
+        if (room == Room.Empty)
         {
             return null;
         }
 
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
-        }
-
-        Room room = JsonSerializer.Deserialize<GetRoomResponse>(httpContentBytes.Span).Room;
         emotes = DeserializeResponse(httpContentBytes.Span);
         Cache?.AddChannelEmotes(room.TwitchId, channelName.Span, emotes);
         return emotes;
+    }
+
+    public async ValueTask<Emote[]> GetGlobalEmotesAsync()
+    {
+        if (TryGetGlobalEmotesFromCache(out Emote[]? emotes))
+        {
+            return emotes;
+        }
+
+        using PoolBufferStringBuilder urlBuilder = new(_apiBaseUrl.Length + 30);
+        urlBuilder.Append(_apiBaseUrl, "/set/global");
+
+        using HttpClient httpClient = new();
+        using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+        int contentLength = httpResponse.GetContentLength();
+        if (contentLength == 0)
+        {
+            throw new HttpResponseEmptyException();
+        }
+
+        using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
+        if (!httpResponse.IsSuccessStatusCode)
+        {
+            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.Span);
+        }
+
+        emotes = JsonSerializer.Deserialize<GetGlobalEmotesResponse>(httpContentBytes.Span).Sets.GlobalSet.Emotes;
+        if (emotes.Length == 0)
+        {
+            return emotes;
+        }
+
+        Cache?.AddGlobalEmotes(emotes);
+        return emotes;
+    }
+
+    private bool TryGetGlobalEmotesFromCache([MaybeNullWhen(false)] out Emote[] emotes)
+    {
+        emotes = null;
+        return Cache?.TryGetGlobalEmotes(out emotes) == true;
     }
 
     private bool TryGetChannelEmotesFromCache(long channelId, [MaybeNullWhen(false)] out Emote[] emotes)

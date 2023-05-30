@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Http;
@@ -40,6 +39,11 @@ public sealed class BttvApi : IEquatable<BttvApi>
 
         using HttpClient httpClient = new();
         using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
         int contentLength = httpResponse.GetContentLength();
         if (contentLength == 0)
         {
@@ -47,14 +51,10 @@ public sealed class BttvApi : IEquatable<BttvApi>
         }
 
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
-        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
 
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
+            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.Span);
         }
 
         GetUserResponse userResponse = JsonSerializer.Deserialize<GetUserResponse>(httpContentBytes.Span);
@@ -70,7 +70,7 @@ public sealed class BttvApi : IEquatable<BttvApi>
         return emotes;
     }
 
-    public async ValueTask<Emote[]> GetGlobalEmotes()
+    public async ValueTask<Emote[]> GetGlobalEmotesAsync()
     {
         if (TryGetGlobalEmotesFromCache(out Emote[]? emotes))
         {
@@ -91,7 +91,7 @@ public sealed class BttvApi : IEquatable<BttvApi>
         using HttpContentBytes httpContentBytes = await httpResponse.GetContentBytesAsync(contentLength);
         if (!httpResponse.IsSuccessStatusCode)
         {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, Encoding.UTF8.GetString(httpContentBytes.Span));
+            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.Span);
         }
 
         emotes = JsonSerializer.Deserialize<Emote[]>(httpContentBytes.Span) ?? throw new InvalidOperationException("The deserialization of the global emotes response failed and returned null.");

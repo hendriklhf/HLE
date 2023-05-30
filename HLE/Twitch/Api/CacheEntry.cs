@@ -10,7 +10,7 @@ internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
 
     internal readonly DateTime _timeOfRequest;
 
-    public static CacheEntry<T> Empty => default;
+    public static CacheEntry<T> Empty => new();
 
     public CacheEntry()
     {
@@ -28,7 +28,7 @@ internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
     [MemberNotNullWhen(true, nameof(Value))]
     public bool IsValid(TimeSpan cacheTime)
     {
-        return Value?.Equals(default) == false && _timeOfRequest + cacheTime > DateTime.UtcNow;
+        return this != default && _timeOfRequest + cacheTime > DateTime.UtcNow;
     }
 
     [Pure]

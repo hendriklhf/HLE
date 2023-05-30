@@ -11,6 +11,7 @@ public sealed class FfzApiCache : IEquatable<FfzApiCache>
     public CacheOptions Options { get; set; }
 
     private readonly ConcurrentDoubleDictionary<long, int, CacheEntry<Emote[]>> _channelEmotesCache = new();
+    private CacheEntry<Emote[]> _globalEmotesCache = CacheEntry<Emote[]>.Empty;
 
     public FfzApiCache(CacheOptions options)
     {
@@ -21,6 +22,23 @@ public sealed class FfzApiCache : IEquatable<FfzApiCache>
     {
         int channelNameHash = string.GetHashCode(channelName, StringComparison.OrdinalIgnoreCase);
         _channelEmotesCache.AddOrSet(channelId, channelNameHash, new(emotes));
+    }
+
+    public void AddGlobalEmotes(Emote[] emotes)
+    {
+        _globalEmotesCache = new(emotes);
+    }
+
+    public bool TryGetGlobalEmotes([MaybeNullWhen(false)] out Emote[] emotes)
+    {
+        if (_globalEmotesCache.IsValid(Options.GlobalEmotesCacheTime))
+        {
+            emotes = _globalEmotesCache.Value;
+            return true;
+        }
+
+        emotes = null;
+        return false;
     }
 
     public bool TryGetChannelEmotes(long channelId, [MaybeNullWhen(false)] out Emote[] emotes)
