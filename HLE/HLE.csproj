@@ -18,10 +18,10 @@
         <Product>HLE</Product>
         <PackageId>HLE</PackageId>
         <Title>HLE</Title>
-        <Version>2.1.5</Version>
-        <PackageVersion>2.1.5</PackageVersion>
-        <AssemblyVersion>2.1.5</AssemblyVersion>
-        <FileVersion>2.1.5</FileVersion>
+        <Version>2.1.6</Version>
+        <PackageVersion>2.1.6</PackageVersion>
+        <AssemblyVersion>2.1.6</AssemblyVersion>
+        <FileVersion>2.1.6</FileVersion>
         <Description>A class library containing usefull methods and data lists.</Description>
         <Authors>Hendrik</Authors>
         <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
