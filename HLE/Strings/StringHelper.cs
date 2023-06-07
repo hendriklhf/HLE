@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -29,6 +30,9 @@ public static class StringHelper
     public const string AntipingChar = "\uDB40\uDC00";
 
     private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+    private static readonly char[] _charsToEscapeSet = CreateCharsToEscape();
+
+    private const string _charsToEscape = "\\*+?|{[()^$.# ";
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -126,32 +130,49 @@ public static class StringHelper
         return resultLength == result.Length ? result : result[..resultLength];
     }
 
-    /// <summary>
-    /// Trims all spaces in the beginning, end and middle of the <see cref="string"/> <paramref name="str"/>.
-    /// </summary>
-    /// <param name="str">The <see cref="string"/> that will be trimmed.</param>
-    /// <returns>A trimmed <see cref="string"/>.</returns>
     [Pure]
     public static string TrimAll(this string str)
     {
-        ReadOnlySpan<char> trimmedString = str.AsSpan().Trim();
-        Span<char> span = stackalloc char[trimmedString.Length];
-        trimmedString.CopyTo(span);
-        int indexOfWhitespaces = span.IndexOf("  ");
+        int resultLength;
+        if (!MemoryHelper.UseStackAlloc<char>(str.Length))
+        {
+            using RentedArray<char> rentedBuffer = new(str.Length);
+            resultLength = TrimAll(str, rentedBuffer);
+            return new(rentedBuffer[..resultLength]);
+        }
+
+        Span<char> buffer = stackalloc char[str.Length];
+        resultLength = TrimAll(str, buffer);
+        return new(buffer[..resultLength]);
+    }
+
+    [Pure]
+    public static int TrimAll(this string str, Span<char> result)
+    {
+        return TrimAll(str.AsSpan(), result);
+    }
+
+    [Pure]
+    public static int TrimAll(this ReadOnlySpan<char> str, Span<char> result)
+    {
+        ReadOnlySpan<char> trimmedString = str.Trim();
+        trimmedString.CopyTo(result);
+        int indexOfWhitespaces = result.IndexOf("  ");
         while (indexOfWhitespaces > -1)
         {
-            int endOfWhitespaces = span[indexOfWhitespaces..].IndexOfAnyExcept(' ');
+            int endOfWhitespaces = result[indexOfWhitespaces..].IndexOfAnyExcept(' ');
             if (endOfWhitespaces < 1)
             {
                 continue;
             }
 
-            span[(indexOfWhitespaces + endOfWhitespaces)..].CopyTo(span[(indexOfWhitespaces + 1)..]);
-            span = span[..^(endOfWhitespaces - 1)];
-            indexOfWhitespaces = span.IndexOf("  ");
+            result[(indexOfWhitespaces + endOfWhitespaces)..].CopyTo(result[(indexOfWhitespaces + 1)..]);
+            result = result[..^(endOfWhitespaces - 1)];
+            indexOfWhitespaces = result.IndexOf("  ");
         }
 
-        return new(span);
+        result = result.TrimEnd('\0');
+        return result.Length;
     }
 
     [Pure]
@@ -711,7 +732,7 @@ public static class StringHelper
 
             for (int i = 0; i < span.Length; i++)
             {
-                bool equals = span[i] == '.';
+                bool equals = span[i] == byteToCount;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -734,7 +755,7 @@ public static class StringHelper
 
             for (int i = 0; i < span.Length; i++)
             {
-                bool equals = span[i] == '.';
+                bool equals = span[i] == byteToCount;
                 result += Unsafe.As<bool, byte>(ref equals);
             }
 
@@ -751,38 +772,39 @@ public static class StringHelper
         return result;
     }
 
+    private static char[] CreateCharsToEscape()
+    {
+        char maxChar = _charsToEscape.Max();
+        char[] charsToEscapeSet = new char[maxChar + 1];
+        foreach (char c in _charsToEscape)
+        {
+            charsToEscapeSet[c] = c;
+        }
+
+        return charsToEscapeSet;
+    }
+
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
     {
-        // chars to escape: "\\*+?|{[()^$. "
         ValueStringBuilder builder = escapedInput;
         int inputLength = input.Length;
-        ref char firstChar = ref MemoryMarshal.GetReference(input);
         for (int i = 0; i < inputLength; i++)
         {
-            char c = Unsafe.Add(ref firstChar, i);
-            switch (c)
+            char c = input[i];
+            bool needsEscape = _charsToEscapeSet[c] != '\0';
+            if (!needsEscape)
             {
-                case '\\':
-                case '*':
-                case '+':
-                case '?':
-                case '|':
-                case '{':
-                case '[':
-                case '(':
-                case ')':
-                case '^':
-                case '$':
-                case '.':
-                    builder.Append('\\', c);
-                    continue;
-                case ' ':
-                    builder.Append('\\', 's');
-                    continue;
-                default:
-                    builder.Append(c);
-                    break;
+                builder.Append(c);
+                continue;
             }
+
+            if (c == ' ')
+            {
+                builder.Append('\\', 's');
+                continue;
+            }
+
+            builder.Append('\\', c);
         }
 
         return builder.Length;
