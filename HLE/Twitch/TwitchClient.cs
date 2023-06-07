@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Collections.Concurrent;
@@ -86,8 +87,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     private readonly WebSocketIrcClient _client;
     private readonly IrcHandler _ircHandler = new();
     private readonly ConcurrentPoolBufferList<string> _ircChannels = new();
-    private readonly Memory<char> _pingResponseBuffer = new char[50];
-    private bool _reconnecting;
+    private readonly SemaphoreSlim _reconnectionLock = new(1);
 
     private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
     private static readonly Regex _anonymousLoginPattern = RegexPool.Shared.GetOrAdd(@"^justinfan[0-9]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
@@ -432,11 +432,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         try
         {
-            ((ReadOnlySpan<char>)_pongPrefix).CopyTo(_pingResponseBuffer.Span);
-            int bufferLength = _pongPrefix.Length;
-            data.Span.CopyTo(_pingResponseBuffer.Span);
-            bufferLength += data.Length;
-            await SendRawAsync(_pingResponseBuffer[..bufferLength]);
+            using PoolBufferStringBuilder builder = new(50);
+            builder.Append(_pongPrefix, data.Span);
+            await SendRawAsync(builder.WrittenMemory);
         }
         finally
         {
@@ -444,25 +442,26 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         }
     }
 
-    private async ValueTask ReconnectAfterConnectionException()
+    private async Task ReconnectAfterConnectionException()
     {
-        if (_reconnecting || IsConnected)
-        {
-            return;
-        }
+        await _reconnectionLock.WaitAsync();
 
-        _reconnecting = true;
         try
         {
+            if (_client.IsConnected || _client.IsConnecting)
+            {
+                return;
+            }
+
             _client.CancelTasks();
             await Task.Delay(TimeSpan.FromSeconds(10));
+            await _client.ConnectAsync(_ircChannels.AsMemory());
+            await Task.Delay(TimeSpan.FromSeconds(5));
         }
         finally
         {
-            _reconnecting = false;
+            _reconnectionLock.Release();
         }
-
-        await _client.ConnectAsync(_ircChannels.AsMemory());
     }
 
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)

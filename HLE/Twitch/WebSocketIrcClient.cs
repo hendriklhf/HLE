@@ -18,6 +18,8 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
     /// </summary>
     public override bool IsConnected => _webSocket.State is WebSocketState.Open;
 
+    internal bool IsConnecting => _webSocket.State is WebSocketState.Connecting;
+
     private ClientWebSocket _webSocket = new();
 
     /// <summary>
@@ -38,9 +40,12 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
             int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
             await _webSocket.SendAsync(bytes.Memory[..byteCount], WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
         }
-        catch (WebSocketException)
+        catch (Exception ex)
         {
-            InvokeOnConnectionException();
+            if (ex is WebSocketException or InvalidOperationException)
+            {
+                InvokeOnConnectionException();
+            }
         }
     }
 
@@ -82,9 +87,12 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
                 bufferLength = receivedChars.Length;
             }
         }
-        catch (WebSocketException)
+        catch (Exception ex)
         {
-            InvokeOnConnectionException();
+            if (ex is WebSocketException or InvalidOperationException)
+            {
+                InvokeOnConnectionException();
+            }
         }
     }
 
@@ -119,9 +127,12 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         {
             await _webSocket.ConnectAsync(new($"{_url.Url}:{_url.Port}"), _cancellationTokenSource.Token);
         }
-        catch (WebSocketException)
+        catch (Exception ex)
         {
-            InvokeOnConnectionException();
+            if (ex is WebSocketException or InvalidOperationException)
+            {
+                InvokeOnConnectionException();
+            }
         }
     }
 
@@ -131,9 +142,12 @@ public sealed class WebSocketIrcClient : IrcClient, IEquatable<WebSocketIrcClien
         {
             await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _cancellationTokenSource.Token);
         }
-        catch (WebSocketException)
+        catch (Exception ex)
         {
-            InvokeOnConnectionException();
+            if (ex is WebSocketException or InvalidOperationException)
+            {
+                InvokeOnConnectionException();
+            }
         }
     }
 

@@ -78,7 +78,7 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
     }
 
     [Pure]
-    public async ValueTask<T> RentAsync()
+    public async Task<T> RentAsync()
     {
         if (!_rentableItems.TryPop(out T? item))
         {
@@ -98,7 +98,7 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
         return item;
     }
 
-    public async ValueTask ReturnAsync(T item)
+    public async Task ReturnAsync(T item)
     {
         await _rentedItemsLock.WaitAsync();
         try
@@ -131,7 +131,7 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
         }
     }
 
-    public async ValueTask ClearAsync()
+    public async Task ClearAsync()
     {
         await _rentedItemsLock.WaitAsync();
         try

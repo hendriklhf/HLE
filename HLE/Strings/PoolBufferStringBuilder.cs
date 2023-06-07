@@ -252,7 +252,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
         _length -= length;
     }
 
-#if M
+#if NET8_0_OR_GREATER
     public readonly void Replace(char oldChar, char newChar)
     {
         WrittenSpan.Replace(oldChar, newChar);
