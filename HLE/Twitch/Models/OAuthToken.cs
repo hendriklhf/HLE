@@ -10,8 +10,6 @@ namespace HLE.Twitch.Models;
 [DebuggerDisplay("{ToString()}")]
 public readonly struct OAuthToken : IEquatable<OAuthToken>
 {
-    public bool IsEmpty => _token.Length == 0;
-
     private readonly ReadOnlyMemory<char> _token = ReadOnlyMemory<char>.Empty;
 
     public static OAuthToken Empty => new();
@@ -82,30 +80,5 @@ public readonly struct OAuthToken : IEquatable<OAuthToken>
     public static bool operator !=(OAuthToken left, OAuthToken right)
     {
         return !(left == right);
-    }
-
-    public static implicit operator ReadOnlySpan<char>(OAuthToken token)
-    {
-        return token._token.Span;
-    }
-
-    public static implicit operator ReadOnlyMemory<char>(OAuthToken token)
-    {
-        return token._token;
-    }
-
-    public static implicit operator OAuthToken(char[] token)
-    {
-        return new(token);
-    }
-
-    public static implicit operator OAuthToken(ReadOnlyMemory<char> token)
-    {
-        return new(token);
-    }
-
-    public static implicit operator OAuthToken(string token)
-    {
-        return new(token);
     }
 }

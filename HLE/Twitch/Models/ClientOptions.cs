@@ -1,4 +1,6 @@
 ﻿using System;
+using HLE.Memory;
+using HLE.Twitch.Chatterino;
 
 namespace HLE.Twitch.Models;
 
@@ -20,13 +22,20 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
     /// </summary>
     public bool IsVerifiedBot { get; init; } = false;
 
+    /// <summary>
+    /// The parsing mode of the IRC message parsers.
+    /// </summary>
+    public ParsingMode ParsingMode { get; init; } = ParsingMode.Balanced;
+
+    public static ClientOptions Default => new();
+
     public ClientOptions()
     {
     }
 
     public bool Equals(ClientOptions other)
     {
-        return UseSSL == other.UseSSL && IsVerifiedBot == other.IsVerifiedBot;
+        return MemoryHelper.EqualsBytes(this, other);
     }
 
     public override bool Equals(object? obj)
@@ -36,7 +45,7 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(UseSSL, IsVerifiedBot);
+        return HashCode.Combine(UseSSL, IsVerifiedBot, ParsingMode);
     }
 
     public static bool operator ==(ClientOptions left, ClientOptions right)

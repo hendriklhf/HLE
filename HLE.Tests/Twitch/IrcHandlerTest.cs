@@ -1,5 +1,6 @@
 ﻿using System;
 using HLE.Twitch;
+using HLE.Twitch.Chatterino;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.Twitch;
@@ -7,7 +8,7 @@ namespace HLE.Tests.Twitch;
 [TestClass]
 public class IrcHandlerTest
 {
-    private readonly IrcHandler _ircHandler = new();
+    private readonly IrcHandler _ircHandler = new(ParsingMode.MemoryEfficient);
 
     private readonly string[] _messages =
     {
@@ -45,6 +46,7 @@ public class IrcHandlerTest
             Assert.AreEqual("strbhlfe", chatMessage.Username);
             Assert.AreEqual("lbnshlfe", chatMessage.Channel);
             Assert.AreEqual("xd xd xd", chatMessage.Message);
+            chatMessage.Dispose();
         };
         Assert.IsTrue(_ircHandler.Handle(_messages[messageIdx]));
     }
@@ -84,7 +86,7 @@ public class IrcHandlerTest
     [TestMethod]
     public void JoinTest()
     {
-        _ircHandler.OnJoinedChannel += (_, joinedChannelArgs) =>
+        _ircHandler.OnJoinedReceived += (_, joinedChannelArgs) =>
         {
             Assert.AreEqual("strbhlfe", joinedChannelArgs.Username);
             Assert.AreEqual("lbnshlfe", joinedChannelArgs.Channel);
@@ -95,7 +97,7 @@ public class IrcHandlerTest
     [TestMethod]
     public void PartTest()
     {
-        _ircHandler.OnLeftChannel += (_, leftChannelArgs) =>
+        _ircHandler.OnLeftReceived += (_, leftChannelArgs) =>
         {
             Assert.AreEqual("strbhlfe", leftChannelArgs.Username);
             Assert.AreEqual("lbnshlfe", leftChannelArgs.Channel);

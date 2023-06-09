@@ -44,8 +44,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public ChannelList Channels { get; } = new();
 
-    #region Events
-
     /// <summary>
     /// Is invoked if the client connects.
     /// </summary>W
@@ -74,7 +72,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Is invoked if a chat message has been received.
     /// </summary>
-    public event EventHandler<ChatMessage>? OnChatMessageReceived;
+    public event EventHandler<IChatMessage>? OnChatMessageReceived;
 
     /// <summary>
     /// Is invoked if data is received from the chat server. If this event is subscribed to, the <see cref="ReceivedData"/> instance has to be manually disposed.
@@ -82,15 +80,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public event EventHandler<ReceivedData>? OnDataReceived;
 
-    #endregion Events
-
     private readonly WebSocketIrcClient _client;
-    private readonly IrcHandler _ircHandler = new();
+    private readonly IrcHandler _ircHandler;
     private readonly ConcurrentPoolBufferList<string> _ircChannels = new();
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
     private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
-    private static readonly Regex _anonymousLoginPattern = RegexPool.Shared.GetOrAdd(@"^justinfan[0-9]+$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
     private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';
@@ -101,9 +96,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// Connects with the username "justinfan123".
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// </summary>
-    public TwitchClient(ClientOptions options = default)
+    public TwitchClient(ClientOptions options)
     {
         _client = new(_anonymousUsername, OAuthToken.Empty, options);
+        _ircHandler = new(options.ParsingMode);
         IsAnonymousLogin = true;
         SetEvents();
     }
@@ -115,22 +111,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
-    public TwitchClient(string username, OAuthToken oAuthToken, ClientOptions options = default)
+    public TwitchClient(string username, OAuthToken oAuthToken, ClientOptions options)
     {
         username = FormatChannel(username, false);
         _client = new(username, oAuthToken, options);
+        _ircHandler = new(options.ParsingMode);
         IsAnonymousLogin = false;
-        SetEvents();
-    }
-
-    /// <summary>
-    /// The constructor for a chat client witch an already created <see cref="IrcClient"/>.
-    /// </summary>
-    /// <param name="ircClient">The IRC client.</param>
-    public TwitchClient(WebSocketIrcClient ircClient)
-    {
-        IsAnonymousLogin = _anonymousLoginPattern.IsMatch(ircClient.Username);
-        _client = ircClient;
         SetEvents();
     }
 
@@ -147,10 +133,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client.OnDataReceived += IrcClient_OnDataReceived;
         _client.OnConnectionException += async (_, _) => await ReconnectAfterConnectionException();
 
-        _ircHandler.OnJoinedChannel += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnLeftChannel += (_, e) => OnLeftChannel?.Invoke(this, e);
-        _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
-        _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
+        _ircHandler.OnJoinedReceived += (_, e) => OnJoinedChannel?.Invoke(this, e);
+        _ircHandler.OnLeftReceived += (_, e) => OnLeftChannel?.Invoke(this, e);
+        _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
+        _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
         _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(_ircChannels.AsMemory());
     }
@@ -417,12 +403,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         OnDataReceived.Invoke(this, data);
     }
 
-    private void IrcHandler_OnChatMessageReceived(object? sender, ChatMessage msg)
+    private void IrcHandlerOnChatMessageReceived(object? sender, IChatMessage msg)
     {
         OnChatMessageReceived?.Invoke(this, msg);
     }
 
-    private void IrcHandler_OnRoomstateReceived(object? sender, RoomstateArgs roomstateArgs)
+    private void IrcHandlerOnRoomstateReceived(object? sender, RoomstateArgs roomstateArgs)
     {
         Channels.Update(in roomstateArgs);
         OnRoomstateReceived?.Invoke(this, roomstateArgs);
