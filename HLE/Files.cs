@@ -110,7 +110,7 @@ public static class Files
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
         if (!MemoryHelper.UseStackAlloc<byte>(byteCount))
         {
-            using RentedArray<byte> byteArrayBuffer = ArrayPool<byte>.Shared.Rent(byteCount);
+            using RentedArray<byte> byteArrayBuffer = new(byteCount);
             bytesWritten = fileEncoding.GetBytes(fileContent, byteArrayBuffer);
             WriteBytes(filePath, byteArrayBuffer[..bytesWritten]);
             return;

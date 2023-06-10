@@ -51,7 +51,7 @@ public sealed class Channel : IEquatable<Channel>
 
     private static readonly ChangedRoomstateFlag[] _roomstates = Enum.GetValues<ChangedRoomstateFlag>();
 
-    internal Channel(in RoomstateArgs args)
+    internal Channel(in Roomstate args)
     {
         Name = args.Channel;
         _prefixedName = '#' + args.Channel;
@@ -63,13 +63,13 @@ public sealed class Channel : IEquatable<Channel>
         SubsOnly = args.SubsOnly;
     }
 
-    internal void Update(in RoomstateArgs args)
+    internal void Update(in Roomstate args)
     {
         ref ChangedRoomstateFlag firstRoomstateFlag = ref MemoryMarshal.GetArrayDataReference(_roomstates);
         for (int i = 0; i < _roomstates.Length; i++)
         {
             ChangedRoomstateFlag roomstateFlag = Unsafe.Add(ref firstRoomstateFlag, i);
-            bool roomstateChanged = (args._changedStatesFlags & roomstateFlag) == roomstateFlag;
+            bool roomstateChanged = (args.ChangedStates & roomstateFlag) == roomstateFlag;
             if (!roomstateChanged)
             {
                 continue;

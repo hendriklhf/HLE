@@ -24,7 +24,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
 
     public override required string Message
     {
-        get => _message ??= _messageBuilder.Length <= _maxPoolingMessageLength ? _shortMessagesPool.GetOrAdd(_messageBuilder.WrittenSpan) : _messageBuilder.ToString();
+        get => _message ??= _messageBuilder.Length <= _maxMessagePoolingLength ? _shortMessagesPool.GetOrAdd(_messageBuilder.WrittenSpan) : _messageBuilder.ToString();
         init { }
     }
 
@@ -45,7 +45,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
     private static readonly StringPool _usernamePool = new();
     private static readonly StringPool _displayNamePool = new();
 
-    private const int _maxPoolingMessageLength = 25;
+    private const int _maxMessagePoolingLength = 25;
 
     /// <summary>
     /// The default constructor of <see cref="MemoryEfficientChatMessage"/>.

@@ -1,13 +1,10 @@
 ﻿using System;
 using HLE.Memory;
-using HLE.Twitch.Chatterino;
 
 namespace HLE.Twitch.Models;
 
 /// <summary>
-/// Options for <see cref="TwitchClient"/>. By default:<br/>
-/// <see cref="UseSSL"/> = false<br/>
-/// <see cref="IsVerifiedBot"/> = false<br/>
+/// Options for <see cref="TwitchClient"/>.
 /// </summary>
 public readonly struct ClientOptions : IEquatable<ClientOptions>
 {

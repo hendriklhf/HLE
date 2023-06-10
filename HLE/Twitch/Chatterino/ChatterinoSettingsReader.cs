@@ -16,7 +16,7 @@ namespace HLE.Twitch.Chatterino;
 [SupportedOSPlatform("windows")]
 public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<ChatterinoSettingsReader>
 {
-    private readonly PoolBufferWriter<byte> _settings = new(5000, 5000);
+    private readonly PoolBufferWriter<byte> _windowLayoutFileContentWriter = new(5000, 5000);
     private string[]? _channels;
 
     public ChatterinoSettingsReader()
@@ -24,7 +24,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
         using PoolBufferStringBuilder pathBuilder = new(100);
         pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
         string windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
-        Files.ReadBytes(windowLayoutPath, _settings);
+        Files.ReadBytes(windowLayoutPath, _windowLayoutFileContentWriter);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
             return _channels;
         }
 
-        Utf8JsonReader jsonReader = new(_settings.WrittenSpan);
+        Utf8JsonReader jsonReader = new(_windowLayoutFileContentWriter.WrittenSpan);
         using PoolBufferList<string> channels = new(20, 15);
         HashSet<int> channelHashes = new(20);
         Span<char> charBuffer = stackalloc char[30];
@@ -92,7 +92,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
 
     public void Dispose()
     {
-        _settings.Dispose();
+        _windowLayoutFileContentWriter.Dispose();
     }
 
     public bool Equals(ChatterinoSettingsReader? other)

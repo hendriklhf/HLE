@@ -149,7 +149,7 @@ public static class StringHelper
     [Pure]
     public static int TrimAll(this string str, Span<char> result)
     {
-        return TrimAll(str.AsSpan(), result);
+        return TrimAll((ReadOnlySpan<char>)str, result);
     }
 
     [Pure]

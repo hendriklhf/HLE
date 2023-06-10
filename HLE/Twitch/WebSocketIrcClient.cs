@@ -76,13 +76,13 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
-    public WebSocketIrcClient(string username, OAuthToken oAuthToken = default, ClientOptions options = default)
+    public WebSocketIrcClient(string username, OAuthToken oAuthToken, ClientOptions options)
     {
         Username = username;
         _oAuthToken = oAuthToken;
         UseSSL = options.UseSSL;
         _isVerifiedBot = options.IsVerifiedBot;
-        _connectionUri = UseSSL ? new($"wss://irc-ws.chat.twitch.tv:{443}") : new($"ws://irc-ws.chat.twitch.tv:{80}");
+        _connectionUri = UseSSL ? new("wss://irc-ws.chat.twitch.tv:443") : new("ws://irc-ws.chat.twitch.tv:80");
     }
 
     ~WebSocketIrcClient()
@@ -101,16 +101,22 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex)
         {
-            if (ex is WebSocketException or InvalidOperationException)
+            if (ex is not (WebSocketException or InvalidOperationException))
             {
-                InvokeOnConnectionException();
+                throw;
             }
+
+            HandleConnectionException();
         }
     }
 
     private void StartListeningThread()
     {
-        Thread listeningThread = new(() => Task.Run(StartListeningAsync));
+        Thread listeningThread = new(() => StartListeningAsync())
+        {
+            IsBackground = true,
+            Priority = ThreadPriority.AboveNormal
+        };
         listeningThread.Start();
     }
 
@@ -150,10 +156,12 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex)
         {
-            if (ex is WebSocketException or InvalidOperationException)
+            if (ex is not (WebSocketException or InvalidOperationException))
             {
-                InvokeOnConnectionException();
+                throw;
             }
+
+            HandleConnectionException();
         }
     }
 
@@ -182,7 +190,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
-    private async ValueTask ConnectClientAsync()
+    private async Task ConnectClientAsync()
     {
         try
         {
@@ -190,14 +198,16 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex)
         {
-            if (ex is WebSocketException or InvalidOperationException)
+            if (ex is not (WebSocketException or InvalidOperationException))
             {
-                InvokeOnConnectionException();
+                throw;
             }
+
+            HandleConnectionException();
         }
     }
 
-    private async ValueTask DisconnectClientAsync(string closeMessage)
+    private async Task DisconnectClientAsync(string closeMessage)
     {
         try
         {
@@ -205,14 +215,16 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex)
         {
-            if (ex is WebSocketException or InvalidOperationException)
+            if (ex is not (WebSocketException or InvalidOperationException))
             {
-                InvokeOnConnectionException();
+                throw;
             }
+
+            HandleConnectionException();
         }
     }
 
-    private void InvokeOnConnectionException()
+    private void HandleConnectionException()
     {
         _webSocket.Dispose();
         _webSocket = new();
@@ -220,13 +232,13 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
-    public async ValueTask ConnectAsync(string[] channels)
+    public async Task ConnectAsync(string[] channels)
     {
         await ConnectAsync(channels.AsMemory());
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
-    public async ValueTask ConnectAsync(List<string> channels)
+    public async Task ConnectAsync(List<string> channels)
     {
         await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
     }
@@ -235,7 +247,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// Asynchronously connects the client to the Twitch IRC server.
     /// </summary>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
-    public async ValueTask ConnectAsync(ReadOnlyMemory<string> channels)
+    public async Task ConnectAsync(ReadOnlyMemory<string> channels)
     {
         await ConnectClientAsync();
         StartListeningThread();
@@ -263,13 +275,13 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// Asynchronously disconnects the client.
     /// </summary>
     /// <param name="closeMessage">A close message or reason.</param>
-    public async ValueTask DisconnectAsync(string closeMessage = "Manually closed")
+    public async Task DisconnectAsync(string closeMessage = "Manually closed")
     {
         await DisconnectClientAsync(closeMessage);
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
-    internal async ValueTask ReconnectAsync(ReadOnlyMemory<string> channels)
+    internal async Task ReconnectAsync(ReadOnlyMemory<string> channels)
     {
         await DisconnectAsync();
         await ConnectAsync(channels);
@@ -352,7 +364,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
-    private async ValueTask JoinChannelsThrottledAsync(ReadOnlyMemory<string> channels)
+    private async Task JoinChannelsThrottledAsync(ReadOnlyMemory<string> channels)
     {
         if (channels.Length == 0)
         {

@@ -67,7 +67,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Is invoked if a room state has been received.
     /// </summary>
-    public event EventHandler<RoomstateArgs>? OnRoomstateReceived;
+    public event EventHandler<Roomstate>? OnRoomstateReceived;
 
     /// <summary>
     /// Is invoked if a chat message has been received.
@@ -230,7 +230,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Asynchronously connects the client to the chat server. This method will be exited after the client has joined all channels.
     /// </summary>
-    public async ValueTask ConnectAsync()
+    public async Task ConnectAsync()
     {
         if (IsConnected)
         {
@@ -240,7 +240,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         await ConnectAsync(_ircChannels.AsMemory());
     }
 
-    private async ValueTask ConnectAsync(ReadOnlyMemory<string> ircChannels)
+    private async Task ConnectAsync(ReadOnlyMemory<string> ircChannels)
     {
         await _client.ConnectAsync(ircChannels);
     }
@@ -272,7 +272,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// If the client is not connected, adds the channels to the channel list, otherwise asynchronously connects the client to the channels.
     /// </summary>
     /// <param name="channels">The channels</param>
-    /// // <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
+    /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if any of <paramref name="channels"/> is in the wrong format.</exception>
     public async ValueTask JoinChannelsAsync(ReadOnlyMemory<string> channels)
     {
         for (int i = 0; i < channels.Length; i++)
@@ -380,7 +380,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Asynchronously disconnects the client from the chat server.
     /// </summary>
-    public async ValueTask DisconnectAsync()
+    public async Task DisconnectAsync()
     {
         if (!IsConnected)
         {
@@ -408,10 +408,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         OnChatMessageReceived?.Invoke(this, msg);
     }
 
-    private void IrcHandlerOnRoomstateReceived(object? sender, RoomstateArgs roomstateArgs)
+    private void IrcHandlerOnRoomstateReceived(object? sender, Roomstate roomstate)
     {
-        Channels.Update(in roomstateArgs);
-        OnRoomstateReceived?.Invoke(this, roomstateArgs);
+        Channels.Update(in roomstate);
+        OnRoomstateReceived?.Invoke(this, roomstate);
     }
 
     private async ValueTask IrcHandler_OnPingReceived(ReceivedData data)

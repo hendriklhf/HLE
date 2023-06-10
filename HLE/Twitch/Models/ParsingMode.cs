@@ -1,4 +1,4 @@
-namespace HLE.Twitch.Chatterino;
+namespace HLE.Twitch.Models;
 
 public enum ParsingMode
 {

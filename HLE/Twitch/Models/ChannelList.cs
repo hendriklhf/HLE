@@ -35,7 +35,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
 
     private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();
 
-    internal void Update(in RoomstateArgs args)
+    internal void Update(in Roomstate args)
     {
         Channel? channel = Get(args.ChannelId);
         if (channel is not null)

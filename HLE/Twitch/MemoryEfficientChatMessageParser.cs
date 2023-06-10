@@ -10,7 +10,7 @@ namespace HLE.Twitch;
 public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquatable<MemoryEfficientChatMessageParser>
 {
     [Pure]
-    public override ChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         RentedArray<Badge> badgeInfos = RentedArray<Badge>.Empty;
         int badgeInfoCount = 0;
