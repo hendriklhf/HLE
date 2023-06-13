@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
@@ -59,6 +61,9 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private readonly OAuthToken _oAuthToken;
     private readonly Uri _connectionUri;
 
+    private static readonly Uri _sslConnectionUri = new("wss://irc-ws.chat.twitch.tv:443");
+    private static readonly Uri _nonSslConnectionUri = new("ws://irc-ws.chat.twitch.tv:80");
+
     // ReSharper disable once InconsistentNaming
     private const string _newLine = "\r\n";
     private const string _passPrefix = "PASS ";
@@ -82,7 +87,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         _oAuthToken = oAuthToken;
         UseSSL = options.UseSSL;
         _isVerifiedBot = options.IsVerifiedBot;
-        _connectionUri = UseSSL ? new("wss://irc-ws.chat.twitch.tv:443") : new("ws://irc-ws.chat.twitch.tv:80");
+        _connectionUri = UseSSL ? _sslConnectionUri : _nonSslConnectionUri;
     }
 
     ~WebSocketIrcClient()
@@ -93,11 +98,16 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private async ValueTask SendAsync(ReadOnlyMemory<char> message)
     {
+        using RentedArray<byte> bytes = new(message.Length << 1);
+        int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
+        await SendAsync(bytes.Memory[..byteCount]);
+    }
+
+    private async ValueTask SendAsync(ReadOnlyMemory<byte> bytes)
+    {
         try
         {
-            using RentedArray<byte> bytes = new(message.Length << 1);
-            int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
-            await _webSocket.SendAsync(bytes.Memory[..byteCount], WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
+            await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -150,6 +160,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
                 PassAllLinesExceptLast(ref receivedChars);
 
                 // receivedChars now only contains left-over chars, because the last received message didn't end with an new line
+                // left-over chars are copied into the charBuffer and will be handled next loop iteration when the new line has been received
                 receivedChars.Span.CopyTo(charBuffer.Span);
                 bufferLength = receivedChars.Length;
             }
@@ -229,6 +240,18 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         _webSocket.Dispose();
         _webSocket = new();
         OnConnectionException?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
+    public async Task ConnectAsync(IEnumerable<string> channels)
+    {
+        if (channels.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> channelsAsMemory))
+        {
+            await ConnectAsync(channelsAsMemory);
+            return;
+        }
+
+        await ConnectAsync(channels.ToArray());
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>

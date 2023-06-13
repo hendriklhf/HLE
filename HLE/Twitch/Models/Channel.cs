@@ -65,10 +65,10 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in Roomstate args)
     {
-        ref ChangedRoomstateFlag firstRoomstateFlag = ref MemoryMarshal.GetArrayDataReference(_roomstates);
+        ref ChangedRoomstateFlag firstRoomstate = ref MemoryMarshal.GetArrayDataReference(_roomstates);
         for (int i = 0; i < _roomstates.Length; i++)
         {
-            ChangedRoomstateFlag roomstateFlag = Unsafe.Add(ref firstRoomstateFlag, i);
+            ChangedRoomstateFlag roomstateFlag = Unsafe.Add(ref firstRoomstate, i);
             bool roomstateChanged = (args.ChangedStates & roomstateFlag) == roomstateFlag;
             if (!roomstateChanged)
             {
@@ -111,5 +111,15 @@ public sealed class Channel : IEquatable<Channel>
     public override int GetHashCode()
     {
         return Id.GetHashCode();
+    }
+
+    public static bool operator ==(Channel? left, Channel? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(Channel? left, Channel? right)
+    {
+        return !(left == right);
     }
 }

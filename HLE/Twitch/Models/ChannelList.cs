@@ -73,6 +73,11 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
 
     private Channel? Get(ReadOnlySpan<char> name)
     {
+        if (name.Length == 0)
+        {
+            return null;
+        }
+
         if (name[0] == '#')
         {
             name = name[1..];

@@ -57,12 +57,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Is invoked if a user joins a channel.
     /// </summary>
-    public event EventHandler<JoinedChannelArgs>? OnJoinedChannel;
+    public event EventHandler<JoinChannelMessage>? OnJoinedChannel;
 
     /// <summary>
     /// Is invoked if a user leaves a channel.
     /// </summary>
-    public event EventHandler<LeftChannelArgs>? OnLeftChannel;
+    public event EventHandler<LeftChannelMessage>? OnLeftChannel;
 
     /// <summary>
     /// Is invoked if a room state has been received.
@@ -251,6 +251,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         if (channels.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> channelsMemory))
         {
             await JoinChannelsAsync(channelsMemory);
+            return;
         }
 
         await JoinChannelsAsync(channels.ToArray());
@@ -334,6 +335,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         if (channels.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> channelsMemory))
         {
             await LeaveChannelsAsync(channelsMemory);
+            return;
         }
 
         await LeaveChannelsAsync(channels.ToArray());
@@ -454,7 +456,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         Span<char> result = stackalloc char[channel.Length + 1];
         int length = FormatChannel(channel, withHashtag, result);
-        return new(result[..length]);
+        return StringPool.Shared.GetOrAdd(result[..length]);
     }
 
     private static int FormatChannel(ReadOnlySpan<char> channel, bool withHashtag, Span<char> result)
@@ -487,6 +489,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         return channel.Length;
     }
 
+    /// <inheritdoc cref="IDisposable.Dispose"/>
     public void Dispose()
     {
         GC.SuppressFinalize(this);
@@ -501,11 +504,21 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     public override bool Equals(object? obj)
     {
-        return ReferenceEquals(this, obj);
+        return obj is TwitchClient other && Equals(other);
     }
 
     public override int GetHashCode()
     {
         return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+    }
+
+    public static bool operator ==(TwitchClient? left, TwitchClient? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(TwitchClient? left, TwitchClient? right)
+    {
+        return !(left == right);
     }
 }

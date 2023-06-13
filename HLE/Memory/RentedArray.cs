@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 namespace HLE.Memory;
 
 /// <summary>
-/// Wraps an <see cref="System.Array"/> rented from a shared <see cref="ArrayPool{T}"/>
+/// Wraps an <see cref="System.Array"/> rented from the shared <see cref="ArrayPool{T}"/>
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>

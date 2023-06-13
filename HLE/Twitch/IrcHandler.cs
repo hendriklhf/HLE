@@ -14,12 +14,12 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a JOIN message has been received.
     /// </summary>
-    public event EventHandler<JoinedChannelArgs>? OnJoinedReceived;
+    public event EventHandler<JoinChannelMessage>? OnJoinedReceived;
 
     /// <summary>
     /// Is invoked if a PART message has been received.
     /// </summary>
-    public event EventHandler<LeftChannelArgs>? OnLeftReceived;
+    public event EventHandler<LeftChannelMessage>? OnLeftReceived;
 
     /// <summary>
     /// Is invoked if a ROOMSTATE message has been received.
@@ -41,7 +41,9 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     /// </summary>
     public event EventHandler<ReceivedData>? OnPingReceived;
 
-    private readonly IrcParser _ircParser;
+    private readonly ChatMessageParser _chatMessageParser;
+    private readonly RoomstateParser _roomstateParser = new();
+    private readonly MembershipMessageParser _membershipMessageParser = new();
 
     private const string _joinCommand = "JOIN";
     private const string _roomstateCommand = "ROOMSTATE";
@@ -52,7 +54,13 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     public IrcHandler(ParsingMode parsingMode)
     {
-        _ircParser = new(parsingMode);
+        _chatMessageParser = parsingMode switch
+        {
+            ParsingMode.TimeEfficient => new TimeEfficientChatMessageParser(),
+            ParsingMode.Balanced => new BalancedChatMessageParser(),
+            ParsingMode.MemoryEfficient => new MemoryEfficientChatMessageParser(),
+            _ => throw new ArgumentOutOfRangeException(nameof(parsingMode), parsingMode, null)
+        };
     }
 
     /// <summary>
@@ -100,7 +108,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
         ReadOnlySpan<char> secondWord = ircMessage[(indicesOfWhitespace[0] + 1)..indicesOfWhitespace[1]];
         if (OnJoinedReceived is not null && secondWord.SequenceEqual(_joinCommand))
         {
-            OnJoinedReceived.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
+            OnJoinedReceived.Invoke(this, _membershipMessageParser.ParseJoinChannelMessage(ircMessage, indicesOfWhitespace[..whitespaceCount]));
             return true;
         }
 
@@ -109,7 +117,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
             return false;
         }
 
-        OnLeftReceived.Invoke(this, new(ircMessage, indicesOfWhitespace[..whitespaceCount]));
+        OnLeftReceived.Invoke(this, _membershipMessageParser.ParseLeftChannelMessage(ircMessage, indicesOfWhitespace[..whitespaceCount]));
         return true;
     }
 
@@ -119,7 +127,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
         ReadOnlySpan<char> thirdWord = ircMessage[(indicesOfWhitespace[1] + 1)..indicesOfWhitespace[2]];
         if (OnChatMessageReceived is not null && thirdWord.SequenceEqual(_privmsgCommand))
         {
-            OnChatMessageReceived.Invoke(this, _ircParser.ParseChatMessage(ircMessage, indicesOfWhitespace[..whitespaceCount]));
+            OnChatMessageReceived.Invoke(this, _chatMessageParser.Parse(ircMessage, indicesOfWhitespace[..whitespaceCount]));
             return true;
         }
 
@@ -128,7 +136,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
             return false;
         }
 
-        _ircParser.ParseRoomstate(ircMessage, indicesOfWhitespace[..whitespaceCount], out Roomstate roomstate);
+        _roomstateParser.Parse(ircMessage, indicesOfWhitespace[..whitespaceCount], out Roomstate roomstate);
         OnRoomstateReceived.Invoke(this, roomstate);
         return true;
     }

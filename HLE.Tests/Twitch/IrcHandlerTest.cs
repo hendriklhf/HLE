@@ -1,6 +1,6 @@
 ﻿using System;
 using HLE.Twitch;
-using HLE.Twitch.Chatterino;
+using HLE.Twitch.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.Twitch;
