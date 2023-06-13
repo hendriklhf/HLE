@@ -133,8 +133,8 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client.OnDataReceived += IrcClient_OnDataReceived;
         _client.OnConnectionException += async (_, _) => await ReconnectAfterConnectionException();
 
-        _ircHandler.OnJoinedReceived += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnLeftReceived += (_, e) => OnLeftChannel?.Invoke(this, e);
+        _ircHandler.OnJoinReceived += (_, e) => OnJoinedChannel?.Invoke(this, e);
+        _ircHandler.OnPartReceived += (_, e) => OnLeftChannel?.Invoke(this, e);
         _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
