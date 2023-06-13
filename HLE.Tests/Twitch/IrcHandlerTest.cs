@@ -113,7 +113,7 @@ public class IrcHandlerTest
     [TestMethod]
     public void Notice_WithTag_Test()
     {
-        _ircHandler.OnNotice += (_, notice) =>
+        _ircHandler.OnNoticeReceived += (_, notice) =>
         {
             Assert.AreEqual(NoticeType.SlowOn, notice.Type);
             Assert.AreEqual("lbnshlfe", notice.Channel);
@@ -126,7 +126,7 @@ public class IrcHandlerTest
     [TestMethod]
     public void Notice_WithoutTag_Test()
     {
-        _ircHandler.OnNotice += (_, notice) =>
+        _ircHandler.OnNoticeReceived += (_, notice) =>
         {
             Assert.AreEqual(NoticeType.Unknown, notice.Type);
             Assert.AreEqual("*", notice.Channel);

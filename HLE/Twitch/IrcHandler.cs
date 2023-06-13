@@ -44,7 +44,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a NOTICE command has been received.
     /// </summary>
-    public event EventHandler<Notice>? OnNotice;
+    public event EventHandler<Notice>? OnNoticeReceived;
 
     private readonly ChatMessageParser _chatMessageParser;
     private readonly RoomstateParser _roomstateParser = new();
@@ -113,12 +113,12 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
             return false;
         }
 
-        if (OnNotice is null || !thirdWord.SequenceEqual(_noticeCommand))
+        if (OnNoticeReceived is null || !thirdWord.SequenceEqual(_noticeCommand))
         {
             return false;
         }
 
-        OnNotice.Invoke(this, _noticeParser.Parse(ircMessage, indicesOfWhitespaces));
+        OnNoticeReceived.Invoke(this, _noticeParser.Parse(ircMessage, indicesOfWhitespaces));
         return true;
     }
 
@@ -206,12 +206,12 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandleNoticeCommandWithoutTag(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
     {
-        if (OnNotice is null || !secondWord.SequenceEqual(_noticeCommand))
+        if (OnNoticeReceived is null || !secondWord.SequenceEqual(_noticeCommand))
         {
             return false;
         }
 
-        OnNotice.Invoke(this, _noticeParser.Parse(ircMessage, indicesOfWhitespaces));
+        OnNoticeReceived.Invoke(this, _noticeParser.Parse(ircMessage, indicesOfWhitespaces));
         return true;
     }
 
