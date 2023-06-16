@@ -18,7 +18,7 @@ public class IrcHandlerTest
     private const string _roomstateAllOn = "@emote-only=1;followers-only=15;r9k=1;room-id=87633910;slow=10;subs-only=1 :tmi.twitch.tv ROOMSTATE #strbhlfe";
     private const string _join = ":strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv JOIN #lbnshlfe";
     private const string _part = ":strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PART #lbnshlfe";
-    private const string _noticeWithTag = "@msg-id=slow_on :tmi.twitch.tv NOTICE #lbnshlfe :This room is now in slow mode. You may send messages every 10 seconds.";
+    private const string _noticeWithTag = "@msg-id=already_emote_only_off :tmi.twitch.tv NOTICE #lbnshlfe :This room is not in emote-only mode.";
     private const string _noticeWithoutTag = ":tmi.twitch.tv NOTICE * :Login authentication failed";
 
     [TestMethod]
@@ -115,9 +115,9 @@ public class IrcHandlerTest
     {
         _ircHandler.OnNoticeReceived += (_, notice) =>
         {
-            Assert.AreEqual(NoticeType.SlowOn, notice.Type);
+            Assert.AreEqual(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
             Assert.AreEqual("lbnshlfe", notice.Channel);
-            Assert.AreEqual("This room is now in slow mode. You may send messages every 10 seconds.", notice.Message);
+            Assert.AreEqual("This room is not in emote-only mode.", notice.Message);
         };
 
         Assert.IsTrue(_ircHandler.Handle(_noticeWithTag));

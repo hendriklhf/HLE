@@ -103,11 +103,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         await SendAsync(bytes.Memory[..byteCount]);
     }
 
-    private async ValueTask SendAsync(ReadOnlyMemory<byte> bytes)
+    private async ValueTask SendAsync(ReadOnlyMemory<byte> message)
     {
         try
         {
-            await _webSocket.SendAsync(bytes, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
+            await _webSocket.SendAsync(message, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -182,7 +182,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         while (indexOfLineEnding > -1)
         {
             ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
-            ReceivedData receivedData = ReceivedData.Create(lineOfData.Span);
+            ReceivedData receivedData = new(lineOfData.Span);
             InvokeDataReceived(this, in receivedData);
             receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
             indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
@@ -195,7 +195,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         {
             int indexOfLineEnding = receivedChars.IndexOf(_newLine);
             ReadOnlySpan<char> lineOfData = receivedChars[..indexOfLineEnding];
-            ReceivedData receivedData = ReceivedData.Create(lineOfData);
+            ReceivedData receivedData = new(lineOfData);
             InvokeDataReceived(this, in receivedData);
             receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
         }

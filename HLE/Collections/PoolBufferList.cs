@@ -213,7 +213,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<PoolB
     [Pure]
     public bool Equals(PoolBufferList<T>? other)
     {
-        return ReferenceEquals(_bufferWriter, other?._bufferWriter);
+        return ReferenceEquals(this, other) || Count == other?.Count && _bufferWriter.Equals(other._bufferWriter);
     }
 
     [Pure]

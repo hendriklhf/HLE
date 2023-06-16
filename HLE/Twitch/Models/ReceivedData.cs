@@ -1,61 +1,35 @@
 ﻿using System;
-using System.Buffers;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE.Twitch.Models;
 
-/// <summary>
-/// Holds received data in an <see cref="Array"/> rented from an <see cref="ArrayPool{T}"/>.
-/// If an instance isn't needed anymore, it has to be disposed.
-/// Otherwise it will lead to memory leaks.
-/// Which also means that the instances or any members of this class should not be cached or persisted in any way after received by an event invocation.
-/// </summary>
 [DebuggerDisplay("{ToString()}")]
 public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>
 {
-    public ReadOnlySpan<char> Span => ((ReadOnlySpan<char>)_data)[.._dataLength];
+    public ReadOnlySpan<char> Span => _data[..Length];
 
-    public ReadOnlyMemory<char> Memory => ((ReadOnlyMemory<char>)_data)[.._dataLength];
+    public ReadOnlyMemory<char> Memory => _data.Memory[..Length];
 
-    public int Length => _dataLength;
+    public int Length { get; }
 
-    internal readonly char[] _data = Array.Empty<char>();
-    private readonly int _dataLength;
+    internal readonly RentedArray<char> _data;
 
-    private ReceivedData(char[] data, int dataLength)
+    public ReceivedData(ReadOnlySpan<char> data)
     {
-        _data = data;
-        _dataLength = dataLength;
-    }
-
-    /// <summary>
-    /// Copies the content of <paramref name="data"/> into a rented array and returns a new <see cref="ReceivedData"/> instance containing the array.
-    /// The instance needs to be disposed when not used anymore. Read more in the documentation of the <see cref="ReceivedData"/> class.
-    /// </summary>
-    /// <param name="data">The data that will be copied into the instance.</param>
-    /// <returns>A <see cref="ReceivedData"/> instance containing the copied data.</returns>
-    [Pure]
-    public static ReceivedData Create(ReadOnlySpan<char> data)
-    {
-        int dataLength = data.Length;
-        char[] rentedArray = ArrayPool<char>.Shared.Rent(dataLength);
-        ref byte source = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(data));
-        ref byte destination = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetArrayDataReference(rentedArray));
-        Unsafe.CopyBlock(ref destination, ref source, (uint)(dataLength << 1));
-        return new(rentedArray, dataLength);
+        Length = data.Length;
+        _data = new(Length);
+        data.CopyTo(_data.Span);
     }
 
     public void Dispose()
     {
-        ArrayPool<char>.Shared.Return(_data);
+        _data.Dispose();
     }
 
     public bool Equals(ReceivedData other)
     {
-        return ReferenceEquals(_data, other._data) && _dataLength == other._dataLength;
+        return _data.Equals(other._data);
     }
 
     public override bool Equals(object? obj)
@@ -65,7 +39,7 @@ public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(_data, _dataLength);
+        return HashCode.Combine(_data, Length);
     }
 
     public override string ToString()

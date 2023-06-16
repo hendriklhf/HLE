@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using HLE.Collections;
@@ -90,17 +91,17 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetBucketIndex(Regex regex)
+    private int GetBucketIndex(Regex regex)
     {
         return GetBucketIndex(regex.ToString(), regex.Options, regex.MatchTimeout);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetBucketIndex(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
+    private int GetBucketIndex(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
         int patternHash = string.GetHashCode(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
-        return (int)(Unsafe.As<int, uint>(ref hash) % _defaultPoolCapacity);
+        return (int)(Unsafe.As<int, uint>(ref hash) % _buckets.Length);
     }
 
     [Pure]
@@ -177,11 +178,17 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
-            Span<Regex?> regexes = _regexes;
-            for (int i = 0; i < _defaultBucketCapacity; i++)
+            ref Regex? regexes = ref MemoryMarshal.GetArrayDataReference(_regexes);
+            for (int i = 0; i < _regexes.Length; i++)
             {
-                Regex? current = regexes[i];
-                if (current is null || options != current.Options || timeout != current.MatchTimeout || !pattern.SequenceEqual(current.ToString()))
+                Regex? current = Unsafe.Add(ref regexes, i);
+                if (current is null)
+                {
+                    regex = null;
+                    return false;
+                }
+
+                if (options != current.Options || timeout != current.MatchTimeout || !pattern.SequenceEqual(current.ToString()))
                 {
                     continue;
                 }

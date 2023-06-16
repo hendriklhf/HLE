@@ -7,7 +7,7 @@ using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
-public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
+public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<NoticeParser>
 {
     private readonly StringPool _noticeMessagePool = new();
 
@@ -59,10 +59,20 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
         {
             span[(indexOfChar + 1)..].CopyTo(span[indexOfChar..]);
             span = span[..^1];
-            indexOfChar = span.IndexOf(charToRemove);
+            int lastIndex = indexOfChar;
+            indexOfChar = span[indexOfChar..].IndexOf(charToRemove);
+            if (indexOfChar >= 0)
+            {
+                indexOfChar += lastIndex;
+            }
         }
 
         return span;
+    }
+
+    public void Dispose()
+    {
+        _noticeMessagePool.Dispose();
     }
 
     public bool Equals(NoticeParser? other)

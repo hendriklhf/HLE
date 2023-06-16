@@ -155,7 +155,7 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
             return false;
         }
 
-        OnPingReceived.Invoke(this, ReceivedData.Create(ircMessage[6..]));
+        OnPingReceived.Invoke(this, new(ircMessage[6..]));
         return true;
     }
 

@@ -291,7 +291,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     [Pure]
     public bool Equals(ConcurrentPoolBufferList<T>? other)
     {
-        return ReferenceEquals(_bufferWriter, other?._bufferWriter);
+        return ReferenceEquals(this, other) || Count == other?.Count && _bufferWriter.Equals(other._bufferWriter);
     }
 
     [Pure]

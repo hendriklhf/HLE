@@ -127,9 +127,9 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
         CopyWrittenElementsIntoNewBuffer(oldBuffer);
     }
 
-    private unsafe void CopyWrittenElementsIntoNewBuffer(T[] oldBuffer)
+    private unsafe void CopyWrittenElementsIntoNewBuffer(ReadOnlySpan<T> oldBuffer)
     {
-        ref byte source = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(oldBuffer));
+        ref byte source = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(oldBuffer));
         ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(_buffer.Span));
         Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * Length));
     }
@@ -170,7 +170,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
     [Pure]
     public bool Equals(PoolBufferWriter<T>? other)
     {
-        return ReferenceEquals(this, other);
+        return ReferenceEquals(this, other) || Length == other?.Length && _buffer.Equals(other._buffer);
     }
 
     [Pure]

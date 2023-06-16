@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using HLE.Collections;
@@ -9,7 +10,7 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class StringPool : IEquatable<StringPool>
+public sealed class StringPool : IDisposable, IEquatable<StringPool>
 {
     private Bucket[] _buckets;
 
@@ -24,6 +25,14 @@ public sealed class StringPool : IEquatable<StringPool>
         for (int i = 0; i < poolCapacity; i++)
         {
             _buckets[i] = new(bucketCapacity);
+        }
+    }
+
+    public void Dispose()
+    {
+        for (int i = 0; i < _buckets.Length; i++)
+        {
+            _buckets[i].Dispose();
         }
     }
 
@@ -184,7 +193,7 @@ public sealed class StringPool : IEquatable<StringPool>
 
         public void Dispose()
         {
-            _stringsLock?.Dispose();
+            _stringsLock.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -219,11 +228,17 @@ public sealed class StringPool : IEquatable<StringPool>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            Span<string?> strings = _strings;
-            for (int i = 0; i < strings.Length; i++)
+            ref string? strings = ref MemoryMarshal.GetArrayDataReference(_strings);
+            for (int i = 0; i < _strings.Length; i++)
             {
-                string? current = strings[i];
-                if (current is null || !span.SequenceEqual(current))
+                string? current = Unsafe.Add(ref strings, i);
+                if (current is null)
+                {
+                    value = null;
+                    return false;
+                }
+
+                if (!span.SequenceEqual(current))
                 {
                     continue;
                 }
