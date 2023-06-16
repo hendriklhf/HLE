@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.Contracts;
 using HLE.Memory;
 using HLE.Strings;
 
@@ -86,6 +87,14 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
         _displayNameBuilder.Dispose();
         _usernameBuilder.Dispose();
         _messageBuilder.Dispose();
+    }
+
+    [Pure]
+    public override string ToString()
+    {
+        ValueStringBuilder builder = stackalloc char[Channel.Length + _usernameBuilder.Length + _messageBuilder.Length + 6];
+        builder.Append("<#", Channel, "> ", _usernameBuilder.WrittenSpan, ": ", _messageBuilder.WrittenSpan);
+        return builder.ToString();
     }
 
     public bool Equals(MemoryEfficientChatMessage? other)

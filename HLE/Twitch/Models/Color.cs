@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace HLE.Twitch.Models;
 
+[DebuggerDisplay("{ToString()}")]
 public readonly struct Color : IEquatable<Color>
 {
     public byte Red { get; }

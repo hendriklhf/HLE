@@ -35,8 +35,12 @@ public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<Notice
         if (hasTag)
         {
             ReadOnlySpan<char> msgId = ircMessage[8..indicesOfWhitespaces[0]];
-            msgId = RemoveChar(msgId.AsMutableSpan(), '_');
-            type = Enum.Parse<NoticeType>(msgId, true);
+
+            Span<char> msgIdWithoutUnderscores = stackalloc char[msgId.Length];
+            msgId.CopyTo(msgIdWithoutUnderscores);
+            RemoveChar(ref msgIdWithoutUnderscores, '_');
+
+            type = Enum.Parse<NoticeType>(msgIdWithoutUnderscores, true);
         }
 
         byte hasTagAsByte = Unsafe.As<bool, byte>(ref hasTag);
@@ -52,7 +56,7 @@ public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<Notice
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ReadOnlySpan<char> RemoveChar(Span<char> span, char charToRemove)
+    private static void RemoveChar(ref Span<char> span, char charToRemove)
     {
         int indexOfChar = span.IndexOf(charToRemove);
         while (indexOfChar >= 0)
@@ -66,8 +70,6 @@ public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<Notice
                 indexOfChar += lastIndex;
             }
         }
-
-        return span;
     }
 
     public void Dispose()

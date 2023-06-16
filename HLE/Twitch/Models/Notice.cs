@@ -21,7 +21,7 @@ public readonly struct Notice : IEquatable<Notice>
 
     public bool Equals(Notice other)
     {
-        return Type == other.Type && Message == other.Message;
+        return Type == other.Type && Channel == other.Channel && Message == other.Message;
     }
 
     public override bool Equals(object? obj)

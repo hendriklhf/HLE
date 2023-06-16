@@ -8,7 +8,12 @@ namespace HLE.Tests.Twitch;
 [TestClass]
 public class IrcHandlerTest
 {
-    private readonly IrcHandler _ircHandler = new(ParsingMode.Balanced);
+    private readonly IrcHandler[] _handlers =
+    {
+        new(ParsingMode.TimeEfficient),
+        new(ParsingMode.Balanced),
+        new(ParsingMode.MemoryEfficient)
+    };
 
     private const string _privMsg =
         "@badge-info=;badges=moderator/1,twitchconEU2022/1;color=#C29900;display-name=Strbhlfe;emotes=;first-msg=0;flags=;id=03c90865-31ff-493f-a711-dcd6d788624b;mod=1;rm-received-ts=1654020884037;room-id=616177816;subscriber=0;tmi-sent-ts=1654020883875;turbo=0;user-id=87633910;user-type=mod :strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PRIVMSG #lbnshlfe :xd xd xd";
@@ -22,9 +27,13 @@ public class IrcHandlerTest
     private const string _noticeWithoutTag = ":tmi.twitch.tv NOTICE * :Login authentication failed";
 
     [TestMethod]
-    public void PrivMsgTest()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void PrivMsgTest(int handlerIndex)
     {
-        _ircHandler.OnChatMessageReceived += (_, chatMessage) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnChatMessageReceived += (_, chatMessage) =>
         {
             Assert.AreEqual(0, chatMessage.BadgeInfos.Length);
             Assert.AreEqual(2, chatMessage.Badges.Length);
@@ -48,14 +57,18 @@ public class IrcHandlerTest
             chatMessage.Dispose();
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_privMsg));
-        Assert.IsTrue(_ircHandler.Handle(_privMsgAction));
+        Assert.IsTrue(handler.Handle(_privMsg));
+        Assert.IsTrue(handler.Handle(_privMsgAction));
     }
 
     [TestMethod]
-    public void Roomstate_AllOff_Test()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void Roomstate_AllOff_Test(int handlerIndex)
     {
-        _ircHandler.OnRoomstateReceived += (_, roomstateArgs) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnRoomstateReceived += (_, roomstateArgs) =>
         {
             Assert.AreEqual(false, roomstateArgs.EmoteOnly);
             Assert.AreEqual(-1, roomstateArgs.FollowersOnly);
@@ -66,13 +79,17 @@ public class IrcHandlerTest
             Assert.AreEqual("strbhlfe", roomstateArgs.Channel);
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_roomstateAllOff));
+        Assert.IsTrue(handler.Handle(_roomstateAllOff));
     }
 
     [TestMethod]
-    public void Roomstate_AllOn_Test()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void Roomstate_AllOn_Test(int handlerIndex)
     {
-        _ircHandler.OnRoomstateReceived += (_, roomstateArgs) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnRoomstateReceived += (_, roomstateArgs) =>
         {
             Assert.AreEqual(true, roomstateArgs.EmoteOnly);
             Assert.AreEqual(15, roomstateArgs.FollowersOnly);
@@ -83,56 +100,72 @@ public class IrcHandlerTest
             Assert.AreEqual("strbhlfe", roomstateArgs.Channel);
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_roomstateAllOn));
+        Assert.IsTrue(handler.Handle(_roomstateAllOn));
     }
 
     [TestMethod]
-    public void JoinTest()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void JoinTest(int handlerIndex)
     {
-        _ircHandler.OnJoinReceived += (_, joinedChannelArgs) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnJoinReceived += (_, joinedChannelArgs) =>
         {
             Assert.AreEqual("strbhlfe", joinedChannelArgs.Username);
             Assert.AreEqual("lbnshlfe", joinedChannelArgs.Channel);
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_join));
+        Assert.IsTrue(handler.Handle(_join));
     }
 
     [TestMethod]
-    public void PartTest()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void PartTest(int handlerIndex)
     {
-        _ircHandler.OnPartReceived += (_, leftChannelArgs) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnPartReceived += (_, leftChannelArgs) =>
         {
             Assert.AreEqual("strbhlfe", leftChannelArgs.Username);
             Assert.AreEqual("lbnshlfe", leftChannelArgs.Channel);
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_part));
+        Assert.IsTrue(handler.Handle(_part));
     }
 
     [TestMethod]
-    public void Notice_WithTag_Test()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void Notice_WithTag_Test(int handlerIndex)
     {
-        _ircHandler.OnNoticeReceived += (_, notice) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnNoticeReceived += (_, notice) =>
         {
             Assert.AreEqual(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
             Assert.AreEqual("lbnshlfe", notice.Channel);
             Assert.AreEqual("This room is not in emote-only mode.", notice.Message);
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_noticeWithTag));
+        Assert.IsTrue(handler.Handle(_noticeWithTag));
     }
 
     [TestMethod]
-    public void Notice_WithoutTag_Test()
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void Notice_WithoutTag_Test(int handlerIndex)
     {
-        _ircHandler.OnNoticeReceived += (_, notice) =>
+        IrcHandler handler = _handlers[handlerIndex];
+        handler.OnNoticeReceived += (_, notice) =>
         {
             Assert.AreEqual(NoticeType.Unknown, notice.Type);
             Assert.AreEqual("*", notice.Channel);
             Assert.AreEqual("Login authentication failed", notice.Message);
         };
 
-        Assert.IsTrue(_ircHandler.Handle(_noticeWithoutTag));
+        Assert.IsTrue(handler.Handle(_noticeWithoutTag));
     }
 }

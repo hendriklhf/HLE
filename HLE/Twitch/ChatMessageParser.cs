@@ -5,7 +5,6 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
-using HLE.Numerics;
 using HLE.Strings;
 using HLE.Twitch.Models;
 
@@ -154,7 +153,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
+    private protected static long GetChannelId(ReadOnlySpan<char> value) => ParseInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ChatMessageFlag GetIsSubscriber(ReadOnlySpan<char> value)
@@ -165,7 +164,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static long GetTmiSentTs(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
+    private protected static long GetTmiSentTs(ReadOnlySpan<char> value) => ParseInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ChatMessageFlag GetIsTurboUser(ReadOnlySpan<char> value)
@@ -176,7 +175,21 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static long GetUserId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
+    private protected static long GetUserId(ReadOnlySpan<char> value) => ParseInt64(value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static long ParseInt64(ReadOnlySpan<char> value)
+    {
+        int length = value.Length;
+        ref char chars = ref MemoryMarshal.GetReference(value);
+        long result = 0;
+        for (int i = 0; i < length; i++)
+        {
+            result = 10 * result + Unsafe.Add(ref chars, i) - '0';
+        }
+
+        return result;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     private static Color ParseHexColor(ref char number)
