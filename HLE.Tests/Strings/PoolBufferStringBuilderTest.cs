@@ -1,17 +1,19 @@
-﻿using System;
+using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Strings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.Strings;
 
 [TestClass]
-public class ValueStringBuilderTest
+public class PoolBufferStringBuilderTest
 {
     [TestMethod]
     public void Indexer_Int32_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
         Assert.AreEqual('h', builder[0]);
@@ -24,7 +26,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Indexer_Index_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
         Assert.AreEqual('o', builder[^1]);
@@ -37,7 +39,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Indexer_Range_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
         Span<char> range = builder[..2];
@@ -49,7 +51,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void LengthTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
         Assert.AreEqual("hello".Length, builder.Length);
 
@@ -61,42 +63,74 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void CapacityTest()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
-        Assert.AreEqual(1000, builder.Capacity);
+        using PoolBufferStringBuilder builder = new();
+        Assert.AreEqual(PoolBufferStringBuilder.DefaultBufferSize, builder.Capacity);
+
+        builder.Append(Random.Shared.NextString(1000));
+        Assert.AreEqual(1000, builder.Length);
+        Assert.IsTrue(builder.Capacity >= builder.Length);
     }
 
     [TestMethod]
     public void BufferSpanTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.AreEqual(10, builder.BufferSpan.Length);
+        Assert.AreEqual(PoolBufferStringBuilder.DefaultBufferSize, builder.BufferSpan.Length);
         Assert.IsTrue(builder.BufferSpan.StartsWith("hello"));
+    }
+
+    [TestMethod]
+    public void BufferMemoryTest()
+    {
+        using PoolBufferStringBuilder builder = new();
+        builder.Append("hello");
+
+        Assert.AreEqual(PoolBufferStringBuilder.DefaultBufferSize, builder.BufferMemory.Length);
+        Assert.IsTrue(builder.BufferMemory.Span.StartsWith("hello"));
     }
 
     [TestMethod]
     public void WrittenSpanTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
         Assert.AreEqual("hello", new(builder.WrittenSpan));
     }
 
     [TestMethod]
-    public void FreeBufferSpanTest()
+    public void WrittenMemoryTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.IsTrue(builder.FreeBuffer.Length == builder.Capacity - builder.Length);
+        Assert.AreEqual("hello", new(builder.WrittenMemory.Span));
+    }
+
+    [TestMethod]
+    public void FreeBufferSpanTest()
+    {
+        using PoolBufferStringBuilder builder = new();
+        builder.Append("hello");
+
+        Assert.IsTrue(builder.FreeBufferSpan.Length == builder.Capacity - builder.Length);
+    }
+
+    [TestMethod]
+    public void FreeBufferMemoryTest()
+    {
+        using PoolBufferStringBuilder builder = new();
+        builder.Append("hello");
+
+        Assert.IsTrue(builder.FreeBufferMemory.Length == builder.Capacity - builder.Length);
     }
 
     [TestMethod]
     public void FreeBufferSizeTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
         Assert.IsTrue(builder.FreeBufferSize == builder.Capacity - builder.Length);
@@ -105,34 +139,34 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void EmptyTest()
     {
-        ValueStringBuilder builder = ValueStringBuilder.Empty;
-        Assert.AreEqual(0, builder.Length);
-        Assert.AreEqual(0, builder.Capacity);
+        PoolBufferStringBuilder empty = PoolBufferStringBuilder.Empty;
+        Assert.AreEqual(0, empty.Length);
+        Assert.AreEqual(0, empty.Capacity);
     }
 
     [TestMethod]
     public void Constructor_NoParameter_Test()
     {
-        ValueStringBuilder builder = new();
-        Assert.AreEqual(0, builder.Capacity);
+        using PoolBufferStringBuilder builder = new();
+        Assert.AreEqual(PoolBufferStringBuilder.DefaultBufferSize, builder.Capacity);
         Assert.AreEqual(0, builder.Length);
     }
 
     [TestMethod]
     public void Constructor_InitialBufferSize_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
-        Assert.AreEqual(10, builder.Capacity);
+        using PoolBufferStringBuilder builder = new(100);
+        Assert.IsTrue(builder.Capacity >= 100);
         Assert.AreEqual(0, builder.Length);
     }
 
     [TestMethod]
     public void AdvanceTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
-        "hello".CopyTo(builder.FreeBuffer);
+        using PoolBufferStringBuilder builder = new();
+        "hello".CopyTo(builder.FreeBufferSpan);
         builder.Advance("hello".Length);
-        "hello".CopyTo(builder.FreeBuffer);
+        "hello".CopyTo(builder.FreeBufferSpan);
         builder.Advance("hello".Length);
 
         Assert.AreEqual("hellohello", builder.ToString());
@@ -144,8 +178,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_ReadOnlySpan_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1005];
-        Assert.AreEqual(1005, builder.Capacity);
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         builder.Append("hello");
         Assert.AreEqual("hello", builder.ToString());
@@ -154,15 +188,15 @@ public class ValueStringBuilderTest
         builder.Append(randomString);
 
         Assert.AreEqual(1005, builder.Length);
-        Assert.AreEqual(0, builder.FreeBufferSize);
+        Assert.IsTrue(builder.Capacity >= 1005);
         Assert.AreEqual("hello" + randomString, builder.ToString());
     }
 
     [TestMethod]
     public void Append_Char_Test()
     {
-        ValueStringBuilder builder = stackalloc char[20];
-        Assert.AreEqual(20, builder.Capacity);
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         for (int i = 0; i < 20; i++)
         {
@@ -171,12 +205,14 @@ public class ValueStringBuilderTest
 
         Assert.AreEqual(new('a', 20), builder.ToString());
         Assert.AreEqual(20, builder.Length);
+        Assert.IsTrue(builder.Capacity >= 20);
     }
 
     [TestMethod]
     public void Append_Byte_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const byte value = 255;
         builder.Append(value);
@@ -195,7 +231,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_SByte_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const sbyte value = 120;
         builder.Append(value);
@@ -214,7 +251,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Short_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const short value = 30_000;
         builder.Append(value);
@@ -233,7 +271,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_UShort_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const ushort value = 60_000;
         builder.Append(value);
@@ -252,7 +291,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Int_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const int value = int.MaxValue;
         builder.Append(value);
@@ -271,7 +311,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_UInt_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const uint value = uint.MaxValue;
         builder.Append(value);
@@ -290,7 +331,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Long_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const long value = long.MaxValue;
         builder.Append(value);
@@ -309,7 +351,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_ULong_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const ulong value = ulong.MaxValue;
         builder.Append(value);
@@ -328,7 +371,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Float_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const float value = float.Pi;
         builder.Append(value);
@@ -347,7 +391,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Double_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         const double value = double.Pi;
         builder.Append(value);
@@ -366,7 +411,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_DateTime_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         DateTime value = DateTime.UtcNow;
         builder.Append(value, "O");
@@ -385,7 +431,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_DateTimeOffset_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         DateTimeOffset value = DateTimeOffset.UtcNow;
         builder.Append(value, "O");
@@ -404,7 +451,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_TimeSpan_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new(16);
+        Assert.AreEqual(16, builder.Capacity);
 
         TimeSpan value = TimeSpan.FromHours(10);
         builder.Append(value, "G");
@@ -423,7 +471,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void ClearTest()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new();
         builder.Append(Random.Shared.NextString(1000));
         Assert.AreEqual(1000, builder.Length);
 
@@ -434,7 +482,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void ToStringTest()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        using PoolBufferStringBuilder builder = new();
         string randomString = Random.Shared.NextString(1000);
         builder.Append(randomString);
 
@@ -442,10 +490,25 @@ public class ValueStringBuilderTest
     }
 
     [TestMethod]
-    public void Equals_ValueStringBuilder_StringComparison_Test()
+    public unsafe void CopyTo_CharPointer_Test()
     {
-        ValueStringBuilder builder1 = stackalloc char[10];
-        ValueStringBuilder builder2 = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
+        builder.Append("hello");
+
+        Span<char> destination = stackalloc char[10];
+        builder.CopyTo((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(destination)));
+
+        string destinationString = new(destination[..builder.Length]);
+        Assert.AreEqual("hello", destinationString);
+        Assert.AreEqual("hello", builder.ToString());
+        Assert.AreEqual(destinationString, builder.ToString());
+    }
+
+    [TestMethod]
+    public void Equals_PoolBufferStringBuilder_StringComparison_Test()
+    {
+        using PoolBufferStringBuilder builder1 = new();
+        using PoolBufferStringBuilder builder2 = new();
 
         builder1.Append("HELLO");
         builder2.Append("hello");
@@ -457,7 +520,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Equals_ReadOnlySpanChar_StringComparison()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        using PoolBufferStringBuilder builder = new();
         builder.Append("hello");
 
         Assert.IsTrue(builder.Equals("HELLO", StringComparison.OrdinalIgnoreCase));
@@ -465,10 +528,10 @@ public class ValueStringBuilderTest
     }
 
     [TestMethod]
-    public void Equals_ValueStringBuilder_Test()
+    public void Equals_PoolBufferStringBuilder_Test()
     {
-        ValueStringBuilder builder1 = stackalloc char[10];
-        ValueStringBuilder builder2 = stackalloc char[10];
+        using PoolBufferStringBuilder builder1 = new();
+        using PoolBufferStringBuilder builder2 = new();
 
         builder1.Append("HELLO");
         builder2.Append("hello");

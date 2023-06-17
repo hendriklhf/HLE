@@ -12,13 +12,13 @@ namespace HLE.Strings;
 [DebuggerDisplay("\"{ToString()}\"")]
 public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBufferStringBuilder>, ICopyable<char>
 {
-    public readonly ref char this[int index] => ref BufferSpan[index];
+    public readonly ref char this[int index] => ref WrittenSpan.AsMutableSpan()[index];
 
-    public readonly ref char this[Index index] => ref BufferSpan[index];
+    public readonly ref char this[Index index] => ref WrittenSpan.AsMutableSpan()[index];
 
-    public readonly Span<char> this[Range range] => BufferSpan[range];
+    public readonly Span<char> this[Range range] => WrittenSpan.AsMutableSpan()[range];
 
-    public readonly int Length => _length;
+    public int Length { get; private set; }
 
     public readonly int Capacity => _buffer.Length;
 
@@ -26,32 +26,44 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     public readonly Memory<char> BufferMemory => _buffer;
 
-    public readonly ReadOnlySpan<char> WrittenSpan => BufferSpan[.._length];
+    public readonly ReadOnlySpan<char> WrittenSpan => BufferSpan[..Length];
 
-    public readonly ReadOnlyMemory<char> WrittenMemory => BufferMemory[.._length];
+    public readonly ReadOnlyMemory<char> WrittenMemory => BufferMemory[..Length];
 
-    public readonly Span<char> FreeBufferSpan => BufferSpan[_length..];
+    public readonly Span<char> FreeBufferSpan => BufferSpan[Length..];
 
-    public readonly Memory<char> FreeBufferMemory => BufferMemory[_length..];
+    public readonly Memory<char> FreeBufferMemory => BufferMemory[Length..];
 
-    public readonly int FreeBufferSize => _buffer.Length - _length;
+    public readonly int FreeBufferSize => Capacity - Length;
 
-    private char[] _buffer = Array.Empty<char>();
-    private int _length;
+    private RentedArray<char> _buffer = RentedArray<char>.Empty;
 
-    private const int _minimumGrowth = 100;
+    public const int DefaultBufferSize = 64;
+    private const int _minimumGrowth = 128;
 
-    public static PoolBufferStringBuilder Empty => new();
+    public static PoolBufferStringBuilder Empty => new(RentedArray<char>.Empty);
+
+    private PoolBufferStringBuilder(RentedArray<char> buffer)
+    {
+        _buffer = buffer;
+    }
 
     public PoolBufferStringBuilder()
     {
+        _buffer = new(DefaultBufferSize);
     }
 
     public PoolBufferStringBuilder(int initialBufferSize)
     {
-        _buffer = ArrayPool<char>.Shared.Rent(initialBufferSize);
+        _buffer = new(initialBufferSize);
     }
 
+    public readonly void Dispose()
+    {
+        _buffer.Dispose();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GrowBuffer(int size = _minimumGrowth)
     {
         if (size < _minimumGrowth)
@@ -65,18 +77,10 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
         _buffer = newBuffer;
     }
 
-    public readonly void Dispose()
-    {
-        if (!ReferenceEquals(_buffer, Array.Empty<char>()))
-        {
-            ArrayPool<char>.Shared.Return(_buffer);
-        }
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Advance(int length)
     {
-        _length += length;
+        Length += length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -88,7 +92,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
         }
 
         span.CopyTo(FreeBufferSpan);
-        _length += span.Length;
+        Advance(span.Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,169 +103,108 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
             GrowBuffer();
         }
 
-        _buffer[_length++] = c;
+        _buffer[Length++] = c;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<byte, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<sbyte, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<short, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<ushort, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<int, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<uint, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<long, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<ulong, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<float, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(value, format, formatProvider);
-        }
-
-        Advance(charsWritten);
+        Append<double, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        Append<DateTime, IFormatProvider>(dateTime, format, formatProvider);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Append(DateTimeOffset dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        Append<DateTimeOffset, IFormatProvider>(dateTime, format, formatProvider);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        Append<TimeSpan, IFormatProvider>(timeSpan, format, formatProvider);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default)
         where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
-        if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
+        while (true)
         {
-            GrowBuffer();
-            Append(spanFormattable, format, formatProvider);
+            if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
+            {
+                GrowBuffer();
+                continue;
+            }
+
+            Advance(charsWritten);
+            break;
         }
-
-        Advance(charsWritten);
     }
 
-    public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
-    {
-        if (!dateTime.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(dateTime, format, formatProvider);
-        }
-
-        Advance(charsWritten);
-    }
-
-    public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
-    {
-        if (!timeSpan.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
-        {
-            GrowBuffer();
-            Append(timeSpan, format, formatProvider);
-        }
-
-        Advance(charsWritten);
-    }
-
-    public void Remove(int index, int length = 1)
-    {
-        BufferSpan[(index + length).._length].CopyTo(BufferSpan[index..]);
-        _length -= length;
-    }
-
-#if NET8_0_OR_GREATER
-    public readonly void Replace(char oldChar, char newChar)
-    {
-        WrittenSpan.Replace(oldChar, newChar);
-    }
-#endif
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear()
     {
-        _length = 0;
+        Length = 0;
     }
 
     [Pure]
@@ -269,12 +212,6 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
     public override readonly string ToString()
     {
         return new(WrittenSpan);
-    }
-
-    [Pure]
-    public readonly char[] ToCharArray()
-    {
-        return WrittenSpan.ToArray();
     }
 
     public readonly void CopyTo(char[] destination, int offset = 0)
@@ -300,13 +237,13 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
     public readonly unsafe void CopyTo(char* destination)
     {
         char* source = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(_buffer));
-        Unsafe.CopyBlock(destination, source, (uint)(_length * sizeof(char)));
+        Unsafe.CopyBlock(destination, source, (uint)(Length * sizeof(char)));
     }
 
     [Pure]
     public readonly bool Equals(PoolBufferStringBuilder builder, StringComparison comparisonType)
     {
-        return WrittenSpan.Equals(builder.WrittenSpan, comparisonType);
+        return Equals(builder.WrittenSpan, comparisonType);
     }
 
     [Pure]
@@ -317,7 +254,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     public readonly bool Equals(PoolBufferStringBuilder other)
     {
-        return ReferenceEquals(_buffer, other._buffer) && _length == other._length;
+        return Length == other.Length && _buffer.Equals(other._buffer);
     }
 
     // ReSharper disable once ArrangeModifiersOrder
@@ -330,7 +267,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode()
     {
-        return HashCode.Combine(_buffer, _length);
+        return HashCode.Combine(_buffer, Length);
     }
 
     [Pure]

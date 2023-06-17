@@ -4,32 +4,32 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
 public ref partial struct ValueStringBuilder
 {
-    public readonly ref char this[int index] => ref _buffer[index];
+    public readonly ref char this[int index] => ref WrittenSpan.AsMutableSpan()[index];
 
-    public readonly ref char this[Index index] => ref _buffer[index];
+    public readonly ref char this[Index index] => ref WrittenSpan.AsMutableSpan()[index];
 
-    public readonly Span<char> this[Range range] => _buffer[range];
+    public readonly Span<char> this[Range range] => WrittenSpan.AsMutableSpan()[range];
 
-    public readonly Span<char> Buffer => _buffer;
-
-    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[.._length];
-
-    public readonly Span<char> FreeBuffer => _buffer[_length..];
-
-    public readonly int Length => _length;
+    public int Length { get; private set; }
 
     public readonly int Capacity => _buffer.Length;
 
-    public readonly int FreeBufferSize => _buffer.Length - _length;
+    public readonly Span<char> BufferSpan => _buffer;
+
+    public readonly ReadOnlySpan<char> WrittenSpan => BufferSpan[..Length];
+
+    public readonly Span<char> FreeBuffer => BufferSpan[Length..];
+
+    public readonly int FreeBufferSize => Capacity - Length;
 
     private readonly Span<char> _buffer = Span<char>.Empty;
-    private int _length = 0;
 
     public static ValueStringBuilder Empty => new();
 
@@ -42,154 +42,104 @@ public ref partial struct ValueStringBuilder
         _buffer = buffer;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Advance(int length)
     {
-        _length += length;
+        Length += length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(scoped ReadOnlySpan<char> span)
     {
         span.CopyTo(FreeBuffer);
-        _length += span.Length;
+        Length += span.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(char c)
     {
-        _buffer[_length++] = c;
+        _buffer[Length++] = c;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<byte, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<sbyte, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<short, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<ushort, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<int, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<uint, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<long, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<ulong, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<float, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!value.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(value));
-        }
-
-        Advance(charsWritten);
+        Append<double, IFormatProvider>(value, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!dateTime.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(dateTime));
-        }
-
-        Advance(charsWritten);
+        Append<DateTime, IFormatProvider>(dateTime, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(DateTimeOffset dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!dateTime.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(dateTime));
-        }
-
-        Advance(charsWritten);
+        Append<DateTimeOffset, IFormatProvider>(dateTime, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
-        if (!timeSpan.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
-        {
-            throw NotEnoughSpaceException(nameof(timeSpan));
-        }
-
-        Advance(charsWritten);
+        Append<TimeSpan, IFormatProvider>(timeSpan, format, formatProvider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default) where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
         if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
@@ -200,35 +150,23 @@ public ref partial struct ValueStringBuilder
         Advance(charsWritten);
     }
 
-    public void Remove(int index, int length = 1)
-    {
-        _buffer[(index + length).._length].CopyTo(_buffer[index..]);
-        _length -= length;
-    }
-
-#if NET8_0_OR_GREATER
-    public readonly void Replace(char oldChar, char newChar)
-    {
-        WrittenSpan.Replace(oldChar, newChar);
-    }
-#endif
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear()
     {
-        _length = 0;
+        Length = 0;
     }
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString()
     {
-        return new(_buffer[.._length]);
+        return new(WrittenSpan);
     }
 
     [Pure]
     public readonly char[] ToCharArray()
     {
-        return _buffer[.._length].ToArray();
+        return _buffer[..Length].ToArray();
     }
 
     [Pure]
@@ -243,26 +181,26 @@ public ref partial struct ValueStringBuilder
     {
         ref char bufferReference = ref MemoryMarshal.GetReference(_buffer);
         ref char otherBufferReference = ref MemoryMarshal.GetReference(other._buffer);
-        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference) && _length == other._length;
+        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference) && Length == other.Length;
     }
 
     [Pure]
     public readonly bool Equals(ValueStringBuilder other, StringComparison comparisonType)
     {
-        return WrittenSpan.Equals(other.WrittenSpan, comparisonType);
+        return Equals(other.WrittenSpan, comparisonType);
     }
 
     [Pure]
-    public readonly bool Equals(ReadOnlySpan<char> span, StringComparison comparisonType)
+    public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
     {
-        return WrittenSpan.Equals(span, comparisonType);
+        return WrittenSpan.Equals(str, comparisonType);
     }
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly unsafe int GetHashCode()
     {
-        return HashCode.Combine((nuint)Unsafe.AsPointer(ref MemoryMarshal.GetReference(_buffer)), _length);
+        return HashCode.Combine((nuint)Unsafe.AsPointer(ref MemoryMarshal.GetReference(_buffer)), Length);
     }
 
     [Pure]
