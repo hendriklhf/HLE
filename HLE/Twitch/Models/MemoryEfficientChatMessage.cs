@@ -51,14 +51,14 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
     /// <summary>
     /// The default constructor of <see cref="MemoryEfficientChatMessage"/>.
     /// </summary>
-    public MemoryEfficientChatMessage(RentedArray<Badge> badgeInfos, int badgeInfoCount, RentedArray<Badge> badges, int badgeCount, ChatMessageFlag flags,
+    public MemoryEfficientChatMessage(RentedArray<Badge> badgeInfos, int badgeInfoCount, RentedArray<Badge> badges, int badgeCount, ChatMessageTags tags,
         ReadOnlySpan<char> displayName, ReadOnlySpan<char> username, ReadOnlySpan<char> message)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
         _badges = badges;
         _badgeCount = badgeCount;
-        _flags = flags;
+        _tags = tags;
 
         _displayNameBuilder = new(displayName.Length);
         _displayNameBuilder.Append(displayName);

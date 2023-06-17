@@ -36,7 +36,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     [Pure]
     public void Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, out Roomstate roomstate)
     {
-        ChangedRoomstateFlag changedStatesFlags = 0;
+        ChangedRoomStates changedStatesFlags = 0;
         bool emoteOnly = false;
         int followersOnly = -1;
         bool r9K = false;
@@ -58,26 +58,26 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
             {
                 case _emoteOnlyTag:
                     emoteOnly = GetEmoteOnly(value);
-                    changedStatesFlags |= ChangedRoomstateFlag.EmoteOnly;
+                    changedStatesFlags |= ChangedRoomStates.EmoteOnly;
                     break;
                 case _followersOnlyTag:
                     followersOnly = GetFollowersOnly(value);
-                    changedStatesFlags |= ChangedRoomstateFlag.FollowersOnly;
+                    changedStatesFlags |= ChangedRoomStates.FollowersOnly;
                     break;
                 case _r9KTag:
                     r9K = GetR9K(value);
-                    changedStatesFlags |= ChangedRoomstateFlag.R9K;
+                    changedStatesFlags |= ChangedRoomStates.R9K;
                     break;
                 case _roomIdTag:
                     channelId = GetChannelId(value);
                     break;
                 case _slowModeTag:
                     slowMode = GetSlowMode(value);
-                    changedStatesFlags |= ChangedRoomstateFlag.SlowMode;
+                    changedStatesFlags |= ChangedRoomStates.SlowMode;
                     break;
                 case _subsOnlyTag:
                     subsOnly = GetSubsOnly(value);
-                    changedStatesFlags |= ChangedRoomstateFlag.SubsOnly;
+                    changedStatesFlags |= ChangedRoomStates.SubsOnly;
                     break;
             }
         }

@@ -16,23 +16,23 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public virtual required string DisplayName { get; init; }
 
-    public bool IsFirstMessage => (_flags & ChatMessageFlag.IsFirstMessage) == ChatMessageFlag.IsFirstMessage;
+    public bool IsFirstMessage => (_tags & ChatMessageTags.IsFirstMessage) == ChatMessageTags.IsFirstMessage;
 
     public required Guid Id { get; init; }
 
-    public bool IsModerator => (_flags & ChatMessageFlag.IsModerator) == ChatMessageFlag.IsModerator;
+    public bool IsModerator => (_tags & ChatMessageTags.IsModerator) == ChatMessageTags.IsModerator;
 
     public required long ChannelId { get; init; }
 
-    public bool IsSubscriber => (_flags & ChatMessageFlag.IsSubscriber) == ChatMessageFlag.IsSubscriber;
+    public bool IsSubscriber => (_tags & ChatMessageTags.IsSubscriber) == ChatMessageTags.IsSubscriber;
 
     public required long TmiSentTs { get; init; }
 
-    public bool IsTurboUser => (_flags & ChatMessageFlag.IsTurboUser) == ChatMessageFlag.IsTurboUser;
+    public bool IsTurboUser => (_tags & ChatMessageTags.IsTurboUser) == ChatMessageTags.IsTurboUser;
 
     public required long UserId { get; init; }
 
-    public bool IsAction => (_flags & ChatMessageFlag.IsAction) == ChatMessageFlag.IsAction;
+    public bool IsAction => (_tags & ChatMessageTags.IsAction) == ChatMessageTags.IsAction;
 
     public virtual required string Username { get; init; }
 
@@ -40,7 +40,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public virtual required string Message { get; init; }
 
-    private protected ChatMessageFlag _flags;
+    private protected ChatMessageTags _tags;
 
     public abstract void Dispose();
 

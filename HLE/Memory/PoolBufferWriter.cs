@@ -1,5 +1,7 @@
 using System;
 using System.Buffers;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -12,7 +14,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyable<T>, IEquatable<PoolBufferWriter<T>>
+public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDisposable, ICopyable<T>, IEquatable<PoolBufferWriter<T>>
 {
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
@@ -198,5 +200,18 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IDisposable, ICopyab
         Type thisType = typeof(PoolBufferWriter<T>);
         Type genericType = typeof(T);
         return $"{thisType.Name}.{nameof(PoolBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Length}]";
+    }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        for (int i = 0; i < Length; i++)
+        {
+            yield return _buffer[i];
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 }

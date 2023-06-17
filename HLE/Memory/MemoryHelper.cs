@@ -15,7 +15,7 @@ public static unsafe class MemoryHelper
     /// The default maximum can also be changed with the <see cref="MaxStackAllocSize"/> property.
     /// </summary>
     /// <param name="elementCount">The amount of elements that will be multiplied by the type's size.</param>
-    /// <typeparam name="T">The type.</typeparam>
+    /// <typeparam name="T">The type of the <see langword="stackalloc">.</typeparam>
     /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -37,6 +37,12 @@ public static unsafe class MemoryHelper
     public static Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
     {
         return *(Memory<T>*)&memory;
+    }
+
+    /// <inheritdoc cref="AsMemoryDangerous{T}(Span{T})"/>
+    public static ReadOnlyMemory<T> AsMemoryDangerous<T>(this ReadOnlySpan<T> span)
+    {
+        return AsMemoryDangerous(span.AsMutableSpan());
     }
 
     /// <summary>

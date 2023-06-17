@@ -59,7 +59,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageFlag GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
+    private protected static ChatMessageTags GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
     {
         if (indicesOfWhitespace.Length < 5)
         {
@@ -69,7 +69,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespace[3] + 1)..indicesOfWhitespace[4]];
         bool isAction = actionPrefix.SequenceEqual(_actionPrefix);
         int asByte = Unsafe.As<bool, byte>(ref isAction);
-        return (ChatMessageFlag)(asByte << 4);
+        return (ChatMessageTags)(asByte << 4);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -134,44 +134,44 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageFlag GetIsFirstMsg(ReadOnlySpan<char> value)
+    private protected static ChatMessageTags GetIsFirstMsg(ReadOnlySpan<char> value)
     {
         bool isFirstMessage = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
-        return (ChatMessageFlag)asByte;
+        return (ChatMessageTags)asByte;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, "D");
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageFlag GetIsModerator(ReadOnlySpan<char> value)
+    private protected static ChatMessageTags GetIsModerator(ReadOnlySpan<char> value)
     {
         bool isModerator = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isModerator);
-        return (ChatMessageFlag)(asByte << 1);
+        return (ChatMessageTags)(asByte << 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static long GetChannelId(ReadOnlySpan<char> value) => ParseInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageFlag GetIsSubscriber(ReadOnlySpan<char> value)
+    private protected static ChatMessageTags GetIsSubscriber(ReadOnlySpan<char> value)
     {
         bool isSubscriber = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isSubscriber);
-        return (ChatMessageFlag)(asByte << 2);
+        return (ChatMessageTags)(asByte << 2);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static long GetTmiSentTs(ReadOnlySpan<char> value) => ParseInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageFlag GetIsTurboUser(ReadOnlySpan<char> value)
+    private protected static ChatMessageTags GetIsTurboUser(ReadOnlySpan<char> value)
     {
         bool isTurboUser = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isTurboUser);
-        return (ChatMessageFlag)(asByte << 3);
+        return (ChatMessageTags)(asByte << 3);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

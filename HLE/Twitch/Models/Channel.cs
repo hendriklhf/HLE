@@ -49,7 +49,7 @@ public sealed class Channel : IEquatable<Channel>
 
     internal readonly string _prefixedName;
 
-    private static readonly ChangedRoomstateFlag[] _roomstates = Enum.GetValues<ChangedRoomstateFlag>();
+    private static readonly ChangedRoomStates[] _allChangedRoomStatesValues = Enum.GetValues<ChangedRoomStates>();
 
     internal Channel(in Roomstate args)
     {
@@ -65,35 +65,35 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in Roomstate args)
     {
-        ref ChangedRoomstateFlag firstRoomstate = ref MemoryMarshal.GetArrayDataReference(_roomstates);
-        for (int i = 0; i < _roomstates.Length; i++)
+        ref ChangedRoomStates firstRoomStateValue = ref MemoryMarshal.GetArrayDataReference(_allChangedRoomStatesValues);
+        for (int i = 0; i < _allChangedRoomStatesValues.Length; i++)
         {
-            ChangedRoomstateFlag roomstateFlag = Unsafe.Add(ref firstRoomstate, i);
-            bool roomstateChanged = (args.ChangedStates & roomstateFlag) == roomstateFlag;
+            ChangedRoomStates roomStates = Unsafe.Add(ref firstRoomStateValue, i);
+            bool roomstateChanged = (args.ChangedStates & roomStates) == roomStates;
             if (!roomstateChanged)
             {
                 continue;
             }
 
-            switch (roomstateFlag)
+            switch (roomStates)
             {
-                case ChangedRoomstateFlag.EmoteOnly:
+                case ChangedRoomStates.EmoteOnly:
                     EmoteOnly = args.EmoteOnly;
                     break;
-                case ChangedRoomstateFlag.FollowersOnly:
+                case ChangedRoomStates.FollowersOnly:
                     FollowersOnly = args.FollowersOnly;
                     break;
-                case ChangedRoomstateFlag.R9K:
+                case ChangedRoomStates.R9K:
                     R9K = args.R9K;
                     break;
-                case ChangedRoomstateFlag.SlowMode:
+                case ChangedRoomStates.SlowMode:
                     SlowMode = args.SlowMode;
                     break;
-                case ChangedRoomstateFlag.SubsOnly:
+                case ChangedRoomStates.SubsOnly:
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    throw new InvalidEnumArgumentException(nameof(roomstateFlag), (int)roomstateFlag, typeof(ChangedRoomstateFlag));
+                    throw new InvalidEnumArgumentException(nameof(roomStates), (int)roomStates, typeof(ChangedRoomStates));
             }
         }
     }

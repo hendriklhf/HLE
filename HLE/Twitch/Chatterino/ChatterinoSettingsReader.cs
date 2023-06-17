@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -24,14 +22,24 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
         using PoolBufferStringBuilder pathBuilder = new(100);
         pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
         string windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
-        Files.ReadBytes(windowLayoutPath, _windowLayoutFileContentWriter);
+        BufferedFileOperations.ReadBytes(windowLayoutPath, _windowLayoutFileContentWriter);
+    }
+
+    ~ChatterinoSettingsReader()
+    {
+        _windowLayoutFileContentWriter.Dispose();
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        _windowLayoutFileContentWriter.Dispose();
     }
 
     /// <summary>
     /// Gets all distinct channels of all your tabs from the Chatterino settings.
     /// </summary>
     /// <returns>A string array of all channels.</returns>
-    [Pure]
     public string[] GetChannels()
     {
         if (_channels is not null)
@@ -41,8 +49,6 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
 
         Utf8JsonReader jsonReader = new(_windowLayoutFileContentWriter.WrittenSpan);
         using PoolBufferList<string> channels = new(20, 15);
-        HashSet<int> channelHashes = new(20);
-        Span<char> charBuffer = stackalloc char[30];
 
         ReadOnlySpan<byte> dataProperty = "data"u8;
         ReadOnlySpan<byte> nameProperty = "name"u8;
@@ -74,11 +80,10 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
                         continue;
                     }
 
-                    int channelLength = Encoding.UTF8.GetChars(channelNameAsBytes, charBuffer);
-                    int channelHash = string.GetHashCode(charBuffer[..channelLength], StringComparison.OrdinalIgnoreCase);
-                    if (channelHashes.Add(channelHash))
+                    string channel = StringPool.Shared.GetOrAdd(channelNameAsBytes, Encoding.UTF8);
+                    if (!channels.Contains(channel))
                     {
-                        channels.Add(new(charBuffer[..channelLength]));
+                        channels.Add(channel);
                     }
 
                     break;
@@ -88,11 +93,6 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
         }
 
         return _channels = channels.ToArray();
-    }
-
-    public void Dispose()
-    {
-        _windowLayoutFileContentWriter.Dispose();
     }
 
     public bool Equals(ChatterinoSettingsReader? other)

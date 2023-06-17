@@ -9,7 +9,7 @@ using HLE.Memory;
 
 namespace HLE;
 
-public static class Files
+public static class BufferedFileOperations
 {
     public static void ReadBytes<TWriter>(string filePath, TWriter writer, int fileSizeHint = 2500) where TWriter : IBufferWriter<byte>
     {

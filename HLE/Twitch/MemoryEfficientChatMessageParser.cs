@@ -18,7 +18,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         int badgeCount = 0;
         Color color = Color.Empty;
         ReadOnlySpan<char> displayName = ReadOnlySpan<char>.Empty;
-        ChatMessageFlag flags = 0;
+        ChatMessageTags chatMessageTags = 0;
         Guid id = Guid.Empty;
         long channelId = 0;
         long tmiSentTs = 0;
@@ -51,25 +51,25 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
                     displayName = GetDisplayName(value);
                     break;
                 case _firstMsgTag:
-                    flags |= GetIsFirstMsg(value);
+                    chatMessageTags |= GetIsFirstMsg(value);
                     break;
                 case _idTag:
                     id = GetId(value);
                     break;
                 case _modTag:
-                    flags |= GetIsModerator(value);
+                    chatMessageTags |= GetIsModerator(value);
                     break;
                 case _roomIdTag:
                     channelId = GetChannelId(value);
                     break;
                 case _subscriberTag:
-                    flags |= GetIsSubscriber(value);
+                    chatMessageTags |= GetIsSubscriber(value);
                     break;
                 case _tmiSentTsTag:
                     tmiSentTs = GetTmiSentTs(value);
                     break;
                 case _turboTag:
-                    flags |= GetIsTurboUser(value);
+                    chatMessageTags |= GetIsTurboUser(value);
                     break;
                 case _userIdTag:
                     userId = GetUserId(value);
@@ -77,12 +77,12 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
             }
         }
 
-        flags |= GetIsAction(ircMessage, indicesOfWhitespaces);
+        chatMessageTags |= GetIsAction(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<char> username = GetUsername(ircMessage, indicesOfWhitespaces, displayName.Length);
         ReadOnlySpan<char> channel = GetChannel(ircMessage, indicesOfWhitespaces);
-        ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (flags & ChatMessageFlag.IsAction) == ChatMessageFlag.IsAction);
+        ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageTags & ChatMessageTags.IsAction) == ChatMessageTags.IsAction);
 
-        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, flags, displayName, username, message)
+        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageTags, displayName, username, message)
         {
             Channel = StringPool.Shared.GetOrAdd(channel),
             ChannelId = channelId,

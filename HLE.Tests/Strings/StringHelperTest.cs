@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using HLE.Strings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.Strings;
 
 [TestClass]
-public class StringHelperTest
+public partial class StringHelperTest
 {
     private readonly string _str = $"{Str(50)} {Str(10)} {Str(25)} {Str(5)} {Str(100)} {Str(30)}";
 
@@ -165,9 +166,30 @@ public class StringHelperTest
     [TestMethod]
     public void TrimAllTest()
     {
-        string str = "     aaa        aaa aaa                   aaa     ".TrimAll();
-        Assert.AreEqual("aaa aaa aaa aaa", str);
-        str = "hello".TrimAll();
-        Assert.AreEqual("hello", str);
+        string str = "     aaa        aaa aaa                   aaa     ";
+        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+
+        str = "      a";
+        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+
+        str = "a       ";
+        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+
+        str = "hello";
+        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+
+        str = "         ";
+        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+
+        str = string.Empty;
+        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
     }
+
+    private static string TrimAllWithRegex(string str)
+    {
+        return GetMultipleSpacesRegex().Replace(str.Trim(), " ");
+    }
+
+    [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled)]
+    private static partial Regex GetMultipleSpacesRegex();
 }

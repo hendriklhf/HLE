@@ -19,11 +19,11 @@ public sealed class BalancedChatMessage : ChatMessage, IEquatable<BalancedChatMe
     /// <summary>
     /// The default constructor of <see cref="BalancedChatMessage"/>.
     /// </summary>
-    public BalancedChatMessage(Badge[] badgeInfos, Badge[] badges, ChatMessageFlag flags)
+    public BalancedChatMessage(Badge[] badgeInfos, Badge[] badges, ChatMessageTags tags)
     {
         _badgeInfos = badgeInfos;
         _badges = badges;
-        _flags = flags;
+        _tags = tags;
     }
 
     public override void Dispose()

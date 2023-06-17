@@ -155,15 +155,24 @@ public static class StringHelper
     [Pure]
     public static int TrimAll(this ReadOnlySpan<char> str, Span<char> result)
     {
-        ReadOnlySpan<char> trimmedString = str.Trim();
-        trimmedString.CopyTo(result);
+        int indexOfAnyNonWhitespace = str.IndexOfAnyExcept(' ');
+        if (indexOfAnyNonWhitespace < 0)
+        {
+            return 0;
+        }
+
+        str = str[indexOfAnyNonWhitespace..];
+        str.CopyTo(result);
+        result = result[..str.Length];
+
         int indexOfWhitespaces = result.IndexOf("  ");
         while (indexOfWhitespaces > -1)
         {
             int endOfWhitespaces = result[indexOfWhitespaces..].IndexOfAnyExcept(' ');
             if (endOfWhitespaces < 1)
             {
-                continue;
+                result = result[..indexOfWhitespaces];
+                break;
             }
 
             result[(indexOfWhitespaces + endOfWhitespaces)..].CopyTo(result[(indexOfWhitespaces + 1)..]);
@@ -171,7 +180,6 @@ public static class StringHelper
             indexOfWhitespaces = result.IndexOf("  ");
         }
 
-        result = result.TrimEnd('\0');
         return result.Length;
     }
 

@@ -16,13 +16,13 @@ public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEffic
     /// <summary>
     /// The default constructor of <see cref="TimeEfficientChatMessage"/>.
     /// </summary>
-    public TimeEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlag flags)
+    public TimeEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageTags tags)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
         _badges = badges;
         _badgeCount = badgeCount;
-        _flags = flags;
+        _tags = tags;
     }
 
     public override void Dispose()

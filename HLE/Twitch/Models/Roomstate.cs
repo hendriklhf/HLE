@@ -50,12 +50,12 @@ public readonly struct Roomstate : IEquatable<Roomstate>
     /// <summary>
     /// Flags of the states that changed.
     /// </summary>
-    public ChangedRoomstateFlag ChangedStates { get; }
+    public ChangedRoomStates ChangedStates { get; }
 
     /// <summary>
     /// The default constructor of <see cref="Roomstate"/>.
     /// </summary>
-    public Roomstate(ChangedRoomstateFlag changedStates)
+    public Roomstate(ChangedRoomStates changedStates)
     {
         ChangedStates = changedStates;
     }

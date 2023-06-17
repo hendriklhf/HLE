@@ -32,11 +32,11 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        GenerateStringBuilderMethods(context);
-        GenerateMessageBuilderMethods(context);
+        GenerateValueStringBuilderMethods(context);
+        GeneratePoolBufferStringBuilderMethods(context);
     }
 
-    private void GenerateStringBuilderMethods(GeneratorExecutionContext context)
+    private void GenerateValueStringBuilderMethods(GeneratorExecutionContext context)
     {
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
@@ -53,7 +53,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         context.AddSource("HLE.Strings.ValueStringBuilder.g.cs", sourceBuilder.ToString());
     }
 
-    private void GenerateMessageBuilderMethods(GeneratorExecutionContext context)
+    private void GeneratePoolBufferStringBuilderMethods(GeneratorExecutionContext context)
     {
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
@@ -81,13 +81,13 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
                 methodBuilder.Append(", ");
             }
 
-            methodBuilder.Append($"{argumentTypes[i]} arg{i}");
+            methodBuilder.Append(argumentTypes[i]).Append(" arg").Append(i);
         }
 
         methodBuilder.AppendLine(")").AppendLine("{");
         for (int i = 0; i < argumentTypes.Length; i++)
         {
-            methodBuilder.AppendLine($"Append(arg{i});");
+            methodBuilder.Append("Append(arg").Append(i).AppendLine(");");
         }
 
         methodBuilder.AppendLine("}");
