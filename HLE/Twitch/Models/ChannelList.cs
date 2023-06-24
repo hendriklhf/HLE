@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using HLE.Collections;
 using HLE.Collections.Concurrent;
 
 namespace HLE.Twitch.Models;
@@ -8,7 +9,7 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// A class that represents a list of channels the client is connected to.
 /// </summary>
-public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
+public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>, ICountable
 {
     /// <summary>
     /// Retrieves a channel by the user id of the channel owner. Returns null if the client is not connected to the channel.
@@ -33,6 +34,9 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
     /// </summary>
     public int Count => _channels.Count;
 
+    /// <summary>
+    /// Uses channel id as primary key and hashed channel name with OrdinalIgnoreCase comparison as secondary key.
+    /// </summary>
     private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();
 
     internal void Update(in Roomstate args)
@@ -68,7 +72,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
 
     private Channel? Get(long channelId)
     {
-        return _channels.TryGetValue(channelId, out Channel? channel) ? channel : null;
+        return _channels.TryGetByPrimaryKey(channelId, out Channel? channel) ? channel : null;
     }
 
     private Channel? Get(ReadOnlySpan<char> name)
@@ -89,7 +93,7 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>
         }
 
         int channelNameHash = string.GetHashCode(name, StringComparison.OrdinalIgnoreCase);
-        return _channels.TryGetValue(channelNameHash, out Channel? channel) ? channel : null;
+        return _channels.TryGetBySecondaryKey(channelNameHash, out Channel? channel) ? channel : null;
     }
 
     public bool Equals(ChannelList? other)

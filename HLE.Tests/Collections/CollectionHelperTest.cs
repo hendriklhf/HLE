@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using HLE.Collections;
-using HLE.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HLE.Tests.Collections;
@@ -14,7 +13,7 @@ public class CollectionHelperTest
     public void RandomTest()
     {
         const int arrLength = 10;
-        string[] arr = TestHelper.CreateStringArray(arrLength, 10);
+        string[] arr = TestHelper.CreateRandomStringArray(arrLength, 10);
         for (int i = 0; i < 1000; i++)
         {
             Assert.IsTrue(arr.Contains(arr.Random()));
@@ -112,16 +111,6 @@ public class CollectionHelperTest
         const string str = "test string";
         int[] indices = str.IndicesOf(c => c is 's');
         Assert.IsTrue(indices is [2, 5]);
-    }
-
-    [TestMethod]
-    public void RandomizeTest()
-    {
-        int[] arr = TestHelper.CreateIntArray(50);
-        int[][] arrArr = Enumerable.Range(0, 100_000).Select(_ => arr.Randomize()).ToArray();
-        int count = arrArr.Count(a => arr.SequenceEqual(a));
-        Console.WriteLine($"Content was equal {NumberHelper.InsertThousandSeparators(count)} times.");
-        Assert.IsTrue(count <= 1);
     }
 
     [TestMethod]

@@ -3,13 +3,20 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using HLE.Collections;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly struct OAuthToken : IEquatable<OAuthToken>
+public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToken>
 {
+    public char this[int index] => AsSpan()[index];
+
+    public char this[Index index] => AsSpan()[index];
+
+    public ReadOnlySpan<char> this[Range range] => AsSpan()[range];
+
     private readonly ReadOnlyMemory<char> _token = ReadOnlyMemory<char>.Empty;
 
     public static OAuthToken Empty => new();

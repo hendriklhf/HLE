@@ -5,12 +5,12 @@ namespace HLE.Tests;
 
 public static class TestHelper
 {
-    public static int[] CreateIntArray(int length)
+    public static int[] CreateRandomIntArray(int length)
     {
         return Enumerable.Range(0, length).Select(_ => Random.Shared.Next()).ToArray();
     }
 
-    public static string[] CreateStringArray(int arrayLength, int stringLength, char minChar = (char)ushort.MinValue, char maxChar = (char)ushort.MaxValue)
+    public static string[] CreateRandomStringArray(int arrayLength, int stringLength, char minChar = char.MinValue, char maxChar = char.MaxValue)
     {
         return Enumerable.Range(0, arrayLength).Select(_ => Random.Shared.NextString(stringLength, minChar, maxChar)).ToArray();
     }

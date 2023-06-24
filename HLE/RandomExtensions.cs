@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Numerics;
 using HLE.Strings;
@@ -96,7 +99,8 @@ public static class RandomExtensions
         return result;
     }
 
-    public static string NextString(this Random random, int length, ReadOnlySpan<char> chars)
+    [Pure]
+    public static string NextString(this Random random, int length, ReadOnlySpan<char> choices)
     {
         if (length <= 0)
         {
@@ -110,8 +114,8 @@ public static class RandomExtensions
             random.Fill(randomIndicesBuffer.Span);
             for (int i = 0; i < length; i++)
             {
-                int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % chars.Length;
-                resultSpan[i] = chars[randomIndex];
+                int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % choices.Length;
+                resultSpan[i] = choices[randomIndex];
             }
 
             return result;
@@ -121,8 +125,8 @@ public static class RandomExtensions
         random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
-            int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % chars.Length;
-            resultSpan[i] = chars[randomIndex];
+            int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % choices.Length;
+            resultSpan[i] = choices[randomIndex];
         }
 
         return result;
@@ -166,6 +170,24 @@ public static class RandomExtensions
     public static void Fill<T>(this Random random, Span<T> span) where T : struct
     {
         random.Write(ref MemoryMarshal.GetReference(span), span.Length);
+    }
+
+    public static T[] Shuffle<T>(this Random random, IEnumerable<T> collection)
+    {
+        if (!collection.TryGetSpan<T>(out Span<T> span))
+        {
+            T[] array = collection.ToArray();
+            random.Shuffle(array);
+            return array;
+        }
+
+        random.Shuffle(span);
+        return span.ToArray();
+    }
+
+    public static void Shuffle<T>(this Random random, List<T> collection)
+    {
+        random.Shuffle(CollectionsMarshal.AsSpan(collection));
     }
 
     [Pure]

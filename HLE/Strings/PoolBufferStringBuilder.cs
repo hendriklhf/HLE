@@ -1,16 +1,17 @@
 ﻿using System;
-using System.Buffers;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBufferStringBuilder>, ICopyable<char>
+public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, IEquatable<PoolBufferStringBuilder>, ICopyable<char>, ICountable, IRefIndexAccessible<char>
 {
     public readonly ref char this[int index] => ref WrittenSpan.AsMutableSpan()[index];
 
@@ -19,6 +20,10 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
     public readonly Span<char> this[Range range] => WrittenSpan.AsMutableSpan()[range];
 
     public int Length { get; private set; }
+
+    readonly int ICollection<char>.Count => Length;
+
+    readonly int ICountable.Count => Length;
 
     public readonly int Capacity => _buffer.Length;
 
@@ -36,10 +41,12 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
 
     public readonly int FreeBufferSize => Capacity - Length;
 
+    readonly bool ICollection<char>.IsReadOnly => false;
+
     private RentedArray<char> _buffer = RentedArray<char>.Empty;
 
-    public const int DefaultBufferSize = 64;
-    private const int _minimumGrowth = 128;
+    public const int DefaultBufferSize = 32;
+    private const int _minimumGrowth = 64;
 
     public static PoolBufferStringBuilder Empty => new(RentedArray<char>.Empty);
 
@@ -71,9 +78,9 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
             size = _minimumGrowth;
         }
 
-        char[] newBuffer = ArrayPool<char>.Shared.Rent(_buffer.Length + size);
+        RentedArray<char> newBuffer = new(_buffer.Length + size);
         WrittenSpan.CopyTo(newBuffer);
-        ArrayPool<char>.Shared.Return(_buffer);
+        _buffer.Dispose();
         _buffer = newBuffer;
     }
 
@@ -214,30 +221,70 @@ public partial struct PoolBufferStringBuilder : IDisposable, IEquatable<PoolBuff
         return new(WrittenSpan);
     }
 
+    public readonly void CopyTo(List<char> destination, int offset = 0)
+    {
+        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        copier.CopyTo(destination, offset);
+    }
+
     public readonly void CopyTo(char[] destination, int offset = 0)
     {
-        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
+        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        copier.CopyTo(destination, offset);
     }
 
     public readonly void CopyTo(Memory<char> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
+        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        copier.CopyTo(destination);
     }
 
     public readonly void CopyTo(Span<char> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination));
+        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        copier.CopyTo(destination);
     }
 
-    public readonly unsafe void CopyTo(ref char destination)
+    public readonly void CopyTo(ref char destination)
     {
-        CopyTo((char*)Unsafe.AsPointer(ref destination));
+        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        copier.CopyTo(ref destination);
     }
 
     public readonly unsafe void CopyTo(char* destination)
     {
-        char* source = (char*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(_buffer));
-        Unsafe.CopyBlock(destination, source, (uint)(Length * sizeof(char)));
+        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        copier.CopyTo(destination);
+    }
+
+    void ICollection<char>.Add(char c)
+    {
+        Append(c);
+    }
+
+    readonly bool ICollection<char>.Contains(char c)
+    {
+        return WrittenSpan.Contains(c);
+    }
+
+    readonly bool ICollection<char>.Remove(char c)
+    {
+        throw new NotSupportedException();
+    }
+
+    [Pure]
+    public readonly IEnumerator<char> GetEnumerator()
+    {
+        int length = Length;
+        for (int i = 0; i < length; i++)
+        {
+            yield return WrittenSpan[i];
+        }
+    }
+
+    readonly IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 
     [Pure]

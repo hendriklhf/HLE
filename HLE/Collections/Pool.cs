@@ -8,7 +8,7 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
+public sealed class Pool<T> : IDisposable, IAsyncDisposable, IEquatable<Pool<T>>
 {
     public static Pool<T> Shared => _shared ?? throw new InvalidOperationException($"The shared instance has not been initialized yet. Use the {nameof(InitializeSharedInstance)} method to initialize the instance.");
 
@@ -34,6 +34,13 @@ public sealed class Pool<T> : IDisposable, IEquatable<Pool<T>>
 
     public void Dispose()
     {
+        Clear();
+        _rentedItemsLock.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ClearAsync();
         _rentedItemsLock.Dispose();
     }
 

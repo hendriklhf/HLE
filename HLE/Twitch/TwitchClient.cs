@@ -85,7 +85,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     private readonly ConcurrentPoolBufferList<string> _ircChannels = new();
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
-    private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?\w{3,25}$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
     private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';

@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Diagnostics;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Twitch.Models;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>
+public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICountable, IIndexAccessible<char>
 {
+    public char this[int index] => Span[index];
+
     public ReadOnlySpan<char> Span => _data[..Length];
 
     public ReadOnlyMemory<char> Memory => _data.Memory[..Length];
 
     public int Length { get; }
+
+    int ICountable.Count => Length;
 
     internal readonly RentedArray<char> _data;
 

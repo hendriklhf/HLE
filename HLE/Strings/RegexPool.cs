@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -10,7 +13,7 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
+public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<Regex>
 {
     private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
 
@@ -21,17 +24,29 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
 
     public RegexPool()
     {
+        Span<Bucket> buckets = _buckets;
         for (int i = 0; i < _defaultPoolCapacity; i++)
         {
-            _buckets[i] = new();
+            buckets[i] = new();
         }
     }
 
     public void Dispose()
     {
-        for (int i = 0; i < _buckets.Length; i++)
+        ReadOnlySpan<Bucket> buckets = _buckets;
+        for (int i = 0; i < _defaultPoolCapacity; i++)
         {
-            _buckets[i].Dispose();
+            buckets[i].Clear();
+            buckets[i].Dispose();
+        }
+    }
+
+    public void Clear()
+    {
+        ReadOnlySpan<Bucket> buckets = _buckets;
+        for (int i = 0; i < _defaultPoolCapacity; i++)
+        {
+            buckets[i].Clear();
         }
     }
 
@@ -99,9 +114,22 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GetBucketIndex(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
-        int patternHash = string.GetHashCode(pattern);
+        int patternHash = GetSimpleStringHash(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
-        return (int)(Unsafe.As<int, uint>(ref hash) % _buckets.Length);
+        int index = (int)(Unsafe.As<int, uint>(ref hash) % _buckets.Length);
+        Debug.Assert(index >= 0 && index < _buckets.Length);
+        return index;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetSimpleStringHash(ReadOnlySpan<char> chars)
+    {
+        Debug.Assert(chars.Length > 0);
+        int length = chars.Length;
+        ref char firstChar = ref MemoryMarshal.GetReference(chars);
+        char middleChar = Unsafe.Add(ref firstChar, length >> 1);
+        char lastChar = Unsafe.Add(ref firstChar, length - 1);
+        return ((firstChar + middleChar + lastChar) * length) ^ ~length;
     }
 
     [Pure]
@@ -132,7 +160,23 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
         return !(left == right);
     }
 
-    private readonly struct Bucket : IDisposable
+    public IEnumerator<Regex> GetEnumerator()
+    {
+        foreach (Bucket bucket in _buckets)
+        {
+            foreach (Regex regex in bucket)
+            {
+                yield return regex;
+            }
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    private readonly struct Bucket : IDisposable, IEnumerable<Regex>
     {
         private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];
         private readonly SemaphoreSlim _regexesLock = new(1);
@@ -144,6 +188,11 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
         public void Dispose()
         {
             _regexesLock.Dispose();
+        }
+
+        public void Clear()
+        {
+            _regexes.AsSpan().Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -178,12 +227,15 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
-            ref Regex? regexes = ref MemoryMarshal.GetArrayDataReference(_regexes);
-            for (int i = 0; i < _regexes.Length; i++)
+            ref Regex? regexesReference = ref MemoryMarshal.GetArrayDataReference(_regexes);
+            int regexesLength = _regexes.Length;
+            for (int i = 0; i < regexesLength; i++)
             {
-                Regex? current = Unsafe.Add(ref regexes, i);
+                Regex? current = Unsafe.Add(ref regexesReference, i);
                 if (current is null)
                 {
+                    // a null reference can only be followed by more null references,
+                    // so we can exit early because the regex can definitely not be found
                     regex = null;
                     return false;
                 }
@@ -195,15 +247,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
 
                 if (i > 3)
                 {
-                    _regexesLock.Wait();
-                    try
-                    {
-                        _regexes.MoveItem(i, i - 4);
-                    }
-                    finally
-                    {
-                        _regexesLock.Release();
-                    }
+                    MoveRegexByFourIndices(i);
                 }
 
                 regex = current;
@@ -214,10 +258,42 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable
             return false;
         }
 
+        /// <summary>
+        /// Moves a matching item by four places, so that it can be found faster next time.
+        /// </summary>
+        private void MoveRegexByFourIndices(int indexOfMatchingRegex)
+        {
+            _regexesLock.Wait();
+            try
+            {
+                _regexes.MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
+            }
+            finally
+            {
+                _regexesLock.Release();
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
         {
             return TryGet(pattern, options, timeout, out _);
+        }
+
+        public IEnumerator<Regex> GetEnumerator()
+        {
+            foreach (Regex? regex in _regexes)
+            {
+                if (regex is not null)
+                {
+                    yield return regex;
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

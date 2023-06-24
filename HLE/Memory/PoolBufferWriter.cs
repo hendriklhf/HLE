@@ -4,8 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Collections;
 
 namespace HLE.Memory;
 
@@ -14,8 +16,10 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDisposable, ICopyable<T>, IEquatable<PoolBufferWriter<T>>
+public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PoolBufferWriter<T>>, IIndexAccessible<T>
 {
+    T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
+
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
@@ -31,34 +35,36 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDis
     /// </summary>
     public int Length { get; private set; }
 
+    int ICountable.Count => Length;
+
     public int Capacity => _buffer.Length;
 
-    private RentedArray<T> _buffer;
-    private readonly int _defaultElementGrowth;
+    int ICollection<T>.Count => Length;
 
-    public PoolBufferWriter() : this(5, 10)
+    bool ICollection<T>.IsReadOnly => false;
+
+    internal RentedArray<T> _buffer;
+
+    private const int _defaultCapacity = 16;
+
+    public PoolBufferWriter() : this(_defaultCapacity)
     {
     }
 
-    public PoolBufferWriter(int initialSize)
+    public PoolBufferWriter(int capacity)
     {
-        _buffer = new(initialSize);
-        _defaultElementGrowth = initialSize << 1;
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="PoolBufferWriter{T}"/> with an initial buffer size and an element growth.
-    /// </summary>
-    /// <param name="initialSize">The initial buffer size.</param>
-    /// <param name="defaultElementGrowth">The default element growth.</param>
-    public PoolBufferWriter(int initialSize, int defaultElementGrowth)
-    {
-        _buffer = new(initialSize);
-        _defaultElementGrowth = defaultElementGrowth;
+        _buffer = new(capacity);
     }
 
     ~PoolBufferWriter()
     {
+        _buffer.Dispose();
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
         _buffer.Dispose();
     }
 
@@ -72,14 +78,25 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDis
     public Memory<T> GetMemory(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return ((Memory<T>)_buffer)[Length..];
+        return _buffer.Memory[Length..];
     }
 
     /// <inheritdoc/>
     public Span<T> GetSpan(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return ((Span<T>)_buffer)[Length..];
+        return _buffer[Length..];
+    }
+
+    /// <summary>
+    /// Returns a reference to the buffer to write the requested size (specified by sizeHint) to.
+    /// </summary>
+    /// <param name="sizeHint">The minimum size of free buffer space after the given reference. If 0, at least one space will be available.</param>
+    /// <returns>A reference to the buffer that can be written to.</returns>
+    public ref T GetReference(int sizeHint = 0)
+    {
+        Span<T> buffer = GetSpan(sizeHint);
+        return ref MemoryMarshal.GetReference(buffer);
     }
 
     public void Clear()
@@ -89,6 +106,33 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDis
         {
             _buffer.Span.Clear();
         }
+    }
+
+    public void EnsureCapacity(int capacity)
+    {
+        if (Capacity >= capacity)
+        {
+            return;
+        }
+
+        int neededSpace = capacity - Capacity;
+        Grow(neededSpace);
+    }
+
+    [Pure]
+    public T[] ToArray()
+    {
+        return WrittenSpan.ToArray();
+    }
+
+    [Pure]
+    public List<T> ToList()
+    {
+        List<T> result = new(Length);
+        CollectionsMarshal.SetCount(result, Length);
+        Span<T> resultSpan = CollectionsMarshal.AsSpan(result);
+        CopyTo(resultSpan);
+        return result;
     }
 
     /// <summary>
@@ -102,71 +146,94 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDis
             sizeHint = 1;
         }
 
-        int freeSpace = _buffer.Length - Length;
+        int freeSpace = Capacity - Length;
         if (freeSpace >= sizeHint)
         {
             return;
         }
 
         int neededSpace = sizeHint - freeSpace;
-        int elementGrowth = neededSpace > _defaultElementGrowth ? neededSpace << 1 : _defaultElementGrowth;
+        bool neededSpaceLargerThanCurrentBuffer = neededSpace > _buffer.Length;
+        int twiceTheNeededSpace = neededSpace << 1;
+        int elementGrowth = neededSpaceLargerThanCurrentBuffer ? twiceTheNeededSpace : neededSpace;
         Grow(elementGrowth);
     }
 
     /// <summary>
-    /// Grows the buffer by the given element growth.
+    /// Grows the buffer by the given needed space.
     /// </summary>
-    /// <param name="elementGrowth">The element growth. If <paramref name="elementGrowth"/> is 0, the default element growth will be taken.</param>
-    private void Grow(int elementGrowth = 0)
+    /// <param name="neededSpace">The needed space. If <paramref name="neededSpace"/> is 0, the default capacity will be taken.</param>
+    private void Grow(int neededSpace = 0)
     {
-        if (elementGrowth == 0)
+        if (neededSpace == 0)
         {
-            elementGrowth = _defaultElementGrowth;
+            neededSpace = _buffer.Length == 0 ? _defaultCapacity : _buffer.Length;
         }
 
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = new(_buffer.Length + elementGrowth);
-        CopyWrittenElementsIntoNewBuffer(oldBuffer);
+        int newCapacity = _buffer.Length + neededSpace;
+        _buffer = new(newCapacity);
+        oldBuffer.CopyTo(_buffer.Span);
     }
 
-    private unsafe void CopyWrittenElementsIntoNewBuffer(ReadOnlySpan<T> oldBuffer)
+    public void CopyTo(List<T> destination, int offset = 0)
     {
-        ref byte source = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(oldBuffer));
-        ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(_buffer.Span));
-        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * Length));
+        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
+        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
+        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination));
+        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        copier.CopyTo(destination);
     }
 
-    public unsafe void CopyTo(ref T destination)
+    public void CopyTo(ref T destination)
     {
-        CopyTo((T*)Unsafe.AsPointer(ref destination));
+        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        T* source = (T*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(WrittenSpan));
-        Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * Length));
+        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        copier.CopyTo(destination);
     }
 
-    /// <inheritdoc/>
-    public void Dispose()
+    void ICollection<T>.Add(T item)
     {
-        GC.SuppressFinalize(this);
-        _buffer.Dispose();
+        GetReference() = item;
+        Advance(1);
+    }
+
+    bool ICollection<T>.Contains(T item)
+    {
+        return _buffer.Contains(item);
+    }
+
+    bool ICollection<T>.Remove(T item)
+    {
+        int index = Array.IndexOf(_buffer, item);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        _buffer[(index + 1)..].CopyTo(_buffer[index..]);
+        Advance(-1);
+        return true;
     }
 
     [Pure]
@@ -192,8 +259,8 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDis
     {
         if (typeof(char) == typeof(T))
         {
-            ref char firstChar = ref Unsafe.As<T, char>(ref _buffer.Reference);
-            ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref firstChar, Length);
+            ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.Reference);
+            ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref charsReference, Length);
             return new(chars);
         }
 
@@ -204,9 +271,11 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, IEnumerable<T>, IDis
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (int i = 0; i < Length; i++)
+        RentedArray<T> buffer = _buffer;
+        int length = Length;
+        for (int i = 0; i < length; i++)
         {
-            yield return _buffer[i];
+            yield return buffer[i];
         }
     }
 

@@ -10,7 +10,7 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
@@ -31,12 +31,12 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer, optimizeForReading);
     }
 
-    public bool TryGetValue(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
+    public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         return _values.TryGetValue(key, out value);
     }
 
-    public bool TryGetValue(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
+    public bool TryGetBySecondaryKey(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         if (_secondaryKeyTranslations.TryGetValue(key, out TPrimaryKey? primaryKey))
         {
@@ -48,13 +48,13 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     }
 
     [Pure]
-    public bool ContainsKey(TPrimaryKey key)
+    public bool ContainsPrimaryKey(TPrimaryKey key)
     {
         return _values.ContainsKey(key);
     }
 
     [Pure]
-    public bool ContainsKey(TSecondaryKey key)
+    public bool ContainsSecondaryKey(TSecondaryKey key)
     {
         return _secondaryKeyTranslations.ContainsKey(key);
     }

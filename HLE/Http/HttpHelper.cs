@@ -13,13 +13,13 @@ public static class HttpHelper
     [Pure]
     public static int GetContentLength(this HttpResponseMessage httpResponse)
     {
-        int contentLength = (int)(httpResponse.Content.Headers.ContentLength ?? 0);
-        if (contentLength < 0)
+        long contentLength = httpResponse.Content.Headers.ContentLength ?? 0;
+        return contentLength switch
         {
-            throw new InvalidOperationException("The HTTP response content has a length of less than 0 or is null.");
-        }
-
-        return contentLength;
+            0 => throw new InvalidOperationException("The HTTP response content has a length of 0."),
+            > int.MaxValue => throw new InvalidOperationException($"The HTTP response content exceed the size of {typeof(int)}."),
+            _ => (int)contentLength
+        };
     }
 
     [Pure]
@@ -38,10 +38,10 @@ public static class HttpHelper
     public static async ValueTask<HttpContentBytes> GetContentBytesAsync(this HttpResponseMessage httpResponse, int contentLength)
     {
         Debug.Assert(contentLength > 0, "contentLength > 0");
-        RentedArray<byte> buffer = new(contentLength);
-        using MemoryStream memoryStream = new(buffer);
+        RentedArray<byte> memoryBuffer = new(contentLength);
+        using MemoryStream memoryStream = new(memoryBuffer);
         await httpResponse.Content.LoadIntoBufferAsync(contentLength);
         await httpResponse.Content.CopyToAsync(memoryStream);
-        return new(buffer, contentLength);
+        return new(memoryBuffer, contentLength);
     }
 }

@@ -12,120 +12,101 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquatable<ConcurrentPoolBufferList<T>>, IDisposable where T : IEquatable<T>
+public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPoolBufferList<T>>, IDisposable, IIndexAccessible<T> where T : IEquatable<T>
 {
     public T this[int index]
     {
-        get => _bufferWriter.WrittenSpan[index];
-        set => _bufferWriter.WrittenSpan[index] = value;
+        get => _list[index];
+        set => _list[index] = value;
     }
 
     public T this[Index index]
     {
-        get => _bufferWriter.WrittenSpan[index];
-        set => _bufferWriter.WrittenSpan[index] = value;
+        get => _list[index];
+        set => _list[index] = value;
     }
 
-    public Span<T> this[Range range] => _bufferWriter.WrittenSpan[range];
+    public Span<T> this[Range range] => _list[range];
 
-    public int Count => _bufferWriter.Length;
+    public int Count => _list.Count;
 
-    public int Capacity => _bufferWriter.Capacity;
+    public int Capacity => _list.Capacity;
 
     public bool IsReadOnly => false;
 
-    private readonly PoolBufferWriter<T> _bufferWriter;
-    private readonly SemaphoreSlim _bufferWriterLock = new(1);
+    private readonly PoolBufferList<T> _list;
+    private readonly SemaphoreSlim _listLock = new(1);
 
-    public ConcurrentPoolBufferList() : this(5)
+    public ConcurrentPoolBufferList()
     {
+        _list = new();
     }
 
     public ConcurrentPoolBufferList(int capacity)
     {
-        _bufferWriter = new(capacity, capacity << 1);
-    }
-
-    public ConcurrentPoolBufferList(int capacity, int defaultElementGrowth)
-    {
-        _bufferWriter = new(capacity, defaultElementGrowth);
+        _list = new(capacity);
     }
 
     public ConcurrentPoolBufferList(PoolBufferWriter<T> bufferWriter)
     {
-        _bufferWriter = bufferWriter;
+        _list = new(bufferWriter);
     }
 
     ~ConcurrentPoolBufferList()
     {
-        _bufferWriter.Dispose();
-        _bufferWriterLock.Dispose();
+        _list.Dispose();
+        _listLock.Dispose();
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
     {
-        return _bufferWriter.WrittenSpan;
+        return _list.AsSpan();
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Memory<T> AsMemory()
     {
-        return _bufferWriter.WrittenMemory;
+        return _list.AsMemory();
     }
 
     [Pure]
     public T[] ToArray()
     {
-        return _bufferWriter.WrittenSpan.ToArray();
+        return _list.ToArray();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AddWithLock(T item)
+    [Pure]
+    public List<T> ToList()
     {
-        _bufferWriterLock.Wait();
-        try
-        {
-            AddWithoutLock(item);
-        }
-        finally
-        {
-            _bufferWriterLock.Release();
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AddWithoutLock(T item)
-    {
-        _bufferWriter.GetSpan()[0] = item;
-        _bufferWriter.Advance(1);
+        return _list.ToList();
     }
 
     public void Add(T item)
     {
-        AddWithLock(item);
-    }
-
-    public void AddRange<TCollection>(TCollection items) where TCollection : IEnumerable<T>
-    {
-        _bufferWriterLock.Wait();
+        _listLock.Wait();
         try
         {
-            if (items.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
-            {
-                AddRangeWithoutLock(span);
-            }
-
-            foreach (T item in items)
-            {
-                AddWithoutLock(item);
-            }
+            _list.Add(item);
         }
         finally
         {
-            _bufferWriterLock.Release();
+            _listLock.Release();
+        }
+    }
+
+    public void AddRange(IEnumerable<T> items)
+    {
+        _listLock.Wait();
+        try
+        {
+            _list.AddRange(items);
+        }
+        finally
+        {
+            _listLock.Release();
         }
     }
 
@@ -144,44 +125,49 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
         AddRange((ReadOnlySpan<T>)items);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AddRangeWithoutLock(ReadOnlySpan<T> items)
-    {
-        Span<T> destination = _bufferWriter.GetSpan(items.Length);
-        items.CopyTo(destination);
-        _bufferWriter.Advance(items.Length);
-    }
-
     public void AddRange(ReadOnlySpan<T> items)
     {
-        _bufferWriterLock.Wait();
+        _listLock.Wait();
         try
         {
-            AddRangeWithoutLock(items);
+            _list.AddRange(items);
         }
         finally
         {
-            _bufferWriterLock.Release();
+            _listLock.Release();
         }
     }
 
     public void Clear()
     {
-        _bufferWriterLock.Wait();
+        _listLock.Wait();
         try
         {
-            _bufferWriter.Clear();
+            _list.Clear();
         }
         finally
         {
-            _bufferWriterLock.Release();
+            _listLock.Release();
+        }
+    }
+
+    public void EnsureCapacity(int capacity)
+    {
+        _listLock.Wait();
+        try
+        {
+            _list.EnsureCapacity(capacity);
+        }
+        finally
+        {
+            _listLock.Release();
         }
     }
 
     [Pure]
     public bool Contains(T item)
     {
-        return _bufferWriter.WrittenSpan.Contains(item);
+        return _list.Contains(item);
     }
 
     public bool Remove(T item)
@@ -192,87 +178,90 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
             return false;
         }
 
-        _bufferWriterLock.Wait();
+        _listLock.Wait();
         try
         {
-            _bufferWriter.WrittenSpan[(index + 1)..].CopyTo(_bufferWriter.WrittenSpan[index..]);
-            _bufferWriter.Advance(-1);
+            return _list.Remove(item);
         }
         finally
         {
-            _bufferWriterLock.Release();
+            _listLock.Release();
         }
-
-        return true;
     }
 
     [Pure]
     public int IndexOf(T item)
     {
-        return _bufferWriter.WrittenSpan.IndexOf(item);
+        return _list.IndexOf(item);
     }
 
     public void Insert(int index, T item)
     {
-        _bufferWriterLock.Wait();
+        _listLock.Wait();
         try
         {
-            _bufferWriter.GetSpan(1);
-            _bufferWriter.Advance(1);
-            _bufferWriter.WrittenSpan[index..^1].CopyTo(_bufferWriter.WrittenSpan[(index + 1)..]);
-            _bufferWriter.WrittenSpan[index] = item;
+            _list.Insert(index, item);
         }
         finally
         {
-            _bufferWriterLock.Release();
+            _listLock.Release();
         }
     }
 
     public void RemoveAt(int index)
     {
-        _bufferWriterLock.Wait();
+        _listLock.Wait();
         try
         {
-            _bufferWriter.WrittenSpan[(index + 1)..].CopyTo(_bufferWriter.WrittenSpan[index..]);
-            _bufferWriter.Advance(-1);
+            _list.RemoveAt(index);
         }
         finally
         {
-            _bufferWriterLock.Release();
+            _listLock.Release();
         }
+    }
+
+    public void CopyTo(List<T> destination, int offset = 0)
+    {
+        DefaultCopyableCopier<T> copier = new(AsSpan());
+        copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
+        DefaultCopyableCopier<T> copier = new(AsSpan());
+        copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
+        DefaultCopyableCopier<T> copier = new(AsSpan());
+        copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination));
+        DefaultCopyableCopier<T> copier = new(AsSpan());
+        copier.CopyTo(destination);
     }
 
-    public unsafe void CopyTo(ref T destination)
+    public void CopyTo(ref T destination)
     {
-        CopyTo((T*)Unsafe.AsPointer(ref destination));
+        DefaultCopyableCopier<T> copier = new(AsSpan());
+        copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        T* source = (T*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(_bufferWriter.WrittenSpan));
-        Unsafe.CopyBlock(destination, source, (uint)(_bufferWriter.Length * sizeof(T)));
+        DefaultCopyableCopier<T> copier = new(AsSpan());
+        copier.CopyTo(destination);
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (int i = 0; i < _bufferWriter.Length; i++)
+        for (int i = 0; i < _list.Count; i++)
         {
-            yield return _bufferWriter.WrittenSpan[i];
+            yield return _list[i];
         }
     }
 
@@ -284,14 +273,14 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        _bufferWriter.Dispose();
-        _bufferWriterLock.Dispose();
+        _list.Dispose();
+        _listLock.Dispose();
     }
 
     [Pure]
     public bool Equals(ConcurrentPoolBufferList<T>? other)
     {
-        return ReferenceEquals(this, other) || Count == other?.Count && _bufferWriter.Equals(other._bufferWriter);
+        return ReferenceEquals(this, other) || Count == other?.Count && _list.Equals(other._list);
     }
 
     [Pure]
@@ -303,6 +292,6 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, IEquat
     [Pure]
     public override int GetHashCode()
     {
-        return _bufferWriter.GetHashCode();
+        return _list.GetHashCode();
     }
 }

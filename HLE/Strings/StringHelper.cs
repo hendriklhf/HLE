@@ -1,10 +1,8 @@
 using System;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -30,9 +28,8 @@ public static class StringHelper
     public const string AntipingChar = "\uDB40\uDC00";
 
     private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
-    private static readonly char[] _charsToEscapeSet = CreateCharsToEscape();
 
-    private const string _charsToEscape = "\\*+?|{[()^$.# ";
+    private const string _regexMetaChars = "\t\n\f\r #$()*+.?[\\^{|";
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -46,8 +43,13 @@ public static class StringHelper
     [Pure]
     public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount)
     {
-        ReadOnlyMemory<char> span = str.AsMemory();
-        if (span.Length <= charCount)
+        if (str.Length == 0)
+        {
+            return Array.Empty<ReadOnlyMemory<char>>();
+        }
+
+        ReadOnlyMemory<char> strAsMemory = str.AsMemory();
+        if (strAsMemory.Length <= charCount)
         {
             return new[]
             {
@@ -55,21 +57,26 @@ public static class StringHelper
             };
         }
 
-        ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[span.Length / charCount + 1];
+        ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[strAsMemory.Length / charCount + 1];
         int resultLength = 0;
-        while (span.Length > charCount)
+        while (strAsMemory.Length > charCount)
         {
-            result[resultLength++] = span[..charCount];
-            span = span[charCount..];
+            result[resultLength++] = strAsMemory[..charCount];
+            strAsMemory = strAsMemory[charCount..];
         }
 
-        result[resultLength++] = span;
+        result[resultLength++] = strAsMemory;
         return resultLength == result.Length ? result : result[..resultLength];
     }
 
     [Pure]
     public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount, char separator)
     {
+        if (str.Length == 0)
+        {
+            return Array.Empty<ReadOnlyMemory<char>>();
+        }
+
         ReadOnlyMemory<char> span = str.AsMemory();
         if (span.Length <= charCount)
         {
@@ -80,7 +87,7 @@ public static class StringHelper
         }
 
         Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
-        int rangesLength = GetRangesOfSplit(span.Span, separator, ranges);
+        int rangesLength = span.Span.Split(ranges, separator);
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[ranges.Length];
         ref ReadOnlyMemory<char> firstResultItem = ref MemoryMarshal.GetArrayDataReference(result);
@@ -280,541 +287,91 @@ public static class StringHelper
 
     public static int IndicesOf(this ReadOnlySpan<byte> span, byte b, Span<int> indices)
     {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return 0;
-        }
-
-        int length = 0;
-        ref byte firstIndex = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            bool equals = Unsafe.Add(ref firstIndex, i) == b;
-            byte asByte = Unsafe.As<bool, byte>(ref equals);
-            indices[length] = i;
-            length += asByte;
-        }
-
-        return length;
-    }
-
-    [Pure]
-    public static Range[] GetRangesOfSplit(this string? str, char separator = ' ')
-    {
-        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator);
-    }
-
-    public static int GetRangesOfSplit(this string? str, char separator, Span<Range> ranges)
-    {
-        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator, ranges);
-    }
-
-    [Pure]
-    public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, char separator = ' ')
-    {
-        if (span.Length == 0)
-        {
-            return Array.Empty<Range>();
-        }
-
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int indicesLength = IndicesOf(span, separator, indices);
-        Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(indicesLength + 1) ? stackalloc Range[indicesLength + 1] : new Range[indicesLength + 1];
-        int rangesLength = GetRangesOfSplit(ranges, indices[..indicesLength]);
-        return ranges[..rangesLength].ToArray();
-    }
-
-    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, char separator, Span<Range> ranges)
-    {
         if (span.Length == 0)
         {
             return 0;
         }
 
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int indicesLength = IndicesOf(span, separator, indices);
-        return GetRangesOfSplit(ranges, indices[..indicesLength]);
+        int indicesLength = 0;
+        int idx = span.IndexOf(b);
+        int spanStartIndex = idx;
+        while (idx != -1)
+        {
+            indices[indicesLength++] = spanStartIndex;
+            idx = span[++spanStartIndex..].IndexOf(b);
+            spanStartIndex += idx;
+        }
+
+        return indicesLength;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static int GetRangesOfSplit(Span<Range> ranges, ReadOnlySpan<int> indices, int separatorLength = 1)
+    public static string RegexEscape(string? input)
     {
-        switch (ranges.Length)
-        {
-            case 0:
-                return 0;
-            case > 0 when indices.Length == 0:
-                ranges[0] = ..;
-                return 1;
-        }
-
-        ref int rangesAsInt = ref Unsafe.As<Range, int>(ref MemoryMarshal.GetReference(ranges));
-
-        int rangesAsIntLength = 0;
-#if NET8_0_OR_GREATER
-        int vector512Count = Vector512<int>.Count;
-        if (Vector512.IsHardwareAccelerated && indices.Length >= vector512Count)
-        {
-            var separatorLengthVector = Vector512.Create(separatorLength);
-            while (indices.Length >= vector512Count)
-            {
-                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
-                var endIndices = Vector512.LoadUnsafe(ref firstIndex);
-                var startIndices = Vector512.Add(endIndices, separatorLengthVector);
-
-                var firstHalf = Vector512.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1], endIndices[2], startIndices[2], endIndices[3], startIndices[3], endIndices[4], startIndices[4],
-                    endIndices[5], startIndices[5], endIndices[6], startIndices[6], endIndices[7], startIndices[7]);
-                var secondHalf = Vector512.Create(endIndices[8], startIndices[8], endIndices[9], startIndices[9], endIndices[10], startIndices[10], endIndices[11], startIndices[11], endIndices[12], startIndices[12],
-                    endIndices[13], startIndices[13], endIndices[14], startIndices[14], endIndices[15], startIndices[15]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector512Count + 1));
-
-                indices = indices[vector512Count..];
-                rangesAsIntLength += vector512Count << 1;
-            }
-
-            rangesAsIntLength++;
-            for (int i = 0; i < indices.Length; i++)
-            {
-                int index = indices[i];
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
-            }
-
-            Unsafe.Add(ref rangesAsInt, 0) = 0;
-            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
-            return (rangesAsIntLength >> 1) + 1;
-        }
-#endif
-
-        int vector256Count = Vector256<int>.Count;
-        if (Vector256.IsHardwareAccelerated && indices.Length >= vector256Count)
-        {
-            var separatorLengthVector = Vector256.Create(separatorLength);
-            while (indices.Length >= vector256Count)
-            {
-                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
-                var endIndices = Vector256.LoadUnsafe(ref firstIndex);
-                var startIndices = Vector256.Add(endIndices, separatorLengthVector);
-
-                var firstHalf = Vector256.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1], endIndices[2], startIndices[2], endIndices[3], startIndices[3]);
-                var secondHalf = Vector256.Create(endIndices[4], startIndices[4], endIndices[5], startIndices[5], endIndices[6], startIndices[6], endIndices[7], startIndices[7]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector256Count + 1));
-
-                indices = indices[vector256Count..];
-                rangesAsIntLength += vector256Count << 1;
-            }
-
-            rangesAsIntLength++;
-            for (int i = 0; i < indices.Length; i++)
-            {
-                int index = indices[i];
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
-            }
-
-            Unsafe.Add(ref rangesAsInt, 0) = 0;
-            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
-            return (rangesAsIntLength >> 1) + 1;
-        }
-
-        int vector128Count = Vector128<int>.Count;
-        if (Vector128.IsHardwareAccelerated && indices.Length >= vector128Count)
-        {
-            var separatorLengthVector = Vector128.Create(separatorLength);
-            while (indices.Length >= vector128Count)
-            {
-                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
-                var endIndices = Vector128.LoadUnsafe(ref firstIndex);
-                var startIndices = Vector128.Add(endIndices, separatorLengthVector);
-
-                var firstHalf = Vector128.Create(endIndices[0], startIndices[0], endIndices[1], startIndices[1]);
-                var secondHalf = Vector128.Create(endIndices[2], startIndices[2], endIndices[3], startIndices[3]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector128Count + 1));
-
-                indices = indices[vector128Count..];
-                rangesAsIntLength += vector128Count << 1;
-            }
-
-            rangesAsIntLength++;
-            for (int i = 0; i < indices.Length; i++)
-            {
-                int index = indices[i];
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
-            }
-
-            Unsafe.Add(ref rangesAsInt, 0) = 0;
-            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
-            return (rangesAsIntLength >> 1) + 1;
-        }
-
-        int vector64Count = Vector64<int>.Count;
-        if (Vector64.IsHardwareAccelerated && indices.Length >= vector64Count)
-        {
-            var separatorLengthVector = Vector64.Create(separatorLength);
-            while (indices.Length >= vector64Count)
-            {
-                ref int firstIndex = ref MemoryMarshal.GetReference(indices);
-                var endIndices = Vector64.LoadUnsafe(ref firstIndex);
-                var startIndices = Vector64.Add(endIndices, separatorLengthVector);
-
-                var firstHalf = Vector64.Create(endIndices[0], startIndices[0]);
-                var secondHalf = Vector64.Create(endIndices[1], startIndices[1]);
-                firstHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + 1));
-                secondHalf.StoreUnsafe(ref Unsafe.Add(ref rangesAsInt, rangesAsIntLength + vector64Count + 1));
-
-                indices = indices[vector64Count..];
-                rangesAsIntLength += vector64Count << 1;
-            }
-
-            rangesAsIntLength++;
-            for (int i = 0; i < indices.Length; i++)
-            {
-                int index = indices[i];
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
-                Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
-            }
-
-            Unsafe.Add(ref rangesAsInt, 0) = 0;
-            Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
-            return (rangesAsIntLength >> 1) + 1;
-        }
-
-        rangesAsIntLength++;
-        for (int i = 0; i < indices.Length; i++)
-        {
-            int index = indices[i];
-            Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index;
-            Unsafe.Add(ref rangesAsInt, rangesAsIntLength++) = index + separatorLength;
-        }
-
-        rangesAsInt = 0;
-        Unsafe.Add(ref rangesAsInt, rangesAsIntLength) = ~0;
-        return (rangesAsIntLength >> 1) + 1;
+        return RegexEscape(input.AsSpan(), true);
     }
 
     [Pure]
-    public static Range[] GetRangesOfSplit(this string? str, ReadOnlySpan<char> separator)
+    public static string RegexEscape(ReadOnlySpan<char> input)
     {
-        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator);
+        return RegexEscape(input, false);
     }
 
-    public static int GetRangesOfSplit(this string? str, ReadOnlySpan<char> separator, Span<Range> ranges)
+    private static string RegexEscape(ReadOnlySpan<char> input, bool inputWasString)
     {
-        return GetRangesOfSplit((ReadOnlySpan<char>)str, separator, ranges);
-    }
-
-    [Pure]
-    public static Range[] GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator)
-    {
-        if (span.Length == 0)
+        int resultLength;
+        int maximumResultLength = input.Length << 1;
+        if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
         {
-            return Array.Empty<Range>();
+            using RentedArray<char> rentedBuffer = new(maximumResultLength);
+            resultLength = RegexEscape(input, rentedBuffer);
+            if (resultLength == 0)
+            {
+                return inputWasString ? input.AsStringDangerous() : new(input);
+            }
+
+            return new(rentedBuffer[..resultLength]);
         }
 
-        Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
-        int rangesLength = GetRangesOfSplit(span, separator, ranges);
-        return ranges[..rangesLength].ToArray();
-    }
-
-    public static int GetRangesOfSplit(this ReadOnlySpan<char> span, ReadOnlySpan<char> separator, Span<Range> ranges)
-    {
-        if (span.Length == 0)
+        Span<char> buffer = stackalloc char[maximumResultLength];
+        resultLength = RegexEscape(input, buffer);
+        if (resultLength == 0)
         {
-            return 0;
+            return inputWasString ? input.AsStringDangerous() : new(input);
         }
 
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int indicesLength = IndicesOf(span, separator, indices);
-        ranges = ranges[..(indicesLength + 1)];
-        return GetRangesOfSplit(ranges, indices[..indicesLength], separator.Length);
-    }
-
-    /// <summary>
-    /// Vectorized char count.
-    /// </summary>
-    /// <param name="str">The string in which the char will be counted.</param>
-    /// <param name="charToCount">The char that will be counted.</param>
-    /// <returns>The amount of the char <paramref name="charToCount"/> in the string <paramref name="str"/>.</returns>
-    [Pure]
-    public static int CharCount(this string? str, char charToCount)
-    {
-        return CharCount((ReadOnlySpan<char>)str, charToCount);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static int CharCount(this ReadOnlySpan<char> span, char charToCount)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return 0;
-        }
-
-        int result = 0;
-#if NET8_0_OR_GREATER
-        int vector512Count = Vector512<ushort>.Count;
-        if (Vector512.IsHardwareAccelerated && spanLength >= vector512Count)
-        {
-            ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector512<ushort> equalsVector = Vector512.Create((ushort)charToCount);
-            Vector512<ushort> oneVector = Vector512.Create((ushort)1);
-            while (shortSpan.Length >= vector512Count)
-            {
-                Vector512<ushort> vector = Vector512.Create(shortSpan[..vector512Count]);
-                Vector512<ushort> equals = Vector512.Equals(vector, equalsVector);
-                Vector512<ushort> and = Vector512.BitwiseAnd(equals, oneVector);
-                result += Vector512.Sum(and);
-                shortSpan = shortSpan[vector512Count..];
-            }
-
-            for (int i = 0; i < shortSpan.Length; i++)
-            {
-                bool equals = shortSpan[i] == charToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-#endif
-
-        int vector256Count = Vector256<ushort>.Count;
-        if (Vector256.IsHardwareAccelerated && spanLength >= vector256Count)
-        {
-            ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector256<ushort> equalsVector = Vector256.Create((ushort)charToCount);
-            Vector256<ushort> oneVector = Vector256.Create((ushort)1);
-            while (shortSpan.Length >= vector256Count)
-            {
-                Vector256<ushort> vector = Vector256.Create(shortSpan[..vector256Count]);
-                Vector256<ushort> equals = Vector256.Equals(vector, equalsVector);
-                Vector256<ushort> and = Vector256.BitwiseAnd(equals, oneVector);
-                result += Vector256.Sum(and);
-                shortSpan = shortSpan[vector256Count..];
-            }
-
-            for (int i = 0; i < shortSpan.Length; i++)
-            {
-                bool equals = shortSpan[i] == charToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-
-        int vector128Count = Vector128<ushort>.Count;
-        if (Vector128.IsHardwareAccelerated && spanLength >= vector128Count)
-        {
-            ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector128<ushort> equalsVector = Vector128.Create((ushort)charToCount);
-            Vector128<ushort> oneVector = Vector128.Create((ushort)1);
-            while (shortSpan.Length >= vector128Count)
-            {
-                Vector128<ushort> vector = Vector128.Create(shortSpan[..vector128Count]);
-                Vector128<ushort> equals = Vector128.Equals(vector, equalsVector);
-                Vector128<ushort> and = Vector128.BitwiseAnd(equals, oneVector);
-                result += Vector128.Sum(and);
-                shortSpan = shortSpan[vector128Count..];
-            }
-
-            for (int i = 0; i < shortSpan.Length; i++)
-            {
-                bool equals = shortSpan[i] == charToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-
-        int vector64Count = Vector64<ushort>.Count;
-        if (Vector64.IsHardwareAccelerated && spanLength >= vector64Count)
-        {
-            ReadOnlySpan<ushort> shortSpan = MemoryMarshal.Cast<char, ushort>(span);
-            Vector64<ushort> equalsVector = Vector64.Create((ushort)charToCount);
-            Vector64<ushort> oneVector = Vector64.Create((ushort)1);
-            while (shortSpan.Length >= vector64Count)
-            {
-                Vector64<ushort> vector = Vector64.Create(shortSpan[..vector64Count]);
-                Vector64<ushort> equals = Vector64.Equals(vector, equalsVector);
-                Vector64<ushort> and = Vector64.BitwiseAnd(equals, oneVector);
-                result += Vector64.Sum(and);
-                shortSpan = shortSpan[vector64Count..];
-            }
-
-            for (int i = 0; i < shortSpan.Length; i++)
-            {
-                bool equals = shortSpan[i] == charToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-
-        ref char firstChar = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            bool equals = Unsafe.Add(ref firstChar, i) == charToCount;
-            result += Unsafe.As<bool, byte>(ref equals);
-        }
-
-        return result;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static int ByteCount(this ReadOnlySpan<byte> span, byte byteToCount)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return 0;
-        }
-
-        int result = 0;
-#if NET8_0_OR_GREATER
-        int vector512Count = Vector512<byte>.Count;
-        if (Vector512.IsHardwareAccelerated && spanLength >= vector512Count)
-        {
-            Vector512<byte> equalsVector = Vector512.Create(byteToCount);
-            Vector512<byte> oneVector = Vector512.Create((byte)1);
-            while (span.Length >= vector512Count)
-            {
-                Vector512<byte> vector = Vector512.Create(span[..vector512Count]);
-                span = span[vector512Count..];
-                Vector512<byte> equals = Vector512.Equals(vector, equalsVector);
-                Vector512<byte> and = Vector512.BitwiseAnd(equals, oneVector);
-                result += Vector512.Sum(and);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                bool equals = span[i] == byteToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-#endif
-
-        int vector256Count = Vector256<byte>.Count;
-        if (Vector256.IsHardwareAccelerated && spanLength >= vector256Count)
-        {
-            Vector256<byte> equalsVector = Vector256.Create(byteToCount);
-            Vector256<byte> oneVector = Vector256.Create((byte)1);
-            while (span.Length >= vector256Count)
-            {
-                Vector256<byte> vector = Vector256.Create(span[..vector256Count]);
-                span = span[vector256Count..];
-                Vector256<byte> equals = Vector256.Equals(vector, equalsVector);
-                Vector256<byte> and = Vector256.BitwiseAnd(equals, oneVector);
-                result += Vector256.Sum(and);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                bool equals = span[i] == byteToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-
-        int vector128Count = Vector128<byte>.Count;
-        if (Vector128.IsHardwareAccelerated && spanLength >= vector128Count)
-        {
-            Vector128<byte> equalsVector = Vector128.Create(byteToCount);
-            Vector128<byte> oneVector = Vector128.Create((byte)1);
-            while (span.Length >= vector128Count)
-            {
-                Vector128<byte> vector = Vector128.Create(span[..vector128Count]);
-                span = span[vector128Count..];
-                Vector128<byte> equals = Vector128.Equals(vector, equalsVector);
-                Vector128<byte> and = Vector128.BitwiseAnd(equals, oneVector);
-                result += Vector128.Sum(and);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                bool equals = span[i] == byteToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-
-        int vector64Count = Vector64<ushort>.Count;
-        if (Vector64.IsHardwareAccelerated && spanLength >= vector64Count)
-        {
-            Vector64<byte> equalsVector = Vector64.Create(byteToCount);
-            Vector64<byte> oneVector = Vector64.Create((byte)1);
-            while (span.Length >= vector64Count)
-            {
-                Vector64<byte> vector = Vector64.Create(span[..vector64Count]);
-                span = span[vector64Count..];
-                Vector64<byte> equals = Vector64.Equals(vector, equalsVector);
-                Vector64<byte> and = Vector64.BitwiseAnd(equals, oneVector);
-                result += Vector64.Sum(and);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                bool equals = span[i] == byteToCount;
-                result += Unsafe.As<bool, byte>(ref equals);
-            }
-
-            return result;
-        }
-
-        ref byte firstByte = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            bool equals = Unsafe.Add(ref firstByte, i) == byteToCount;
-            result += Unsafe.As<bool, byte>(ref equals);
-        }
-
-        return result;
-    }
-
-    private static char[] CreateCharsToEscape()
-    {
-        char maxChar = _charsToEscape.Max();
-        char[] charsToEscapeSet = new char[maxChar + 1];
-        foreach (char c in _charsToEscape)
-        {
-            charsToEscapeSet[c] = c;
-        }
-
-        return charsToEscapeSet;
+        return new(buffer[..resultLength]);
     }
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
     {
-        ValueStringBuilder builder = escapedInput;
-        int inputLength = input.Length;
-        for (int i = 0; i < inputLength; i++)
+        ValueStringBuilder builder = new(escapedInput);
+
+        ReadOnlySpan<char> regexMetaChars = _regexMetaChars;
+        int indexOfMetaChar = input.IndexOfAny(regexMetaChars);
+        if (indexOfMetaChar < 0)
         {
-            char c = input[i];
-            bool needsEscape = _charsToEscapeSet[c] != '\0';
-            if (!needsEscape)
-            {
-                builder.Append(c);
-                continue;
-            }
-
-            if (c == ' ')
-            {
-                builder.Append('\\', 's');
-                continue;
-            }
-
-            builder.Append('\\', c);
+            return 0;
         }
 
+        while (indexOfMetaChar >= 0)
+        {
+            builder.Append(input[..indexOfMetaChar]);
+            char metaChar = input[indexOfMetaChar];
+            metaChar = metaChar switch
+            {
+                '\n' => 'n',
+                '\r' => 'r',
+                '\t' => 't',
+                '\f' => 'f',
+                _ => metaChar
+            };
+
+            builder.Append('\\', metaChar);
+            input = input[(indexOfMetaChar + 1)..];
+            indexOfMetaChar = input.IndexOfAny(regexMetaChars);
+        }
+
+        builder.Append(input);
         return builder.Length;
     }
 
@@ -825,17 +382,17 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<string> strings, char separator, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int stringsLengthMinus1 = strings.Length - 1;
-        ref string firstString = ref MemoryMarshal.GetReference(strings);
+        ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
-            string str = Unsafe.Add(ref firstString, i);
+            string str = Unsafe.Add(ref stringsReference, i);
             builder.Append(str);
             builder.Append(separator);
         }
 
-        string lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        string lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
         builder.Append(lastString);
         return builder.Length;
     }
@@ -847,17 +404,17 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<ReadOnlyMemory<char>> strings, char separator, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int stringsLengthMinus1 = strings.Length - 1;
-        ref ReadOnlyMemory<char> firstString = ref MemoryMarshal.GetReference(strings);
+        ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
-            ReadOnlyMemory<char> str = Unsafe.Add(ref firstString, i);
+            ReadOnlyMemory<char> str = Unsafe.Add(ref stringsReference, i);
             builder.Append(str.Span);
             builder.Append(separator);
         }
 
-        ReadOnlyMemory<char> lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        ReadOnlyMemory<char> lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
         builder.Append(lastString.Span);
         return builder.Length;
     }
@@ -869,16 +426,16 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<string> strings, ReadOnlySpan<char> separator, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int stringsLengthMinus1 = strings.Length - 1;
-        ref string firstString = ref MemoryMarshal.GetReference(strings);
+        ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
-            string str = Unsafe.Add(ref firstString, i);
+            string str = Unsafe.Add(ref stringsReference, i);
             builder.Append(str, separator);
         }
 
-        string lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        string lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
         builder.Append(lastString);
         return builder.Length;
     }
@@ -890,16 +447,16 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<ReadOnlyMemory<char>> strings, ReadOnlySpan<char> separator, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int stringsLengthMinus1 = strings.Length - 1;
-        ref ReadOnlyMemory<char> firstString = ref MemoryMarshal.GetReference(strings);
+        ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
-            ReadOnlyMemory<char> str = Unsafe.Add(ref firstString, i);
+            ReadOnlyMemory<char> str = Unsafe.Add(ref stringsReference, i);
             builder.Append(str.Span, separator);
         }
 
-        ReadOnlyMemory<char> lastString = Unsafe.Add(ref firstString, stringsLengthMinus1);
+        ReadOnlyMemory<char> lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
         builder.Append(lastString.Span);
         return builder.Length;
     }
@@ -911,16 +468,16 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<char> chars, char separator, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int charsLengthMinus1 = chars.Length - 1;
-        ref char firstChar = ref MemoryMarshal.GetReference(chars);
+        ref char charsReference = ref MemoryMarshal.GetReference(chars);
         for (int i = 0; i < charsLengthMinus1; i++)
         {
-            char c = Unsafe.Add(ref firstChar, i);
+            char c = Unsafe.Add(ref charsReference, i);
             builder.Append(c, separator);
         }
 
-        char lastChar = Unsafe.Add(ref firstChar, charsLengthMinus1);
+        char lastChar = Unsafe.Add(ref charsReference, charsLengthMinus1);
         builder.Append(lastChar);
         return builder.Length;
     }
@@ -932,17 +489,17 @@ public static class StringHelper
 
     public static int Join(ReadOnlySpan<char> chars, ReadOnlySpan<char> separator, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int charsLengthMinus1 = chars.Length - 1;
-        ref char firstChar = ref MemoryMarshal.GetReference(chars);
+        ref char charsReference = ref MemoryMarshal.GetReference(chars);
         for (int i = 0; i < charsLengthMinus1; i++)
         {
-            char c = Unsafe.Add(ref firstChar, i);
+            char c = Unsafe.Add(ref charsReference, i);
             builder.Append(c);
             builder.Append(separator);
         }
 
-        char lastChar = Unsafe.Add(ref firstChar, charsLengthMinus1);
+        char lastChar = Unsafe.Add(ref charsReference, charsLengthMinus1);
         builder.Append(lastChar);
         return builder.Length;
     }
@@ -954,12 +511,12 @@ public static class StringHelper
 
     public static int Concat(ReadOnlySpan<string> strings, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int stringsLength = strings.Length;
-        ref string firstString = ref MemoryMarshal.GetReference(strings);
+        ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLength; i++)
         {
-            string str = Unsafe.Add(ref firstString, i);
+            string str = Unsafe.Add(ref stringsReference, i);
             builder.Append(str);
         }
 
@@ -973,12 +530,12 @@ public static class StringHelper
 
     public static int Concat(ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> result)
     {
-        ValueStringBuilder builder = result;
+        ValueStringBuilder builder = new(result);
         int stringsLength = strings.Length;
-        ref ReadOnlyMemory<char> firstString = ref MemoryMarshal.GetReference(strings);
+        ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLength; i++)
         {
-            ReadOnlyMemory<char> str = Unsafe.Add(ref firstString, i);
+            ReadOnlyMemory<char> str = Unsafe.Add(ref stringsReference, i);
             builder.Append(str.Span);
         }
 
@@ -999,7 +556,7 @@ public static class StringHelper
             return ReadOnlySpan<byte>.Empty;
         }
 
-        ref char chars = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref chars), str.Length << 1);
+        ref char charsReference = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref charsReference), str.Length << 1);
     }
 }

@@ -4,8 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Collections;
 
 namespace HLE.Memory;
 
@@ -14,8 +16,8 @@ namespace HLE.Memory;
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
-[DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T>, IEquatable<RentedArray<T>>, IEquatable<T[]>
+[DebuggerDisplay("Length = {Array.Length}")]
+public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IRefIndexAccessible<T>
 {
     public ref T this[int index] => ref Span[index];
 
@@ -23,21 +25,25 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
 
     public Span<T> this[Range range] => Span[range];
 
-    public Span<T> Span => _array;
+    public Span<T> Span => Array;
 
-    public Memory<T> Memory => _array;
+    public Memory<T> Memory => Array;
 
-    public ArraySegment<T> ArraySegment => _array;
+    public ArraySegment<T> ArraySegment => Array;
 
-    public T[] Array => _array;
+    public T[] Array { get; } = System.Array.Empty<T>();
 
     public ref T Reference => ref MemoryMarshal.GetReference(Span);
 
     public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref Reference);
 
-    public int Length => _array.Length;
+    public int Length => Array.Length;
 
-    private readonly T[] _array = System.Array.Empty<T>();
+    int ICountable.Count => Length;
+
+    int ICollection<T>.Count => Length;
+
+    bool ICollection<T>.IsReadOnly => false;
 
     public static RentedArray<T> Empty => new();
 
@@ -45,40 +51,61 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     {
     }
 
-    public RentedArray(int size)
+    public RentedArray(int minimumLength)
     {
-        _array = ArrayPool<T>.Shared.Rent(size);
+        Array = ArrayPool<T>.Shared.Rent(minimumLength);
     }
 
     public RentedArray(T[] array)
     {
-        _array = array;
+        Array = array;
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        if (ReferenceEquals(Array, System.Array.Empty<T>()))
+        {
+            return;
+        }
+
+        ArrayPool<T>.Shared.Return(Array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+    }
+
+    public void CopyTo(List<T> destination, int offset = 0)
+    {
+        DefaultCopyableCopier<T> copier = new(Span);
+        copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyTo(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset));
+        DefaultCopyableCopier<T> copier = new(Span);
+        copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
+        DefaultCopyableCopier<T> copier = new(Span);
+        copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination));
+        DefaultCopyableCopier<T> copier = new(Span);
+        copier.CopyTo(destination);
     }
 
-    public unsafe void CopyTo(ref T destination)
+    public void CopyTo(ref T destination)
     {
-        CopyTo((T*)Unsafe.AsPointer(ref destination));
+        DefaultCopyableCopier<T> copier = new(Span);
+        copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        T* source = (T*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(_array));
-        Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * _array.Length));
+        DefaultCopyableCopier<T> copier = new(Span);
+        copier.CopyTo(destination);
     }
 
     [Pure]
@@ -86,28 +113,48 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     {
         return obj switch
         {
-            RentedArray<T> rentedArray => Equals(rentedArray._array),
+            RentedArray<T> rentedArray => Equals(rentedArray.Array),
             T[] array => Equals(array),
             _ => false
         };
     }
 
+    void ICollection<T>.Add(T item)
+    {
+        throw new NotSupportedException();
+    }
+
+    void ICollection<T>.Clear()
+    {
+        Span.Clear();
+    }
+
+    bool ICollection<T>.Contains(T item)
+    {
+        return Array.Contains(item);
+    }
+
+    bool ICollection<T>.Remove(T item)
+    {
+        throw new NotSupportedException();
+    }
+
     [Pure]
     public bool Equals(RentedArray<T> other)
     {
-        return Equals(other._array);
+        return Equals(other.Array);
     }
 
     [Pure]
     public bool Equals(T[]? array)
     {
-        return ReferenceEquals(_array, array);
+        return ReferenceEquals(Array, array);
     }
 
     [Pure]
     public override int GetHashCode()
     {
-        return _array.GetHashCode();
+        return Array.GetHashCode();
     }
 
     /// <inheritdoc/>
@@ -116,13 +163,13 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
     {
         Type thisType = typeof(RentedArray<T>);
         Type genericType = typeof(T);
-        return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{_array.Length}]";
+        return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{Array.Length}]";
     }
 
     /// <inheritdoc/>
     public IEnumerator<T> GetEnumerator()
     {
-        int length = _array.Length;
+        int length = Length;
         for (int i = 0; i < length; i++)
         {
             yield return Span[i];
@@ -135,45 +182,34 @@ public readonly struct RentedArray<T> : IDisposable, IEnumerable<T>, ICopyable<T
         return GetEnumerator();
     }
 
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        if (ReferenceEquals(_array, System.Array.Empty<T>()))
-        {
-            return;
-        }
-
-        ArrayPool<T>.Shared.Return(_array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
-    }
-
     public static implicit operator T[](RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 
     public static implicit operator Span<T>(RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 
     public static implicit operator ReadOnlySpan<T>(RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 
     public static implicit operator Memory<T>(RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 
     public static implicit operator ReadOnlyMemory<T>(RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 
     public static implicit operator ArraySegment<T>(RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 
     public static implicit operator RentedArray<T>(T[] array)

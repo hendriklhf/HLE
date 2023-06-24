@@ -10,7 +10,7 @@ using HLE.Strings;
 
 namespace HLE.Resources;
 
-public sealed class ResourceReader : IEquatable<ResourceReader>
+public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
 {
     public int Count => _resources.Count;
 
@@ -18,7 +18,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
     private readonly string _assemblyName;
     private readonly ConcurrentDictionary<string, byte[]?> _resources = new();
 
-    public ResourceReader(Assembly assembly, bool readAllResourcesOnInitialization = true)
+    public ResourceReader(Assembly assembly, bool readAllResourcesOnInitialization = false)
     {
         _assembly = assembly;
         string? assemblyName = _assembly.GetName().Name;
@@ -86,7 +86,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
         }
 
         int streamLength = (int)stream.Length;
-        using PoolBufferWriter<byte> bufferWriter = new(streamLength, 1000);
+        using PoolBufferWriter<byte> bufferWriter = new(streamLength);
         int sizeHint = streamLength < 1000 ? streamLength : 1000;
         int bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
         bufferWriter.Advance(bytesRead);
@@ -121,7 +121,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>
         }
 
         int streamLength = (int)stream.Length;
-        using PoolBufferWriter<byte> bufferWriter = new(streamLength, 1000);
+        using PoolBufferWriter<byte> bufferWriter = new(streamLength);
         int sizeHint = streamLength < 1000 ? streamLength : 1000;
         int bytesRead = await stream.ReadAsync(bufferWriter.GetMemory(sizeHint));
         bufferWriter.Advance(bytesRead);

@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -10,9 +13,9 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class StringPool : IDisposable, IEquatable<StringPool>
+public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerable<string>
 {
-    private Bucket[] _buckets;
+    private readonly Bucket[] _buckets;
 
     public static StringPool Shared { get; } = new();
 
@@ -28,25 +31,20 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
         }
     }
 
+    public void Clear()
+    {
+        for (int i = 0; i < _buckets.Length; i++)
+        {
+            _buckets[i].Clear();
+        }
+    }
+
     public void Dispose()
     {
         for (int i = 0; i < _buckets.Length; i++)
         {
+            _buckets[i].Clear();
             _buckets[i].Dispose();
-        }
-    }
-
-    public void Reset()
-    {
-        Reset(_buckets.Length, _buckets[0]._strings.Length);
-    }
-
-    public void Reset(int newPoolCapacity, int newBucketCapacity)
-    {
-        _buckets = new Bucket[newPoolCapacity];
-        for (int i = 0; i < newPoolCapacity; i++)
-        {
-            _buckets[i] = new(newBucketCapacity);
         }
     }
 
@@ -119,6 +117,12 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
     }
 
     [Pure]
+    public bool Contains(string str)
+    {
+        return Contains((ReadOnlySpan<char>)str);
+    }
+
+    [Pure]
     public bool Contains(ReadOnlySpan<char> span)
     {
         return span.Length != 0 && GetBucket(span).Contains(span);
@@ -148,9 +152,37 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> span)
     {
-        int hash = string.GetHashCode(span);
+        int hash = GetSimpleStringHash(span);
         int index = (int)(Unsafe.As<int, uint>(ref hash) % _buckets.Length);
+        Debug.Assert(index >= 0 && index < _buckets.Length);
         return _buckets[index];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetSimpleStringHash(ReadOnlySpan<char> chars)
+    {
+        Debug.Assert(chars.Length > 0);
+        int length = chars.Length;
+        ref char firstChar = ref MemoryMarshal.GetReference(chars);
+        char middleChar = Unsafe.Add(ref firstChar, length >> 1);
+        char lastChar = Unsafe.Add(ref firstChar, length - 1);
+        return ((firstChar + middleChar + lastChar) * length) ^ ~length;
+    }
+
+    public IEnumerator<string> GetEnumerator()
+    {
+        foreach (Bucket bucket in _buckets)
+        {
+            foreach (string str in bucket)
+            {
+                yield return str;
+            }
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 
     [Pure]
@@ -181,9 +213,9 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
         return !(left == right);
     }
 
-    private readonly struct Bucket : IDisposable
+    private readonly struct Bucket : IDisposable, IEnumerable<string>
     {
-        internal readonly string?[] _strings;
+        private readonly string?[] _strings;
         private readonly SemaphoreSlim _stringsLock = new(1);
 
         public Bucket(int bucketCapacity = _defaultBucketCapacity)
@@ -194,6 +226,11 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
         public void Dispose()
         {
             _stringsLock.Dispose();
+        }
+
+        public void Clear()
+        {
+            _strings.AsSpan().Clear();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -228,12 +265,15 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            ref string? strings = ref MemoryMarshal.GetArrayDataReference(_strings);
-            for (int i = 0; i < _strings.Length; i++)
+            ref string? stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
+            int stringsLength = _strings.Length;
+            for (int i = 0; i < stringsLength; i++)
             {
-                string? current = Unsafe.Add(ref strings, i);
+                string? current = Unsafe.Add(ref stringsReference, i);
                 if (current is null)
                 {
+                    // a null reference can only be followed by more null references,
+                    // so we can exit early because the string can definitely not be found
                     value = null;
                     return false;
                 }
@@ -245,15 +285,7 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
 
                 if (i > 3)
                 {
-                    _stringsLock.Wait();
-                    try
-                    {
-                        _strings.MoveItem(i, i - 4);
-                    }
-                    finally
-                    {
-                        _stringsLock.Release();
-                    }
+                    MoveStringByFourIndices(i);
                 }
 
                 value = current;
@@ -264,10 +296,42 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>
             return false;
         }
 
+        /// <summary>
+        /// Moves a matching item by four places, so that it can be found faster next time.
+        /// </summary>
+        private void MoveStringByFourIndices(int indexOfMatchingString)
+        {
+            _stringsLock.Wait();
+            try
+            {
+                _strings.MoveItem(indexOfMatchingString, indexOfMatchingString - 4);
+            }
+            finally
+            {
+                _stringsLock.Release();
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Contains(ReadOnlySpan<char> span)
         {
             return TryGet(span, out _);
+        }
+
+        public IEnumerator<string> GetEnumerator()
+        {
+            foreach (string? str in _strings)
+            {
+                if (str is not null)
+                {
+                    yield return str;
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

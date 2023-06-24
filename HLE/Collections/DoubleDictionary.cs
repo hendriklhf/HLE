@@ -11,7 +11,7 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
@@ -55,16 +55,22 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     internal readonly Dictionary<TPrimaryKey, TValue> _values;
     internal readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
 
+    public DoubleDictionary()
+    {
+        _values = new();
+        _secondaryKeyTranslations = new();
+    }
+
+    public DoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer)
+    {
+        _values = new(primaryKeyComparer);
+        _secondaryKeyTranslations = new(secondaryKeyComparer);
+    }
+
     public DoubleDictionary(int capacity, IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
     {
         _values = new(capacity, primaryKeyComparer);
         _secondaryKeyTranslations = new(capacity, secondaryKeyComparer);
-    }
-
-    public DoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
-    {
-        _values = new(primaryKeyComparer);
-        _secondaryKeyTranslations = new(secondaryKeyComparer);
     }
 
     public void Add(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
@@ -123,12 +129,12 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         primaryKeyRef = primaryKey;
     }
 
-    public bool TryGetValue(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
+    public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         return _values.TryGetValue(key, out value);
     }
 
-    public bool TryGetValue(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
+    public bool TryGetBySecondaryKey(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         if (_secondaryKeyTranslations.TryGetValue(key, out TPrimaryKey? primaryKey))
         {
@@ -163,13 +169,13 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     }
 
     [Pure]
-    public bool ContainsKey(TPrimaryKey key)
+    public bool ContainsPrimaryKey(TPrimaryKey key)
     {
         return _values.ContainsKey(key);
     }
 
     [Pure]
-    public bool ContainsKey(TSecondaryKey key)
+    public bool ContainsSecondaryKey(TSecondaryKey key)
     {
         return _secondaryKeyTranslations.ContainsKey(key);
     }

@@ -53,7 +53,7 @@ public readonly struct Color : IEquatable<Color>
 
     public bool Equals(Color other)
     {
-        return IsEmpty && other.IsEmpty || Red == other.Red && Green == other.Green && Blue == other.Blue;
+        return IsEmpty && other.IsEmpty && Red == other.Red && Green == other.Green && Blue == other.Blue;
     }
 
     public override bool Equals(object? obj)

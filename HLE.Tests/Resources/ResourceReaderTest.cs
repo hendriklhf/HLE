@@ -14,7 +14,7 @@ public class ResourceReaderTest
     [TestMethod]
     public void ReadResourceTest()
     {
-        ResourceReader reader = new(Assembly.GetExecutingAssembly(), false);
+        ResourceReader reader = new(Assembly.GetExecutingAssembly());
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {
@@ -31,7 +31,7 @@ public class ResourceReaderTest
     [TestMethod]
     public void ReadResourceOnInit()
     {
-        ResourceReader reader = new(Assembly.GetExecutingAssembly());
+        ResourceReader reader = new(Assembly.GetExecutingAssembly(), true);
         List<string?> resources = new();
         for (int i = 1; i <= 3; i++)
         {

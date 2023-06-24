@@ -38,14 +38,14 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         int whitespaceCount;
         if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = new(ircMessage.Length);
-            whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer);
-            return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
+            using RentedArray<int> rentedIndicesOfWhitespacesBuffer = new(ircMessage.Length);
+            whitespaceCount = ircMessage.IndicesOf(' ', rentedIndicesOfWhitespacesBuffer);
+            return Parse(ircMessage, rentedIndicesOfWhitespacesBuffer[..whitespaceCount]);
         }
 
-        Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
-        whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespaces);
-        return Parse(ircMessage, indicesOfWhitespaces[..whitespaceCount]);
+        Span<int> indicesOfWhitespacesBuffer = stackalloc int[ircMessage.Length];
+        whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer);
+        return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
     }
 
     [Pure]
@@ -103,7 +103,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
             return Array.Empty<Badge>();
         }
 
-        Badge[] badges = new Badge[value.CharCount(',') + 1];
+        Badge[] badges = new Badge[value.Count(',') + 1];
         int badgeCount = 0;
         while (value.Length > 0)
         {
@@ -181,11 +181,11 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private static long ParseInt64(ReadOnlySpan<char> value)
     {
         int length = value.Length;
-        ref char chars = ref MemoryMarshal.GetReference(value);
+        ref char charsReference = ref MemoryMarshal.GetReference(value);
         long result = 0;
         for (int i = 0; i < length; i++)
         {
-            result = 10 * result + Unsafe.Add(ref chars, i) - '0';
+            result = 10 * result + Unsafe.Add(ref charsReference, i) - '0';
         }
 
         return result;

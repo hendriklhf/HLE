@@ -14,7 +14,7 @@ namespace HLE.Twitch.Chatterino;
 [SupportedOSPlatform("windows")]
 public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<ChatterinoSettingsReader>
 {
-    private readonly PoolBufferWriter<byte> _windowLayoutFileContentWriter = new(5000, 5000);
+    private readonly PoolBufferWriter<byte> _windowLayoutFileContentWriter = new(20_000);
     private string[]? _channels;
 
     public ChatterinoSettingsReader()
@@ -22,7 +22,9 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
         using PoolBufferStringBuilder pathBuilder = new(100);
         pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
         string windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
-        BufferedFileOperations.ReadBytes(windowLayoutPath, _windowLayoutFileContentWriter);
+
+        BufferedFileReader fileReader = new(windowLayoutPath);
+        fileReader.ReadBytes(_windowLayoutFileContentWriter, 20_000);
     }
 
     ~ChatterinoSettingsReader()
@@ -38,6 +40,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
 
     /// <summary>
     /// Gets all distinct channels of all your tabs from the Chatterino settings.
+    /// The result will be cached.
     /// </summary>
     /// <returns>A string array of all channels.</returns>
     public string[] GetChannels()
@@ -48,7 +51,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
         }
 
         Utf8JsonReader jsonReader = new(_windowLayoutFileContentWriter.WrittenSpan);
-        using PoolBufferList<string> channels = new(20, 15);
+        using PoolBufferList<string> channels = new(20);
 
         ReadOnlySpan<byte> dataProperty = "data"u8;
         ReadOnlySpan<byte> nameProperty = "name"u8;
@@ -92,7 +95,8 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
             }
         }
 
-        return _channels = channels.ToArray();
+        _channels = channels.ToArray();
+        return _channels;
     }
 
     public bool Equals(ChatterinoSettingsReader? other)

@@ -134,12 +134,15 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         try
         {
+            CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
+            ClientWebSocket webSocket = _webSocket;
+
             Memory<byte> byteBuffer = new byte[4096];
             Memory<char> charBuffer = new char[4096];
             int bufferLength = 0;
-            while (!_cancellationTokenSource.IsCancellationRequested && IsConnected)
+            while (!cancellationTokenSource.IsCancellationRequested && IsConnected)
             {
-                ValueWebSocketReceiveResult webSocketReceiveResult = await _webSocket.ReceiveAsync(byteBuffer, _cancellationTokenSource.Token);
+                ValueWebSocketReceiveResult webSocketReceiveResult = await webSocket.ReceiveAsync(byteBuffer, cancellationTokenSource.Token);
                 if (webSocketReceiveResult.Count == 0)
                 {
                     continue;
@@ -176,6 +179,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PassAllLinesExceptLast(ref ReadOnlyMemory<char> receivedChars)
     {
         int indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
@@ -189,6 +193,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PassAllLines(ReadOnlySpan<char> receivedChars)
     {
         while (receivedChars.Length > 2)

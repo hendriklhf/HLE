@@ -1,19 +1,23 @@
 ﻿using System;
 using System.Diagnostics;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Http;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
-[DebuggerDisplay("Length = {_contentLength}")]
-public readonly struct HttpContentBytes : IDisposable, IEquatable<HttpContentBytes>
+[DebuggerDisplay("Length = {Count}")]
+public readonly struct HttpContentBytes : IDisposable, ICountable, IEquatable<HttpContentBytes>, IIndexAccessible<byte>
 {
-    public ReadOnlySpan<byte> Span => _contentBuffer[.._contentLength];
+    public byte this[int index] => Span[index];
 
-    public ReadOnlyMemory<byte> Memory => _contentBuffer.Memory[.._contentLength];
+    public ReadOnlySpan<byte> Span => _contentBuffer[..Count];
+
+    public ReadOnlyMemory<byte> Memory => _contentBuffer.Memory[..Count];
+
+    public int Count { get; }
 
     private readonly RentedArray<byte> _contentBuffer = RentedArray<byte>.Empty;
-    private readonly int _contentLength;
 
     public static HttpContentBytes Empty => new();
 
@@ -24,7 +28,7 @@ public readonly struct HttpContentBytes : IDisposable, IEquatable<HttpContentByt
     public HttpContentBytes(RentedArray<byte> contentBuffer, int contentLength)
     {
         _contentBuffer = contentBuffer;
-        _contentLength = contentLength;
+        Count = contentLength;
     }
 
     public void Dispose()
@@ -34,7 +38,7 @@ public readonly struct HttpContentBytes : IDisposable, IEquatable<HttpContentByt
 
     public bool Equals(HttpContentBytes other)
     {
-        return _contentBuffer == other._contentBuffer && _contentLength == other._contentLength || _contentBuffer[.._contentLength].SequenceEqual(other._contentBuffer[..other._contentLength]);
+        return _contentBuffer == other._contentBuffer && Count == other.Count || _contentBuffer[..Count].SequenceEqual(other._contentBuffer[..other.Count]);
     }
 
     public override bool Equals(object? obj)
@@ -44,7 +48,7 @@ public readonly struct HttpContentBytes : IDisposable, IEquatable<HttpContentByt
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(_contentBuffer, _contentLength);
+        return HashCode.Combine(_contentBuffer, Count);
     }
 
     public static bool operator ==(HttpContentBytes left, HttpContentBytes right)

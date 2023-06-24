@@ -65,17 +65,17 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in Roomstate args)
     {
-        ref ChangedRoomStates firstRoomStateValue = ref MemoryMarshal.GetArrayDataReference(_allChangedRoomStatesValues);
+        ref ChangedRoomStates changedRoomStatesReference = ref MemoryMarshal.GetArrayDataReference(_allChangedRoomStatesValues);
         for (int i = 0; i < _allChangedRoomStatesValues.Length; i++)
         {
-            ChangedRoomStates roomStates = Unsafe.Add(ref firstRoomStateValue, i);
-            bool roomstateChanged = (args.ChangedStates & roomStates) == roomStates;
+            ChangedRoomStates roomState = Unsafe.Add(ref changedRoomStatesReference, i);
+            bool roomstateChanged = (args.ChangedStates & roomState) == roomState;
             if (!roomstateChanged)
             {
                 continue;
             }
 
-            switch (roomStates)
+            switch (roomState)
             {
                 case ChangedRoomStates.EmoteOnly:
                     EmoteOnly = args.EmoteOnly;
@@ -93,7 +93,7 @@ public sealed class Channel : IEquatable<Channel>
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    throw new InvalidEnumArgumentException(nameof(roomStates), (int)roomStates, typeof(ChangedRoomStates));
+                    throw new InvalidEnumArgumentException(nameof(roomState), (int)roomState, typeof(ChangedRoomStates));
             }
         }
     }

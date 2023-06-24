@@ -35,6 +35,7 @@ public static class StringManipulations
         Replace(span.AsMutableSpan(), oldChar, newChar);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Replace(Span<char> span, char oldChar, char newChar)
     {
         if (span.Length == 0)
@@ -56,6 +57,7 @@ public static class StringManipulations
         ToLower(span.AsMutableSpan(), cultureInfo);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToLower(Span<char> span, CultureInfo? cultureInfo = null)
     {
         if (span.Length == 0)
@@ -86,6 +88,7 @@ public static class StringManipulations
         ToUpper(span.AsMutableSpan(), cultureInfo);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToUpper(Span<char> span, CultureInfo? cultureInfo = null)
     {
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))

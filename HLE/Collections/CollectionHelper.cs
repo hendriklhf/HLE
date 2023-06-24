@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using HLE.Memory;
-using HLE.Numerics;
 using HLE.Strings;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -21,7 +21,36 @@ public static class CollectionHelper
     [Pure]
     public static T? Random<T>(this IEnumerable<T> collection)
     {
-        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? Random(span) : Random(collection.ToArray());
+        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
+        {
+            return Random(span);
+        }
+
+        switch (collection)
+        {
+            case IList<T> iList:
+                return iList.Count == 0 ? default : iList[System.Random.Shared.Next(iList.Count)];
+            case ICountable countable:
+                if (countable.Count == 0)
+                {
+                    return default;
+                }
+
+                int randomIndex = System.Random.Shared.Next(countable.Count);
+                if (collection.TryNonEnumeratedElementAt(randomIndex, out T? randomElement))
+                {
+                    return randomElement;
+                }
+
+                break;
+        }
+
+        if (collection is ICollection<T> iCollection)
+        {
+            return collection.ElementAt(System.Random.Shared.Next(iCollection.Count));
+        }
+
+        return Random(collection.ToArray());
     }
 
     [Pure]
@@ -52,8 +81,8 @@ public static class CollectionHelper
         }
 
         ref T firstItem = ref MemoryMarshal.GetReference(span);
-        int randomIdx = System.Random.Shared.Next(0, spanLength);
-        return ref Unsafe.Add(ref firstItem, randomIdx)!;
+        int randomIndex = System.Random.Shared.Next(spanLength);
+        return ref Unsafe.Add(ref firstItem, randomIndex)!;
     }
 
     [Pure]
@@ -125,31 +154,69 @@ public static class CollectionHelper
     {
         if (typeof(T) == typeof(char))
         {
-            if (!collection.TryGetReadOnlySpan(out ReadOnlySpan<char> chars))
+            if (collection.TryGetReadOnlySpan(out ReadOnlySpan<char> chars))
             {
-                chars = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection).ToArray();
+                return new(chars);
             }
 
-            return new(chars);
+            IEnumerable<char> charCollection = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection);
+            if (charCollection.TryGetNonEnumeratedCount(out int elementCount))
+            {
+                using RentedArray<char> rentedBuffer = new(elementCount);
+                if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer))
+                {
+                    return new(rentedBuffer);
+                }
+
+                using PoolBufferStringBuilder builderWithCapacity = new(elementCount);
+                foreach (char c in charCollection)
+                {
+                    builderWithCapacity.Append(c);
+                }
+
+                return builderWithCapacity.ToString();
+            }
+
+            using PoolBufferStringBuilder builder = new();
+            foreach (char c in charCollection)
+            {
+                builder.Append(c);
+            }
+
+            return builder.ToString();
         }
 
         if (typeof(T) == typeof(string))
         {
             if (!collection.TryGetReadOnlySpan(out ReadOnlySpan<string> strings))
             {
-                strings = Unsafe.As<IEnumerable<T>, IEnumerable<string>>(ref collection).ToArray();
+                IEnumerable<string> stringCollection = Unsafe.As<IEnumerable<T>, IEnumerable<string>>(ref collection);
+                if (stringCollection.TryGetNonEnumeratedCount(out int elementCount))
+                {
+                    using PoolBufferStringBuilder enumerableBuilder = new(15 * elementCount);
+                    foreach (string str in stringCollection)
+                    {
+                        enumerableBuilder.Append(str);
+                    }
+
+                    return enumerableBuilder.ToString();
+                }
             }
 
-            if (strings.Length == 0)
+            int stringsLength = strings.Length;
+            if (stringsLength == 0)
             {
                 return string.Empty;
             }
 
-            int estimatedAverageStringLength = (strings[0].Length + strings[strings.Length >> 1].Length + strings[^1].Length) / 3;
-            using PoolBufferStringBuilder builder = new(estimatedAverageStringLength * strings.Length);
-            for (int i = 0; i < strings.Length; i++)
+            int pseudoAverageStringLength = (strings[0].Length + strings[stringsLength >> 1].Length + strings[^1].Length) / 3;
+            using PoolBufferStringBuilder builder = new(pseudoAverageStringLength * stringsLength);
+
+            ref string stringsReference = ref MemoryMarshal.GetReference(strings);
+            for (int i = 0; i < stringsLength; i++)
             {
-                builder.Append(strings[i]);
+                string str = Unsafe.Add(ref stringsReference, i);
+                builder.Append(str);
             }
 
             return builder.ToString();
@@ -180,7 +247,7 @@ public static class CollectionHelper
     public static T[] Replace<T>(this T[] array, Func<T, bool> predicate, T replacement)
     {
         T[] copy = new T[array.Length];
-        Array.Copy(array, copy, array.Length);
+        array.AsSpan().CopyTo(copy);
         Replace((Span<T>)copy, predicate, replacement);
         return copy;
     }
@@ -193,10 +260,10 @@ public static class CollectionHelper
             return;
         }
 
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        ref T spanReference = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            ref T item = ref Unsafe.Add(ref firstItem, i);
+            ref T item = ref Unsafe.Add(ref spanReference, i);
             if (predicate(item))
             {
                 item = replacement;
@@ -224,7 +291,7 @@ public static class CollectionHelper
     public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> predicate, T replacement)
     {
         T[] copy = new T[array.Length];
-        Array.Copy(array, copy, array.Length);
+        array.AsSpan().CopyTo(copy);
         Replace((Span<T>)copy, predicate, replacement);
         return copy;
     }
@@ -294,10 +361,10 @@ public static class CollectionHelper
         ref T[] firstResultValue = ref MemoryMarshal.GetArrayDataReference(result);
         int resultLength = 0;
         int start = 0;
-        ref int firstIndex = ref MemoryMarshal.GetReference(indices);
+        ref int indicesReference = ref MemoryMarshal.GetReference(indices);
         for (int i = 0; i < indicesLength; i++)
         {
-            int index = Unsafe.Add(ref firstIndex, i);
+            int index = Unsafe.Add(ref indicesReference, i);
             ReadOnlySpan<T> split = span[start..index];
             start = index + 1;
             if (split.Length > 0)
@@ -318,7 +385,24 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
     {
-        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf((ReadOnlySpan<T>)collection.ToArray(), predicate);
+        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
+        {
+            return IndicesOf(span, predicate);
+        }
+
+        using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        int currentIndex = 0;
+        foreach (T item in collection)
+        {
+            if (predicate(item))
+            {
+                indices.Add(currentIndex);
+            }
+
+            currentIndex++;
+        }
+
+        return indices.ToArray();
     }
 
     [Pure]
@@ -384,7 +468,24 @@ public static class CollectionHelper
     [Pure]
     public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate)
     {
-        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, predicate) : IndicesOf(collection.ToArray(), predicate);
+        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
+        {
+            return IndicesOf(span, predicate);
+        }
+
+        using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        int currentIndex = 0;
+        foreach (T item in collection)
+        {
+            if (predicate(item))
+            {
+                indices.Add(currentIndex);
+            }
+
+            currentIndex++;
+        }
+
+        return indices.ToArray();
     }
 
     [Pure]
@@ -435,10 +536,10 @@ public static class CollectionHelper
         }
 
         int length = 0;
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        ref T spanReference = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            bool equals = predicate(Unsafe.Add(ref firstItem, i));
+            bool equals = predicate(Unsafe.Add(ref spanReference, i));
             int equalsAsByte = Unsafe.As<bool, byte>(ref equals);
             indices[length] = i;
             length += equalsAsByte;
@@ -450,7 +551,24 @@ public static class CollectionHelper
     [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item) where T : IEquatable<T>
     {
-        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? IndicesOf(span, item) : IndicesOf(collection.ToArray(), item);
+        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
+        {
+            return IndicesOf(span, item);
+        }
+
+        int currentIndex = 0;
+        using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        foreach (T t in collection)
+        {
+            if (t.Equals(item))
+            {
+                indices.Add(currentIndex);
+            }
+
+            currentIndex++;
+        }
+
+        return indices.ToArray();
     }
 
     [Pure]
@@ -500,13 +618,13 @@ public static class CollectionHelper
         }
 
         int indicesLength = 0;
-        int idx = span.IndexOf(item);
-        int spanStartIndex = idx;
-        while (idx != -1)
+        int indexOfItem = span.IndexOf(item);
+        int spanStartIndex = indexOfItem;
+        while (indexOfItem != -1)
         {
             indices[indicesLength++] = spanStartIndex;
-            idx = span[++spanStartIndex..].IndexOf(item);
-            spanStartIndex += idx;
+            indexOfItem = span[++spanStartIndex..].IndexOf(item);
+            spanStartIndex += indexOfItem;
         }
 
         return indicesLength;
@@ -525,112 +643,6 @@ public static class CollectionHelper
         {
             (TKey, TValue) valuePair = valuePairs[i];
             result.Add(valuePair.Item1, valuePair.Item2);
-        }
-
-        return result;
-    }
-
-    [Pure]
-    public static T[] Randomize<T>(this IEnumerable<T> collection)
-    {
-        T[] result;
-        if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
-        {
-            result = span.ToArray();
-            Randomize((Span<T>)result);
-            return result;
-        }
-
-        result = collection.ToArray();
-        Randomize((Span<T>)result);
-        return result;
-    }
-
-    [Pure]
-    public static List<T> Randomize<T>(this List<T> list)
-    {
-        List<T> copy = new(list);
-        Randomize(CollectionsMarshal.AsSpan(copy));
-        return copy;
-    }
-
-    [Pure]
-    public static T[] Randomize<T>(this T[] array)
-    {
-        T[] copy = new T[array.Length];
-        Array.Copy(array, copy, array.Length);
-        Randomize((Span<T>)copy);
-        return copy;
-    }
-
-    public static void Randomize<T>(this Span<T> span)
-    {
-        if (span.Length <= 1)
-        {
-            return;
-        }
-
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < span.Length; i++)
-        {
-            int randomIdx = System.Random.Shared.Next(0, span.Length);
-            ref T item = ref Unsafe.Add(ref firstItem, i);
-            (item, span[randomIdx]) = (span[randomIdx], item);
-        }
-    }
-
-    [Pure]
-    public static T[] RandomCollection<T>(this IEnumerable<T> collection, int length)
-    {
-        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? RandomCollection(span, length) : RandomCollection(collection.ToArray(), length);
-    }
-
-    [Pure]
-    public static T[] RandomCollection<T>(this T[] array, int length)
-    {
-        return RandomCollection((Span<T>)array, length);
-    }
-
-    [Pure]
-    public static T[] RandomCollection<T>(this List<T> list, int length)
-    {
-        return RandomCollection(CollectionsMarshal.AsSpan(list), length);
-    }
-
-    [Pure]
-    public static T[] RandomCollection<T>(this Span<T> span, int length)
-    {
-        return RandomCollection((ReadOnlySpan<T>)span, length);
-    }
-
-    [Pure]
-    public static T[] RandomCollection<T>(this ReadOnlySpan<T> span, int length)
-    {
-        if (span.Length == 0)
-        {
-            return Array.Empty<T>();
-        }
-
-        T[] result = new T[length];
-        if (!MemoryHelper.UseStackAlloc<int>(length))
-        {
-            using RentedArray<int> randomIndicesBuffer = new(length);
-            System.Random.Shared.Fill(randomIndicesBuffer.Span);
-            for (int i = 0; i < length; i++)
-            {
-                int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % span.Length;
-                result[i] = span[randomIndex];
-            }
-
-            return result;
-        }
-
-        Span<int> randomIndices = stackalloc int[length];
-        System.Random.Shared.Fill(randomIndices);
-        for (int i = 0; i < length; i++)
-        {
-            int randomIndex = NumberHelper.SetSignBitToZero(randomIndices[i]) % span.Length;
-            result[i] = span[randomIndex];
         }
 
         return result;
@@ -883,20 +895,18 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
     {
-        if (typeof(T[]) == collection.GetType())
+        switch (collection)
         {
-            span = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
-            return true;
+            case T[] array:
+                span = array;
+                return true;
+            case List<T> list:
+                span = CollectionsMarshal.AsSpan(list);
+                return true;
+            default:
+                span = Span<T>.Empty;
+                return false;
         }
-
-        if (typeof(List<T>) == collection.GetType())
-        {
-            span = CollectionsMarshal.AsSpan(Unsafe.As<IEnumerable<T>, List<T>>(ref collection));
-            return true;
-        }
-
-        span = Span<T>.Empty;
-        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -936,20 +946,18 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
     {
-        if (typeof(T[]) == collection.GetType())
+        switch (collection)
         {
-            memory = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
-            return true;
+            case T[] array:
+                memory = array;
+                return true;
+            case List<T> list:
+                memory = CollectionsMarshal.AsSpan(list).AsMemoryDangerous();
+                return true;
+            default:
+                memory = Memory<T>.Empty;
+                return false;
         }
-
-        if (typeof(List<T>) == collection.GetType())
-        {
-            memory = CollectionsMarshal.AsSpan(Unsafe.As<IEnumerable<T>, List<T>>(ref collection)).AsMemoryDangerous();
-            return true;
-        }
-
-        memory = Memory<T>.Empty;
-        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -957,6 +965,78 @@ public static class CollectionHelper
     {
         IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
         return TryGetMemory<TTo>(resultCollection, out memory);
+    }
+
+    public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> collection, out int elementCount)
+    {
+        if (Enumerable.TryGetNonEnumeratedCount(collection, out elementCount))
+        {
+            return true;
+        }
+
+        if (collection is ICountable countable)
+        {
+            elementCount = countable.Count;
+            return true;
+        }
+
+        elementCount = 0;
+        return false;
+    }
+
+    /// <summary>
+    /// Tries to copy the elements of the <see cref="IEnumerable{T}"/> to the <paramref name="destination"/> at a given offset,
+    /// while not enumerating the enumerable.
+    /// </summary>
+    /// <param name="collection">The collection of items that will be tried to be copied to the destination.</param>
+    /// <param name="destination">The destination of the copied items.</param>
+    /// <param name="destinationOffset">The offset to the destination start.</param>
+    /// <typeparam name="T">The type of items that will be tried to be copied.</typeparam>
+    /// <returns>True, if copying was possible, otherwise false.</returns>
+    public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> collection, T[] destination, int destinationOffset = 0)
+    {
+        if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+        {
+            span.CopyTo(destination.AsSpan(destinationOffset));
+            return true;
+        }
+
+        switch (collection)
+        {
+            case ICollection<T> iCollection:
+                iCollection.CopyTo(destination, destinationOffset);
+                return true;
+            case ICopyable<T> copyable:
+                copyable.CopyTo(destination, destinationOffset);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static bool TryNonEnumeratedElementAt<T>([NoEnumeration] this IEnumerable<T> collection, int index, [MaybeNullWhen(false)] out T element)
+    {
+        if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+        {
+            element = span[index];
+            return true;
+        }
+
+        switch (collection)
+        {
+            case IList<T> iList:
+                element = iList[index];
+                return true;
+            case IRefIndexAccessible<T> refIndexAccessibleCollection:
+                element = refIndexAccessibleCollection[index];
+                return true;
+            case IIndexAccessible<T> indexAccessibleCollection:
+                element = indexAccessibleCollection[index];
+                return true;
+            default:
+                element = default;
+                return false;
+        }
     }
 
     /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
@@ -985,14 +1065,16 @@ public static class CollectionHelper
             return;
         }
 
-        if (Math.Abs(sourceIndex - destinationIndex) == 1)
+        bool areSourceAndDestinationNextToEachOther = Math.Abs(sourceIndex - destinationIndex) == 1;
+        if (areSourceAndDestinationNextToEachOther)
         {
             (span[sourceIndex], span[destinationIndex]) = (span[destinationIndex], span[sourceIndex]);
             return;
         }
 
         T value = span[sourceIndex];
-        if (sourceIndex > destinationIndex)
+        bool isSourceRightOfDestination = sourceIndex > destinationIndex;
+        if (isSourceRightOfDestination)
         {
             span[destinationIndex..sourceIndex].CopyTo(span[(destinationIndex + 1)..]);
         }
@@ -1002,5 +1084,75 @@ public static class CollectionHelper
         }
 
         span[destinationIndex] = value;
+    }
+
+    /// <summary>
+    /// Tries to enumerate a <see cref="IEnumerable{T}"/> and write the elements into a buffer.<br/>
+    /// If the amount of elements in <paramref name="collection"/> can be found out, the method will check if there is enough space in the buffer.
+    /// If there isn't enough space, the method will return <see langword="false"/> and set <paramref name="writtenElements"/> to <c>0</c>.<br/>
+    /// If no amount of elements could be retrieved, the method will start writing elements into the buffer and will do so until it is finished, in which case it will return <see langword="true"/>,
+    /// or until it runs out of buffer space, in which case it will return <see langword="false"/>.
+    /// </summary>
+    /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be enumerated and elements will be taken from.</param>
+    /// <param name="buffer">The buffer the elements will be written into.</param>
+    /// <param name="writtenElements">The amount of written elements.</param>
+    /// <typeparam name="T">The type of elements in the <see cref="IEnumerable{T}"/>.</typeparam>
+    /// <returns>True, if a full enumeration into the buffer possible, otherwise false.</returns>
+    public static bool TryEnumerateInto<T>(this IEnumerable<T> collection, Span<T> buffer, out int writtenElements)
+    {
+        if (collection.TryGetNonEnumeratedCount(out int elementCount))
+        {
+            if (elementCount > buffer.Length)
+            {
+                writtenElements = 0;
+                return false;
+            }
+
+            if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+            {
+                span.CopyTo(buffer);
+                writtenElements = span.Length;
+                return true;
+            }
+
+            switch (collection)
+            {
+                case ICopyable<T> copyable:
+                    copyable.CopyTo(buffer);
+                    writtenElements = elementCount;
+                    return true;
+                case IIndexAccessible<T> indexAccessible:
+                {
+                    for (int i = 0; i < elementCount; i++)
+                    {
+                        buffer[i] = indexAccessible[i];
+                    }
+
+                    break;
+                }
+                case IRefIndexAccessible<T> refIndexAccessible:
+                {
+                    for (int i = 0; i < elementCount; i++)
+                    {
+                        buffer[i] = refIndexAccessible[i];
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        writtenElements = 0;
+        foreach (T item in collection)
+        {
+            if (writtenElements >= buffer.Length)
+            {
+                return false;
+            }
+
+            buffer[writtenElements++] = item;
+        }
+
+        return true;
     }
 }

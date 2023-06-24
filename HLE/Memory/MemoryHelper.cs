@@ -15,7 +15,7 @@ public static unsafe class MemoryHelper
     /// The default maximum can also be changed with the <see cref="MaxStackAllocSize"/> property.
     /// </summary>
     /// <param name="elementCount">The amount of elements that will be multiplied by the type's size.</param>
-    /// <typeparam name="T">The type of the <see langword="stackalloc">.</typeparam>
+    /// <typeparam name="T">The type of the <see langword="stackalloc"/>.</typeparam>
     /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -40,21 +40,23 @@ public static unsafe class MemoryHelper
     }
 
     /// <inheritdoc cref="AsMemoryDangerous{T}(Span{T})"/>
-    public static ReadOnlyMemory<T> AsMemoryDangerous<T>(this ReadOnlySpan<T> span)
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Memory<T> AsMemoryDangerous<T>(this Span<T> span)
     {
-        return AsMemoryDangerous(span.AsMutableSpan());
+        return AsMemoryDangerous((ReadOnlySpan<T>)span).AsMutableMemory();
     }
 
     /// <summary>
-    /// Converts a <see cref="Span{T}"/> to a <see cref="Memory{T}"/>. Does not allocate any memory. <br/>
-    /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/>. Otherwise this method is potentially dangerous. ⚠️
+    /// Converts a <see cref="ReadOnlySpan{T}"/> to a <see cref="ReadOnlyMemory{T}"/>. Does not allocate any memory. <br/>
+    /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/> of type <typeparamref name="T"/>. Otherwise this method is potentially dangerous. ⚠️
     /// </summary>
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    public static Memory<T> AsMemoryDangerous<T>(this Span<T> span)
+    public static ReadOnlyMemory<T> AsMemoryDangerous<T>(this ReadOnlySpan<T> span)
     {
-        Unsafe.SkipInit(out Memory<T> result);
+        Unsafe.SkipInit(out ReadOnlyMemory<T> result);
         byte* spanPointerAsBytePointer = (byte*)&span;
         byte* memoryPointerAsBytePointer = (byte*)&result;
 
@@ -74,11 +76,41 @@ public static unsafe class MemoryHelper
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string AsStringDangerous(this Span<char> span)
+    {
+        return AsStringDangerous((ReadOnlySpan<char>)span);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string AsStringDangerous(this ReadOnlySpan<char> span)
+    {
+        ref char charsReference = ref MemoryMarshal.GetReference(span);
+        ref byte charsAsBytesReference = ref Unsafe.As<char, byte>(ref charsReference);
+        ref byte stringDataReference = ref Unsafe.Subtract(ref charsAsBytesReference, sizeof(nuint) + sizeof(int));
+        return GetReferenceFromRawDataPointer<string, byte>(ref stringDataReference)!;
+    }
+
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint GetRawDataPointer<T>(T reference) where T : class?
     {
         return *(nuint*)&reference;
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TValue? GetReferenceFromRawDataPointer<TValue, TRef>(ref TRef reference) where TValue : class?
+    {
+        TValue* pointer = (TValue*)Unsafe.AsPointer(ref reference);
+        return GetReferenceFromRawDataPointer<TValue>((nuint)pointer);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T? GetReferenceFromRawDataPointer<T>(void* pointer) where T : class?
+    {
+        return GetReferenceFromRawDataPointer<T>((nuint)pointer);
     }
 
     [Pure]
@@ -129,10 +161,14 @@ public static unsafe class MemoryHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> ReturnStackAlloced<T>(scoped Span<T> span)
+    public static void CopyUnsafe<T>(ReadOnlySpan<T> source, Span<T> destination)
     {
-#pragma warning disable CS9080
-        return span;
-#pragma warning restore CS9080
+        ref T sourceReference = ref MemoryMarshal.GetReference(source);
+        ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
+
+        ref T destinationReference = ref MemoryMarshal.GetReference(destination);
+        ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
+
+        Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * source.Length));
     }
 }
