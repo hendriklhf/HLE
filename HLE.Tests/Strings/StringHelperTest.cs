@@ -127,16 +127,12 @@ public partial class StringHelperTest
     }
 
     [TestMethod]
-    public void GetRangesOfSplit_string_char()
+    public void RegexEscapeTest()
     {
-        string str = Random.Shared.NextString(1000, "abc ");
-        using PoolBufferList<int> correctIndices = new();
-        for (int i = 0; i < str.Length; i++)
+        for (int i = 0; i < 100; i++)
         {
-            if (str[i] == ' ')
-            {
-                correctIndices.Add(i);
-            }
+            string str = Random.Shared.NextString(1000, $"{StringHelper.RegexMetaChars}awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
+            Assert.AreEqual(Regex.Escape(str), StringHelper.RegexEscape(str));
         }
     }
 }

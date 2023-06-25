@@ -44,5 +44,15 @@ public class MemoryHelperTest
 
         string? stringFromRawPointer = MemoryHelper.GetReferenceFromRawDataPointer<string>(stringToRawPointer);
         Assert.IsTrue(stringFromRawPointer is hello);
+        Assert.AreEqual(typeof(string), stringFromRawPointer.GetType());
+    }
+
+    [TestMethod]
+    public void AsStringDangerousTest()
+    {
+        ReadOnlySpan<char> str = "hello";
+        string actualString = str.AsStringDangerous();
+        Assert.AreEqual("hello", actualString);
+        Assert.AreEqual(typeof(string), actualString.GetType());
     }
 }

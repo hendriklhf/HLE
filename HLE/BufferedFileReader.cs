@@ -44,7 +44,7 @@ public readonly struct BufferedFileReader
     {
         using PoolBufferWriter<byte> byteWriter = new(fileSizeHint);
         ReadBytes(byteWriter);
-        int charCount = fileEncoding.GetMaxCharCount(byteWriter.Length);
+        int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
         int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, writer.GetSpan(charCount));
         writer.Advance(charsWritten);
     }
@@ -53,7 +53,7 @@ public readonly struct BufferedFileReader
     {
         using PoolBufferWriter<byte> byteWriter = new(fileSizeHint);
         await ReadBytesAsync(byteWriter);
-        int charCount = fileEncoding.GetMaxCharCount(byteWriter.Length);
+        int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
         int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, writer.GetSpan(charCount));
         writer.Advance(charsWritten);
     }

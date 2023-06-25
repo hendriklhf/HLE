@@ -176,7 +176,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             throw new AnonymousClientException();
         }
 
-        string prefixedChannel = (Channels[channel.Span]?._prefixedName) ?? throw new NotConnectedToTheChannelException(new string(channel.Span));
+        string prefixedChannel = Channels[channel.Span]?._prefixedName ?? throw new NotConnectedToTheChannelException(new string(channel.Span));
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -203,7 +203,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             throw new AnonymousClientException();
         }
 
-        string prefixedChannel = (Channels[channelId]?._prefixedName) ?? throw new NotConnectedToTheChannelException(channelId);
+        string prefixedChannel = Channels[channelId]?._prefixedName ?? throw new NotConnectedToTheChannelException(channelId);
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -254,6 +254,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
+        // TODO: try other ways before using .ToArray()
         await JoinChannelsAsync(channels.ToArray());
     }
 
@@ -338,6 +339,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
+        // TODO: try other ways before using .ToArray()
         await LeaveChannelsAsync(channels.ToArray());
     }
 

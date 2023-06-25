@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Memory;
-using HLE.Strings;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -60,6 +60,8 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     private const string _noticeCommand = "NOTICE";
     // TODO: WHISPER, CLEARMSG, CLEARCHAT, USERSTATE, USERNOTICE
 
+    private const int _maximumAmountOfWhitespacesNeededToHandle = 4;
+
     public IrcHandler(ParsingMode parsingMode)
     {
         _chatMessageParser = parsingMode switch
@@ -78,8 +80,8 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
     public bool Handle(ReadOnlySpan<char> ircMessage)
     {
-        Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
-        int whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespaces);
+        Span<int> indicesOfWhitespaces = stackalloc int[_maximumAmountOfWhitespacesNeededToHandle];
+        int whitespaceCount = GetIndicesOfWhitespaces(ircMessage, ref MemoryMarshal.GetReference(indicesOfWhitespaces));
         indicesOfWhitespaces = indicesOfWhitespaces[..whitespaceCount];
 
         return whitespaceCount switch
@@ -90,6 +92,27 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
             > 0 => HandleMoreThanZeroWhitespaces(ircMessage, indicesOfWhitespaces),
             _ => false
         };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetIndicesOfWhitespaces(ReadOnlySpan<char> ircMessage, ref int indicesReference)
+    {
+        int indicesLength = 0;
+        int indexOfWhitespace = ircMessage.IndexOf(' ');
+        int spanStartIndex = indexOfWhitespace;
+        while (indexOfWhitespace != -1)
+        {
+            Unsafe.Add(ref indicesReference, indicesLength++) = spanStartIndex;
+            if (indicesLength == _maximumAmountOfWhitespacesNeededToHandle)
+            {
+                return _maximumAmountOfWhitespacesNeededToHandle;
+            }
+
+            indexOfWhitespace = ircMessage[++spanStartIndex..].IndexOf(' ');
+            spanStartIndex += indexOfWhitespace;
+        }
+
+        return indicesLength;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

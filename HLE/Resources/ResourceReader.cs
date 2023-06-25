@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
@@ -39,22 +38,6 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
         pathBuilder.Append('.');
         pathBuilder.Append(resourceName);
         return ReadResourceFromPath(StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan));
-    }
-
-    [Pure]
-    public async ValueTask<byte[]?> ReadAsync(string resourceName)
-    {
-        return await ReadAsync(resourceName.AsMemory());
-    }
-
-    [Pure]
-    public async ValueTask<byte[]?> ReadAsync(ReadOnlyMemory<char> resourceName)
-    {
-        using PoolBufferStringBuilder pathBuilder = new(1 + _assemblyName.Length + resourceName.Length);
-        pathBuilder.Append(_assemblyName);
-        pathBuilder.Append('.');
-        pathBuilder.Append(resourceName.Span);
-        return await ReadResourceFromPathAsync(StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan));
     }
 
     private void ReadAllResources()
@@ -93,41 +76,6 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
         while (bytesRead < streamLength && bytesRead > 0)
         {
             bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
-            bufferWriter.Advance(bytesRead);
-        }
-
-        resource = bufferWriter.WrittenSpan.ToArray();
-        _resources.AddOrSet(resourcePath, resource);
-        return resource;
-    }
-
-    private async ValueTask<byte[]?> ReadResourceFromPathAsync(string resourcePath)
-    {
-        if (_resources.TryGetValue(resourcePath, out byte[]? resource))
-        {
-            return resource;
-        }
-
-        await using Stream? stream = _assembly.GetManifestResourceStream(resourcePath);
-        if (stream is null)
-        {
-            _resources.AddOrSet(resourcePath, null);
-            return null;
-        }
-
-        if (stream.Length > int.MaxValue)
-        {
-            throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
-        }
-
-        int streamLength = (int)stream.Length;
-        using PoolBufferWriter<byte> bufferWriter = new(streamLength);
-        int sizeHint = streamLength < 1000 ? streamLength : 1000;
-        int bytesRead = await stream.ReadAsync(bufferWriter.GetMemory(sizeHint));
-        bufferWriter.Advance(bytesRead);
-        while (bytesRead < streamLength && bytesRead > 0)
-        {
-            bytesRead = await stream.ReadAsync(bufferWriter.GetMemory(sizeHint));
             bufferWriter.Advance(bytesRead);
         }
 

@@ -7,10 +7,8 @@ using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
 
-public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<NoticeParser>
+public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
 {
-    private readonly StringPool _noticeMessagePool = new();
-
     [Pure]
     public Notice Parse(ReadOnlySpan<char> ircMessage)
     {
@@ -52,7 +50,7 @@ public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<Notice
             channel = channel[1..];
         }
 
-        return new(type, _noticeMessagePool.GetOrAdd(message), StringPool.Shared.GetOrAdd(channel));
+        return new(type, StringPool.Shared.GetOrAdd(message), StringPool.Shared.GetOrAdd(channel));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -70,11 +68,6 @@ public sealed class NoticeParser : INoticeParser, IDisposable, IEquatable<Notice
                 indexOfChar += lastIndex;
             }
         }
-    }
-
-    public void Dispose()
-    {
-        _noticeMessagePool.Dispose();
     }
 
     public bool Equals(NoticeParser? other)

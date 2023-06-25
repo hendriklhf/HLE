@@ -157,7 +157,7 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
 
     public bool Equals(UnitPrefix? other)
     {
-        return Name == other?.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) <= 0;
+        return Name == other?.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) == 0;
     }
 
     public override bool Equals(object? obj)

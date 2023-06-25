@@ -9,7 +9,6 @@ namespace HLE.Twitch;
 public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatable<TimeEfficientChatMessageParser>
 {
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = Array.Empty<Badge>();

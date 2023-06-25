@@ -316,73 +316,6 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static T[][] Split<T>(this IEnumerable<T> collection, T separator) where T : IEquatable<T>
-    {
-        return TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span) ? Split(span, separator) : Split((ReadOnlySpan<T>)collection.ToArray(), separator);
-    }
-
-    [Pure]
-    public static T[][] Split<T>(this List<T> list, T separator) where T : IEquatable<T>
-    {
-        return Split((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), separator);
-    }
-
-    [Pure]
-    public static T[][] Split<T>(this T[] array, T separator) where T : IEquatable<T>
-    {
-        return Split((ReadOnlySpan<T>)array, separator);
-    }
-
-    [Pure]
-    public static T[][] Split<T>(this Span<T> span, T separator) where T : IEquatable<T>
-    {
-        return Split((ReadOnlySpan<T>)span, separator);
-    }
-
-    [Pure]
-    public static T[][] Split<T>(this ReadOnlySpan<T> span, T separator) where T : IEquatable<T>
-    {
-        if (span.Length == 0)
-        {
-            return Array.Empty<T[]>();
-        }
-
-        Span<int> indices = MemoryHelper.UseStackAlloc<int>(span.Length) ? stackalloc int[span.Length] : new int[span.Length];
-        int indicesLength = IndicesOf(span, separator, indices);
-        if (indicesLength == 0)
-        {
-            return new[]
-            {
-                span.ToArray()
-            };
-        }
-
-        T[][] result = new T[indicesLength + 1][];
-        ref T[] firstResultValue = ref MemoryMarshal.GetArrayDataReference(result);
-        int resultLength = 0;
-        int start = 0;
-        ref int indicesReference = ref MemoryMarshal.GetReference(indices);
-        for (int i = 0; i < indicesLength; i++)
-        {
-            int index = Unsafe.Add(ref indicesReference, i);
-            ReadOnlySpan<T> split = span[start..index];
-            start = index + 1;
-            if (split.Length > 0)
-            {
-                Unsafe.Add(ref firstResultValue, resultLength++) = split.ToArray();
-            }
-        }
-
-        ReadOnlySpan<T> end = span[(indices[indicesLength - 1] + 1)..];
-        if (end.Length > 0)
-        {
-            Unsafe.Add(ref firstResultValue, resultLength) = end.ToArray();
-        }
-
-        return result[..resultLength];
-    }
-
-    [Pure]
     public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
     {
         if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
@@ -390,6 +323,7 @@ public static class CollectionHelper
             return IndicesOf(span, predicate);
         }
 
+        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
         using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         int currentIndex = 0;
         foreach (T item in collection)
@@ -473,6 +407,7 @@ public static class CollectionHelper
             return IndicesOf(span, predicate);
         }
 
+        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
         using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         int currentIndex = 0;
         foreach (T item in collection)
@@ -556,6 +491,7 @@ public static class CollectionHelper
             return IndicesOf(span, item);
         }
 
+        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
         int currentIndex = 0;
         using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         foreach (T t in collection)
@@ -628,24 +564,6 @@ public static class CollectionHelper
         }
 
         return indicesLength;
-    }
-
-    [Pure]
-    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey, TValue)> collection) where TKey : notnull
-    {
-        if (!collection.TryGetReadOnlySpan<(TKey, TValue)>(out ReadOnlySpan<(TKey, TValue)> valuePairs))
-        {
-            return collection.ToDictionary(i => i.Item1, i => i.Item2);
-        }
-
-        Dictionary<TKey, TValue> result = new(valuePairs.Length);
-        for (int i = 0; i < valuePairs.Length; i++)
-        {
-            (TKey, TValue) valuePair = valuePairs[i];
-            result.Add(valuePair.Item1, valuePair.Item2);
-        }
-
-        return result;
     }
 
     [Pure]

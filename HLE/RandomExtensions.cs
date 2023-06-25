@@ -88,12 +88,12 @@ public static class RandomExtensions
             return string.Empty;
         }
 
-        string result = StringHelper.FastAllocateString(length, out Span<char> span);
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span)), length << 1);
-        random.NextBytes(bytes);
+        string result = StringHelper.FastAllocateString(length, out Span<char> resultChars);
+        Span<byte> resultBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(resultChars)), length << 1);
+        random.NextBytes(resultBytes);
         for (int i = 0; i < length; i++)
         {
-            span[i] = NumberHelper.BringNumberIntoRange(span[i], minChar, maxChar);
+            resultChars[i] = NumberHelper.BringNumberIntoRange(resultChars[i], minChar, maxChar);
         }
 
         return result;

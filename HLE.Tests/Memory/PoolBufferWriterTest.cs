@@ -13,7 +13,7 @@ public class PoolBufferWriterTest
         using PoolBufferWriter<char> writer = new();
         "hello".CopyTo(writer.GetSpan(5));
         writer.Advance(5);
-        Assert.AreEqual(5, writer.Length);
+        Assert.AreEqual(5, writer.Count);
         Assert.IsTrue(writer.WrittenSpan is "hello");
     }
 
@@ -23,7 +23,7 @@ public class PoolBufferWriterTest
         using PoolBufferWriter<char> writer = new();
         "hello".CopyTo(writer.GetMemory(5).Span);
         writer.Advance(5);
-        Assert.AreEqual(5, writer.Length);
+        Assert.AreEqual(5, writer.Count);
         Assert.IsTrue(writer.WrittenSpan is "hello");
     }
 
@@ -37,7 +37,7 @@ public class PoolBufferWriterTest
             writer.Advance(5);
         }
 
-        Assert.AreEqual(5000, writer.Length);
+        Assert.AreEqual(5000, writer.Count);
         Assert.IsTrue(writer.WrittenSpan.StartsWith("hello"));
         Assert.IsTrue(writer.WrittenSpan.EndsWith("hello"));
     }
@@ -53,7 +53,7 @@ public class PoolBufferWriterTest
         }
 
         writer.Clear();
-        Assert.IsTrue(writer.Length == 0);
+        Assert.IsTrue(writer.Count == 0);
         Assert.IsTrue(writer.WrittenSpan is "");
     }
 
@@ -73,6 +73,6 @@ public class PoolBufferWriterTest
             writer.Advance(str.Length);
         }
 
-        Assert.IsTrue(writer.Length > 0);
+        Assert.IsTrue(writer.Count > 0);
     }
 }

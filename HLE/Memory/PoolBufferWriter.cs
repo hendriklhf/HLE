@@ -23,23 +23,21 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
-    public Span<T> WrittenSpan => _buffer[..Length];
+    public Span<T> WrittenSpan => _buffer[..Count];
 
     /// <summary>
     /// A <see cref="Memory{T}"/> view over the written elements.
     /// </summary>
-    public Memory<T> WrittenMemory => _buffer.Memory[..Length];
+    public Memory<T> WrittenMemory => _buffer.Memory[..Count];
 
     /// <summary>
     /// The amount of written elements.
     /// </summary>
-    public int Length { get; private set; }
-
-    int ICountable.Count => Length;
+    public int Count { get; private set; }
 
     public int Capacity => _buffer.Length;
 
-    int ICollection<T>.Count => Length;
+    int ICollection<T>.Count => Count;
 
     bool ICollection<T>.IsReadOnly => false;
 
@@ -71,21 +69,21 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     /// <inheritdoc/>
     public void Advance(int count)
     {
-        Length += count;
+        Count += count;
     }
 
     /// <inheritdoc/>
     public Memory<T> GetMemory(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return _buffer.Memory[Length..];
+        return _buffer.Memory[Count..];
     }
 
     /// <inheritdoc/>
     public Span<T> GetSpan(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return _buffer[Length..];
+        return _buffer[Count..];
     }
 
     /// <summary>
@@ -101,7 +99,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
 
     public void Clear()
     {
-        Length = 0;
+        Count = 0;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
             _buffer.Span.Clear();
@@ -128,8 +126,8 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     [Pure]
     public List<T> ToList()
     {
-        List<T> result = new(Length);
-        CollectionsMarshal.SetCount(result, Length);
+        List<T> result = new(Count);
+        CollectionsMarshal.SetCount(result, Count);
         Span<T> resultSpan = CollectionsMarshal.AsSpan(result);
         CopyTo(resultSpan);
         return result;
@@ -146,7 +144,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
             sizeHint = 1;
         }
 
-        int freeSpace = Capacity - Length;
+        int freeSpace = Capacity - Count;
         if (freeSpace >= sizeHint)
         {
             return;
@@ -239,7 +237,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     [Pure]
     public bool Equals(PoolBufferWriter<T>? other)
     {
-        return ReferenceEquals(this, other) || Length == other?.Length && _buffer.Equals(other._buffer);
+        return ReferenceEquals(this, other) || Count == other?.Count && _buffer.Equals(other._buffer);
     }
 
     [Pure]
@@ -260,19 +258,19 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
         if (typeof(char) == typeof(T))
         {
             ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.Reference);
-            ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref charsReference, Length);
+            ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref charsReference, Count);
             return new(chars);
         }
 
         Type thisType = typeof(PoolBufferWriter<T>);
         Type genericType = typeof(T);
-        return $"{thisType.Name}.{nameof(PoolBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Length}]";
+        return $"{thisType.Name}.{nameof(PoolBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Count}]";
     }
 
     public IEnumerator<T> GetEnumerator()
     {
         RentedArray<T> buffer = _buffer;
-        int length = Length;
+        int length = Count;
         for (int i = 0; i < length; i++)
         {
             yield return buffer[i];

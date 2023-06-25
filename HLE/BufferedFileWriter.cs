@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -17,7 +18,7 @@ public readonly struct BufferedFileWriter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void WriteBytes(ReadOnlySpan<byte> fileBytes, bool append)
+    private void WriteBytes(ReadOnlySpan<byte> fileBytes, [ConstantExpected] bool append)
     {
         using FileStream fileStream = File.OpenWrite(_filePath);
         if (!append)
@@ -34,7 +35,7 @@ public readonly struct BufferedFileWriter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes, bool append)
+    private async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes, [ConstantExpected] bool append)
     {
         await using FileStream fileStream = File.OpenWrite(_filePath);
         if (!append)
@@ -51,7 +52,7 @@ public readonly struct BufferedFileWriter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding, bool append)
+    private void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding, [ConstantExpected] bool append)
     {
         int bytesWritten;
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
@@ -69,7 +70,7 @@ public readonly struct BufferedFileWriter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding, bool append)
+    private async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding, [ConstantExpected] bool append)
     {
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
         using RentedArray<byte> byteBuffer = new(byteCount);

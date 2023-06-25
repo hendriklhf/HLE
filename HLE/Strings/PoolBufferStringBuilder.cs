@@ -46,7 +46,6 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     private RentedArray<char> _buffer = RentedArray<char>.Empty;
 
     public const int DefaultBufferSize = 32;
-    private const int _minimumGrowth = 64;
 
     public static PoolBufferStringBuilder Empty => new(RentedArray<char>.Empty);
 
@@ -71,15 +70,11 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void GrowBuffer(int size = _minimumGrowth)
+    private void GrowBuffer()
     {
-        if (size < _minimumGrowth)
-        {
-            size = _minimumGrowth;
-        }
-
-        RentedArray<char> newBuffer = new(_buffer.Length + size);
-        WrittenSpan.CopyTo(newBuffer);
+        RentedArray<char> newBuffer = new(_buffer.Length << 1);
+        Debug.Assert(newBuffer.Length > _buffer.Length);
+        MemoryHelper.CopyUnsafe(_buffer.Span, newBuffer.Span);
         _buffer.Dispose();
         _buffer = newBuffer;
     }
@@ -95,7 +90,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     {
         if (FreeBufferSize < span.Length)
         {
-            GrowBuffer(span.Length);
+            GrowBuffer();
         }
 
         span.CopyTo(FreeBufferSpan);
@@ -162,6 +157,18 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Append(Int128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        Append<Int128, IFormatProvider>(value, format, formatProvider);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Append(UInt128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    {
+        Append<UInt128, IFormatProvider>(value, format, formatProvider);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
     {
         Append<float, IFormatProvider>(value, format, formatProvider);
@@ -191,14 +198,21 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
         Append<TimeSpan, IFormatProvider>(timeSpan, format, formatProvider);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default)
         where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
+        const int maximumFormattingTries = 10;
+        int countOfFailedTries = 0;
         while (true)
         {
+            if (countOfFailedTries == maximumFormattingTries)
+            {
+                throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
+            }
+
             if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, formatProvider))
             {
+                countOfFailedTries++;
                 GrowBuffer();
                 continue;
             }

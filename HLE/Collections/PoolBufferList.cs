@@ -27,7 +27,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
 
     public Span<T> this[Range range] => _bufferWriter.WrittenSpan[range];
 
-    public int Count => _bufferWriter.Length;
+    public int Count => _bufferWriter.Count;
 
     public int Capacity => _bufferWriter.Capacity;
 
@@ -234,7 +234,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (int i = 0; i < _bufferWriter.Length; i++)
+        for (int i = 0; i < _bufferWriter.Count; i++)
         {
             yield return _bufferWriter.WrittenSpan[i];
         }

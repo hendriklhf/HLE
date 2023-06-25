@@ -76,19 +76,27 @@ public static unsafe class MemoryHelper
         return result;
     }
 
+    /// <inheritdoc cref="AsStringDangerous(ReadOnlySpan{char})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string AsStringDangerous(this Span<char> span)
     {
         return AsStringDangerous((ReadOnlySpan<char>)span);
     }
 
+    /// <summary>
+    /// Converts a <see cref="ReadOnlySpan{T}"/> back to a <see cref="string"/>.
+    /// The caller has to be sure that the <see cref="ReadOnlySpan{T}"/> was definitely a <see cref="string"/>,
+    /// otherwise this method is potentially dangerous.
+    /// </summary>
+    /// <param name="span">The <see cref="ReadOnlySpan{T}"/> that will be converted to a <see cref="string"/>.</param>
+    /// <returns>The <see cref="ReadOnlySpan{T}"/> as a <see cref="string"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string AsStringDangerous(this ReadOnlySpan<char> span)
     {
         ref char charsReference = ref MemoryMarshal.GetReference(span);
         ref byte charsAsBytesReference = ref Unsafe.As<char, byte>(ref charsReference);
         ref byte stringDataReference = ref Unsafe.Subtract(ref charsAsBytesReference, sizeof(nuint) + sizeof(int));
-        return GetReferenceFromRawDataPointer<string, byte>(ref stringDataReference)!;
+        return GetReferenceFromRawDataPointer<byte, string>(ref stringDataReference)!;
     }
 
     [Pure]
@@ -100,7 +108,7 @@ public static unsafe class MemoryHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TValue? GetReferenceFromRawDataPointer<TValue, TRef>(ref TRef reference) where TValue : class?
+    public static TValue? GetReferenceFromRawDataPointer<TRef, TValue>(ref TRef reference) where TValue : class?
     {
         TValue* pointer = (TValue*)Unsafe.AsPointer(ref reference);
         return GetReferenceFromRawDataPointer<TValue>((nuint)pointer);
@@ -131,14 +139,7 @@ public static unsafe class MemoryHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBytes<TLeft, TRight>(TLeft left, TRight right) where TLeft : struct where TRight : struct
     {
-        if (sizeof(TLeft) != sizeof(TRight))
-        {
-            return false;
-        }
-
-        ReadOnlySpan<byte> leftBytes = GetStructBytes(ref left);
-        ReadOnlySpan<byte> rightBytes = GetStructBytes(ref right);
-        return leftBytes.SequenceEqual(rightBytes);
+        return EqualsBytes(ref left, ref right);
     }
 
     [Pure]
@@ -170,5 +171,36 @@ public static unsafe class MemoryHelper
         ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
 
         Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * source.Length));
+    }
+
+    /// <summary>
+    /// Returns the <see cref="Span{T}"/> that has been passed in. The method can be used to avoid a compiler error,
+    /// but comes at the cost that the caller has to guarantee the safety of the code by themself.<br/>
+    /// For example, this code produces the compiler error:
+    /// <code>
+    /// Span&lt;T&gt; span = Span&lt;T&gt;.Empty;
+    /// if (condition)
+    /// {
+    ///     span = stackalloc int[50]; // CS8353: A result of a 'stackalloc' expression cannot be used in this context because it may be exposed outside of the containing method
+    /// }
+    /// </code>
+    /// The error can be avoided by using this method:
+    /// <code>
+    /// Span&lt;T&gt; span = Span&lt;T&gt;.Empty;
+    /// if (condition)
+    /// {
+    ///     span = MemoryHelper.ReturnStackAlloced(stackalloc int[50]);
+    /// }
+    /// </code>
+    /// </summary>
+    /// <param name="span">The <see cref="Span{T}"/> that will be returned.</param>
+    /// <typeparam name="T">The type of elements in the <see cref="Span{T}"/>.</typeparam>
+    /// <returns>The <see cref="Span{T}"/> that has been passed in.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<T> ReturnStackAlloced<T>(scoped Span<T> span)
+    {
+#pragma warning disable CS9080
+        return span;
+#pragma warning restore CS9080
     }
 }

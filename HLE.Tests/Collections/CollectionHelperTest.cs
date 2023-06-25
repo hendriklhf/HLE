@@ -66,46 +66,6 @@ public class CollectionHelperTest
     }
 
     [TestMethod]
-    public void SplitTest()
-    {
-        string[] arr =
-        {
-            ".",
-            ".",
-            "A",
-            "B",
-            "C",
-            ".",
-            "D",
-            ".",
-            ".",
-            "E",
-            "F",
-            "G",
-            "H",
-            ".",
-            "I",
-            "J",
-            ".",
-            "."
-        };
-
-        var split = arr.Split(".");
-        Assert.AreEqual(4, split.Length);
-        byte[] lengths =
-        {
-            3,
-            1,
-            4,
-            2
-        };
-        for (int i = 0; i < split.Length; i++)
-        {
-            Assert.AreEqual(lengths[i], split[i].Length);
-        }
-    }
-
-    [TestMethod]
     public void IndicesOfTest()
     {
         const string str = "test string";

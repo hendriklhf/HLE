@@ -8,32 +8,6 @@ namespace HLE.Tests.Numerics;
 public class NumberHelperTest
 {
     [TestMethod]
-    public void InsertThousandsSeparatorTest()
-    {
-        const int number1 = 1234567890;
-        Assert.AreEqual("1.234.567.890", NumberHelper.InsertThousandSeparators(number1));
-        const int number2 = 123456789;
-        Assert.AreEqual("123.456.789", NumberHelper.InsertThousandSeparators(number2));
-        const int number3 = 12345678;
-        Assert.AreEqual("12.345.678", NumberHelper.InsertThousandSeparators(number3));
-        const int number4 = 1234567;
-        Assert.AreEqual("1.234.567", NumberHelper.InsertThousandSeparators(number4));
-        const int number5 = 123;
-        Assert.AreEqual("123", NumberHelper.InsertThousandSeparators(number5));
-
-        const int nnumber1 = -1234567890;
-        Assert.AreEqual("-1.234.567.890", NumberHelper.InsertThousandSeparators(nnumber1));
-        const int nnumber2 = -123456789;
-        Assert.AreEqual("-123.456.789", NumberHelper.InsertThousandSeparators(nnumber2));
-        const int nnumber3 = -12345678;
-        Assert.AreEqual("-12.345.678", NumberHelper.InsertThousandSeparators(nnumber3));
-        const int nnumber4 = -1234567;
-        Assert.AreEqual("-1.234.567", NumberHelper.InsertThousandSeparators(nnumber4));
-        const int nnumber5 = -123;
-        Assert.AreEqual("-123", NumberHelper.InsertThousandSeparators(nnumber5));
-    }
-
-    [TestMethod]
     public void GetNumberLengthTest()
     {
         for (int i = 0; i <= 10_000_000; i++)

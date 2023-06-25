@@ -27,9 +27,9 @@ public static class StringHelper
     /// </summary>
     public const string AntipingChar = "\uDB40\uDC00";
 
-    private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+    public const string RegexMetaChars = "\t\n\f\r #$()*+.?[\\^{|";
 
-    private const string _regexMetaChars = "\t\n\f\r #$()*+.?[\\^{|";
+    private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -346,7 +346,7 @@ public static class StringHelper
     {
         ValueStringBuilder builder = new(escapedInput);
 
-        ReadOnlySpan<char> regexMetaChars = _regexMetaChars;
+        ReadOnlySpan<char> regexMetaChars = RegexMetaChars;
         int indexOfMetaChar = input.IndexOfAny(regexMetaChars);
         if (indexOfMetaChar < 0)
         {

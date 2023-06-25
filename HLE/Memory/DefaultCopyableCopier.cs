@@ -22,25 +22,24 @@ internal readonly ref struct DefaultCopyableCopier<T>
             CollectionsMarshal.SetCount(destination, _source.Length + offset);
         }
 
-        Span<T> destinationSpan = CollectionsMarshal.AsSpan(destination)[offset..];
+        Span<T> destinationSpan = CollectionsMarshal.AsSpan(destination);
         Debug.Assert(destinationSpan.Length >= _source.Length, "destinationSpan.Length >= _source.Length");
-        CopyTo(destinationSpan);
+        CopyTo(destinationSpan[offset..]);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        ref T destinationReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(destination), offset);
-        CopyTo(ref destinationReference);
+        CopyTo(destination.AsSpan(offset));
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination.Span));
+        CopyTo(destination.Span);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        CopyTo(ref MemoryMarshal.GetReference(destination));
+        _source.CopyTo(destination);
     }
 
     public unsafe void CopyTo(ref T destination)

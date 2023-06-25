@@ -10,55 +10,6 @@ namespace HLE.Numerics;
 public static class NumberHelper
 {
     [Pure]
-    public static string InsertThousandSeparators<T>(T number, char separator = '.') where T : INumber<T>
-    {
-        Span<char> resultBuffer = stackalloc char[30];
-        int length = InsertThousandSeparators(number, separator, resultBuffer);
-        return new(resultBuffer[..length]);
-    }
-
-    public static int InsertThousandSeparators<T>(T number, char separator, Span<char> resultBuffer) where T : INumber<T>
-    {
-        Span<byte> digits = stackalloc byte[30];
-        int digitsLength = GetDigits(number, digits);
-
-        bool isNegative = number < T.Zero;
-        int isNegativeAsByte = Unsafe.As<bool, byte>(ref isNegative);
-
-        bool isDivisibleBy3 = digitsLength % 3 == 0;
-        int isDivisibleBy3AsByte = Unsafe.As<bool, byte>(ref isDivisibleBy3);
-
-        int countOfDotsInNumber = (digitsLength / 3) - isDivisibleBy3AsByte;
-        int totalNumberLength = digitsLength + countOfDotsInNumber;
-        int resultLength = 0;
-        int digitIndex = digitsLength - 1;
-        int writeIndex = totalNumberLength + isNegativeAsByte - 1;
-        int writtenSeparatorCount = 0;
-        while (resultLength < totalNumberLength)
-        {
-            resultBuffer[writeIndex--] = DigitToChar(digits[digitIndex--]);
-            resultLength++;
-
-            bool needsToWriteSeparator = resultLength > 0 && resultLength + 1 < totalNumberLength && (resultLength - writtenSeparatorCount) % 3 == 0;
-            if (!needsToWriteSeparator)
-            {
-                continue;
-            }
-
-            resultBuffer[writeIndex--] = separator;
-            writtenSeparatorCount++;
-            resultLength++;
-        }
-
-        if (isNegative)
-        {
-            resultBuffer[0] = '-';
-        }
-
-        return resultLength + isNegativeAsByte;
-    }
-
-    [Pure]
     public static int GetNumberLength<T>(T number) where T : INumber<T>
     {
         return number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(Math.Abs(double.CreateTruncating(number))) + 1);
@@ -67,7 +18,7 @@ public static class NumberHelper
     [Pure]
     public static byte[] GetDigits<T>(T number) where T : INumber<T>
     {
-        Span<byte> digits = stackalloc byte[30];
+        Span<byte> digits = stackalloc byte[50];
         int length = GetDigits(number, digits);
         return digits[..length].ToArray();
     }
