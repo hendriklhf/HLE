@@ -57,6 +57,7 @@ public static class StringManipulations
         ToLower(span.AsMutableSpan(), cultureInfo);
     }
 
+    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToLower(Span<char> span, CultureInfo? cultureInfo = null)
     {
@@ -88,6 +89,7 @@ public static class StringManipulations
         ToUpper(span.AsMutableSpan(), cultureInfo);
     }
 
+    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToUpper(Span<char> span, CultureInfo? cultureInfo = null)
     {

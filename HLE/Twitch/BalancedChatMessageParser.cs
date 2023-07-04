@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
 
@@ -106,7 +105,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(BalancedChatMessageParser? left, BalancedChatMessageParser? right)

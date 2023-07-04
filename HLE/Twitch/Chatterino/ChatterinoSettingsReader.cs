@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -12,9 +13,9 @@ namespace HLE.Twitch.Chatterino;
 /// Reads settings of the application <a href="https://www.chatterino.com">Chatterino</a>.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<ChatterinoSettingsReader>
+public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsReader>
 {
-    private readonly PoolBufferWriter<byte> _windowLayoutFileContentWriter = new(20_000);
+    private readonly byte[] _windowLayoutFileContent;
     private string[]? _channels;
 
     public ChatterinoSettingsReader()
@@ -23,19 +24,10 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
         pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
         string windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
 
+        using PoolBufferWriter<byte> fileContentWriter = new(20_000);
         BufferedFileReader fileReader = new(windowLayoutPath);
-        fileReader.ReadBytes(_windowLayoutFileContentWriter, 20_000);
-    }
-
-    ~ChatterinoSettingsReader()
-    {
-        _windowLayoutFileContentWriter.Dispose();
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-        _windowLayoutFileContentWriter.Dispose();
+        fileReader.ReadBytes(fileContentWriter, 20_000);
+        _windowLayoutFileContent = fileContentWriter.ToArray();
     }
 
     /// <summary>
@@ -50,7 +42,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
             return _channels;
         }
 
-        Utf8JsonReader jsonReader = new(_windowLayoutFileContentWriter.WrittenSpan);
+        Utf8JsonReader jsonReader = new(_windowLayoutFileContent);
         using PoolBufferList<string> channels = new(20);
 
         ReadOnlySpan<byte> dataProperty = "data"u8;
@@ -111,7 +103,7 @@ public sealed class ChatterinoSettingsReader : IDisposable, IEquatable<Chatterin
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right)

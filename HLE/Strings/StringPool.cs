@@ -13,7 +13,7 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerable<string>
+public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>
 {
     private readonly Bucket[] _buckets;
 
@@ -39,13 +39,20 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
         }
     }
 
-    public void Dispose()
+    public string GetOrAdd(string str)
     {
-        for (int i = 0; i < _buckets.Length; i++)
+        if (str.Length == 0)
         {
-            _buckets[i].Clear();
-            _buckets[i].Dispose();
+            return string.Empty;
         }
+
+        Bucket bucket = GetBucket(str);
+        if (!bucket.Contains(str))
+        {
+            bucket.Add(str);
+        }
+
+        return str;
     }
 
     public string GetOrAdd(ReadOnlySpan<char> span)
@@ -53,6 +60,7 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
         return span.Length == 0 ? string.Empty : GetBucket(span).GetOrAdd(span);
     }
 
+    [SkipLocalsInit]
     public string GetOrAdd(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
         if (bytes.Length == 0)
@@ -80,7 +88,17 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
             return;
         }
 
-        GetBucket(value).Add(value);
+        Bucket bucket = GetBucket(value);
+        if (!bucket.Contains(value))
+        {
+            bucket.Add(value);
+        }
+    }
+
+    public bool TryGet(string str, [MaybeNullWhen(false)] out string value)
+    {
+        value = str;
+        return true;
     }
 
     public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
@@ -94,6 +112,7 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
         return true;
     }
 
+    [SkipLocalsInit]
     public bool TryGet(ReadOnlySpan<byte> bytes, Encoding encoding, [MaybeNullWhen(false)] out string value)
     {
         if (bytes.Length == 0)
@@ -129,6 +148,7 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
     }
 
     [Pure]
+    [SkipLocalsInit]
     public bool Contains(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
         if (bytes.Length == 0)
@@ -152,21 +172,10 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> span)
     {
-        int hash = GetSimpleStringHash(span);
-        int index = (int)(Unsafe.As<int, uint>(ref hash) % _buckets.Length);
+        int hash = SimpleStringHasher.Hash(span);
+        int index = (int)((uint)hash % _buckets.Length);
         Debug.Assert(index >= 0 && index < _buckets.Length);
         return _buckets[index];
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetSimpleStringHash(ReadOnlySpan<char> chars)
-    {
-        Debug.Assert(chars.Length > 0);
-        int length = chars.Length;
-        ref char firstChar = ref MemoryMarshal.GetReference(chars);
-        char middleChar = Unsafe.Add(ref firstChar, length >> 1);
-        char lastChar = Unsafe.Add(ref firstChar, length - 1);
-        return ((firstChar + middleChar + lastChar) * length) ^ ~length;
     }
 
     public IEnumerator<string> GetEnumerator()
@@ -200,7 +209,7 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
     [Pure]
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(StringPool? left, StringPool? right)
@@ -213,7 +222,7 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
         return !(left == right);
     }
 
-    private readonly struct Bucket : IDisposable, IEnumerable<string>
+    private readonly struct Bucket : IEnumerable<string>
     {
         private readonly string?[] _strings;
         private readonly SemaphoreSlim _stringsLock = new(1);
@@ -221,11 +230,6 @@ public sealed class StringPool : IDisposable, IEquatable<StringPool>, IEnumerabl
         public Bucket(int bucketCapacity = _defaultBucketCapacity)
         {
             _strings = new string[bucketCapacity];
-        }
-
-        public void Dispose()
-        {
-            _stringsLock.Dispose();
         }
 
         public void Clear()

@@ -1,47 +1,22 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Threading;
-using System.Threading.Tasks;
-using HLE.Memory;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Collections;
 
-public sealed class Pool<T> : IDisposable, IAsyncDisposable, IEquatable<Pool<T>>
+public sealed class Pool<T> : IEquatable<Pool<T>>
 {
-    public static Pool<T> Shared => _shared ?? throw new InvalidOperationException($"The shared instance has not been initialized yet. Use the {nameof(InitializeSharedInstance)} method to initialize the instance.");
-
     private readonly ConcurrentStack<T> _rentableItems = new();
-    private readonly HashSet<T> _rentedItems;
-    private readonly SemaphoreSlim _rentedItemsLock = new(1);
     private readonly Func<T> _itemFactory;
-    private readonly Action<T>? _resetItem;
+    private readonly Action<T>? _returnAction;
 
-    private static Pool<T>? _shared;
+    private const int _defaultMaximumPoolCapacity = 32;
 
-    public Pool(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
+    public Pool(Func<T> itemFactory, Action<T>? returnAction = null)
     {
         _itemFactory = itemFactory;
-        _rentedItems = new(equalityComparer);
-        _resetItem = onReturn;
-    }
-
-    public static void InitializeSharedInstance(Func<T> itemFactory, IEqualityComparer<T>? equalityComparer = null, Action<T>? onReturn = null)
-    {
-        _shared = new(itemFactory, equalityComparer, onReturn);
-    }
-
-    public void Dispose()
-    {
-        Clear();
-        _rentedItemsLock.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await ClearAsync();
-        _rentedItemsLock.Dispose();
+        _returnAction = returnAction;
     }
 
     [Pure]
@@ -52,104 +27,23 @@ public sealed class Pool<T> : IDisposable, IAsyncDisposable, IEquatable<Pool<T>>
             item = _itemFactory();
         }
 
-        _rentedItemsLock.Wait();
-        try
-        {
-            _rentedItems.Add(item);
-        }
-        finally
-        {
-            _rentedItemsLock.Release();
-        }
-
         return item;
     }
 
     public void Return(T item)
     {
-        _rentedItemsLock.Wait();
-        try
+        if (_rentableItems.Count >= _defaultMaximumPoolCapacity)
         {
-            if (!_rentedItems.Remove(item))
-            {
-                return;
-            }
-        }
-        finally
-        {
-            _rentedItemsLock.Release();
+            return;
         }
 
-        _resetItem?.Invoke(item);
-        _rentableItems.Push(item);
-    }
-
-    [Pure]
-    public async Task<T> RentAsync()
-    {
-        if (!_rentableItems.TryPop(out T? item))
-        {
-            item = _itemFactory();
-        }
-
-        await _rentedItemsLock.WaitAsync();
-        try
-        {
-            _rentedItems.Add(item);
-        }
-        finally
-        {
-            _rentedItemsLock.Release();
-        }
-
-        return item;
-    }
-
-    public async Task ReturnAsync(T item)
-    {
-        await _rentedItemsLock.WaitAsync();
-        try
-        {
-            if (!_rentedItems.Remove(item))
-            {
-                return;
-            }
-        }
-        finally
-        {
-            _rentedItemsLock.Release();
-        }
-
-        _resetItem?.Invoke(item);
+        _returnAction?.Invoke(item);
         _rentableItems.Push(item);
     }
 
     public void Clear()
     {
-        _rentedItemsLock.Wait();
-        try
-        {
-            _rentableItems.Clear();
-            _rentedItems.Clear();
-        }
-        finally
-        {
-            _rentedItemsLock.Release();
-        }
-    }
-
-    public async Task ClearAsync()
-    {
-        await _rentedItemsLock.WaitAsync();
-        try
-        {
-            _rentableItems.Clear();
-            _rentedItems.Clear();
-        }
-        finally
-        {
-            _rentedItemsLock.Release();
-        }
+        _rentableItems.Clear();
     }
 
     public bool Equals(Pool<T>? other)
@@ -164,7 +58,7 @@ public sealed class Pool<T> : IDisposable, IAsyncDisposable, IEquatable<Pool<T>>
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(Pool<T>? left, Pool<T>? right)

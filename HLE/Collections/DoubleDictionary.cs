@@ -192,6 +192,14 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
         _values.EnsureCapacity(capacity);
     }
 
+    public TValue[] ToArray()
+    {
+        TValue[] result = new TValue[Count];
+        _values.Values.TryEnumerateInto(result, out int writtenElementCount);
+        Debug.Assert(writtenElementCount == Count);
+        return result;
+    }
+
     public IEnumerator<TValue> GetEnumerator()
     {
         return Values.GetEnumerator();

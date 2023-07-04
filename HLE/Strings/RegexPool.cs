@@ -9,11 +9,10 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using HLE.Collections;
-using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<Regex>
+public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
 {
     private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
 
@@ -25,29 +24,30 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
     public RegexPool()
     {
         Span<Bucket> buckets = _buckets;
-        for (int i = 0; i < _defaultPoolCapacity; i++)
+        for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
-        }
-    }
-
-    public void Dispose()
-    {
-        ReadOnlySpan<Bucket> buckets = _buckets;
-        for (int i = 0; i < _defaultPoolCapacity; i++)
-        {
-            buckets[i].Clear();
-            buckets[i].Dispose();
         }
     }
 
     public void Clear()
     {
         ReadOnlySpan<Bucket> buckets = _buckets;
-        for (int i = 0; i < _defaultPoolCapacity; i++)
+        for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i].Clear();
         }
+    }
+
+    public Regex GetOrAdd(Regex regex)
+    {
+        Bucket bucket = GetBucket(regex);
+        if (!bucket.Contains(regex))
+        {
+            bucket.Add(regex);
+        }
+
+        return regex;
     }
 
     public Regex GetOrAdd([StringSyntax(StringSyntaxAttribute.Regex)] string pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
@@ -58,6 +58,17 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
         }
 
         return GetBucket(pattern, options, timeout).GetOrAdd(pattern, options, timeout);
+    }
+
+    public void Add(string pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
+    {
+        if (timeout == default)
+        {
+            timeout = Regex.InfiniteMatchTimeout;
+        }
+
+        Regex regex = new(pattern, options, timeout);
+        Add(regex);
     }
 
     public void Add(Regex regex)
@@ -78,6 +89,12 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
     {
         return GetBucket(pattern, options, timeout).TryGet(pattern, options, timeout, out regex);
+    }
+
+    [Pure]
+    public bool Contains(Regex regex)
+    {
+        return Contains(regex.ToString(), regex.Options, regex.MatchTimeout);
     }
 
     [Pure]
@@ -114,22 +131,11 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GetBucketIndex(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
-        int patternHash = GetSimpleStringHash(pattern);
+        int patternHash = SimpleStringHasher.Hash(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
-        int index = (int)(Unsafe.As<int, uint>(ref hash) % _buckets.Length);
+        int index = (int)((uint)hash % _buckets.Length);
         Debug.Assert(index >= 0 && index < _buckets.Length);
         return index;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetSimpleStringHash(ReadOnlySpan<char> chars)
-    {
-        Debug.Assert(chars.Length > 0);
-        int length = chars.Length;
-        ref char firstChar = ref MemoryMarshal.GetReference(chars);
-        char middleChar = Unsafe.Add(ref firstChar, length >> 1);
-        char lastChar = Unsafe.Add(ref firstChar, length - 1);
-        return ((firstChar + middleChar + lastChar) * length) ^ ~length;
     }
 
     [Pure]
@@ -147,7 +153,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
     [Pure]
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(RegexPool? left, RegexPool? right)
@@ -176,18 +182,13 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
         return GetEnumerator();
     }
 
-    private readonly struct Bucket : IDisposable, IEnumerable<Regex>
+    private readonly struct Bucket : IEnumerable<Regex>
     {
         private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];
         private readonly SemaphoreSlim _regexesLock = new(1);
 
         public Bucket()
         {
-        }
-
-        public void Dispose()
-        {
-            _regexesLock.Dispose();
         }
 
         public void Clear()
@@ -272,6 +273,12 @@ public sealed class RegexPool : IEquatable<RegexPool>, IDisposable, IEnumerable<
             {
                 _regexesLock.Release();
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(Regex regex)
+        {
+            return TryGet(regex.ToString(), regex.Options, regex.MatchTimeout, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

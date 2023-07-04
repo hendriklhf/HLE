@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
 
@@ -32,19 +31,14 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected const string _turboTag = "turbo";
     private protected const string _userIdTag = "user-id";
 
+    private const int _maximumWhitespacesNeededToHandle = 5;
+
     [Pure]
+    [SkipLocalsInit]
     public IChatMessage Parse(ReadOnlySpan<char> ircMessage)
     {
-        int whitespaceCount;
-        if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
-        {
-            using RentedArray<int> rentedIndicesOfWhitespacesBuffer = new(ircMessage.Length);
-            whitespaceCount = ircMessage.IndicesOf(' ', rentedIndicesOfWhitespacesBuffer);
-            return Parse(ircMessage, rentedIndicesOfWhitespacesBuffer[..whitespaceCount]);
-        }
-
-        Span<int> indicesOfWhitespacesBuffer = stackalloc int[ircMessage.Length];
-        whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer);
+        Span<int> indicesOfWhitespacesBuffer = stackalloc int[_maximumWhitespacesNeededToHandle];
+        int whitespaceCount = ParsingHelper.GetIndicesOfWhitespaces(ircMessage, ref MemoryMarshal.GetReference(indicesOfWhitespacesBuffer), _maximumWhitespacesNeededToHandle);
         return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
     }
 
@@ -52,21 +46,21 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     public abstract IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ReadOnlySpan<char> GetChannel(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
+    private protected static ReadOnlySpan<char> GetChannel(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespace[2] + 1)..indicesOfWhitespace[3]][1..];
+        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespaces[2] + 1)..indicesOfWhitespaces[3]][1..];
         return channel;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageTags GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespace)
+    private protected static ChatMessageTags GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        if (indicesOfWhitespace.Length < 5)
+        if (indicesOfWhitespaces.Length < 5)
         {
             return 0;
         }
 
-        ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespace[3] + 1)..indicesOfWhitespace[4]];
+        ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespaces[3] + 1)..indicesOfWhitespaces[4]];
         bool isAction = actionPrefix.SequenceEqual(_actionPrefix);
         int asByte = Unsafe.As<bool, byte>(ref isAction);
         return (ChatMessageTags)(asByte << 4);
@@ -109,7 +103,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         {
             int indexOfComma = value.IndexOf(',');
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
-            value = indexOfComma == -1 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
+            value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
             string name = StringPool.Shared.GetOrAdd(info[..slashIndex]);
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..]);
@@ -122,7 +116,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static Color GetColor(ReadOnlySpan<char> value)
     {
-        return value.Length == 0 ? Color.Empty : ParseHexColor(ref MemoryMarshal.GetReference(value[1..]));
+        return value.Length == 0 ? Color.Empty : ParseHexColor(ref Unsafe.Add(ref MemoryMarshal.GetReference(value), 1));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -192,13 +186,13 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
-    private static Color ParseHexColor(ref char number)
+    private static Color ParseHexColor(ref char numberReference)
     {
         const byte charAAndZeroDiff = _upperCaseAMinus10 - _charZero;
 
-        char firstChar = Unsafe.Add(ref number, 0);
-        char thirdChar = Unsafe.Add(ref number, 2);
-        char fifthChar = Unsafe.Add(ref number, 4);
+        char firstChar = Unsafe.Add(ref numberReference, 0);
+        char thirdChar = Unsafe.Add(ref numberReference, 2);
+        char fifthChar = Unsafe.Add(ref numberReference, 4);
 
         bool isFirstCharHexLetter = IsHexLetter(firstChar);
         bool isThirdCharHexLetter = IsHexLetter(thirdChar);
@@ -212,9 +206,9 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         green <<= 4;
         blue <<= 4;
 
-        char secondChar = Unsafe.Add(ref number, 1);
-        char forthChar = Unsafe.Add(ref number, 3);
-        char sixthChar = Unsafe.Add(ref number, 5);
+        char secondChar = Unsafe.Add(ref numberReference, 1);
+        char forthChar = Unsafe.Add(ref numberReference, 3);
+        char sixthChar = Unsafe.Add(ref numberReference, 5);
 
         bool isSecondCharHexLetter = IsHexLetter(secondChar);
         bool isForthCharHexLetter = IsHexLetter(forthChar);
@@ -245,7 +239,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(ChatMessageParser? left, ChatMessageParser? right)

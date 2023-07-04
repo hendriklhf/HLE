@@ -8,20 +8,20 @@ using HLE.Collections;
 
 namespace HLE.Memory;
 
-public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IRefIndexAccessible<T>
-    where T : unmanaged
+public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IRefIndexAccessible<T>, IReadOnlyCollection<T>
+    where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if (index < 0 || index >= Length)
+            if ((uint)index >= (uint)Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(index));
+                throw new IndexOutOfRangeException($"The index {index} is out of range for Length {Length}.");
             }
 
-            return ref _buffer[index];
+            return ref _pointer[index];
         }
     }
 
@@ -31,12 +31,12 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         get
         {
             int actualIndex = index.GetOffset(Length);
-            if (actualIndex < 0 || actualIndex >= Length)
+            if ((uint)actualIndex >= (uint)Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(index));
+                throw new IndexOutOfRangeException($"The index {actualIndex} is out of range for Length {Length}.");
             }
 
-            return ref _buffer[actualIndex];
+            return ref _pointer[actualIndex];
         }
     }
 
@@ -48,18 +48,18 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
             int start = range.Start.GetOffset(Length);
             int length = range.End.GetOffset(Length) - start;
 
-            if (start < 0 || start >= Length || length >= Length - start)
+            if ((uint)start >= (uint)Length || length >= Length - start)
             {
-                throw new ArgumentOutOfRangeException(nameof(range));
+                throw new IndexOutOfRangeException();
             }
 
-            return new(_buffer + start, length);
+            return new(_pointer + start, length);
         }
     }
 
-    public Span<T> Span => new(_buffer, Length);
-
     public int Length { get; }
+
+    int IReadOnlyCollection<T>.Count => Length;
 
     int ICollection<T>.Count => Length;
 
@@ -67,67 +67,79 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     bool ICollection<T>.IsReadOnly => false;
 
-    private readonly T* _buffer;
+    internal readonly T* _pointer;
 
     public static NativeMemory<T> Empty => new();
 
     public NativeMemory()
     {
-        _buffer = null;
+        _pointer = null;
         Length = 0;
     }
 
     public NativeMemory(int length)
     {
-        _buffer = (T*)NativeMemory.AllocZeroed((nuint)(sizeof(T) * length));
+        _pointer = (T*)NativeMemory.AllocZeroed((nuint)(sizeof(T) * length));
         Length = length;
+    }
+
+    public NativeMemory(int length, bool clearMemory)
+    {
+        _pointer = clearMemory ? (T*)NativeMemory.AllocZeroed((nuint)(sizeof(T) * length)) : (T*)NativeMemory.Alloc((nuint)(sizeof(T) * length));
+        Length = length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Span<T> AsSpan()
+    {
+        return new(_pointer, Length);
     }
 
     public void Dispose()
     {
-        NativeMemory.Free(_buffer);
+        NativeMemory.Free(_pointer);
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(ref destination);
     }
 
     public void CopyTo(T* destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     [Pure]
     public T[] ToArray()
     {
-        return Span.ToArray();
+        return AsSpan().ToArray();
     }
 
     void ICollection<T>.Add(T item)
@@ -137,12 +149,12 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     public void Clear()
     {
-        NativeMemory.Clear(_buffer, (nuint)(Length * sizeof(T)));
+        AsSpan().Clear();
     }
 
     bool ICollection<T>.Contains(T item)
     {
-        throw new NotSupportedException();
+        return AsSpan().Contains(item);
     }
 
     bool ICollection<T>.Remove(T item)
@@ -155,7 +167,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         int length = Length;
         for (int i = 0; i < length; i++)
         {
-            yield return Span[i];
+            yield return AsSpan()[i];
         }
     }
 
@@ -168,7 +180,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
     {
         if (typeof(T) == typeof(char))
         {
-            return new((char*)_buffer, 0, Length);
+            return new((char*)_pointer, 0, Length);
         }
 
         Type thisType = typeof(NativeMemory<T>);
@@ -178,7 +190,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     public bool Equals(NativeMemory<T> other)
     {
-        return Length == other.Length && _buffer == other._buffer;
+        return Length == other.Length && _pointer == other._pointer;
     }
 
     public override bool Equals(object? obj)
@@ -188,7 +200,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     public override int GetHashCode()
     {
-        return HashCode.Combine((nuint)_buffer, Length);
+        return HashCode.Combine((nuint)_pointer, Length);
     }
 
     public static bool operator ==(NativeMemory<T> left, NativeMemory<T> right)
@@ -203,6 +215,6 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     public static implicit operator Span<T>(NativeMemory<T> nativeMemory)
     {
-        return nativeMemory.Span;
+        return nativeMemory.AsSpan();
     }
 }

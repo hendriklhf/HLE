@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
@@ -31,13 +32,15 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     }
 
     [Pure]
+    [SkipLocalsInit]
     public byte[]? Read(ReadOnlySpan<char> resourceName)
     {
         ValueStringBuilder pathBuilder = stackalloc char[1 + _assemblyName.Length + resourceName.Length];
         pathBuilder.Append(_assemblyName);
         pathBuilder.Append('.');
         pathBuilder.Append(resourceName);
-        return ReadResourceFromPath(StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan));
+        string resourcePath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
+        return ReadResourceFromPath(resourcePath);
     }
 
     private void ReadAllResources()
@@ -99,6 +102,6 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     [Pure]
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 }

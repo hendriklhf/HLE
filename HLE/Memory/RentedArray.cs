@@ -17,7 +17,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 [DebuggerDisplay("Length = {Array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IRefIndexAccessible<T>
+public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IRefIndexAccessible<T>, IReadOnlyCollection<T>
 {
     public ref T this[int index] => ref Span[index];
 
@@ -42,6 +42,8 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     int ICountable.Count => Length;
 
     int ICollection<T>.Count => Length;
+
+    int IReadOnlyCollection<T>.Count => Length;
 
     bool ICollection<T>.IsReadOnly => false;
 
@@ -74,37 +76,37 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(Span);
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(Span);
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(Span);
         copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(Span);
         copier.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(Span);
         copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopyableCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(Span);
         copier.CopyTo(destination);
     }
 

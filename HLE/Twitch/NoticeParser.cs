@@ -10,6 +10,7 @@ namespace HLE.Twitch;
 public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
 {
     [Pure]
+    [SkipLocalsInit]
     public Notice Parse(ReadOnlySpan<char> ircMessage)
     {
         int whitespaceCount;
@@ -26,6 +27,7 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
     }
 
     [Pure]
+    [SkipLocalsInit]
     public Notice Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         NoticeType type = NoticeType.Unknown;
@@ -82,7 +84,7 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(NoticeParser? left, NoticeParser? right)

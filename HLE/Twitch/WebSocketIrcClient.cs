@@ -183,7 +183,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private void PassAllLinesExceptLast(ref ReadOnlyMemory<char> receivedChars)
     {
         int indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
-        while (indexOfLineEnding > -1)
+        while (indexOfLineEnding >= 0)
         {
             ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
             ReceivedData receivedData = new(lineOfData.Span);
@@ -463,6 +463,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 }

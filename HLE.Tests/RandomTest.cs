@@ -30,7 +30,7 @@ public class RandomTest
         {
             string s = Random.Shared.NextString(strLength, (char)32, (char)127);
             Assert.AreEqual(strLength, s.Length);
-            Assert.IsTrue(s.All(c => c is >= (char)32 and < (char)127));
+            Assert.IsTrue(s.All(static c => c is >= (char)32 and < (char)127));
         }
     }
 
@@ -43,7 +43,7 @@ public class RandomTest
         {
             string s = Random.Shared.NextString(strLength, chars);
             Assert.AreEqual(strLength, s.Length);
-            Assert.IsTrue(s.All(c => chars.Contains(c)));
+            Assert.IsTrue(s.All(static c => chars.Contains(c)));
         }
     }
 

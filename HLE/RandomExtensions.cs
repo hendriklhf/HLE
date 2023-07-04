@@ -100,6 +100,7 @@ public static class RandomExtensions
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static string NextString(this Random random, int length, ReadOnlySpan<char> choices)
     {
         if (length <= 0)
@@ -149,10 +150,10 @@ public static class RandomExtensions
     }
 
     [Pure]
-    public static unsafe void NextStruct<T>(this Random random, out T result) where T : struct
+    public static void NextStruct<T>(this Random random, out T result) where T : struct
     {
         Unsafe.SkipInit(out result);
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref result), sizeof(T));
+        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
         random.NextBytes(bytes);
     }
 
@@ -167,6 +168,11 @@ public static class RandomExtensions
         random.NextBytes(span);
     }
 
+    public static void Fill<T>(this Random random, T[] array) where T : struct
+    {
+        random.Fill(array.AsSpan());
+    }
+
     public static void Fill<T>(this Random random, Span<T> span) where T : struct
     {
         random.Write(ref MemoryMarshal.GetReference(span), span.Length);
@@ -176,9 +182,7 @@ public static class RandomExtensions
     {
         if (!collection.TryGetSpan<T>(out Span<T> span))
         {
-            T[] array = collection.ToArray();
-            random.Shuffle(array);
-            return array;
+            span = collection.ToArray();
         }
 
         random.Shuffle(span);

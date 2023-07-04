@@ -7,14 +7,14 @@ namespace HLE.Memory;
 
 public static unsafe class MemoryHelper
 {
-    public static int MaxStackAllocSize { get; set; } = sizeof(nuint) >= sizeof(ulong) ? 10_000 : 2500;
+    public static int MaxStackAllocSize { get; set; } = sizeof(nuint) << (Environment.Is64BitProcess ? 10 : 9);
 
     /// <summary>
     /// Determines whether to use a stack or a heap allocation by passing a generic type and the element count.
     /// The default maximum stack allocation size is set to 10.000 bytes for 64-bit processes and to 2500 bytes for 32-bit processes.
     /// The default maximum can also be changed with the <see cref="MaxStackAllocSize"/> property.
     /// </summary>
-    /// <param name="elementCount">The amount of elements that will be multiplied by the type's size.</param>
+    /// <param name="elementCount">The amount of elements wanted to be stack allocated.</param>
     /// <typeparam name="T">The type of the <see langword="stackalloc"/>.</typeparam>
     /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
     [Pure]
@@ -137,6 +137,13 @@ public static unsafe class MemoryHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<byte> GetStructBytes<T>(T item) where T : struct
+    {
+        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBytes<TLeft, TRight>(TLeft left, TRight right) where TLeft : struct where TRight : struct
     {
         return EqualsBytes(ref left, ref right);
@@ -151,6 +158,18 @@ public static unsafe class MemoryHelper
             return false;
         }
 
+        switch (sizeof(TLeft))
+        {
+            case sizeof(byte):
+                return Unsafe.As<TLeft, byte>(ref left) == Unsafe.As<TRight, byte>(ref right);
+            case sizeof(short):
+                return Unsafe.As<TLeft, short>(ref left) == Unsafe.As<TRight, short>(ref right);
+            case sizeof(int):
+                return Unsafe.As<TLeft, int>(ref left) == Unsafe.As<TRight, int>(ref right);
+            case sizeof(long):
+                return Unsafe.As<TLeft, long>(ref left) == Unsafe.As<TRight, long>(ref right);
+        }
+
         if (Unsafe.AreSame(ref Unsafe.As<TLeft, byte>(ref left), ref Unsafe.As<TRight, byte>(ref right)))
         {
             return true;
@@ -161,6 +180,12 @@ public static unsafe class MemoryHelper
         return leftBytes.SequenceEqual(rightBytes);
     }
 
+    /// <summary>
+    /// Copies the <paramref name="source"/> to the <paramref name="destination"/> without checking if enough space is available, so the caller has to verify that it is safe.
+    /// </summary>
+    /// <param name="source">The items that will be copied.</param>
+    /// <param name="destination">The destination where the items will be copied to.</param>
+    /// <typeparam name="T">The type of the items that will be copied.</typeparam>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CopyUnsafe<T>(ReadOnlySpan<T> source, Span<T> destination)
     {
@@ -176,10 +201,12 @@ public static unsafe class MemoryHelper
     /// <summary>
     /// Returns the <see cref="Span{T}"/> that has been passed in. The method can be used to avoid a compiler error,
     /// but comes at the cost that the caller has to guarantee the safety of the code by themself.<br/>
-    /// For example, this code produces the compiler error:
+    /// </summary>
+    /// <example>
+    /// For example, this code produces a compiler error:
     /// <code>
     /// Span&lt;T&gt; span = Span&lt;T&gt;.Empty;
-    /// if (condition)
+    /// if (span.Length == 0)
     /// {
     ///     span = stackalloc int[50]; // CS8353: A result of a 'stackalloc' expression cannot be used in this context because it may be exposed outside of the containing method
     /// }
@@ -187,12 +214,12 @@ public static unsafe class MemoryHelper
     /// The error can be avoided by using this method:
     /// <code>
     /// Span&lt;T&gt; span = Span&lt;T&gt;.Empty;
-    /// if (condition)
+    /// if (span.Length == 0)
     /// {
     ///     span = MemoryHelper.ReturnStackAlloced(stackalloc int[50]);
     /// }
     /// </code>
-    /// </summary>
+    /// </example>
     /// <param name="span">The <see cref="Span{T}"/> that will be returned.</param>
     /// <typeparam name="T">The type of elements in the <see cref="Span{T}"/>.</typeparam>
     /// <returns>The <see cref="Span{T}"/> that has been passed in.</returns>

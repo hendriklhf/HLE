@@ -12,7 +12,8 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPoolBufferList<T>>, IDisposable, IIndexAccessible<T> where T : IEquatable<T>
+public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPoolBufferList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
+    where T : IEquatable<T>
 {
     public T this[int index]
     {
@@ -67,7 +68,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICount
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Memory<T> AsMemory()
+    internal Memory<T> AsMemory()
     {
         return _list.AsMemory();
     }
@@ -223,37 +224,37 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICount
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(AsSpan());
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(AsSpan());
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(AsSpan());
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(AsSpan());
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopyableCopier<T> copier = new(AsSpan());
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopyableCopier<T> copier = new(AsSpan());
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 

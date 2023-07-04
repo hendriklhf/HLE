@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
@@ -68,7 +69,17 @@ public readonly struct Color : IEquatable<Color>
 
     public override string ToString()
     {
-        return IsEmpty ? string.Empty : $"#{Red:X}{Green:X}{Blue:X}";
+        if (IsEmpty)
+        {
+            return string.Empty;
+        }
+
+        ValueStringBuilder builder = stackalloc char[7];
+        builder.Append('#');
+        builder.Append(Red, "X");
+        builder.Append(Green, "X");
+        builder.Append(Blue, "X");
+        return StringPool.Shared.GetOrAdd(builder.WrittenSpan);
     }
 
     public static bool operator ==(Color left, Color right)

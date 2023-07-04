@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
-using HLE.Collections.Concurrent;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
@@ -75,6 +75,11 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     public event EventHandler<IChatMessage>? OnChatMessageReceived;
 
     /// <summary>
+    /// Is invoked if a notice has been received.
+    /// </summary>
+    public event EventHandler<Notice>? OnNoticeReceived;
+
+    /// <summary>
     /// Is invoked if data is received from the chat server. If this event is subscribed to, the <see cref="ReceivedData"/> instance has to be manually disposed.
     /// Read more in the documentation of the <see cref="ReceivedData"/> class.
     /// </summary>
@@ -82,7 +87,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     private readonly WebSocketIrcClient _client;
     private readonly IrcHandler _ircHandler;
-    private readonly ConcurrentPoolBufferList<string> _ircChannels = new();
+    private readonly List<string> _ircChannels = new();
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
     private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
@@ -101,7 +106,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client = new(_anonymousUsername, OAuthToken.Empty, options);
         _ircHandler = new(options.ParsingMode);
         IsAnonymousLogin = true;
-        SetEvents();
+        SubscribeToEvents();
     }
 
     /// <summary>
@@ -117,16 +122,15 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client = new(username, oAuthToken, options);
         _ircHandler = new(options.ParsingMode);
         IsAnonymousLogin = false;
-        SetEvents();
+        SubscribeToEvents();
     }
 
     ~TwitchClient()
     {
         _client.Dispose();
-        _ircChannels.Dispose();
     }
 
-    private void SetEvents()
+    private void SubscribeToEvents()
     {
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
         _client.OnDisconnected += (_, e) => OnDisconnected?.Invoke(this, e);
@@ -138,7 +142,8 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
-        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(_ircChannels.AsMemory());
+        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+        _ircHandler.OnNoticeReceived += (_, e) => OnNoticeReceived?.Invoke(this, e);
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -237,7 +242,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        await ConnectAsync(_ircChannels.AsMemory());
+        await ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
     }
 
     private async Task ConnectAsync(ReadOnlyMemory<string> ircChannels)
@@ -374,7 +379,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (IsConnected)
         {
-            await LeaveChannelsAsync(_ircChannels.AsMemory());
+            await LeaveChannelsAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
         }
 
         Channels.Clear();
@@ -445,7 +450,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
             _client.CancelTasks();
             await Task.Delay(TimeSpan.FromSeconds(10));
-            await _client.ConnectAsync(_ircChannels.AsMemory());
+            await _client.ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
             await Task.Delay(TimeSpan.FromSeconds(5));
         }
         finally
@@ -454,6 +459,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         }
     }
 
+    [SkipLocalsInit]
     private static string FormatChannel(ReadOnlySpan<char> channel, bool withHashtag = true)
     {
         Span<char> result = stackalloc char[channel.Length + 1];
@@ -496,7 +502,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         GC.SuppressFinalize(this);
         _client.Dispose();
-        _ircChannels.Dispose();
     }
 
     public bool Equals(TwitchClient? other)
@@ -511,7 +516,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(TwitchClient? left, TwitchClient? right)

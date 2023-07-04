@@ -11,7 +11,7 @@ using HLE.Memory;
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, IEquatable<PoolBufferStringBuilder>, ICopyable<char>, ICountable, IRefIndexAccessible<char>
+public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, IEquatable<PoolBufferStringBuilder>, ICopyable<char>, ICountable, IRefIndexAccessible<char>, IReadOnlyCollection<char>
 {
     public readonly ref char this[int index] => ref WrittenSpan.AsMutableSpan()[index];
 
@@ -24,6 +24,8 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     readonly int ICollection<char>.Count => Length;
 
     readonly int ICountable.Count => Length;
+
+    readonly int IReadOnlyCollection<char>.Count => Length;
 
     public readonly int Capacity => _buffer.Length;
 
@@ -54,9 +56,8 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
         _buffer = buffer;
     }
 
-    public PoolBufferStringBuilder()
+    public PoolBufferStringBuilder() : this(DefaultBufferSize)
     {
-        _buffer = new(DefaultBufferSize);
     }
 
     public PoolBufferStringBuilder(int initialBufferSize)
@@ -70,9 +71,10 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void GrowBuffer()
+    private void GrowBuffer(int sizeHint = 0)
     {
-        RentedArray<char> newBuffer = new(_buffer.Length << 1);
+        int newSize = sizeHint < 1 ? _buffer.Length << 1 : _buffer.Length + sizeHint;
+        RentedArray<char> newBuffer = new(newSize);
         Debug.Assert(newBuffer.Length > _buffer.Length);
         MemoryHelper.CopyUnsafe(_buffer.Span, newBuffer.Span);
         _buffer.Dispose();
@@ -90,7 +92,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     {
         if (FreeBufferSize < span.Length)
         {
-            GrowBuffer();
+            GrowBuffer(span.Length);
         }
 
         span.CopyTo(FreeBufferSpan);
@@ -237,37 +239,37 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
 
     public readonly void CopyTo(List<char> destination, int offset = 0)
     {
-        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        DefaultCopier<char> copier = new(WrittenSpan);
         copier.CopyTo(destination, offset);
     }
 
     public readonly void CopyTo(char[] destination, int offset = 0)
     {
-        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        DefaultCopier<char> copier = new(WrittenSpan);
         copier.CopyTo(destination, offset);
     }
 
     public readonly void CopyTo(Memory<char> destination)
     {
-        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        DefaultCopier<char> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
 
     public readonly void CopyTo(Span<char> destination)
     {
-        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        DefaultCopier<char> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
 
     public readonly void CopyTo(ref char destination)
     {
-        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        DefaultCopier<char> copier = new(WrittenSpan);
         copier.CopyTo(ref destination);
     }
 
     public readonly unsafe void CopyTo(char* destination)
     {
-        DefaultCopyableCopier<char> copier = new(WrittenSpan);
+        DefaultCopier<char> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
 

@@ -90,30 +90,6 @@ public class BufferedFileOperationsTest
     }
 
     [TestMethod]
-    public void ReadStringTest()
-    {
-        string filePath = CreateFile("hello", Encoding.Unicode);
-        string fileContent = new BufferedFileReader(filePath).ReadString(Encoding.Unicode, 10);
-        Assert.AreEqual("hello", fileContent);
-
-        filePath = CreateFile("hello", Encoding.UTF8);
-        fileContent = new BufferedFileReader(filePath).ReadString(Encoding.UTF8, 10);
-        Assert.AreEqual("hello", fileContent);
-    }
-
-    [TestMethod]
-    public async Task ReadStringAsyncTest()
-    {
-        string filePath = CreateFile("hello", Encoding.Unicode);
-        string fileContent = await new BufferedFileReader(filePath).ReadStringAsync(Encoding.Unicode, 10);
-        Assert.AreEqual("hello", fileContent);
-
-        filePath = CreateFile("hello", Encoding.UTF8);
-        fileContent = await new BufferedFileReader(filePath).ReadStringAsync(Encoding.UTF8, 10);
-        Assert.AreEqual("hello", fileContent);
-    }
-
-    [TestMethod]
     public void WriteBytesTest()
     {
         string filePath = CreateFile("idahwiudhasiudhakwdukawuidha", Encoding.UTF8);

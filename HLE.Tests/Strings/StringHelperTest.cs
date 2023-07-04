@@ -25,13 +25,13 @@ public partial class StringHelperTest
     {
         string str = Random.Shared.NextString(1000);
         ReadOnlyMemory<char>[] chunks = str.Chunk(50);
-        Assert.IsTrue(chunks.All(c => c.Length == 50));
+        Assert.IsTrue(chunks.All(static c => c.Length == 50));
 
         str = Random.Shared.NextString(1025);
         chunks = str.Chunk(50);
         ReadOnlyMemory<char>[] allExceptLastChunk = chunks[..^1];
         Assert.AreEqual(20, allExceptLastChunk.Length);
-        Assert.IsTrue(allExceptLastChunk.All(c => c.Length == 50));
+        Assert.IsTrue(allExceptLastChunk.All(static c => c.Length == 50));
         Assert.IsTrue(chunks[^1].Length == 25);
 
         chunks = string.Empty.Chunk(10);
@@ -46,7 +46,7 @@ public partial class StringHelperTest
     {
         string str = $"{new('*', 10)} {new('*', 20)} {new('*', 2)} {new('*', 2)} {new('*', 10)}";
         ReadOnlyMemory<char>[] chunks = str.Chunk(10, ' ');
-        int[] chunkLengths = chunks.Select(c => c.Length).ToArray();
+        int[] chunkLengths = chunks.Select(static c => c.Length).ToArray();
         Assert.IsTrue(chunkLengths is [10, 20, 5, 10]);
 
         chunks = string.Empty.Chunk(10, ' ');
@@ -89,7 +89,7 @@ public partial class StringHelperTest
     [TestMethod]
     public void IndicesOf_string_char_Test()
     {
-        string str = Random.Shared.NextString(1000, "abc ");
+        string str = Random.Shared.NextString(10_000, "abc ");
         using PoolBufferList<int> correctIndices = new();
         for (int i = 0; i < str.Length; i++)
         {

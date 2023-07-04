@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-internal readonly ref struct DefaultCopyableCopier<T>
+internal readonly ref struct DefaultCopier<T>
 {
     private readonly ReadOnlySpan<T> _source;
 
-    public DefaultCopyableCopier(ReadOnlySpan<T> source)
+    public DefaultCopier(ReadOnlySpan<T> source)
     {
         _source = source;
     }
@@ -44,12 +44,13 @@ internal readonly ref struct DefaultCopyableCopier<T>
 
     public unsafe void CopyTo(ref T destination)
     {
-        CopyTo((T*)Unsafe.AsPointer(ref destination));
+        ref byte sourceAsByteReference = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(_source));
+        ref byte destinationAsByteReference = ref Unsafe.As<T, byte>(ref destination);
+        Unsafe.CopyBlock(ref destinationAsByteReference, ref sourceAsByteReference, (uint)(sizeof(T) * _source.Length));
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        T* source = (T*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(_source));
-        Unsafe.CopyBlock(destination, source, (uint)(sizeof(T) * _source.Length));
+        CopyTo(ref Unsafe.AsRef<T>(destination));
     }
 }

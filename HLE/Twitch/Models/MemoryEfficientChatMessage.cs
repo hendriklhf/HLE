@@ -1,58 +1,91 @@
 using System;
 using System.Diagnostics.Contracts;
-using HLE.Memory;
+using System.Runtime.CompilerServices;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
 public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryEfficientChatMessage>
 {
-    public override ReadOnlySpan<Badge> BadgeInfos => _badgeInfos[.._badgeInfoCount];
+    public override ReadOnlySpan<Badge> BadgeInfos => _badgeInfos.AsSpan(.._badgeInfoCount);
 
-    public override ReadOnlySpan<Badge> Badges => _badges[.._badgeCount];
+    public override ReadOnlySpan<Badge> Badges => _badges.AsSpan(.._badgeCount);
 
     public override required string DisplayName
     {
-        get => _displayName ??= _displayNamePool.GetOrAdd(_displayNameBuilder.WrittenSpan);
+        get
+        {
+            if (_displayName is not null)
+            {
+                return _displayName;
+            }
+
+            _displayName = StringPool.Shared.GetOrAdd(_displayNameBuffer.AsSpan(.._nameLength));
+            MemoryEfficientChatMessageParser._nameArrayPool.Return(_displayNameBuffer!);
+            _displayNameBuffer = null;
+            return _displayName;
+        }
         init { }
     }
 
     public override required string Username
     {
-        get => _username ??= _usernamePool.GetOrAdd(_usernameBuilder.WrittenSpan);
+        get
+        {
+            if (_username is not null)
+            {
+                return _username;
+            }
+
+            _username = StringPool.Shared.GetOrAdd(_usernameBuffer.AsSpan(.._nameLength));
+            MemoryEfficientChatMessageParser._nameArrayPool.Return(_usernameBuffer!);
+            _usernameBuffer = null;
+            return _username;
+        }
         init { }
     }
 
     public override required string Message
     {
-        get => _message ??= _messageBuilder.Length <= _maxMessagePoolingLength ? _shortMessagesPool.GetOrAdd(_messageBuilder.WrittenSpan) : _messageBuilder.ToString();
+        get
+        {
+            if (_message is not null)
+            {
+                return _message;
+            }
+
+            ReadOnlySpan<char> message = _messageBuffer.AsSpan(.._messageLength);
+            _message = message.Length <= _maxMessagePoolingLength ? StringPool.Shared.GetOrAdd(message) : new(message);
+            MemoryEfficientChatMessageParser._messageArrayPool.Return(_messageBuffer!);
+            _messageBuffer = null;
+            return _message;
+        }
         init { }
     }
 
-    private readonly RentedArray<Badge> _badgeInfos;
+    private readonly Badge[] _badgeInfos;
     private readonly int _badgeInfoCount;
-    private readonly RentedArray<Badge> _badges;
+    private readonly Badge[] _badges;
     private readonly int _badgeCount;
 
     private string? _displayName;
     private string? _username;
     private string? _message;
 
-    private readonly PoolBufferStringBuilder _displayNameBuilder;
-    private readonly PoolBufferStringBuilder _usernameBuilder;
-    private readonly PoolBufferStringBuilder _messageBuilder;
+    private char[]? _displayNameBuffer;
+    private char[]? _usernameBuffer;
+    private readonly int _nameLength;
 
-    private static readonly StringPool _shortMessagesPool = new();
-    private static readonly StringPool _usernamePool = new();
-    private static readonly StringPool _displayNamePool = new();
+    private char[]? _messageBuffer;
+    private readonly int _messageLength;
 
-    private const int _maxMessagePoolingLength = 10;
+    private const int _maxMessagePoolingLength = 25;
 
     /// <summary>
     /// The default constructor of <see cref="MemoryEfficientChatMessage"/>.
     /// </summary>
-    public MemoryEfficientChatMessage(RentedArray<Badge> badgeInfos, int badgeInfoCount, RentedArray<Badge> badges, int badgeCount, ChatMessageTags tags,
-        ReadOnlySpan<char> displayName, ReadOnlySpan<char> username, ReadOnlySpan<char> message)
+    public MemoryEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageTags tags,
+        char[] displayName, char[] username, int nameLength, char[] message, int messageLength)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
@@ -60,40 +93,77 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
         _badgeCount = badgeCount;
         _tags = tags;
 
-        _displayNameBuilder = new(displayName.Length);
-        _displayNameBuilder.Append(displayName);
+        _displayNameBuffer = displayName;
+        _usernameBuffer = username;
+        _nameLength = nameLength;
 
-        _usernameBuilder = new(username.Length);
-        _usernameBuilder.Append(username);
-
-        _messageBuilder = new(message.Length);
-        _messageBuilder.Append(message);
+        _messageBuffer = message;
+        _messageLength = messageLength;
     }
 
     ~MemoryEfficientChatMessage()
     {
-        _badgeInfos.Dispose();
-        _badges.Dispose();
-        _displayNameBuilder.Dispose();
-        _usernameBuilder.Dispose();
-        _messageBuilder.Dispose();
+        if (!ReferenceEquals(_badgeInfos, Array.Empty<Badge>()))
+        {
+            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badgeInfos);
+        }
+
+        if (!ReferenceEquals(_badges, Array.Empty<Badge>()))
+        {
+            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badges);
+        }
+
+        if (_displayNameBuffer is not null)
+        {
+            MemoryEfficientChatMessageParser._nameArrayPool.Return(_displayNameBuffer);
+        }
+
+        if (_usernameBuffer is not null)
+        {
+            MemoryEfficientChatMessageParser._nameArrayPool.Return(_usernameBuffer);
+        }
+
+        if (_messageBuffer is not null)
+        {
+            MemoryEfficientChatMessageParser._messageArrayPool.Return(_messageBuffer);
+        }
     }
 
     public override void Dispose()
     {
         GC.SuppressFinalize(this);
-        _badgeInfos.Dispose();
-        _badges.Dispose();
-        _displayNameBuilder.Dispose();
-        _usernameBuilder.Dispose();
-        _messageBuilder.Dispose();
+        if (!ReferenceEquals(_badgeInfos, Array.Empty<Badge>()))
+        {
+            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badgeInfos);
+        }
+
+        if (!ReferenceEquals(_badges, Array.Empty<Badge>()))
+        {
+            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badges);
+        }
+
+        if (_displayNameBuffer is not null)
+        {
+            MemoryEfficientChatMessageParser._nameArrayPool.Return(_displayNameBuffer);
+        }
+
+        if (_usernameBuffer is not null)
+        {
+            MemoryEfficientChatMessageParser._nameArrayPool.Return(_usernameBuffer);
+        }
+
+        if (_messageBuffer is not null)
+        {
+            MemoryEfficientChatMessageParser._messageArrayPool.Return(_messageBuffer);
+        }
     }
 
     [Pure]
+    [SkipLocalsInit]
     public override string ToString()
     {
-        ValueStringBuilder builder = stackalloc char[Channel.Length + _usernameBuilder.Length + _messageBuilder.Length + 6];
-        builder.Append("<#", Channel, "> ", _usernameBuilder.WrittenSpan, ": ", _messageBuilder.WrittenSpan);
+        ValueStringBuilder builder = stackalloc char[Channel.Length + _nameLength + _messageLength + 6];
+        builder.Append("<#", Channel, "> ", Username, ": ", Message);
         return builder.ToString();
     }
 

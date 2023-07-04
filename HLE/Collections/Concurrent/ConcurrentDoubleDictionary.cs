@@ -129,6 +129,12 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
         return _dictionary.ContainsSecondaryKey(key);
     }
 
+    [Pure]
+    public TValue[] ToArray()
+    {
+        return _dictionary.ToArray();
+    }
+
     public IEnumerator<TValue> GetEnumerator()
     {
         return Values.GetEnumerator();

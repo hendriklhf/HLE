@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using HLE.Collections;
 using HLE.Collections.Concurrent;
 
@@ -9,6 +11,7 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// A class that represents a list of channels the client is connected to.
 /// </summary>
+[DebuggerDisplay("Count = {_channels.Count}")]
 public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>, ICountable
 {
     /// <summary>
@@ -85,15 +88,20 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>,
         if (name[0] == '#')
         {
             name = name[1..];
-        }
-
-        if (name.Length == 0)
-        {
-            return null;
+            if (name.Length == 0)
+            {
+                return null;
+            }
         }
 
         int channelNameHash = string.GetHashCode(name, StringComparison.OrdinalIgnoreCase);
         return _channels.TryGetBySecondaryKey(channelNameHash, out Channel? channel) ? channel : null;
+    }
+
+    [Pure]
+    public Channel[] ToArray()
+    {
+        return _channels.ToArray();
     }
 
     public bool Equals(ChannelList? other)

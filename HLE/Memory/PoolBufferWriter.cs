@@ -16,7 +16,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PoolBufferWriter<T>>, IIndexAccessible<T>
+public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PoolBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>
 {
     T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
 
@@ -176,37 +176,37 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopyableCopier<T> copier = new(WrittenSpan);
+        DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
 
@@ -249,7 +249,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     [Pure]
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     [Pure]

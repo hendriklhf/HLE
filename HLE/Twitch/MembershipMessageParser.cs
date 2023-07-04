@@ -10,6 +10,7 @@ namespace HLE.Twitch;
 public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatable<MembershipMessageParser>
 {
     [Pure]
+    [SkipLocalsInit]
     public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<char> ircMessage)
     {
         int whitespaceCount;
@@ -32,6 +33,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
     }
 
     [Pure]
+    [SkipLocalsInit]
     public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<char> ircMessage)
     {
         int whitespaceCount;
@@ -75,7 +77,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(MembershipMessageParser? left, MembershipMessageParser? right)

@@ -16,6 +16,7 @@ public static class NumberHelper
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static byte[] GetDigits<T>(T number) where T : INumber<T>
     {
         Span<byte> digits = stackalloc byte[50];

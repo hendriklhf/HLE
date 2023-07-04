@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -86,6 +87,7 @@ public static class CollectionHelper
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static string JoinToString<T>(this IEnumerable<T> collection, char separator)
     {
         if (typeof(char) == typeof(T))
@@ -118,6 +120,7 @@ public static class CollectionHelper
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static string JoinToString<T>(this IEnumerable<T> collection, string separator)
     {
         if (typeof(char) == typeof(T))
@@ -323,17 +326,60 @@ public static class CollectionHelper
             return IndicesOf(span, predicate);
         }
 
-        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
         using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        int currentIndex = 0;
-        foreach (T item in collection)
+        switch (collection)
         {
-            if (predicate(item))
+            case IList<T> iList:
             {
-                indices.Add(currentIndex);
-            }
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(iList[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
 
-            currentIndex++;
+                break;
+            }
+            case IIndexAccessible<T> indexAccessible:
+            {
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(indexAccessible[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
+
+                break;
+            }
+            case IRefIndexAccessible<T> refIndexAccessible:
+            {
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(refIndexAccessible[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
+
+                break;
+            }
+            default:
+            {
+                int currentIndex = 0;
+                foreach (T item in collection)
+                {
+                    if (predicate(item))
+                    {
+                        indices.Add(currentIndex);
+                    }
+
+                    currentIndex++;
+                }
+
+                break;
+            }
         }
 
         return indices.ToArray();
@@ -363,6 +409,7 @@ public static class CollectionHelper
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate)
     {
         int length;
@@ -447,6 +494,7 @@ public static class CollectionHelper
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate)
     {
         int length;
@@ -531,6 +579,7 @@ public static class CollectionHelper
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item) where T : IEquatable<T>
     {
         int length;
@@ -556,7 +605,7 @@ public static class CollectionHelper
         int indicesLength = 0;
         int indexOfItem = span.IndexOf(item);
         int spanStartIndex = indexOfItem;
-        while (indexOfItem != -1)
+        while (indexOfItem >= 0)
         {
             indices[indicesLength++] = spanStartIndex;
             indexOfItem = span[++spanStartIndex..].IndexOf(item);
@@ -786,8 +835,10 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlySpan<T> span)
     {
-        if (collection is string str)
+        // ReSharper disable once OperatorIsCanBeUsed
+        if (typeof(T) == typeof(char) && collection.GetType() == typeof(string))
         {
+            string str = Unsafe.As<IEnumerable<T>, string>(ref collection);
             ref char firstChar = ref MemoryMarshal.GetReference(str.AsSpan());
             span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
             return true;
@@ -813,18 +864,22 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
     {
-        switch (collection)
+        Type collectionType = collection.GetType();
+        if (collectionType == typeof(T[]))
         {
-            case T[] array:
-                span = array;
-                return true;
-            case List<T> list:
-                span = CollectionsMarshal.AsSpan(list);
-                return true;
-            default:
-                span = Span<T>.Empty;
-                return false;
+            span = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
+            return true;
         }
+
+        if (collectionType == typeof(List<T>))
+        {
+            var list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
+            span = CollectionsMarshal.AsSpan(list);
+            return true;
+        }
+
+        span = Span<T>.Empty;
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -837,9 +892,10 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
     {
-        if (collection is string str)
+        // ReSharper disable once OperatorIsCanBeUsed
+        if (typeof(T) == typeof(char) && collection.GetType() == typeof(string))
         {
-            ReadOnlyMemory<char> stringMemory = str.AsMemory();
+            ReadOnlyMemory<char> stringMemory = Unsafe.As<IEnumerable<T>, string>(ref collection).AsMemory();
             memory = Unsafe.As<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(ref stringMemory);
             return true;
         }
@@ -864,18 +920,22 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
     {
-        switch (collection)
+        Type collectionType = collection.GetType();
+        if (collectionType == typeof(T[]))
         {
-            case T[] array:
-                memory = array;
-                return true;
-            case List<T> list:
-                memory = CollectionsMarshal.AsSpan(list).AsMemoryDangerous();
-                return true;
-            default:
-                memory = Memory<T>.Empty;
-                return false;
+            memory = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
+            return true;
         }
+
+        if (collectionType == typeof(List<T>))
+        {
+            var list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
+            memory = CollectionsMarshal.AsSpan(list).AsMemoryDangerous();
+            return true;
+        }
+
+        memory = Memory<T>.Empty;
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1009,13 +1069,14 @@ public static class CollectionHelper
     /// If the amount of elements in <paramref name="collection"/> can be found out, the method will check if there is enough space in the buffer.
     /// If there isn't enough space, the method will return <see langword="false"/> and set <paramref name="writtenElements"/> to <c>0</c>.<br/>
     /// If no amount of elements could be retrieved, the method will start writing elements into the buffer and will do so until it is finished, in which case it will return <see langword="true"/>,
-    /// or until it runs out of buffer space, in which case it will return <see langword="false"/>.
+    /// or until it runs out of buffer space, in which case it will return <see langword="false"/>.<br/>
+    /// This method is in some cases much more efficient than calling <c>.ToArray()</c> on an <see cref="IEnumerable{T}"/> and enables using a rented <see cref="Array"/> from an <see cref="ArrayPool{T}"/> to store the elements.
     /// </summary>
     /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be enumerated and elements will be taken from.</param>
     /// <param name="buffer">The buffer the elements will be written into.</param>
     /// <param name="writtenElements">The amount of written elements.</param>
     /// <typeparam name="T">The type of elements in the <see cref="IEnumerable{T}"/>.</typeparam>
-    /// <returns>True, if a full enumeration into the buffer possible, otherwise false.</returns>
+    /// <returns>True, if a full enumeration into the buffer was possible, otherwise false.</returns>
     public static bool TryEnumerateInto<T>(this IEnumerable<T> collection, Span<T> buffer, out int writtenElements)
     {
         if (collection.TryGetNonEnumeratedCount(out int elementCount))

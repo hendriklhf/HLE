@@ -7,7 +7,7 @@ public static class TestHelper
 {
     public static int[] CreateRandomIntArray(int length)
     {
-        return Enumerable.Range(0, length).Select(_ => Random.Shared.Next()).ToArray();
+        return Enumerable.Range(0, length).Select(static _ => Random.Shared.Next()).ToArray();
     }
 
     public static string[] CreateRandomStringArray(int arrayLength, int stringLength, char minChar = char.MinValue, char maxChar = char.MaxValue)

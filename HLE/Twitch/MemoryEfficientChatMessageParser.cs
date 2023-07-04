@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HLE.Memory;
+using HLE.Collections;
 using HLE.Strings;
 using HLE.Twitch.Models;
 
@@ -9,12 +9,16 @@ namespace HLE.Twitch;
 
 public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquatable<MemoryEfficientChatMessageParser>
 {
+    internal static readonly Pool<Badge[]> _badgeArrayPool = new(static () => new Badge[5]);
+    internal static readonly Pool<char[]> _nameArrayPool = new(static () => new char[25]);
+    internal static readonly Pool<char[]> _messageArrayPool = new(static () => new char[512]);
+
     [Pure]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        RentedArray<Badge> badgeInfos = RentedArray<Badge>.Empty;
+        Badge[] badgeInfos = Array.Empty<Badge>();
         int badgeInfoCount = 0;
-        RentedArray<Badge> badges = RentedArray<Badge>.Empty;
+        Badge[] badges = Array.Empty<Badge>();
         int badgeCount = 0;
         Color color = Color.Empty;
         ReadOnlySpan<char> displayName = ReadOnlySpan<char>.Empty;
@@ -82,7 +86,15 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         ReadOnlySpan<char> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageTags & ChatMessageTags.IsAction) == ChatMessageTags.IsAction);
 
-        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageTags, displayName, username, message)
+        char[] usernameBuffer = _nameArrayPool.Rent();
+        char[] displayNameBuffer = _nameArrayPool.Rent();
+        char[] messageBuffer = _messageArrayPool.Rent();
+
+        username.CopyTo(usernameBuffer);
+        displayName.CopyTo(displayNameBuffer);
+        message.CopyTo(messageBuffer);
+
+        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageTags, displayNameBuffer, usernameBuffer, username.Length, messageBuffer, message.Length)
         {
             Channel = StringPool.Shared.GetOrAdd(channel),
             ChannelId = channelId,
@@ -97,20 +109,20 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static RentedArray<Badge> GetBadges(ReadOnlySpan<char> value, out int badgeCount)
+    private static Badge[] GetBadges(ReadOnlySpan<char> value, out int badgeCount)
     {
         badgeCount = 0;
         if (value.Length == 0)
         {
-            return RentedArray<Badge>.Empty;
+            return Array.Empty<Badge>();
         }
 
-        RentedArray<Badge> badges = new(5);
+        Badge[] badges = _badgeArrayPool.Rent();
         while (value.Length > 0)
         {
             int indexOfComma = value.IndexOf(',');
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
-            value = indexOfComma == -1 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
+            value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
             string name = StringPool.Shared.GetOrAdd(info[..slashIndex]);
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..]);
@@ -132,7 +144,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(MemoryEfficientChatMessageParser? left, MemoryEfficientChatMessageParser? right)

@@ -18,6 +18,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     private const string _subsOnlyTag = "subs-only";
 
     [Pure]
+    [SkipLocalsInit]
     public void Parse(ReadOnlySpan<char> ircMessage, out Roomstate roomstate)
     {
         int whitespaceCount;
@@ -46,12 +47,12 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
 
         ReadOnlySpan<char> tags = ircMessage[1..indicesOfWhitespaces[0]];
         int equalsSignIndex = tags.IndexOf('=');
-        while (equalsSignIndex != -1)
+        while (equalsSignIndex >= 0)
         {
             int semicolonIndex = tags.IndexOf(';');
             ReadOnlySpan<char> key = tags[..equalsSignIndex];
             ReadOnlySpan<char> value = tags[(equalsSignIndex + 1)..Unsafe.As<int, Index>(ref semicolonIndex)];
-            tags = semicolonIndex == -1 ? ReadOnlySpan<char>.Empty : tags[(semicolonIndex + 1)..];
+            tags = semicolonIndex < 0 ? ReadOnlySpan<char>.Empty : tags[(semicolonIndex + 1)..];
             equalsSignIndex = tags.IndexOf('=');
 
             switch (key)
@@ -141,7 +142,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(RoomstateParser? left, RoomstateParser? right)

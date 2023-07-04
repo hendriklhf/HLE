@@ -22,7 +22,7 @@ public class ResourceReaderTest
             resources.Add(Encoding.UTF8.GetString(resource));
         }
 
-        Assert.IsTrue(resources.Count(r => r is not null) == 3);
+        Assert.IsTrue(resources.Count(static r => r is not null) == 3);
         Assert.AreEqual("abc\r\n", resources[0]);
         Assert.AreEqual("xd\r\n", resources[1]);
         Assert.AreEqual(":)\r\n", resources[2]);
@@ -39,7 +39,7 @@ public class ResourceReaderTest
             resources.Add(Encoding.UTF8.GetString(resource));
         }
 
-        Assert.IsTrue(resources.Count(r => r is not null) == 3);
+        Assert.IsTrue(resources.Count(static r => r is not null) == 3);
         Assert.AreEqual("abc\r\n", resources[0]);
         Assert.AreEqual("xd\r\n", resources[1]);
         Assert.AreEqual(":)\r\n", resources[2]);

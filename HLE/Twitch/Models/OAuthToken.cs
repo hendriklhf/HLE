@@ -34,6 +34,7 @@ public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToke
     {
     }
 
+    [SkipLocalsInit]
     public OAuthToken(ReadOnlyMemory<char> token)
     {
         if (!_tokenPattern.IsMatch(token.Span))
@@ -62,7 +63,7 @@ public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToke
 
     public bool Equals(OAuthToken other)
     {
-        return _token.Span.SequenceEqual(other._token.Span);
+        return _token.Equals(other._token) || _token.Span.SequenceEqual(other._token.Span);
     }
 
     public override bool Equals(object? obj)

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
@@ -49,6 +50,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     /// </summary>
     /// <returns>The message in a readable format.</returns>
     [Pure]
+    [SkipLocalsInit]
     public override string ToString()
     {
         ValueStringBuilder builder = stackalloc char[Channel.Length + Username.Length + Message.Length + 6];

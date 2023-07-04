@@ -61,15 +61,15 @@ public class CollectionHelperTest
             3,
             3
         };
-        arr = arr.Replace(i => i == 2, 4);
-        Assert.AreEqual(5, arr.Count(i => i == 4));
+        arr = arr.Replace(static i => i == 2, 4);
+        Assert.AreEqual(5, arr.Count(static i => i == 4));
     }
 
     [TestMethod]
     public void IndicesOfTest()
     {
         const string str = "test string";
-        int[] indices = str.IndicesOf(c => c is 's');
+        int[] indices = str.IndicesOf(static c => c is 's');
         Assert.IsTrue(indices is [2, 5]);
     }
 
@@ -98,14 +98,14 @@ public class CollectionHelperTest
         Assert.AreEqual(50, items[0]);
         Assert.AreEqual(100, items[^1]);
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsException<InvalidOperationException>(static () =>
         {
             foreach (int _ in ..^100)
             {
             }
         });
 
-        Assert.ThrowsException<InvalidOperationException>(() =>
+        Assert.ThrowsException<InvalidOperationException>(static () =>
         {
             foreach (int _ in 50..)
             {
@@ -119,7 +119,7 @@ public class CollectionHelperTest
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
         IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
         IEnumerable<char> str = "hello";
-        IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(_ => Random.Shared.Next()).Where(i => i > 0);
+        IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
         bool succeeded = array.TryGetReadOnlySpan(out var arraySpan);
         Assert.IsTrue(succeeded && arraySpan is [0, 1, 2, 3, 4]);
@@ -140,7 +140,7 @@ public class CollectionHelperTest
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
         IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
         IEnumerable<char> str = "hello";
-        IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(_ => Random.Shared.Next()).Where(i => i > 0);
+        IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
         bool succeeded = array.TryGetReadOnlyMemory(out var arrayMemory);
         Assert.IsTrue(succeeded && arrayMemory.Span is [0, 1, 2, 3, 4]);
@@ -152,7 +152,7 @@ public class CollectionHelperTest
         Assert.IsTrue(succeeded && stringMemory.Span is "hello");
 
         succeeded = enumerable.TryGetReadOnlyMemory(out var enumerableMemory);
-        Assert.IsFalse(succeeded && enumerableMemory.Length == 0);
+        Assert.IsFalse(succeeded && enumerableMemory.Length > 0);
     }
 
     [TestMethod]

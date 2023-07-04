@@ -67,7 +67,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
 
         string[] files = Directory.GetFiles(cacheDirectory);
-        string? emojiFilePath = files.FirstOrDefault(f =>
+        string? emojiFilePath = files.FirstOrDefault(static f =>
         {
             string fileName = Path.GetFileName(f);
             DateTimeOffset creationTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(fileName));
@@ -110,7 +110,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
         AppendEmojis(sourceBuilder);
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Emojis.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Emoji.g.cs", sourceBuilder.ToString());
     }
 
     private void AppendEmojis(StringBuilder sourceBuilder)

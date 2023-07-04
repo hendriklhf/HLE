@@ -51,6 +51,7 @@ public readonly struct BufferedFileWriter
         await fileStream.WriteAsync(fileBytes);
     }
 
+    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding, [ConstantExpected] bool append)
     {

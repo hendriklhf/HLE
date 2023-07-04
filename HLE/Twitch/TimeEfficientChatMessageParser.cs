@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HLE.Memory;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -109,7 +108,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         {
             int indexOfComma = value.IndexOf(',');
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
-            value = indexOfComma == -1 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
+            value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
             string name = new(info[..slashIndex]);
             string level = new(info[(slashIndex + 1)..]);
@@ -131,7 +130,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 
     public static bool operator ==(TimeEfficientChatMessageParser? left, TimeEfficientChatMessageParser? right)

@@ -147,12 +147,17 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Convert(float value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
     {
-        return (float)(value * (fromPrefix / toPrefix));
+        return (float)Convert((double)value, fromPrefix, toPrefix);
     }
 
     public static implicit operator double(UnitPrefix prefix)
     {
         return prefix.Value;
+    }
+
+    public override string ToString()
+    {
+        return Name;
     }
 
     public bool Equals(UnitPrefix? other)

@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Models;
 
 /// <summary>
-/// A class that represent a badge or badge info of a user.
+/// Represents a badge or badge info of a user.
 /// </summary>
 public readonly struct Badge : IEquatable<Badge>
 {

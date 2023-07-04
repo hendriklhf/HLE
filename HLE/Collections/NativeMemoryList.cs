@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -9,72 +8,58 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-// ReSharper disable once UseNameofExpressionForPartOfTheString
-[DebuggerDisplay("Count = {Count}")]
-public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PoolBufferList<T>>, IDisposable, IRefIndexAccessible<T>, IReadOnlyList<T>
-    where T : IEquatable<T>
+public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IRefIndexAccessible<T>, IReadOnlyList<T>
+    where T : unmanaged, IEquatable<T>
 {
-    public ref T this[int index] => ref _bufferWriter.WrittenSpan[index];
+    public ref T this[int index] => ref AsSpan()[index];
 
     T IReadOnlyList<T>.this[int index] => this[index];
 
     T IList<T>.this[int index]
     {
-        get => _bufferWriter.WrittenSpan[index];
-        set => _bufferWriter.WrittenSpan[index] = value;
+        get => AsSpan()[index];
+        set => AsSpan()[index] = value;
     }
 
-    public ref T this[Index index] => ref _bufferWriter.WrittenSpan[index];
+    public ref T this[Index index] => ref AsSpan()[index];
 
-    public Span<T> this[Range range] => _bufferWriter.WrittenSpan[range];
+    public Span<T> this[Range range] => AsSpan()[range];
 
-    public int Count => _bufferWriter.Count;
+    public int Count { get; private set; }
 
-    public int Capacity => _bufferWriter.Capacity;
+    public int Capacity => _buffer.Length;
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal readonly PoolBufferWriter<T> _bufferWriter;
+    internal NativeMemory<T> _buffer;
 
     private const int _defaultCapacity = 16;
 
-    public PoolBufferList() : this(_defaultCapacity)
+    public NativeMemoryList() : this(_defaultCapacity)
     {
     }
 
-    public PoolBufferList(int capacity)
+    public NativeMemoryList(int capacity)
     {
-        _bufferWriter = new(capacity);
+        _buffer = new(capacity, false);
     }
 
-    public PoolBufferList(PoolBufferWriter<T> bufferWriter)
+    ~NativeMemoryList()
     {
-        _bufferWriter = bufferWriter;
-    }
-
-    ~PoolBufferList()
-    {
-        _bufferWriter.Dispose();
+        _buffer.Dispose();
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
     {
-        return _bufferWriter.WrittenSpan;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Memory<T> AsMemory()
-    {
-        return _bufferWriter.WrittenMemory;
+        return _buffer[..Count];
     }
 
     [Pure]
     public T[] ToArray()
     {
-        return _bufferWriter.WrittenSpan.ToArray();
+        return _buffer.ToArray();
     }
 
     [Pure]
@@ -87,31 +72,49 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
         return result;
     }
 
-    public void Add(T item)
+    private void GrowIfNeeded(int neededSpace)
     {
-        _bufferWriter.GetReference() = item;
-        _bufferWriter.Advance(1);
+        int freeSpace = Capacity - Count;
+        if (freeSpace >= neededSpace)
+        {
+            return;
+        }
+
+        if (neededSpace < _defaultCapacity)
+        {
+            neededSpace = _defaultCapacity;
+        }
+
+        using NativeMemory<T> oldBuffer = _buffer;
+        NativeMemory<T> newBuffer = new(oldBuffer.Length + neededSpace, false);
+        oldBuffer.CopyTo(newBuffer);
+        _buffer = newBuffer;
     }
 
-    public void AddRange(IEnumerable<T> items)
+    public unsafe void Add(T item)
+    {
+        GrowIfNeeded(1);
+        _buffer._pointer[Count++] = item;
+    }
+
+    public unsafe void AddRange(IEnumerable<T> items)
     {
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
-            ref T destination = ref _bufferWriter.GetReference(itemsCount);
-            T[] buffer = _bufferWriter._buffer.Array;
-            if (items.TryNonEnumeratedCopyTo(buffer, Count))
+            GrowIfNeeded(itemsCount);
+            T* destination = _buffer._pointer + Count;
+            if (items is ICopyable<T> copyable)
             {
-                _bufferWriter.Advance(itemsCount);
+                copyable.CopyTo(destination);
+                Count += itemsCount;
                 return;
             }
 
-            int i = 0;
             foreach (T item in items)
             {
-                Unsafe.Add(ref destination, i++) = item;
+                destination[Count++] = item;
             }
 
-            _bufferWriter.Advance(itemsCount);
             return;
         }
 
@@ -123,7 +126,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
 
     public void AddRange(List<T> items)
     {
-        AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
+        AddRange(CollectionsMarshal.AsSpan(items));
     }
 
     public void AddRange(params T[] items)
@@ -141,28 +144,34 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
         ref T sourceReference = ref MemoryMarshal.GetReference(items);
         ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
 
-        ref T destinationReference = ref _bufferWriter.GetReference(items.Length);
+        GrowIfNeeded(items.Length);
+        ref T destinationReference = ref Unsafe.AsRef<T>(_buffer._pointer + Count);
         ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
 
-        Debug.Assert(_bufferWriter.Capacity - _bufferWriter.Count >= items.Length);
         Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * items.Length));
-        _bufferWriter.Advance(items.Length);
+        Count += items.Length;
     }
 
     public void Clear()
     {
-        _bufferWriter.Clear();
+        Count = 0;
     }
 
     public void EnsureCapacity(int capacity)
     {
-        _bufferWriter.EnsureCapacity(capacity);
+        if (capacity < Capacity)
+        {
+            return;
+        }
+
+        int neededSpace = capacity - Capacity;
+        GrowIfNeeded(neededSpace);
     }
 
     [Pure]
     public bool Contains(T item)
     {
-        return _bufferWriter.WrittenSpan.Contains(item);
+        return AsSpan().Contains(item);
     }
 
     public bool Remove(T item)
@@ -173,29 +182,29 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
             return false;
         }
 
-        _bufferWriter.WrittenSpan[(index + 1)..].CopyTo(_bufferWriter.WrittenSpan[index..]);
-        _bufferWriter.Advance(-1);
+        AsSpan()[(index + 1)..].CopyTo(AsSpan()[index..]);
+        Count--;
         return true;
     }
 
     [Pure]
     public int IndexOf(T item)
     {
-        return _bufferWriter.WrittenSpan.IndexOf(item);
+        return AsSpan().IndexOf(item);
     }
 
     public void Insert(int index, T item)
     {
-        _bufferWriter.GetSpan();
-        _bufferWriter.Advance(1);
-        _bufferWriter.WrittenSpan[index..^1].CopyTo(_bufferWriter.WrittenSpan[(index + 1)..]);
-        _bufferWriter.WrittenSpan[index] = item;
+        GrowIfNeeded(1);
+        Count++;
+        AsSpan()[index..^1].CopyTo(AsSpan()[(index + 1)..]);
+        AsSpan()[index] = item;
     }
 
     public void RemoveAt(int index)
     {
-        _bufferWriter.WrittenSpan[(index + 1)..].CopyTo(_bufferWriter.WrittenSpan[index..]);
-        _bufferWriter.Advance(-1);
+        AsSpan()[(index + 1)..].CopyTo(AsSpan()[index..]);
+        Count--;
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
@@ -236,9 +245,9 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (int i = 0; i < _bufferWriter.Count; i++)
+        for (int i = 0; i < Count; i++)
         {
-            yield return _bufferWriter.WrittenSpan[i];
+            yield return _buffer[i];
         }
     }
 
@@ -250,24 +259,24 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        _bufferWriter.Dispose();
+        _buffer.Dispose();
     }
 
     [Pure]
-    public bool Equals(PoolBufferList<T>? other)
+    public bool Equals(NativeMemoryList<T>? other)
     {
-        return ReferenceEquals(this, other) || Count == other?.Count && _bufferWriter.Equals(other._bufferWriter);
+        return ReferenceEquals(this, other) || Count == other?.Count && _buffer.Equals(other._buffer);
     }
 
     [Pure]
     public override bool Equals(object? obj)
     {
-        return obj is PoolBufferList<T> other && Equals(other);
+        return obj is NativeMemoryList<T> other && Equals(other);
     }
 
     [Pure]
     public override int GetHashCode()
     {
-        return _bufferWriter.GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using System.Timers;
-using HLE.Memory;
 
 namespace HLE.Time;
 
@@ -78,6 +78,6 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 
     public override int GetHashCode()
     {
-        return MemoryHelper.GetRawDataPointer(this).GetHashCode();
+        return RuntimeHelpers.GetHashCode(this);
     }
 }

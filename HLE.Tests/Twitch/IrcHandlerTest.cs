@@ -33,7 +33,7 @@ public class IrcHandlerTest
     public void PrivMsgTest(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnChatMessageReceived += (_, chatMessage) =>
+        handler.OnChatMessageReceived += static (_, chatMessage) =>
         {
             Assert.AreEqual(0, chatMessage.BadgeInfos.Length);
             Assert.AreEqual(2, chatMessage.Badges.Length);
@@ -68,7 +68,7 @@ public class IrcHandlerTest
     public void Roomstate_AllOff_Test(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnRoomstateReceived += (_, roomstateArgs) =>
+        handler.OnRoomstateReceived += static (_, roomstateArgs) =>
         {
             Assert.AreEqual(false, roomstateArgs.EmoteOnly);
             Assert.AreEqual(-1, roomstateArgs.FollowersOnly);
@@ -89,7 +89,7 @@ public class IrcHandlerTest
     public void Roomstate_AllOn_Test(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnRoomstateReceived += (_, roomstateArgs) =>
+        handler.OnRoomstateReceived += static (_, roomstateArgs) =>
         {
             Assert.AreEqual(true, roomstateArgs.EmoteOnly);
             Assert.AreEqual(15, roomstateArgs.FollowersOnly);
@@ -110,7 +110,7 @@ public class IrcHandlerTest
     public void JoinTest(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnJoinReceived += (_, joinedChannelArgs) =>
+        handler.OnJoinReceived += static (_, joinedChannelArgs) =>
         {
             Assert.AreEqual("strbhlfe", joinedChannelArgs.Username);
             Assert.AreEqual("lbnshlfe", joinedChannelArgs.Channel);
@@ -126,7 +126,7 @@ public class IrcHandlerTest
     public void PartTest(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnPartReceived += (_, leftChannelArgs) =>
+        handler.OnPartReceived += static (_, leftChannelArgs) =>
         {
             Assert.AreEqual("strbhlfe", leftChannelArgs.Username);
             Assert.AreEqual("lbnshlfe", leftChannelArgs.Channel);
@@ -142,7 +142,7 @@ public class IrcHandlerTest
     public void Notice_WithTag_Test(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnNoticeReceived += (_, notice) =>
+        handler.OnNoticeReceived += static (_, notice) =>
         {
             Assert.AreEqual(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
             Assert.AreEqual("lbnshlfe", notice.Channel);
@@ -159,7 +159,7 @@ public class IrcHandlerTest
     public void Notice_WithoutTag_Test(int handlerIndex)
     {
         IrcHandler handler = _handlers[handlerIndex];
-        handler.OnNoticeReceived += (_, notice) =>
+        handler.OnNoticeReceived += static (_, notice) =>
         {
             Assert.AreEqual(NoticeType.Unknown, notice.Type);
             Assert.AreEqual("*", notice.Channel);
