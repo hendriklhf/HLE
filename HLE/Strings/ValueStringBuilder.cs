@@ -21,17 +21,15 @@ public ref partial struct ValueStringBuilder
 
     public readonly int Capacity => _buffer.Length;
 
-    public readonly Span<char> BufferSpan => _buffer;
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[..Length];
 
-    public readonly ReadOnlySpan<char> WrittenSpan => BufferSpan[..Length];
-
-    public readonly Span<char> FreeBuffer => BufferSpan[Length..];
+    public readonly Span<char> FreeBuffer => _buffer[Length..];
 
     public readonly int FreeBufferSize => Capacity - Length;
 
-    private readonly Span<char> _buffer = Span<char>.Empty;
-
     public static ValueStringBuilder Empty => new();
+
+    internal readonly Span<char> _buffer = Span<char>.Empty;
 
     public ValueStringBuilder()
     {
@@ -139,8 +137,8 @@ public ref partial struct ValueStringBuilder
         Append<TimeSpan, IFormatProvider>(timeSpan, format, formatProvider);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default) where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
+    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default)
+        where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
     {
         if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
         {
@@ -161,12 +159,6 @@ public ref partial struct ValueStringBuilder
     public override readonly string ToString()
     {
         return new(WrittenSpan);
-    }
-
-    [Pure]
-    public readonly char[] ToCharArray()
-    {
-        return _buffer[..Length].ToArray();
     }
 
     [Pure]
@@ -213,10 +205,6 @@ public ref partial struct ValueStringBuilder
     {
         return new("There was not enough space left in the buffer to write the provided value to the buffer.", paramName);
     }
-
-    public static implicit operator ValueStringBuilder(Span<char> buffer) => new(buffer);
-
-    public static implicit operator ValueStringBuilder(char[] buffer) => new(buffer);
 
     public static bool operator ==(ValueStringBuilder left, ValueStringBuilder right)
     {

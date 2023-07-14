@@ -81,7 +81,7 @@ public static class RandomExtensions
     }
 
     [Pure]
-    public static string NextString(this Random random, int length, char minChar = char.MinValue, char maxChar = char.MaxValue)
+    public static string NextString(this Random random, int length, char min = char.MinValue, char max = char.MaxValue)
     {
         if (length <= 0)
         {
@@ -93,7 +93,7 @@ public static class RandomExtensions
         random.NextBytes(resultBytes);
         for (int i = 0; i < length; i++)
         {
-            resultChars[i] = NumberHelper.BringNumberIntoRange(resultChars[i], minChar, maxChar);
+            resultChars[i] = NumberHelper.BringNumberIntoRange(resultChars[i], min, max);
         }
 
         return result;

@@ -10,7 +10,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void IndexerTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         list.AddRange("helXo".AsSpan());
         Assert.AreEqual('h', list[0]);
         Assert.AreEqual('o', list[4]);
@@ -21,7 +21,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void CountTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         list.AddRange("hello".AsSpan());
         Assert.AreEqual(5, list.Count);
     }
@@ -29,7 +29,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void AddTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         for (int i = 0; i < 1000; i++)
         {
             list.Add('x');
@@ -42,7 +42,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void ClearTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         for (int i = 0; i < 1000; i++)
         {
             list.Add('x');
@@ -55,7 +55,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void RemoveTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         list.AddRange("hello".AsSpan());
         list.Remove('l');
         Assert.AreEqual("helo", new(list.AsSpan()));
@@ -64,7 +64,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void RemoveAtTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         list.AddRange("hello".AsSpan());
         list.RemoveAt(2);
         Assert.AreEqual("helo", new(list.AsSpan()));
@@ -73,7 +73,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void InsertTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         list.AddRange("helo".AsSpan());
         list.Insert(2, 'l');
         Assert.AreEqual("hello", new(list.AsSpan()));
@@ -82,7 +82,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void EnumeratorTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         list.AddRange("hello".AsSpan());
         Span<char> result = stackalloc char[5];
         int resultLength = 0;
@@ -97,7 +97,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void AddRemoveLoopTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         for (int i = 0; i < 100_000; i++)
         {
             list.Add('x');
@@ -110,7 +110,7 @@ public class PoolBufferListTest
     [TestMethod]
     public void AddLoopTest()
     {
-        using PoolBufferList<char> list = new();
+        using PooledList<char> list = new();
         for (int i = 0; i < 100_000; i++)
         {
             list.Add('x');

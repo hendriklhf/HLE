@@ -1,4 +1,5 @@
 ﻿using System;
+using HLE.Collections;
 using HLE.Memory;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -27,7 +28,7 @@ public class MemoryHelperTest
     public void AsMemoryDangerousTest()
     {
         Span<char> span = "hello".ToCharArray();
-        Memory<char> memory = span.AsMemoryDangerous();
+        Memory<char> memory = span.AsMemoryUnsafe();
         Assert.IsTrue(memory.Span is "hello");
     }
 
@@ -51,8 +52,22 @@ public class MemoryHelperTest
     public void AsStringDangerousTest()
     {
         ReadOnlySpan<char> str = "hello";
-        string actualString = str.AsStringDangerous();
+        string actualString = str.AsStringUnsafe();
         Assert.AreEqual("hello", actualString);
         Assert.AreEqual(typeof(string), actualString.GetType());
+    }
+
+    [TestMethod]
+    public void UnsafeSliceTest()
+    {
+        Span<int> span = stackalloc int[50];
+        span.FillAscending();
+        Span<int> slice = span.SliceUnsafe(5, 10);
+        Assert.AreEqual(10, slice.Length);
+        Assert.IsTrue(slice[0] == 5 && slice[^1] == 14);
+
+        slice = span.SliceUnsafe(5..15);
+        Assert.AreEqual(10, slice.Length);
+        Assert.IsTrue(slice[0] == 5 && slice[^1] == 14);
     }
 }

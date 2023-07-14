@@ -58,7 +58,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
         sourceBuilder.AppendLine("namespace HLE.Strings;").AppendLine();
-        sourceBuilder.AppendLine("public partial struct PoolBufferStringBuilder");
+        sourceBuilder.AppendLine("public partial struct PooledStringBuilder");
         sourceBuilder.AppendLine("{");
         foreach (string[] argumentTypes in _arguments)
         {
@@ -67,7 +67,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         }
 
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Strings.PoolBufferStringBuilder.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Strings.PooledStringBuilder.g.cs", sourceBuilder.ToString());
     }
 
     private static string CreateAppendMethod(ReadOnlySpan<string> argumentTypes)

@@ -25,10 +25,6 @@ public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEffic
         _tags = tags;
     }
 
-    public override void Dispose()
-    {
-    }
-
     public bool Equals(TimeEfficientChatMessage? other)
     {
         return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);

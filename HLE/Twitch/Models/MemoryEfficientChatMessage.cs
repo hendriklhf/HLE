@@ -5,7 +5,7 @@ using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
-public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryEfficientChatMessage>
+public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEquatable<MemoryEfficientChatMessage>
 {
     public override ReadOnlySpan<Badge> BadgeInfos => _badgeInfos.AsSpan(.._badgeInfoCount);
 
@@ -129,7 +129,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
         }
     }
 
-    public override void Dispose()
+    public void Dispose()
     {
         GC.SuppressFinalize(this);
         if (!ReferenceEquals(_badgeInfos, Array.Empty<Badge>()))
@@ -162,7 +162,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
     [SkipLocalsInit]
     public override string ToString()
     {
-        ValueStringBuilder builder = stackalloc char[Channel.Length + _nameLength + _messageLength + 6];
+        ValueStringBuilder builder = new(stackalloc char[Channel.Length + _nameLength + _messageLength + 6]);
         builder.Append("<#", Channel, "> ", Username, ": ", Message);
         return builder.ToString();
     }

@@ -8,7 +8,7 @@ using HLE.Memory;
 
 namespace HLE;
 
-public readonly struct BufferedFileWriter
+public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 {
     private readonly string _filePath;
 
@@ -117,5 +117,30 @@ public readonly struct BufferedFileWriter
     public async ValueTask AppendCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding)
     {
         await WriteCharsAsync(fileContent, fileEncoding, true);
+    }
+
+    public bool Equals(BufferedFileWriter other)
+    {
+        return _filePath == other._filePath;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is BufferedFileWriter other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return _filePath.GetHashCode();
+    }
+
+    public static bool operator ==(BufferedFileWriter left, BufferedFileWriter right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(BufferedFileWriter left, BufferedFileWriter right)
+    {
+        return !left.Equals(right);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Numerics;
@@ -150,6 +151,7 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
         return (float)Convert((double)value, fromPrefix, toPrefix);
     }
 
+    [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
     public static implicit operator double(UnitPrefix prefix)
     {
         return prefix.Value;

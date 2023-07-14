@@ -12,7 +12,7 @@ using HLE.Collections;
 
 namespace HLE.Strings;
 
-public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
+public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisposable
 {
     private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
 
@@ -27,6 +27,15 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
+        }
+    }
+
+    public void Dispose()
+    {
+        ReadOnlySpan<Bucket> buckets = _buckets;
+        for (int i = 0; i < buckets.Length; i++)
+        {
+            buckets[i].Dispose();
         }
     }
 
@@ -51,6 +60,16 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
     }
 
     public Regex GetOrAdd([StringSyntax(StringSyntaxAttribute.Regex)] string pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
+    {
+        if (timeout == default)
+        {
+            timeout = Regex.InfiniteMatchTimeout;
+        }
+
+        return GetBucket(pattern, options, timeout).GetOrAdd(pattern, options, timeout);
+    }
+
+    public Regex GetOrAdd([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
     {
         if (timeout == default)
         {
@@ -182,13 +201,19 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
         return GetEnumerator();
     }
 
-    private readonly struct Bucket : IEnumerable<Regex>
+    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
+    private readonly struct Bucket : IEnumerable<Regex>, IDisposable
     {
         private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];
         private readonly SemaphoreSlim _regexesLock = new(1);
 
         public Bucket()
         {
+        }
+
+        public void Dispose()
+        {
+            _regexesLock.Dispose();
         }
 
         public void Clear()
@@ -205,6 +230,19 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
             }
 
             regex = new(pattern, options, timeout);
+            Add(regex);
+            return regex;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Regex GetOrAdd(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
+        {
+            if (TryGet(pattern, options, timeout, out Regex? regex))
+            {
+                return regex;
+            }
+
+            regex = new(new(pattern), options, timeout);
             Add(regex);
             return regex;
         }

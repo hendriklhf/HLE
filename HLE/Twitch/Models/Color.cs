@@ -42,6 +42,7 @@ public readonly struct Color : IEquatable<Color>
         Blue = color.B;
     }
 
+#pragma warning disable CA2225
     public static implicit operator Color(System.Drawing.Color color)
     {
         return new(color);
@@ -51,6 +52,7 @@ public readonly struct Color : IEquatable<Color>
     {
         return color.IsEmpty ? System.Drawing.Color.Empty : System.Drawing.Color.FromArgb(0xFF, color.Red, color.Green, color.Blue);
     }
+#pragma warning restore CA2225
 
     public bool Equals(Color other)
     {
@@ -74,7 +76,7 @@ public readonly struct Color : IEquatable<Color>
             return string.Empty;
         }
 
-        ValueStringBuilder builder = stackalloc char[7];
+        ValueStringBuilder builder = new(stackalloc char[7]);
         builder.Append('#');
         builder.Append(Red, "X");
         builder.Append(Green, "X");

@@ -11,7 +11,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Indexer_Int32_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Assert.AreEqual('h', builder[0]);
@@ -24,7 +24,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Indexer_Index_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Assert.AreEqual('o', builder[^1]);
@@ -37,7 +37,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Indexer_Range_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Span<char> range = builder[..2];
@@ -49,7 +49,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void LengthTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
         Assert.AreEqual("hello".Length, builder.Length);
 
@@ -61,24 +61,24 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void CapacityTest()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
         Assert.AreEqual(1000, builder.Capacity);
     }
 
     [TestMethod]
     public void BufferSpanTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
-        Assert.AreEqual(10, builder.BufferSpan.Length);
-        Assert.IsTrue(builder.BufferSpan.StartsWith("hello"));
+        Assert.AreEqual(10, builder._buffer.Length);
+        Assert.IsTrue(builder._buffer.StartsWith("hello"));
     }
 
     [TestMethod]
     public void WrittenSpanTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Assert.AreEqual("hello", new(builder.WrittenSpan));
@@ -87,7 +87,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void FreeBufferSpanTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Assert.IsTrue(builder.FreeBuffer.Length == builder.Capacity - builder.Length);
@@ -96,7 +96,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void FreeBufferSizeTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Assert.IsTrue(builder.FreeBufferSize == builder.Capacity - builder.Length);
@@ -121,7 +121,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Constructor_InitialBufferSize_Test()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         Assert.AreEqual(10, builder.Capacity);
         Assert.AreEqual(0, builder.Length);
     }
@@ -129,7 +129,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void AdvanceTest()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         "hello".CopyTo(builder.FreeBuffer);
         builder.Advance("hello".Length);
         "hello".CopyTo(builder.FreeBuffer);
@@ -144,7 +144,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_ReadOnlySpan_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1005];
+        ValueStringBuilder builder = new(stackalloc char[1005]);
         Assert.AreEqual(1005, builder.Capacity);
 
         builder.Append("hello");
@@ -161,7 +161,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Char_Test()
     {
-        ValueStringBuilder builder = stackalloc char[20];
+        ValueStringBuilder builder = new(stackalloc char[20]);
         Assert.AreEqual(20, builder.Capacity);
 
         for (int i = 0; i < 20; i++)
@@ -176,7 +176,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Byte_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const byte value = 255;
         builder.Append(value);
@@ -195,7 +195,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_SByte_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const sbyte value = 120;
         builder.Append(value);
@@ -214,7 +214,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Short_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const short value = 30_000;
         builder.Append(value);
@@ -233,7 +233,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_UShort_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const ushort value = 60_000;
         builder.Append(value);
@@ -252,7 +252,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Int_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const int value = int.MaxValue;
         builder.Append(value);
@@ -271,7 +271,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_UInt_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const uint value = uint.MaxValue;
         builder.Append(value);
@@ -290,7 +290,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Long_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const long value = long.MaxValue;
         builder.Append(value);
@@ -309,7 +309,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_ULong_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const ulong value = ulong.MaxValue;
         builder.Append(value);
@@ -328,7 +328,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Float_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const float value = float.Pi;
         builder.Append(value);
@@ -347,7 +347,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_Double_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         const double value = double.Pi;
         builder.Append(value);
@@ -366,7 +366,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_DateTime_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         DateTime value = DateTime.UtcNow;
         builder.Append(value, "O");
@@ -385,7 +385,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_DateTimeOffset_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         DateTimeOffset value = DateTimeOffset.UtcNow;
         builder.Append(value, "O");
@@ -404,7 +404,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Append_TimeSpan_Test()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
 
         TimeSpan value = TimeSpan.FromHours(10);
         builder.Append(value, "G");
@@ -423,7 +423,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void ClearTest()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
         builder.Append(Random.Shared.NextString(1000));
         Assert.AreEqual(1000, builder.Length);
 
@@ -434,7 +434,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void ToStringTest()
     {
-        ValueStringBuilder builder = stackalloc char[1000];
+        ValueStringBuilder builder = new(stackalloc char[1000]);
         string randomString = Random.Shared.NextString(1000);
         builder.Append(randomString);
 
@@ -444,8 +444,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Equals_ValueStringBuilder_StringComparison_Test()
     {
-        ValueStringBuilder builder1 = stackalloc char[10];
-        ValueStringBuilder builder2 = stackalloc char[10];
+        ValueStringBuilder builder1 = new(stackalloc char[10]);
+        ValueStringBuilder builder2 = new(stackalloc char[10]);
 
         builder1.Append("HELLO");
         builder2.Append("hello");
@@ -457,7 +457,7 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Equals_ReadOnlySpanChar_StringComparison()
     {
-        ValueStringBuilder builder = stackalloc char[10];
+        ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
         Assert.IsTrue(builder.Equals("HELLO", StringComparison.OrdinalIgnoreCase));
@@ -467,8 +467,8 @@ public class ValueStringBuilderTest
     [TestMethod]
     public void Equals_ValueStringBuilder_Test()
     {
-        ValueStringBuilder builder1 = stackalloc char[10];
-        ValueStringBuilder builder2 = stackalloc char[10];
+        ValueStringBuilder builder1 = new(stackalloc char[10]);
+        ValueStringBuilder builder2 = new(stackalloc char[10]);
 
         builder1.Append("HELLO");
         builder2.Append("hello");

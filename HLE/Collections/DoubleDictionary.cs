@@ -18,6 +18,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public TValue this[TSecondaryKey key] => _values[_secondaryKeyTranslations[key]];
 
+    [SuppressMessage("Design", "CA1044:Properties should not be write only")]
     public TValue this[TPrimaryKey primaryKey, TSecondaryKey secondaryKey]
     {
         set

@@ -90,7 +90,7 @@ public partial class StringHelperTest
     public void IndicesOf_string_char_Test()
     {
         string str = Random.Shared.NextString(10_000, "abc ");
-        using PoolBufferList<int> correctIndices = new();
+        using PooledList<int> correctIndices = new();
         for (int i = 0; i < str.Length; i++)
         {
             if (str[i] == ' ')
@@ -110,7 +110,7 @@ public partial class StringHelperTest
     public void IndicesOf_string_ReadOnlySpanChar_Test()
     {
         string str = Random.Shared.NextString(1000, "abc ");
-        using PoolBufferList<int> correctIndices = new();
+        using PooledList<int> correctIndices = new();
         for (int i = 0; i < str.Length; i++)
         {
             if (i < str.Length - 1 && str[i] == ' ' && str[i + 1] == ' ')

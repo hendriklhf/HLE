@@ -417,7 +417,7 @@ public static class StringHelper
             resultLength = RegexEscape(input, rentedBuffer);
             if (resultLength == 0)
             {
-                return inputWasString ? input.AsStringDangerous() : new(input);
+                return inputWasString ? input.AsStringUnsafe() : new(input);
             }
 
             return new(rentedBuffer[..resultLength]);
@@ -427,7 +427,7 @@ public static class StringHelper
         resultLength = RegexEscape(input, buffer);
         if (resultLength == 0)
         {
-            return inputWasString ? input.AsStringDangerous() : new(input);
+            return inputWasString ? input.AsStringUnsafe() : new(input);
         }
 
         return new(buffer[..resultLength]);

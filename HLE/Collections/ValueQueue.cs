@@ -120,8 +120,4 @@ public ref struct ValueQueue<T>
     {
         return _queue[_dequeueIndex.._enqueueIndex].ToArray();
     }
-
-    public static implicit operator ValueQueue<T>(Span<T> queue) => new(queue);
-
-    public static implicit operator ValueQueue<T>(T[] queue) => new(queue);
 }

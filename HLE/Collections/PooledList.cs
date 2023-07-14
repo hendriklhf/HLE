@@ -5,13 +5,14 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshals;
 using HLE.Memory;
 
 namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PoolBufferList<T>>, IDisposable, IRefIndexAccessible<T>, IReadOnlyList<T>
+public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IRefIndexAccessible<T>, IReadOnlyList<T>
     where T : IEquatable<T>
 {
     public ref T this[int index] => ref _bufferWriter.WrittenSpan[index];
@@ -34,25 +35,25 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal readonly PoolBufferWriter<T> _bufferWriter;
+    internal readonly PooledBufferWriter<T> _bufferWriter;
 
     private const int _defaultCapacity = 16;
 
-    public PoolBufferList() : this(_defaultCapacity)
+    public PooledList() : this(_defaultCapacity)
     {
     }
 
-    public PoolBufferList(int capacity)
+    public PooledList(int capacity)
     {
         _bufferWriter = new(capacity);
     }
 
-    public PoolBufferList(PoolBufferWriter<T> bufferWriter)
+    public PooledList(PooledBufferWriter<T> bufferWriter)
     {
         _bufferWriter = bufferWriter;
     }
 
-    ~PoolBufferList()
+    ~PooledList()
     {
         _bufferWriter.Dispose();
     }
@@ -98,7 +99,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
             ref T destination = ref _bufferWriter.GetReference(itemsCount);
-            T[] buffer = _bufferWriter._buffer.Array;
+            T[] buffer = PooledBufferWriterMarshal<T>.GetBuffer(_bufferWriter);
             if (items.TryNonEnumeratedCopyTo(buffer, Count))
             {
                 _bufferWriter.Advance(itemsCount);
@@ -254,7 +255,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
     }
 
     [Pure]
-    public bool Equals(PoolBufferList<T>? other)
+    public bool Equals(PooledList<T>? other)
     {
         return ReferenceEquals(this, other) || Count == other?.Count && _bufferWriter.Equals(other._bufferWriter);
     }
@@ -262,7 +263,7 @@ public sealed class PoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEqu
     [Pure]
     public override bool Equals(object? obj)
     {
-        return obj is PoolBufferList<T> other && Equals(other);
+        return obj is PooledList<T> other && Equals(other);
     }
 
     [Pure]

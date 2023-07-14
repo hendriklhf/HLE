@@ -11,7 +11,7 @@ using HLE.Memory;
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, IEquatable<PoolBufferStringBuilder>, ICopyable<char>, ICountable, IRefIndexAccessible<char>, IReadOnlyCollection<char>
+public partial struct PooledStringBuilder : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IRefIndexAccessible<char>, IReadOnlyCollection<char>
 {
     public readonly ref char this[int index] => ref WrittenSpan.AsMutableSpan()[index];
 
@@ -29,38 +29,34 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
 
     public readonly int Capacity => _buffer.Length;
 
-    public readonly Span<char> BufferSpan => _buffer;
+    public readonly ReadOnlySpan<char> WrittenSpan => _buffer.Span[..Length];
 
-    public readonly Memory<char> BufferMemory => _buffer;
+    public readonly ReadOnlyMemory<char> WrittenMemory => _buffer.Memory[..Length];
 
-    public readonly ReadOnlySpan<char> WrittenSpan => BufferSpan[..Length];
+    public readonly Span<char> FreeBufferSpan => _buffer.Span[Length..];
 
-    public readonly ReadOnlyMemory<char> WrittenMemory => BufferMemory[..Length];
-
-    public readonly Span<char> FreeBufferSpan => BufferSpan[Length..];
-
-    public readonly Memory<char> FreeBufferMemory => BufferMemory[Length..];
+    public readonly Memory<char> FreeBufferMemory => _buffer.Memory[Length..];
 
     public readonly int FreeBufferSize => Capacity - Length;
 
     readonly bool ICollection<char>.IsReadOnly => false;
 
-    private RentedArray<char> _buffer = RentedArray<char>.Empty;
+    internal RentedArray<char> _buffer = RentedArray<char>.Empty;
 
     public const int DefaultBufferSize = 32;
 
-    public static PoolBufferStringBuilder Empty => new(RentedArray<char>.Empty);
+    public static PooledStringBuilder Empty => new(RentedArray<char>.Empty);
 
-    private PoolBufferStringBuilder(RentedArray<char> buffer)
+    private PooledStringBuilder(RentedArray<char> buffer)
     {
         _buffer = buffer;
     }
 
-    public PoolBufferStringBuilder() : this(DefaultBufferSize)
+    public PooledStringBuilder() : this(DefaultBufferSize)
     {
     }
 
-    public PoolBufferStringBuilder(int initialBufferSize)
+    public PooledStringBuilder(int initialBufferSize)
     {
         _buffer = new(initialBufferSize);
     }
@@ -304,7 +300,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     }
 
     [Pure]
-    public readonly bool Equals(PoolBufferStringBuilder builder, StringComparison comparisonType)
+    public readonly bool Equals(PooledStringBuilder builder, StringComparison comparisonType)
     {
         return Equals(builder.WrittenSpan, comparisonType);
     }
@@ -315,7 +311,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
         return WrittenSpan.Equals(str, comparisonType);
     }
 
-    public readonly bool Equals(PoolBufferStringBuilder other)
+    public readonly bool Equals(PooledStringBuilder other)
     {
         return Length == other.Length && _buffer.Equals(other._buffer);
     }
@@ -323,7 +319,7 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly bool Equals(object? obj)
     {
-        return obj is PoolBufferStringBuilder other && Equals(other);
+        return obj is PooledStringBuilder other && Equals(other);
     }
 
     [Pure]
@@ -339,12 +335,12 @@ public partial struct PoolBufferStringBuilder : IDisposable, ICollection<char>, 
         return string.GetHashCode(WrittenSpan, comparisonType);
     }
 
-    public static bool operator ==(PoolBufferStringBuilder left, PoolBufferStringBuilder right)
+    public static bool operator ==(PooledStringBuilder left, PooledStringBuilder right)
     {
         return left.Equals(right);
     }
 
-    public static bool operator !=(PoolBufferStringBuilder left, PoolBufferStringBuilder right)
+    public static bool operator !=(PooledStringBuilder left, PooledStringBuilder right)
     {
         return !(left == right);
     }

@@ -26,10 +26,6 @@ public sealed class BalancedChatMessage : ChatMessage, IEquatable<BalancedChatMe
         _tags = tags;
     }
 
-    public override void Dispose()
-    {
-    }
-
     public bool Equals(BalancedChatMessage? other)
     {
         return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);

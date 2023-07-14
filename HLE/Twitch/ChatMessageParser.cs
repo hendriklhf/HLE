@@ -13,7 +13,7 @@ namespace HLE.Twitch;
 public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMessageParser>
 {
     private protected const string _actionPrefix = ":\u0001ACTION";
-    private protected const string _nameWithSpaceEnding = "\\s";
+    private protected const string _escapedWhitespace = "\\s";
 
     private protected const char _upperCaseAMinus10 = (char)('A' - 10);
     private protected const char _charZero = '0';
@@ -122,7 +122,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ReadOnlySpan<char> GetDisplayName(ReadOnlySpan<char> value)
     {
-        bool isBackSlash = value[^2] == _nameWithSpaceEnding[0];
+        bool isBackSlash = value[^2] == '\\';
         int asByte = Unsafe.As<bool, byte>(ref isBackSlash) << 1;
         return value[..^asByte];
     }

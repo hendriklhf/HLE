@@ -2,7 +2,7 @@ using System;
 
 namespace HLE.Twitch.Models;
 
-public interface IChatMessage : IDisposable
+public interface IChatMessage : IEquatable<IChatMessage>
 {
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
@@ -85,6 +85,4 @@ public interface IChatMessage : IDisposable
     /// The message content.
     /// </summary>
     string Message { get; }
-
-    bool Equals(IChatMessage? other);
 }

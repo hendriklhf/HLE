@@ -31,6 +31,8 @@ public static class CollectionHelper
         {
             case IList<T> iList:
                 return iList.Count == 0 ? default : iList[System.Random.Shared.Next(iList.Count)];
+            case IReadOnlyList<T> iReadOnlyList:
+                return iReadOnlyList.Count == 0 ? default : iReadOnlyList[System.Random.Shared.Next(iReadOnlyList.Count)];
             case ICountable countable:
                 if (countable.Count == 0)
                 {
@@ -171,7 +173,7 @@ public static class CollectionHelper
                     return new(rentedBuffer);
                 }
 
-                using PoolBufferStringBuilder builderWithCapacity = new(elementCount);
+                using PooledStringBuilder builderWithCapacity = new(elementCount);
                 foreach (char c in charCollection)
                 {
                     builderWithCapacity.Append(c);
@@ -180,7 +182,7 @@ public static class CollectionHelper
                 return builderWithCapacity.ToString();
             }
 
-            using PoolBufferStringBuilder builder = new();
+            using PooledStringBuilder builder = new();
             foreach (char c in charCollection)
             {
                 builder.Append(c);
@@ -196,7 +198,7 @@ public static class CollectionHelper
                 IEnumerable<string> stringCollection = Unsafe.As<IEnumerable<T>, IEnumerable<string>>(ref collection);
                 if (stringCollection.TryGetNonEnumeratedCount(out int elementCount))
                 {
-                    using PoolBufferStringBuilder enumerableBuilder = new(15 * elementCount);
+                    using PooledStringBuilder enumerableBuilder = new(15 * elementCount);
                     foreach (string str in stringCollection)
                     {
                         enumerableBuilder.Append(str);
@@ -213,7 +215,7 @@ public static class CollectionHelper
             }
 
             int pseudoAverageStringLength = (strings[0].Length + strings[stringsLength >> 1].Length + strings[^1].Length) / 3;
-            using PoolBufferStringBuilder builder = new(pseudoAverageStringLength * stringsLength);
+            using PooledStringBuilder builder = new(pseudoAverageStringLength * stringsLength);
 
             ref string stringsReference = ref MemoryMarshal.GetReference(strings);
             for (int i = 0; i < stringsLength; i++)
@@ -326,7 +328,7 @@ public static class CollectionHelper
             return IndicesOf(span, predicate);
         }
 
-        using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         switch (collection)
         {
             case IList<T> iList:
@@ -334,6 +336,18 @@ public static class CollectionHelper
                 for (int i = 0; i < elementCount; i++)
                 {
                     if (predicate(iList[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
+
+                break;
+            }
+            case IReadOnlyList<T> iReadOnlyList:
+            {
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(iReadOnlyList[i]))
                     {
                         indices.Add(i);
                     }
@@ -454,17 +468,72 @@ public static class CollectionHelper
             return IndicesOf(span, predicate);
         }
 
-        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
-        using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        int currentIndex = 0;
-        foreach (T item in collection)
+        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        switch (collection)
         {
-            if (predicate(item))
+            case IList<T> iList:
             {
-                indices.Add(currentIndex);
-            }
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(iList[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
 
-            currentIndex++;
+                break;
+            }
+            case IReadOnlyList<T> iReadOnlyList:
+            {
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(iReadOnlyList[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
+
+                break;
+            }
+            case IIndexAccessible<T> indexAccessible:
+            {
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(indexAccessible[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
+
+                break;
+            }
+            case IRefIndexAccessible<T> refIndexAccessible:
+            {
+                for (int i = 0; i < elementCount; i++)
+                {
+                    if (predicate(refIndexAccessible[i]))
+                    {
+                        indices.Add(i);
+                    }
+                }
+
+                break;
+            }
+            default:
+            {
+                int currentIndex = 0;
+                foreach (T item in collection)
+                {
+                    if (predicate(item))
+                    {
+                        indices.Add(currentIndex);
+                    }
+
+                    currentIndex++;
+                }
+
+                break;
+            }
         }
 
         return indices.ToArray();
@@ -541,7 +610,7 @@ public static class CollectionHelper
 
         // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
         int currentIndex = 0;
-        using PoolBufferList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         foreach (T t in collection)
         {
             if (t.Equals(item))
@@ -930,7 +999,7 @@ public static class CollectionHelper
         if (collectionType == typeof(List<T>))
         {
             var list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
-            memory = CollectionsMarshal.AsSpan(list).AsMemoryDangerous();
+            memory = CollectionsMarshal.AsSpan(list).AsMemoryUnsafe();
             return true;
         }
 
@@ -1070,8 +1139,8 @@ public static class CollectionHelper
     /// If there isn't enough space, the method will return <see langword="false"/> and set <paramref name="writtenElements"/> to <c>0</c>.<br/>
     /// If no amount of elements could be retrieved, the method will start writing elements into the buffer and will do so until it is finished, in which case it will return <see langword="true"/>,
     /// or until it runs out of buffer space, in which case it will return <see langword="false"/>.<br/>
-    /// This method is in some cases much more efficient than calling <c>.ToArray()</c> on an <see cref="IEnumerable{T}"/> and enables using a rented <see cref="Array"/> from an <see cref="ArrayPool{T}"/> to store the elements.
     /// </summary>
+    /// <remarks>This method is in some cases much more efficient than calling <c>.ToArray()</c> on an <see cref="IEnumerable{T}"/> and enables using a rented <see cref="Array"/> from an <see cref="ArrayPool{T}"/> to store the elements.</remarks>
     /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be enumerated and elements will be taken from.</param>
     /// <param name="buffer">The buffer the elements will be written into.</param>
     /// <param name="writtenElements">The amount of written elements.</param>

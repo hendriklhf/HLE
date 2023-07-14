@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Collections;
 
@@ -19,6 +20,7 @@ public ref struct RangeEnumerator
         _end = range.End.Value;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool MoveNext()
     {
         return ++Current <= _end;

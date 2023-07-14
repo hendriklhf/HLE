@@ -10,7 +10,7 @@ public class ValueStackTest
     [TestMethod]
     public void PushTest()
     {
-        ValueStack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = new(stackalloc int[5]);
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
@@ -20,7 +20,7 @@ public class ValueStackTest
     [TestMethod]
     public void PopTest()
     {
-        ValueStack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = new(stackalloc int[5]);
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
@@ -34,7 +34,7 @@ public class ValueStackTest
     [TestMethod]
     public void PeekTest()
     {
-        ValueStack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = new(stackalloc int[5]);
         stack.Push(5);
         Assert.AreEqual(5, stack.Peek());
         Assert.AreEqual(1, stack.Count);
@@ -43,7 +43,7 @@ public class ValueStackTest
     [TestMethod]
     public void ClearTest()
     {
-        ValueStack<int> stack = stackalloc int[5];
+        ValueStack<int> stack = new(stackalloc int[5]);
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
@@ -54,7 +54,7 @@ public class ValueStackTest
     [TestMethod]
     public void PushAndPopTest()
     {
-        ValueStack<int> stack = stackalloc int[50];
+        ValueStack<int> stack = new(stackalloc int[50]);
         for (int i = 0; i < 10_000; i++)
         {
             int count = Random.Shared.Next(0, 50);

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -15,35 +17,33 @@ namespace HLE.Twitch.Chatterino;
 [SupportedOSPlatform("windows")]
 public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsReader>
 {
-    private readonly byte[] _windowLayoutFileContent;
+    private readonly string _windowLayoutPath;
     private string[]? _channels;
 
     public ChatterinoSettingsReader()
     {
-        using PoolBufferStringBuilder pathBuilder = new(100);
+        using PooledStringBuilder pathBuilder = new(100);
         pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
-        string windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
-
-        using PoolBufferWriter<byte> fileContentWriter = new(20_000);
-        BufferedFileReader fileReader = new(windowLayoutPath);
-        fileReader.ReadBytes(fileContentWriter, 20_000);
-        _windowLayoutFileContent = fileContentWriter.ToArray();
+        _windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
     }
 
     /// <summary>
     /// Gets all distinct channels of all your tabs from the Chatterino settings.
-    /// The result will be cached.
     /// </summary>
+    /// <remarks>The result will be cached, thus only the first call will allocate.</remarks>
     /// <returns>A string array of all channels.</returns>
-    public string[] GetChannels()
+    public ImmutableArray<string> GetChannels()
     {
         if (_channels is not null)
         {
-            return _channels;
+            return ImmutableCollectionsMarshal.AsImmutableArray(_channels);
         }
 
-        Utf8JsonReader jsonReader = new(_windowLayoutFileContent);
-        using PoolBufferList<string> channels = new(20);
+        using PooledBufferWriter<byte> windowLayoutFileContentWriter = new(20_000);
+        ReadWindowLayoutFile(windowLayoutFileContentWriter);
+
+        Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
+        using PooledList<string> channels = new(20);
 
         ReadOnlySpan<byte> dataProperty = "data"u8;
         ReadOnlySpan<byte> nameProperty = "name"u8;
@@ -88,7 +88,13 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
         }
 
         _channels = channels.ToArray();
-        return _channels;
+        return ImmutableCollectionsMarshal.AsImmutableArray(_channels);
+    }
+
+    private void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
+    {
+        BufferedFileReader fileReader = new(_windowLayoutPath);
+        fileReader.ReadBytes(windowLayoutFileContentWriter, 20_000);
     }
 
     public bool Equals(ChatterinoSettingsReader? other)

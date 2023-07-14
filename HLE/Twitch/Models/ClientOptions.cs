@@ -32,7 +32,7 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
 
     public bool Equals(ClientOptions other)
     {
-        return MemoryHelper.EqualsBytes(this, other);
+        return this.EqualsBitwise(other);
     }
 
     public override bool Equals(object? obj)

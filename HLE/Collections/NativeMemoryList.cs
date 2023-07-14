@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshals;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -87,14 +88,15 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
 
         using NativeMemory<T> oldBuffer = _buffer;
         NativeMemory<T> newBuffer = new(oldBuffer.Length + neededSpace, false);
-        oldBuffer.CopyTo(newBuffer);
+        oldBuffer.CopyTo(newBuffer.AsSpan());
         _buffer = newBuffer;
     }
 
     public unsafe void Add(T item)
     {
         GrowIfNeeded(1);
-        _buffer._pointer[Count++] = item;
+        T* ptr = NativeMemoryMarshal<T>.GetPointer(_buffer);
+        ptr[Count++] = item;
     }
 
     public unsafe void AddRange(IEnumerable<T> items)
@@ -102,7 +104,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
             GrowIfNeeded(itemsCount);
-            T* destination = _buffer._pointer + Count;
+            T* destination = NativeMemoryMarshal<T>.GetPointer(_buffer) + Count;
             if (items is ICopyable<T> copyable)
             {
                 copyable.CopyTo(destination);
@@ -145,7 +147,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
         ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
 
         GrowIfNeeded(items.Length);
-        ref T destinationReference = ref Unsafe.AsRef<T>(_buffer._pointer + Count);
+        ref T destinationReference = ref Unsafe.AsRef<T>(NativeMemoryMarshal<T>.GetPointer(_buffer) + Count);
         ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
 
         Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * items.Length));

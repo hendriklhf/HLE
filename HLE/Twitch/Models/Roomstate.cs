@@ -64,7 +64,7 @@ public readonly struct Roomstate : IEquatable<Roomstate>
     public bool Equals(Roomstate other)
     {
         ref Roomstate thisRoomstate = ref Unsafe.AsRef(in this);
-        return MemoryHelper.EqualsBytes(ref thisRoomstate, ref other);
+        return thisRoomstate.EqualsBitwise(ref other);
     }
 
     public override bool Equals(object? obj)

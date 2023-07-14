@@ -42,7 +42,7 @@ public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToke
             throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {_tokenPattern}");
         }
 
-        ValueStringBuilder builder = stackalloc char[_tokenLength];
+        ValueStringBuilder builder = new(stackalloc char[_tokenLength]);
         if (!token.Span.StartsWith(_tokenPrefix))
         {
             builder.Append(_tokenPrefix);

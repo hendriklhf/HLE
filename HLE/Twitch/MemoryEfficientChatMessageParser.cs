@@ -9,9 +9,9 @@ namespace HLE.Twitch;
 
 public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquatable<MemoryEfficientChatMessageParser>
 {
-    internal static readonly Pool<Badge[]> _badgeArrayPool = new(static () => new Badge[5]);
-    internal static readonly Pool<char[]> _nameArrayPool = new(static () => new char[25]);
-    internal static readonly Pool<char[]> _messageArrayPool = new(static () => new char[512]);
+    internal static readonly ObjectPool<Badge[]> _badgeArrayPool = new(static () => new Badge[5]);
+    internal static readonly ObjectPool<char[]> _nameArrayPool = new(static () => new char[25]);
+    internal static readonly ObjectPool<char[]> _messageArrayPool = new(static () => new char[512]);
 
     [Pure]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)

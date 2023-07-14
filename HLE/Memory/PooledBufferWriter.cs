@@ -16,7 +16,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PoolBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>
+public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>
 {
     T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
 
@@ -45,16 +45,16 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
 
     private const int _defaultCapacity = 16;
 
-    public PoolBufferWriter() : this(_defaultCapacity)
+    public PooledBufferWriter() : this(_defaultCapacity)
     {
     }
 
-    public PoolBufferWriter(int capacity)
+    public PooledBufferWriter(int capacity)
     {
         _buffer = new(capacity);
     }
 
-    ~PoolBufferWriter()
+    ~PooledBufferWriter()
     {
         _buffer.Dispose();
     }
@@ -235,7 +235,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     }
 
     [Pure]
-    public bool Equals(PoolBufferWriter<T>? other)
+    public bool Equals(PooledBufferWriter<T>? other)
     {
         return ReferenceEquals(this, other) || Count == other?.Count && _buffer.Equals(other._buffer);
     }
@@ -243,7 +243,7 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
     [Pure]
     public override bool Equals(object? obj)
     {
-        return obj is PoolBufferWriter<T> other && Equals(other);
+        return obj is PooledBufferWriter<T> other && Equals(other);
     }
 
     [Pure]
@@ -262,9 +262,9 @@ public sealed class PoolBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDis
             return new(chars);
         }
 
-        Type thisType = typeof(PoolBufferWriter<T>);
+        Type thisType = typeof(PooledBufferWriter<T>);
         Type genericType = typeof(T);
-        return $"{thisType.Name}.{nameof(PoolBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Count}]";
+        return $"{thisType.Name}.{nameof(PooledBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Count}]";
     }
 
     public IEnumerator<T> GetEnumerator()

@@ -142,7 +142,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
-        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
         _ircHandler.OnNoticeReceived += (_, e) => OnNoticeReceived?.Invoke(this, e);
     }
 
@@ -242,7 +242,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        await ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+        await ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
     }
 
     private async Task ConnectAsync(ReadOnlyMemory<string> ircChannels)
@@ -266,7 +266,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask JoinChannelsAsync(List<string> channels)
     {
-        await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
+        await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
@@ -351,7 +351,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask LeaveChannelsAsync(List<string> channels)
     {
-        await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
+        await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
@@ -379,7 +379,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (IsConnected)
         {
-            await LeaveChannelsAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+            await LeaveChannelsAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
         }
 
         Channels.Clear();
@@ -427,7 +427,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         try
         {
-            using PoolBufferStringBuilder builder = new(50);
+            using PooledStringBuilder builder = new(50);
             builder.Append(_pongPrefix, data.Span);
             await SendRawAsync(builder.WrittenMemory);
         }
@@ -450,7 +450,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
             _client.CancelTasks();
             await Task.Delay(TimeSpan.FromSeconds(10));
-            await _client.ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryDangerous());
+            await _client.ConnectAsync(CollectionsMarshal.AsSpan(_ircChannels).AsMemoryUnsafe());
             await Task.Delay(TimeSpan.FromSeconds(5));
         }
         finally
@@ -502,6 +502,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         GC.SuppressFinalize(this);
         _client.Dispose();
+        _reconnectionLock.Dispose();
     }
 
     public bool Equals(TwitchClient? other)

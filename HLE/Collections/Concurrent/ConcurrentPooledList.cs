@@ -12,7 +12,7 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPoolBufferList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
+public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
     where T : IEquatable<T>
 {
     public T this[int index]
@@ -35,25 +35,25 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICount
 
     public bool IsReadOnly => false;
 
-    private readonly PoolBufferList<T> _list;
+    internal readonly PooledList<T> _list;
     private readonly SemaphoreSlim _listLock = new(1);
 
-    public ConcurrentPoolBufferList()
+    public ConcurrentPooledList()
     {
         _list = new();
     }
 
-    public ConcurrentPoolBufferList(int capacity)
+    public ConcurrentPooledList(int capacity)
     {
         _list = new(capacity);
     }
 
-    public ConcurrentPoolBufferList(PoolBufferWriter<T> bufferWriter)
+    public ConcurrentPooledList(PooledBufferWriter<T> bufferWriter)
     {
         _list = new(bufferWriter);
     }
 
-    ~ConcurrentPoolBufferList()
+    ~ConcurrentPooledList()
     {
         _list.Dispose();
         _listLock.Dispose();
@@ -279,7 +279,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICount
     }
 
     [Pure]
-    public bool Equals(ConcurrentPoolBufferList<T>? other)
+    public bool Equals(ConcurrentPooledList<T>? other)
     {
         return ReferenceEquals(this, other) || Count == other?.Count && _list.Equals(other._list);
     }
@@ -287,7 +287,7 @@ public sealed class ConcurrentPoolBufferList<T> : IList<T>, ICopyable<T>, ICount
     [Pure]
     public override bool Equals(object? obj)
     {
-        return obj is ConcurrentPoolBufferList<T> other && Equals(other);
+        return obj is ConcurrentPooledList<T> other && Equals(other);
     }
 
     [Pure]

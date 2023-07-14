@@ -10,7 +10,7 @@ public class ValueQueueTest
     [TestMethod]
     public void EnqueueTest()
     {
-        ValueQueue<int> queue = stackalloc int[5];
+        ValueQueue<int> queue = new(stackalloc int[5]);
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
@@ -20,7 +20,7 @@ public class ValueQueueTest
     [TestMethod]
     public void DequeueTest()
     {
-        ValueQueue<int> queue = stackalloc int[5];
+        ValueQueue<int> queue = new(stackalloc int[5]);
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
@@ -38,7 +38,7 @@ public class ValueQueueTest
     [TestMethod]
     public void PeekTest()
     {
-        ValueQueue<int> queue = stackalloc int[1];
+        ValueQueue<int> queue = new(stackalloc int[1]);
         queue.Enqueue(1);
 
         Assert.AreEqual(1, queue.Peek());
@@ -48,7 +48,7 @@ public class ValueQueueTest
     [TestMethod]
     public void ClearTest()
     {
-        ValueQueue<int> queue = stackalloc int[5];
+        ValueQueue<int> queue = new(stackalloc int[5]);
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
@@ -61,7 +61,7 @@ public class ValueQueueTest
     [TestMethod]
     public void EnqueueAndDequeueTest()
     {
-        ValueQueue<int> queue = stackalloc int[50];
+        ValueQueue<int> queue = new(stackalloc int[50]);
         for (int i = 0; i < 10_000; i++)
         {
             int count = Random.Shared.Next(0, 50);

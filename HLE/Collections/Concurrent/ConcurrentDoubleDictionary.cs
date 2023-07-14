@@ -10,13 +10,14 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, ICountable, IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, ICountable, IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IDisposable
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _dictionary[key];
 
     public TValue this[TSecondaryKey key] => _dictionary[key];
 
+    [SuppressMessage("Design", "CA1044:Properties should not be write only")]
     public TValue this[TPrimaryKey primaryKey, TSecondaryKey secondaryKey]
     {
         set
@@ -53,6 +54,11 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     public ConcurrentDoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
     {
         _dictionary = new(primaryKeyComparer, secondaryKeyComparer);
+    }
+
+    public void Dispose()
+    {
+        _dictionaryLock.Dispose();
     }
 
     public bool TryAdd(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)

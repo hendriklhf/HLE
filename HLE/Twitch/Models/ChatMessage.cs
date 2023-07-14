@@ -43,8 +43,6 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     private protected ChatMessageTags _tags;
 
-    public abstract void Dispose();
-
     /// <summary>
     /// Returns the message in the following format: "&lt;#Channel&gt; Username: Message".
     /// </summary>
@@ -53,7 +51,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     [SkipLocalsInit]
     public override string ToString()
     {
-        ValueStringBuilder builder = stackalloc char[Channel.Length + Username.Length + Message.Length + 6];
+        ValueStringBuilder builder = new(stackalloc char[Channel.Length + Username.Length + Message.Length + 6]);
         builder.Append("<#", Channel, "> ", Username, ": ", Message);
         return builder.ToString();
     }

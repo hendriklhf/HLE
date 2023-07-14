@@ -79,8 +79,4 @@ public ref struct ValueStack<T>
     {
         return _stack[..Count].ToArray();
     }
-
-    public static implicit operator ValueStack<T>(Span<T> stack) => new(stack);
-
-    public static implicit operator ValueStack<T>(T[] stack) => new(stack);
 }

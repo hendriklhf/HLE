@@ -12,7 +12,7 @@ namespace HLE.Twitch.Models;
 /// A class that represents a list of channels the client is connected to.
 /// </summary>
 [DebuggerDisplay("Count = {_channels.Count}")]
-public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>, ICountable
+public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>, ICountable, IDisposable
 {
     /// <summary>
     /// Retrieves a channel by the user id of the channel owner. Returns null if the client is not connected to the channel.
@@ -41,6 +41,17 @@ public sealed class ChannelList : IEnumerable<Channel>, IEquatable<ChannelList>,
     /// Uses channel id as primary key and hashed channel name with OrdinalIgnoreCase comparison as secondary key.
     /// </summary>
     private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();
+
+    ~ChannelList()
+    {
+        _channels.Dispose();
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        _channels.Dispose();
+    }
 
     internal void Update(in Roomstate args)
     {

@@ -13,9 +13,9 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>
+public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, IDisposable
 {
-    private readonly Bucket[] _buckets;
+    internal readonly Bucket[] _buckets;
 
     public static StringPool Shared { get; } = new();
 
@@ -28,6 +28,14 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>
         for (int i = 0; i < poolCapacity; i++)
         {
             _buckets[i] = new(bucketCapacity);
+        }
+    }
+
+    public void Dispose()
+    {
+        for (int i = 0; i < _buckets.Length; i++)
+        {
+            _buckets[i].Dispose();
         }
     }
 
@@ -93,12 +101,6 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>
         {
             bucket.Add(value);
         }
-    }
-
-    public bool TryGet(string str, [MaybeNullWhen(false)] out string value)
-    {
-        value = str;
-        return true;
     }
 
     public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
@@ -222,14 +224,20 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>
         return !(left == right);
     }
 
-    private readonly struct Bucket : IEnumerable<string>
+    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
+    internal readonly struct Bucket : IEnumerable<string>, IDisposable
     {
-        private readonly string?[] _strings;
+        internal readonly string?[] _strings;
         private readonly SemaphoreSlim _stringsLock = new(1);
 
         public Bucket(int bucketCapacity = _defaultBucketCapacity)
         {
             _strings = new string[bucketCapacity];
+        }
+
+        public void Dispose()
+        {
+            _stringsLock.Dispose();
         }
 
         public void Clear()

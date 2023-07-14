@@ -10,7 +10,7 @@ public class PoolBufferWriterTest
     [TestMethod]
     public void WriteToSpanTest()
     {
-        using PoolBufferWriter<char> writer = new();
+        using PooledBufferWriter<char> writer = new();
         "hello".CopyTo(writer.GetSpan(5));
         writer.Advance(5);
         Assert.AreEqual(5, writer.Count);
@@ -20,7 +20,7 @@ public class PoolBufferWriterTest
     [TestMethod]
     public void WriteToMemoryTest()
     {
-        using PoolBufferWriter<char> writer = new();
+        using PooledBufferWriter<char> writer = new();
         "hello".CopyTo(writer.GetMemory(5).Span);
         writer.Advance(5);
         Assert.AreEqual(5, writer.Count);
@@ -30,7 +30,7 @@ public class PoolBufferWriterTest
     [TestMethod]
     public void LoopWritingTest()
     {
-        using PoolBufferWriter<char> writer = new();
+        using PooledBufferWriter<char> writer = new();
         for (int i = 0; i < 1000; i++)
         {
             "hello".CopyTo(writer.GetSpan(5));
@@ -45,7 +45,7 @@ public class PoolBufferWriterTest
     [TestMethod]
     public void ClearTest()
     {
-        using PoolBufferWriter<char> writer = new();
+        using PooledBufferWriter<char> writer = new();
         for (int i = 0; i < 1000; i++)
         {
             "hello".CopyTo(writer.GetSpan(5));
@@ -60,7 +60,7 @@ public class PoolBufferWriterTest
     [TestMethod]
     public void WritingAndClearingTest()
     {
-        using PoolBufferWriter<char> writer = new();
+        using PooledBufferWriter<char> writer = new();
         for (int i = 0; i < 100_000; i++)
         {
             if (i > 0 && i % 100 == 0)

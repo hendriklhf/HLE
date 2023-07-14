@@ -54,7 +54,10 @@ public class IrcHandlerTest
             Assert.AreEqual("strbhlfe", chatMessage.Username);
             Assert.AreEqual("lbnshlfe", chatMessage.Channel);
             Assert.AreEqual("xd xd xd", chatMessage.Message);
-            chatMessage.Dispose();
+            if (chatMessage is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
         };
 
         Assert.IsTrue(handler.Handle(_privMsg));

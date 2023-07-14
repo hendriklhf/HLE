@@ -37,7 +37,7 @@ public class BufferedFileOperationsTest
     public void ReadBytesTest()
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
-        using PoolBufferWriter<byte> writer = new(10);
+        using PooledBufferWriter<byte> writer = new(10);
         new BufferedFileReader(filePath).ReadBytes(writer);
         Assert.IsTrue(writer.WrittenSpan.SequenceEqual("hello".AsByteSpan()));
 
@@ -51,7 +51,7 @@ public class BufferedFileOperationsTest
     public async Task ReadBytesAsyncTest()
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
-        using PoolBufferWriter<byte> writer = new(10);
+        using PooledBufferWriter<byte> writer = new(10);
         await new BufferedFileReader(filePath).ReadBytesAsync(writer);
         Assert.IsTrue(writer.WrittenSpan.SequenceEqual("hello".AsByteSpan()));
 
@@ -65,7 +65,7 @@ public class BufferedFileOperationsTest
     public void ReadCharsTest()
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
-        using PoolBufferWriter<char> writer = new(10);
+        using PooledBufferWriter<char> writer = new(10);
         new BufferedFileReader(filePath).ReadChars(writer, Encoding.Unicode, 10);
         Assert.IsTrue(writer.WrittenSpan is "hello");
 
@@ -79,7 +79,7 @@ public class BufferedFileOperationsTest
     public async Task ReadCharsAsyncTest()
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
-        using PoolBufferWriter<char> writer = new(10);
+        using PooledBufferWriter<char> writer = new(10);
         await new BufferedFileReader(filePath).ReadCharsAsync(writer, Encoding.Unicode, 10);
         Assert.IsTrue(writer.WrittenSpan is "hello");
 

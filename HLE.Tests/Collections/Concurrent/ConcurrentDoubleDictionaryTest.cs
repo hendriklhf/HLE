@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using HLE.Collections.Concurrent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -8,9 +9,10 @@ namespace HLE.Tests.Collections.Concurrent;
 public class ConcurrentConcurrentDoubleDictionaryTest
 {
     [TestMethod]
+    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public void SetTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 
@@ -34,7 +36,7 @@ public class ConcurrentConcurrentDoubleDictionaryTest
     [TestMethod]
     public void TryAddTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 
@@ -49,9 +51,10 @@ public class ConcurrentConcurrentDoubleDictionaryTest
     }
 
     [TestMethod]
+    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public void AddOrSetTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
 
         dictionary.AddOrSet(1, "a", value);
@@ -78,7 +81,7 @@ public class ConcurrentConcurrentDoubleDictionaryTest
     [TestMethod]
     public void TryGetValueTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 
@@ -104,7 +107,7 @@ public class ConcurrentConcurrentDoubleDictionaryTest
     [TestMethod]
     public void RemoveTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
         dictionary.AddOrSet(2, "b", value);
@@ -126,7 +129,7 @@ public class ConcurrentConcurrentDoubleDictionaryTest
     [TestMethod]
     public void ClearTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
         dictionary.AddOrSet(2, "b", value);
@@ -141,7 +144,7 @@ public class ConcurrentConcurrentDoubleDictionaryTest
     [TestMethod]
     public void ContainsTest()
     {
-        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 

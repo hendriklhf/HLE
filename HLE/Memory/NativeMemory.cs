@@ -16,11 +16,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if ((uint)index >= (uint)Length)
-            {
-                throw new IndexOutOfRangeException($"The index {index} is out of range for Length {Length}.");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Length);
             return ref _pointer[index];
         }
     }
@@ -31,11 +27,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         get
         {
             int actualIndex = index.GetOffset(Length);
-            if ((uint)actualIndex >= (uint)Length)
-            {
-                throw new IndexOutOfRangeException($"The index {actualIndex} is out of range for Length {Length}.");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(actualIndex, Length);
             return ref _pointer[actualIndex];
         }
     }
@@ -46,12 +38,10 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         get
         {
             int start = range.Start.GetOffset(Length);
-            int length = range.End.GetOffset(Length) - start;
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(start, Length);
 
-            if ((uint)start >= (uint)Length || length >= Length - start)
-            {
-                throw new IndexOutOfRangeException();
-            }
+            int length = range.End.GetOffset(Length) - start;
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(length, Length - start);
 
             return new(_pointer + start, length);
         }
@@ -211,10 +201,5 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
     public static bool operator !=(NativeMemory<T> left, NativeMemory<T> right)
     {
         return !(left == right);
-    }
-
-    public static implicit operator Span<T>(NativeMemory<T> nativeMemory)
-    {
-        return nativeMemory.AsSpan();
     }
 }

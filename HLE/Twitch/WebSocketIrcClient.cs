@@ -269,7 +269,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
     public async Task ConnectAsync(List<string> channels)
     {
-        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryDangerous());
+        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
     }
 
     /// <summary>
@@ -282,7 +282,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         StartListeningThread();
         OnConnected?.Invoke(this, EventArgs.Empty);
 
-        using PoolBufferStringBuilder messageBuilder = new(_capReqMessage.Length);
+        using PooledStringBuilder messageBuilder = new(_capReqMessage.Length);
         if (_oAuthToken != OAuthToken.Empty)
         {
             messageBuilder.Append(_passPrefix, _oAuthToken.AsSpan());
@@ -342,7 +342,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// </summary>
     /// <param name="channel">The channel the message will be sent to.</param>
     /// <param name="builder">The builder that contains the message that will be sent.</param>
-    public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, PoolBufferStringBuilder builder)
+    public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, PooledStringBuilder builder)
     {
         await SendMessageAsync(channel, builder.WrittenMemory);
     }
@@ -354,7 +354,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="message">The message that will be sent to the channel.</param>
     public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
-        using PoolBufferStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
+        using PooledStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
         messageBuilder.Append(_privMsgPrefix, channel.Span, " :", message.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
@@ -371,7 +371,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="channel">The channel the client will join.</param>
     public async ValueTask JoinChannelAsync(ReadOnlyMemory<char> channel)
     {
-        using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
+        using PooledStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_joinPrefix, channel.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
@@ -388,7 +388,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="channel">The channel the client will leave.</param>
     public async ValueTask LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
-        using PoolBufferStringBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
+        using PooledStringBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
         messageBuilder.Append(_partPrefix, channel.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
@@ -404,7 +404,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         int maxJoinsInPeriod = 20 + 180 * Unsafe.As<bool, byte>(ref isVerifiedBot);
         TimeSpan period = TimeSpan.FromSeconds(10);
 
-        using PoolBufferStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
+        using PooledStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         DateTimeOffset start = DateTimeOffset.UtcNow;
         for (int i = 0; i < channels.Length && !_cancellationTokenSource.IsCancellationRequested; i++)
         {
