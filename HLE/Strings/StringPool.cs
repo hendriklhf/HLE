@@ -15,6 +15,10 @@ namespace HLE.Strings;
 
 public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, IDisposable
 {
+    public int Capacity => _buckets.Length;
+
+    public int BucketCapacity => _buckets[0]._strings.Length;
+
     internal readonly Bucket[] _buckets;
 
     public static StringPool Shared { get; } = new();

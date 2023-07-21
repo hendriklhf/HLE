@@ -134,5 +134,11 @@ public partial class StringHelperTest
             string str = Random.Shared.NextString(1000, $"{StringHelper.RegexMetaChars}awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
             Assert.AreEqual(Regex.Escape(str), StringHelper.RegexEscape(str));
         }
+
+        for (int i = 0; i < 100; i++)
+        {
+            string str = Random.Shared.NextString(1000, "awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
+            Assert.AreEqual(Regex.Escape(str), StringHelper.RegexEscape(str));
+        }
     }
 }

@@ -11,7 +11,7 @@ public ref struct ValueStack<T>
 
     public readonly int Capacity => _stack.Length;
 
-    private readonly Span<T> _stack = Span<T>.Empty;
+    internal readonly Span<T> _stack = Span<T>.Empty;
 
     public ValueStack()
     {

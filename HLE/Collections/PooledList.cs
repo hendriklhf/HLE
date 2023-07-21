@@ -12,10 +12,12 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IRefIndexAccessible<T>, IReadOnlyList<T>
+public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
     where T : IEquatable<T>
 {
     public ref T this[int index] => ref _bufferWriter.WrittenSpan[index];
+
+    T IIndexAccessible<T>.this[int index] => this[index];
 
     T IReadOnlyList<T>.this[int index] => this[index];
 
@@ -63,13 +65,6 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
     public Span<T> AsSpan()
     {
         return _bufferWriter.WrittenSpan;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Memory<T> AsMemory()
-    {
-        return _bufferWriter.WrittenMemory;
     }
 
     [Pure]

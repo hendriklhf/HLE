@@ -10,17 +10,17 @@ namespace HLE;
 
 public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 {
-    private readonly string _filePath;
+    public string FilePath { get; }
 
     public BufferedFileWriter(string filePath)
     {
-        _filePath = filePath;
+        FilePath = filePath;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteBytes(ReadOnlySpan<byte> fileBytes, [ConstantExpected] bool append)
     {
-        using FileStream fileStream = File.OpenWrite(_filePath);
+        using FileStream fileStream = File.OpenWrite(FilePath);
         if (!append)
         {
             fileStream.SetLength(fileBytes.Length);
@@ -37,7 +37,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes, [ConstantExpected] bool append)
     {
-        await using FileStream fileStream = File.OpenWrite(_filePath);
+        await using FileStream fileStream = File.OpenWrite(FilePath);
         if (!append)
         {
             fileStream.SetLength(fileBytes.Length);
@@ -121,7 +121,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 
     public bool Equals(BufferedFileWriter other)
     {
-        return _filePath == other._filePath;
+        return FilePath == other.FilePath;
     }
 
     public override bool Equals(object? obj)
@@ -131,7 +131,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 
     public override int GetHashCode()
     {
-        return _filePath.GetHashCode();
+        return FilePath.GetHashCode();
     }
 
     public static bool operator ==(BufferedFileWriter left, BufferedFileWriter right)

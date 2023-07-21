@@ -168,7 +168,7 @@ public static class CollectionHelper
             if (charCollection.TryGetNonEnumeratedCount(out int elementCount))
             {
                 using RentedArray<char> rentedBuffer = new(elementCount);
-                if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer))
+                if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer._array))
                 {
                     return new(rentedBuffer);
                 }
@@ -367,18 +367,6 @@ public static class CollectionHelper
 
                 break;
             }
-            case IRefIndexAccessible<T> refIndexAccessible:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(refIndexAccessible[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
             default:
             {
                 int currentIndex = 0;
@@ -500,18 +488,6 @@ public static class CollectionHelper
                 for (int i = 0; i < elementCount; i++)
                 {
                     if (predicate(indexAccessible[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            case IRefIndexAccessible<T> refIndexAccessible:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(refIndexAccessible[i]))
                     {
                         indices.Add(i);
                     }
@@ -677,7 +653,7 @@ public static class CollectionHelper
         while (indexOfItem >= 0)
         {
             indices[indicesLength++] = spanStartIndex;
-            indexOfItem = span[++spanStartIndex..].IndexOf(item);
+            indexOfItem = span.SliceUnsafe(++spanStartIndex).IndexOf(item);
             spanStartIndex += indexOfItem;
         }
 
@@ -702,7 +678,7 @@ public static class CollectionHelper
                 Vector512<int> values = Vector512.Add(startValues, ascendingValueAdditions);
                 values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
                 start += vector512Count;
-                span = span[vector512Count..];
+                span = span.SliceUnsafe(vector512Count);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -724,7 +700,7 @@ public static class CollectionHelper
                 Vector256<int> values = Vector256.Add(startValues, ascendingValueAdditions);
                 values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
                 start += vector256Count;
-                span = span[vector256Count..];
+                span = span.SliceUnsafe(vector256Count);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -766,7 +742,7 @@ public static class CollectionHelper
                 Vector64<int> values = Vector64.Add(startValues, ascendingValueAdditions);
                 values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
                 start += vector64Count;
-                span = span[vector64Count..];
+                span = span.SliceUnsafe(vector64Count);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -802,7 +778,7 @@ public static class CollectionHelper
                 Vector512<ushort> values = Vector512.Add(startValues, ascendingValueAdditions);
                 values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
                 start += vector512Count;
-                span = span[vector512Count..];
+                span = span.SliceUnsafe(vector512Count);
             }
 
             for (ushort i = 0; i < span.Length; i++)
@@ -825,7 +801,7 @@ public static class CollectionHelper
                 Vector256<ushort> values = Vector256.Add(startValues, ascendingValueAdditions);
                 values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
                 start += vector256Count;
-                span = span[vector256Count..];
+                span = span.SliceUnsafe(vector256Count);
             }
 
             for (ushort i = 0; i < span.Length; i++)
@@ -867,7 +843,7 @@ public static class CollectionHelper
                 Vector64<ushort> values = Vector64.Add(startValues, ascendingValueAdditions);
                 values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
                 start += vector64Count;
-                span = span[vector64Count..];
+                span = span.SliceUnsafe(vector64Count);
             }
 
             for (int i = 0; i < span.Length; i++)
@@ -1074,9 +1050,6 @@ public static class CollectionHelper
             case IList<T> iList:
                 element = iList[index];
                 return true;
-            case IRefIndexAccessible<T> refIndexAccessibleCollection:
-                element = refIndexAccessibleCollection[index];
-                return true;
             case IIndexAccessible<T> indexAccessibleCollection:
                 element = indexAccessibleCollection[index];
                 return true;
@@ -1174,15 +1147,6 @@ public static class CollectionHelper
                     for (int i = 0; i < elementCount; i++)
                     {
                         buffer[i] = indexAccessible[i];
-                    }
-
-                    break;
-                }
-                case IRefIndexAccessible<T> refIndexAccessible:
-                {
-                    for (int i = 0; i < elementCount; i++)
-                    {
-                        buffer[i] = refIndexAccessible[i];
                     }
 
                     break;

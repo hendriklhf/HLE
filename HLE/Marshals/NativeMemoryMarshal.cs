@@ -11,7 +11,7 @@ public static class NativeMemoryMarshal<T> where T : unmanaged, IEquatable<T>
         return nativeMemory._pointer;
     }
 
-    public static unsafe ref T GetReference(NativeMemory<T> nativeMemory)
+    public static unsafe ref T GetManagedPointer(NativeMemory<T> nativeMemory)
     {
         return ref Unsafe.AsRef<T>(nativeMemory._pointer);
     }

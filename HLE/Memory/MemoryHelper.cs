@@ -39,7 +39,7 @@ public static unsafe class MemoryHelper
         return *(Memory<T>*)&memory;
     }
 
-    /// <inheritdoc cref="AsMemoryUnsafe{T}(System.Span{T})"/>
+    /// <inheritdoc cref="AsMemoryUnsafe{T}(ReadOnlySpan{T})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMemoryUnsafe<T>(this Span<T> span)
@@ -180,6 +180,12 @@ public static unsafe class MemoryHelper
         return leftBytes.SequenceEqual(rightBytes);
     }
 
+    /// <inheritdoc cref="CopyToUnsafe{T}(ReadOnlySpan{T},Span{T})"/>
+    public static void CopyToUnsafe<T>(this Span<T> source, Span<T> destination)
+    {
+        CopyToUnsafe((ReadOnlySpan<T>)source, destination);
+    }
+
     /// <summary>
     /// Copies the <paramref name="source"/> to the <paramref name="destination"/> without checking if enough space is available, so the caller has to verify that it is safe.
     /// </summary>
@@ -187,7 +193,7 @@ public static unsafe class MemoryHelper
     /// <param name="destination">The destination where the items will be copied to.</param>
     /// <typeparam name="T">The type of the items that will be copied.</typeparam>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CopyUnsafe<T>(ReadOnlySpan<T> source, Span<T> destination)
+    public static void CopyToUnsafe<T>(this ReadOnlySpan<T> source, Span<T> destination)
     {
         ref T sourceReference = ref MemoryMarshal.GetReference(source);
         ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);

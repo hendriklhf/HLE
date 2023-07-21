@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -19,7 +20,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public int Count => _values.Count;
 
-    public IEnumerable<TValue> Values => _values.Values;
+    public ImmutableArray<TValue> Values => _values.Values;
 
     internal readonly FrozenDictionary<TPrimaryKey, TValue> _values;
     internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
@@ -61,7 +62,10 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public IEnumerator<TValue> GetEnumerator()
     {
-        return Values.GetEnumerator();
+        foreach (TValue item in Values)
+        {
+            yield return item;
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator()

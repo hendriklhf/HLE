@@ -4,13 +4,12 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using HLE.Memory;
 
-namespace HLE.Strings;
+namespace HLE.Marshals;
 
 /// <summary>
-/// Provides methods for <see cref="string"/> manipulation.
-/// ⚠️ Only use this class if you completely know what you are doing and how strings work. ⚠️
+/// Provides methods for <see cref="string"/> manipulation.<br/>
 /// </summary>
-public static class StringManipulations
+public static class StringMarshal
 {
     /// <summary>
     /// Creates a mutable <see cref="Span{Char}"/> over a <see cref="string"/>.
@@ -24,7 +23,6 @@ public static class StringManipulations
         return ((ReadOnlySpan<char>)str).AsMutableSpan();
     }
 
-#if NET8_0_OR_GREATER
     public static void Replace(string? str, char oldChar, char newChar)
     {
         Replace((ReadOnlySpan<char>)str, oldChar, newChar);
@@ -45,21 +43,20 @@ public static class StringManipulations
 
         span.Replace(oldChar, newChar);
     }
-#endif
 
-    public static void ToLower(string? str, CultureInfo? cultureInfo = null)
+    public static void ToLower(string? str)
     {
-        ToLower((ReadOnlySpan<char>)str, cultureInfo);
+        ToLower((ReadOnlySpan<char>)str);
     }
 
-    public static void ToLower(ReadOnlySpan<char> span, CultureInfo? cultureInfo = null)
+    public static void ToLower(ReadOnlySpan<char> span)
     {
-        ToLower(span.AsMutableSpan(), cultureInfo);
+        ToLower(span.AsMutableSpan());
     }
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ToLower(Span<char> span, CultureInfo? cultureInfo = null)
+    private static void ToLower(Span<char> span)
     {
         if (span.Length == 0)
         {
@@ -70,39 +67,39 @@ public static class StringManipulations
         {
             using RentedArray<char> rentedCopyBuffer = new(span.Length);
             span.CopyTo(rentedCopyBuffer);
-            MemoryExtensions.ToLower(rentedCopyBuffer[..span.Length], span, cultureInfo);
+            MemoryExtensions.ToLower(rentedCopyBuffer[..span.Length], span, CultureInfo.InvariantCulture);
             return;
         }
 
         Span<char> copyBuffer = stackalloc char[span.Length];
         span.CopyTo(copyBuffer);
-        MemoryExtensions.ToLower(copyBuffer, span, cultureInfo);
+        MemoryExtensions.ToLower(copyBuffer, span, CultureInfo.InvariantCulture);
     }
 
-    public static void ToUpper(string? str, CultureInfo? cultureInfo = null)
+    public static void ToUpper(string? str)
     {
-        ToUpper((ReadOnlySpan<char>)str, cultureInfo);
+        ToUpper((ReadOnlySpan<char>)str);
     }
 
-    public static void ToUpper(ReadOnlySpan<char> span, CultureInfo? cultureInfo = null)
+    public static void ToUpper(ReadOnlySpan<char> span)
     {
-        ToUpper(span.AsMutableSpan(), cultureInfo);
+        ToUpper(span.AsMutableSpan());
     }
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ToUpper(Span<char> span, CultureInfo? cultureInfo = null)
+    private static void ToUpper(Span<char> span)
     {
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = new(span.Length);
             span.CopyTo(rentedCopyBuffer);
-            MemoryExtensions.ToUpper(rentedCopyBuffer[..span.Length], span, cultureInfo);
+            MemoryExtensions.ToUpper(rentedCopyBuffer[..span.Length], span, CultureInfo.InvariantCulture);
             return;
         }
 
         Span<char> copyBuffer = stackalloc char[span.Length];
         span.CopyTo(copyBuffer);
-        MemoryExtensions.ToUpper(copyBuffer, span, cultureInfo);
+        MemoryExtensions.ToUpper(copyBuffer, span, CultureInfo.InvariantCulture);
     }
 }

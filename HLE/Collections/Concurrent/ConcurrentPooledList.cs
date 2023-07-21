@@ -67,13 +67,6 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     }
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Memory<T> AsMemory()
-    {
-        return _list.AsMemory();
-    }
-
-    [Pure]
     public T[] ToArray()
     {
         return _list.ToArray();

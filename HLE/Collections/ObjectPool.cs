@@ -13,8 +13,8 @@ namespace HLE.Collections;
 public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>
 {
     private readonly ConcurrentStack<T> _rentableItems = new();
-    private readonly Func<T> _itemFactory;
-    private readonly Action<T>? _returnAction;
+    internal Func<T> _itemFactory;
+    internal Action<T>? _returnAction;
 
     private const int _defaultMaximumPoolCapacity = 64;
 

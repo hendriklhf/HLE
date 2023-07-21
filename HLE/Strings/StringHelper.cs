@@ -1,11 +1,12 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Buffers;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using HLE.Marshals;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -32,6 +33,7 @@ public static class StringHelper
 
     public const string RegexMetaChars = "\t\n\f\r #$()*+.?[\\^{|";
 
+    private static readonly SearchValues<char> _regexMetaCharsSearchValues = SearchValues.Create(RegexMetaChars);
     private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
 
     [Pure]
@@ -39,7 +41,7 @@ public static class StringHelper
     public static unsafe string FastAllocateString(int length, out Span<char> chars)
     {
         string str = _fastAllocateString(length);
-        chars = StringManipulations.AsMutableSpan(str);
+        chars = StringMarshal.AsMutableSpan(str);
         return str;
     }
 
@@ -158,37 +160,38 @@ public static class StringHelper
         return new(buffer[..resultLength]);
     }
 
-    [Pure]
     public static int TrimAll(this string str, Span<char> result)
     {
         return TrimAll((ReadOnlySpan<char>)str, result);
     }
 
-    [Pure]
-    public static int TrimAll(this ReadOnlySpan<char> str, Span<char> result)
+    public static int TrimAll(this ReadOnlySpan<char> span, Span<char> result)
     {
-        int indexOfAnyNonWhitespace = str.IndexOfAnyExcept(' ');
+        int indexOfAnyNonWhitespace = span.IndexOfAnyExcept(' ');
         if (indexOfAnyNonWhitespace < 0)
         {
             return 0;
         }
 
-        str = str[indexOfAnyNonWhitespace..];
-        str.CopyTo(result);
-        result = result[..str.Length];
+        span = span.SliceUnsafe(indexOfAnyNonWhitespace);
+        span.CopyTo(result);
+        result = result.SliceUnsafe(0, span.Length);
 
         int indexOfWhitespaces = result.IndexOf("  ");
         while (indexOfWhitespaces >= 0)
         {
-            int endOfWhitespaces = result[indexOfWhitespaces..].IndexOfAnyExcept(' ');
+            int endOfWhitespaces = result.SliceUnsafe(indexOfWhitespaces).IndexOfAnyExcept(' ');
             if (endOfWhitespaces < 1)
             {
-                result = result[..indexOfWhitespaces];
+                result = result.SliceUnsafe(0, indexOfWhitespaces);
                 break;
             }
 
-            result[(indexOfWhitespaces + endOfWhitespaces)..].CopyTo(result[(indexOfWhitespaces + 1)..]);
-            result = result[..^(endOfWhitespaces - 1)];
+            Span<char> source = result.SliceUnsafe(indexOfWhitespaces + endOfWhitespaces);
+            Span<char> destination = result.SliceUnsafe(indexOfWhitespaces + 1);
+            source.CopyTo(destination);
+
+            result = result.SliceUnsafe(..^(endOfWhitespaces - 1));
             indexOfWhitespaces = result.IndexOf("  ");
         }
 
@@ -249,7 +252,7 @@ public static class StringHelper
             int startIndex = 0;
             while (spanAsShort.Length - startIndex >= vector512Count)
             {
-                Vector512<ushort> charsVector = Unsafe.As<ushort, Vector512<ushort>>(ref Unsafe.Add(ref MemoryMarshal.GetReference(spanAsShort), startIndex));
+                Vector512<ushort> charsVector = Vector512.LoadUnsafe(ref Unsafe.Add(ref MemoryMarshal.GetReference(spanAsShort), startIndex));
                 uint equals = (uint)Vector512.Equals(charsVector, whitespaceVector).ExtractMostSignificantBits();
                 while (equals > 0)
                 {
@@ -281,7 +284,7 @@ public static class StringHelper
             int startIndex = 0;
             while (spanAsShort.Length - startIndex >= vector256Count)
             {
-                Vector256<ushort> charsVector = Unsafe.As<ushort, Vector256<ushort>>(ref Unsafe.Add(ref MemoryMarshal.GetReference(spanAsShort), startIndex));
+                Vector256<ushort> charsVector = Vector256.LoadUnsafe(ref Unsafe.Add(ref MemoryMarshal.GetReference(spanAsShort), startIndex));
                 ushort equals = (ushort)Vector256.Equals(charsVector, whitespaceVector).ExtractMostSignificantBits();
                 while (equals > 0)
                 {
@@ -395,19 +398,15 @@ public static class StringHelper
         return indicesLength;
     }
 
+    [Pure]
     public static string RegexEscape(string? input)
     {
-        return RegexEscape(input.AsSpan(), true);
+        return input is null ? string.Empty : RegexEscape(input.AsSpan());
     }
 
     [Pure]
-    public static string RegexEscape(ReadOnlySpan<char> input)
-    {
-        return RegexEscape(input, false);
-    }
-
     [SkipLocalsInit]
-    private static string RegexEscape(ReadOnlySpan<char> input, [ConstantExpected] bool inputWasString)
+    public static string RegexEscape(ReadOnlySpan<char> input)
     {
         int resultLength;
         int maximumResultLength = input.Length << 1;
@@ -415,39 +414,33 @@ public static class StringHelper
         {
             using RentedArray<char> rentedBuffer = new(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer);
-            if (resultLength == 0)
-            {
-                return inputWasString ? input.AsStringUnsafe() : new(input);
-            }
-
-            return new(rentedBuffer[..resultLength]);
+            return resultLength == input.Length ? input.AsStringUnsafe() : new(rentedBuffer[..resultLength]);
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];
         resultLength = RegexEscape(input, buffer);
-        if (resultLength == 0)
-        {
-            return inputWasString ? input.AsStringUnsafe() : new(input);
-        }
-
-        return new(buffer[..resultLength]);
+        return resultLength == input.Length ? input.AsStringUnsafe() : new(buffer[..resultLength]);
     }
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
     {
-        ValueStringBuilder builder = new(escapedInput);
-
-        ReadOnlySpan<char> regexMetaChars = RegexMetaChars;
-        int indexOfMetaChar = input.IndexOfAny(regexMetaChars);
-        if (indexOfMetaChar < 0)
+        if (input.Length == 0)
         {
             return 0;
         }
 
-        while (indexOfMetaChar >= 0)
+        ValueStringBuilder builder = new(escapedInput);
+        ref char inputReference = ref MemoryMarshal.GetReference(input);
+        SearchValues<char> regexMetaCharsSearchValues = _regexMetaCharsSearchValues;
+        while (true)
         {
-            builder.Append(input[..indexOfMetaChar]);
-            char metaChar = input[indexOfMetaChar];
+            int indexOfMetaChar = input.IndexOfAny(regexMetaCharsSearchValues);
+            if (indexOfMetaChar < 0)
+            {
+                break;
+            }
+
+            char metaChar = Unsafe.Add(ref inputReference, indexOfMetaChar);
             metaChar = metaChar switch
             {
                 '\n' => 'n',
@@ -457,9 +450,9 @@ public static class StringHelper
                 _ => metaChar
             };
 
+            builder.Append(input.SliceUnsafe(0, indexOfMetaChar));
             builder.Append('\\', metaChar);
-            input = input[(indexOfMetaChar + 1)..];
-            indexOfMetaChar = input.IndexOfAny(regexMetaChars);
+            input = input.SliceUnsafe(indexOfMetaChar + 1);
         }
 
         builder.Append(input);
@@ -642,7 +635,7 @@ public static class StringHelper
     [Pure]
     public static ReadOnlySpan<byte> AsByteSpan(this string? str)
     {
-        if (str is null || str.Length == 0)
+        if (str is not { Length: > 0 })
         {
             return ReadOnlySpan<byte>.Empty;
         }

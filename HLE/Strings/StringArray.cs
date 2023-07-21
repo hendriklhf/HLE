@@ -1,13 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Strings;
 
@@ -40,10 +42,10 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     bool ICollection<string>.IsReadOnly => false;
 
-    private readonly string[] _strings;
-    private readonly int[] _stringLengths;
-    private readonly int[] _stringStarts;
-    private char[] _stringChars;
+    internal readonly string[] _strings;
+    internal readonly int[] _stringLengths;
+    internal readonly int[] _stringStarts;
+    internal char[] _stringChars;
 
     public StringArray(int length)
     {
@@ -53,16 +55,13 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _stringChars = new char[(nuint)length << 2];
     }
 
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public StringArray(ReadOnlySpan<string> strings) : this(strings.Length)
     {
-        ref string stringsReference = ref MemoryMarshal.GetReference(strings);
-        int stringsLength = strings.Length;
-        for (int i = 0; i < stringsLength; i++)
-        {
-            SetString(i, Unsafe.Add(ref stringsReference, i));
-        }
+        FillArray(strings);
     }
 
+    [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public StringArray(IEnumerable<string> strings)
     {
         _strings = strings.ToArray();
@@ -70,12 +69,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _stringStarts = new int[_strings.Length];
         _stringChars = new char[(nuint)_strings.Length << 2];
 
-        ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-        int stringsLength = _strings.Length;
-        for (int i = 0; i < stringsLength; i++)
-        {
-            SetString(i, Unsafe.Add(ref stringsReference, i));
-        }
+        FillArray(_strings);
     }
 
     [Pure]
@@ -98,6 +92,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     {
         int arrayLength = Length;
         ReadOnlySpan<char> charBuffer = _stringChars;
+        ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
         ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(_stringLengths);
         ref int startReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
         for (int i = startIndex; i < arrayLength; i++)
@@ -108,9 +103,16 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
                 continue;
             }
 
+            ref char charsReference = ref MemoryMarshal.GetReference(chars);
+            ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
+            if (Unsafe.AreSame(ref charsReference, ref stringReference))
+            {
+                return i;
+            }
+
             int start = Unsafe.Add(ref startReference, i);
-            ReadOnlySpan<char> bufferSlice = charBuffer.SliceUnsafe(start, length);
-            if (chars.SequenceEqual(bufferSlice))
+            ReadOnlySpan<char> bufferString = charBuffer.SliceUnsafe(start, length);
+            if (chars.SequenceEqual(bufferString))
             {
                 return i;
             }
@@ -120,24 +122,32 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     }
 
     [Pure]
-    public int IndexOf(string str, StringComparison comparison, int startIndex) => IndexOf(str.AsSpan(), comparison, startIndex);
+    public int IndexOf(string str, StringComparison comparison, int startIndex = 0) => IndexOf(str.AsSpan(), comparison, startIndex);
 
     [Pure]
     public int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
         int arrayLength = Length;
         ReadOnlySpan<char> charBuffer = _stringChars;
-        ReadOnlySpan<int> lengths = _stringLengths;
-        ReadOnlySpan<int> starts = _stringStarts;
+        ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
+        ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(_stringLengths);
+        ref int startReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
         for (int i = startIndex; i < arrayLength; i++)
         {
-            int length = lengths[i];
+            int length = Unsafe.Add(ref lengthsReference, i);
             if (length != chars.Length)
             {
                 continue;
             }
 
-            int start = starts[i];
+            ref char charsReference = ref MemoryMarshal.GetReference(chars);
+            ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
+            if (Unsafe.AreSame(ref charsReference, ref stringReference))
+            {
+                return i;
+            }
+
+            int start = Unsafe.Add(ref startReference, i);
             ReadOnlySpan<char> bufferSlice = charBuffer.SliceUnsafe(start, length);
             if (chars.Equals(bufferSlice, comparison))
             {
@@ -157,6 +167,17 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     void ICollection<string>.Add(string str) => throw new NotSupportedException();
 
     bool ICollection<string>.Remove(string str) => throw new NotSupportedException();
+
+    private void FillArray(ReadOnlySpan<string> strings)
+    {
+        Debug.Assert(strings.Length == Length);
+        ref string stringsReference = ref MemoryMarshal.GetReference(strings);
+        int stringsLength = strings.Length;
+        for (int i = 0; i < stringsLength; i++)
+        {
+            SetString(i, Unsafe.Add(ref stringsReference, i));
+        }
+    }
 
     public void Clear()
     {

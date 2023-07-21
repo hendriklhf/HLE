@@ -8,7 +8,7 @@ using HLE.Collections;
 
 namespace HLE.Memory;
 
-public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IRefIndexAccessible<T>, IReadOnlyCollection<T>
+public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IIndexAccessible<T>, IReadOnlyCollection<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index]
@@ -16,10 +16,12 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Length);
-            return ref _pointer[index];
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length);
+            return ref Unsafe.AsRef<T>(_pointer + index);
         }
     }
+
+    T IIndexAccessible<T>.this[int index] => this[index];
 
     public ref T this[Index index]
     {
@@ -28,7 +30,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         {
             int actualIndex = index.GetOffset(Length);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(actualIndex, Length);
-            return ref _pointer[actualIndex];
+            return ref Unsafe.AsRef<T>(_pointer + actualIndex);
         }
     }
 
@@ -132,10 +134,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         return AsSpan().ToArray();
     }
 
-    void ICollection<T>.Add(T item)
-    {
-        throw new NotSupportedException();
-    }
+    void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
     public void Clear()
     {
@@ -147,10 +146,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         return AsSpan().Contains(item);
     }
 
-    bool ICollection<T>.Remove(T item)
-    {
-        throw new NotSupportedException();
-    }
+    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     public IEnumerator<T> GetEnumerator()
     {

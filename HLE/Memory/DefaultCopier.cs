@@ -24,7 +24,7 @@ internal readonly ref struct DefaultCopier<T>
 
         Span<T> destinationSpan = CollectionsMarshal.AsSpan(destination);
         Debug.Assert(destinationSpan.Length >= _source.Length, "destinationSpan.Length >= _source.Length");
-        CopyTo(destinationSpan[offset..]);
+        CopyTo(destinationSpan.SliceUnsafe(offset));
     }
 
     public void CopyTo(T[] destination, int offset = 0)

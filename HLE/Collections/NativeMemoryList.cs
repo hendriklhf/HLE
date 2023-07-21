@@ -9,10 +9,12 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IRefIndexAccessible<T>, IReadOnlyList<T>
+public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index] => ref AsSpan()[index];
+
+    T IIndexAccessible<T>.this[int index] => this[index];
 
     T IReadOnlyList<T>.this[int index] => this[index];
 

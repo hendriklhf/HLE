@@ -40,118 +40,136 @@ public ref partial struct ValueStringBuilder
         _buffer = buffer;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Advance(int length)
     {
         Length += length;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(scoped ReadOnlySpan<char> span)
     {
         span.CopyTo(FreeBuffer);
-        Length += span.Length;
+        Advance(span.Length);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Append(char c)
     {
         _buffer[Length++] = c;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<byte, IFormatProvider>(value, format, formatProvider);
+        Append<byte>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<sbyte, IFormatProvider>(value, format, formatProvider);
+        Append<sbyte>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<short, IFormatProvider>(value, format, formatProvider);
+        Append<short>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<ushort, IFormatProvider>(value, format, formatProvider);
+        Append<ushort>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<int, IFormatProvider>(value, format, formatProvider);
+        Append<int>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<uint, IFormatProvider>(value, format, formatProvider);
+        Append<uint>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<long, IFormatProvider>(value, format, formatProvider);
+        Append<long>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<ulong, IFormatProvider>(value, format, formatProvider);
+        Append<ulong>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(Int128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<float, IFormatProvider>(value, format, formatProvider);
+        Append<Int128>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(UInt128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<double, IFormatProvider>(value, format, formatProvider);
+        Append<UInt128>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<DateTime, IFormatProvider>(dateTime, format, formatProvider);
+        Append<float>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(DateTimeOffset dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<DateTimeOffset, IFormatProvider>(dateTime, format, formatProvider);
+        Append<double>(value, format);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default, IFormatProvider? formatProvider = null)
+    public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default)
     {
-        Append<TimeSpan, IFormatProvider>(timeSpan, format, formatProvider);
+        Append<DateTime>(dateTime, format);
     }
 
-    public void Append<TSpanFormattable, TFormatProvider>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default, TFormatProvider? formatProvider = default)
-        where TSpanFormattable : ISpanFormattable where TFormatProvider : IFormatProvider
+    public void Append(DateTimeOffset dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default)
     {
-        if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, formatProvider))
+        Append<DateTimeOffset>(dateTime, format);
+    }
+
+    public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default)
+    {
+        Append<TimeSpan>(timeSpan, format);
+    }
+
+    public void Append(DateOnly dateOnly, [StringSyntax(StringSyntaxAttribute.DateOnlyFormat)] ReadOnlySpan<char> format = default)
+    {
+        Append<DateOnly>(dateOnly, format);
+    }
+
+    public void Append(TimeOnly timeOnly, [StringSyntax(StringSyntaxAttribute.TimeOnlyFormat)] ReadOnlySpan<char> format = default)
+    {
+        Append<TimeOnly>(timeOnly, format);
+    }
+
+    public void Append(Guid guid, [StringSyntax(StringSyntaxAttribute.GuidFormat)] ReadOnlySpan<char> format = default)
+    {
+        Append<Guid>(guid, format);
+    }
+
+    public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
+    {
+        if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, null))
         {
-            throw NotEnoughSpaceException(nameof(spanFormattable));
+            ThrowNotEnoughSpaceException();
         }
 
         Advance(charsWritten);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Clear()
+    internal bool TryAppend<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
+    {
+        bool success = spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, null);
+        Advance(charsWritten);
+        return success;
+    }
+
+    public void Clear(bool clearBuffer = false)
     {
         Length = 0;
+        if (clearBuffer)
+        {
+            _buffer.Clear();
+        }
     }
 
     [Pure]
@@ -171,9 +189,14 @@ public ref partial struct ValueStringBuilder
     [Pure]
     public readonly bool Equals(ValueStringBuilder other)
     {
+        if (Length == other.Length)
+        {
+            return true;
+        }
+
         ref char bufferReference = ref MemoryMarshal.GetReference(_buffer);
         ref char otherBufferReference = ref MemoryMarshal.GetReference(other._buffer);
-        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference) && Length == other.Length;
+        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference);
     }
 
     [Pure]
@@ -201,9 +224,10 @@ public ref partial struct ValueStringBuilder
         return string.GetHashCode(WrittenSpan, comparisonType);
     }
 
-    private static ArgumentException NotEnoughSpaceException(string paramName)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowNotEnoughSpaceException()
     {
-        return new("There was not enough space left in the buffer to write the provided value to the buffer.", paramName);
+        throw new InvalidOperationException("There was not enough space left in the buffer to write the provided value to the buffer.");
     }
 
     public static bool operator ==(ValueStringBuilder left, ValueStringBuilder right)

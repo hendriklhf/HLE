@@ -58,7 +58,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
         sourceBuilder.AppendLine("namespace HLE.Strings;").AppendLine();
-        sourceBuilder.AppendLine("public partial struct PooledStringBuilder");
+        sourceBuilder.AppendLine("public sealed partial class PooledStringBuilder");
         sourceBuilder.AppendLine("{");
         foreach (string[] argumentTypes in _arguments)
         {

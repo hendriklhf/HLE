@@ -10,21 +10,21 @@ namespace HLE;
 
 public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 {
-    private readonly string _filePath;
+    public string FilePath { get; }
 
     public BufferedFileReader(ReadOnlySpan<char> filePath)
     {
-        _filePath = StringPool.Shared.GetOrAdd(filePath);
+        FilePath = StringPool.Shared.GetOrAdd(filePath);
     }
 
     public BufferedFileReader(string filePath)
     {
-        _filePath = filePath;
+        FilePath = filePath;
     }
 
     public void ReadBytes<TWriter>(TWriter writer, int fileSizeHint = 100_000) where TWriter : IBufferWriter<byte>
     {
-        using FileStream fileStream = File.OpenRead(_filePath);
+        using FileStream fileStream = File.OpenRead(FilePath);
         int bytesRead = fileStream.Read(writer.GetSpan(fileSizeHint));
         writer.Advance(bytesRead);
         while (bytesRead > 0)
@@ -36,7 +36,7 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 
     public async ValueTask ReadBytesAsync<TWriter>(TWriter writer, int fileSizeHint = 100_000) where TWriter : IBufferWriter<byte>
     {
-        await using FileStream fileStream = File.OpenRead(_filePath);
+        await using FileStream fileStream = File.OpenRead(FilePath);
         int bytesRead = await fileStream.ReadAsync(writer.GetMemory(fileSizeHint));
         writer.Advance(bytesRead);
         while (bytesRead > 0)
@@ -66,7 +66,7 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 
     public bool Equals(BufferedFileReader other)
     {
-        return _filePath == other._filePath;
+        return FilePath == other.FilePath;
     }
 
     public override bool Equals(object? obj)
@@ -76,7 +76,7 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 
     public override int GetHashCode()
     {
-        return _filePath.GetHashCode();
+        return FilePath.GetHashCode();
     }
 
     public static bool operator ==(BufferedFileReader left, BufferedFileReader right)

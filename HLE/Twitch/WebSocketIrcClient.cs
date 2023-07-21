@@ -49,11 +49,9 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     internal event EventHandler? OnConnectionException;
 
     /// <summary>
-    /// Indicates whether the client is connected or not.
+    /// Gets the state of the websocket connection.
     /// </summary>
-    public bool IsConnected => _webSocket.State is WebSocketState.Open;
-
-    internal bool IsConnecting => _webSocket.State is WebSocketState.Connecting;
+    public WebSocketState State => _webSocket.State;
 
     private ClientWebSocket _webSocket = new();
     private readonly bool _isVerifiedBot;
@@ -140,7 +138,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             Memory<byte> byteBuffer = new byte[4096];
             Memory<char> charBuffer = new char[4096];
             int bufferLength = 0;
-            while (!cancellationTokenSource.IsCancellationRequested && IsConnected)
+            while (!cancellationTokenSource.IsCancellationRequested && State is WebSocketState.Open)
             {
                 ValueWebSocketReceiveResult webSocketReceiveResult = await webSocket.ReceiveAsync(byteBuffer, cancellationTokenSource.Token);
                 if (webSocketReceiveResult.Count == 0)
@@ -331,7 +329,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         await SendAsync(rawMessage);
     }
 
-    /// <inheritdoc cref="SendMessageAsync(System.ReadOnlyMemory{char},System.ReadOnlyMemory{char})"/>
+    /// <inheritdoc cref="SendMessageAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
     public async ValueTask SendMessageAsync(string channel, string message)
     {
         await SendMessageAsync(channel.AsMemory(), message.AsMemory());

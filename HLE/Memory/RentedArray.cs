@@ -12,14 +12,16 @@ using HLE.Collections;
 namespace HLE.Memory;
 
 /// <summary>
-/// Wraps an <see cref="System.Array"/> rented from the shared <see cref="ArrayPool{T}"/>
+/// Wraps an <see cref="Array"/> rented from the shared <see cref="ArrayPool{T}"/>
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 [DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IRefIndexAccessible<T>, IReadOnlyCollection<T>
+public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>
 {
     public ref T this[int index] => ref Span[index];
+
+    T IIndexAccessible<T>.this[int index] => this[index];
 
     public ref T this[Index index] => ref Span[index];
 
@@ -29,11 +31,9 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
 
     public Memory<T> Memory => _array;
 
-    public ArraySegment<T> ArraySegment => _array;
+    public ref T ManagedPointer => ref MemoryMarshal.GetReference(Span);
 
-    public ref T Reference => ref MemoryMarshal.GetReference(Span);
-
-    public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref Reference);
+    public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref ManagedPointer);
 
     public int Length => _array.Length;
 
@@ -110,10 +110,7 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         copier.CopyTo(destination);
     }
 
-    void ICollection<T>.Add(T item)
-    {
-        throw new NotSupportedException();
-    }
+    void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
     void ICollection<T>.Clear()
     {
@@ -125,10 +122,7 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         return _array.Contains(item);
     }
 
-    bool ICollection<T>.Remove(T item)
-    {
-        throw new NotSupportedException();
-    }
+    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     [Pure]
     public override bool Equals(object? obj)
@@ -185,11 +179,6 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     }
 
 #pragma warning disable CA2225
-    public static implicit operator T[](RentedArray<T> rentedArray)
-    {
-        return rentedArray._array;
-    }
-
     public static implicit operator Span<T>(RentedArray<T> rentedArray)
     {
         return rentedArray._array;
@@ -206,11 +195,6 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     }
 
     public static implicit operator ReadOnlyMemory<T>(RentedArray<T> rentedArray)
-    {
-        return rentedArray._array;
-    }
-
-    public static implicit operator ArraySegment<T>(RentedArray<T> rentedArray)
     {
         return rentedArray._array;
     }

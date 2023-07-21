@@ -18,7 +18,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public TValue this[TSecondaryKey key] => _values[_secondaryKeyTranslations[key]];
 
-    [SuppressMessage("Design", "CA1044:Properties should not be write only")]
+    [SuppressMessage("Design", "CA1044:Properties should not be write only", Justification = "reading makes no sense here")]
     public TValue this[TPrimaryKey primaryKey, TSecondaryKey secondaryKey]
     {
         set
@@ -51,7 +51,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public int Count => _values.Count;
 
-    public IEnumerable<TValue> Values => _values.Values;
+    public IReadOnlyCollection<TValue> Values => _values.Values;
 
     internal readonly Dictionary<TPrimaryKey, TValue> _values;
     internal readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;

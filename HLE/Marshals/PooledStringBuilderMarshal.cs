@@ -6,6 +6,6 @@ public static class PooledStringBuilderMarshal
 {
     public static char[] GetBuffer(PooledStringBuilder builder)
     {
-        return builder._buffer;
+        return builder._buffer._array;
     }
 }

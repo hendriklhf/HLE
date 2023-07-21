@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -31,7 +32,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Indicates whether the client is connected or not.
     /// </summary>
-    public bool IsConnected => _client.IsConnected;
+    public bool IsConnected => _client.State is WebSocketState.Open;
 
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
@@ -85,9 +86,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public event EventHandler<ReceivedData>? OnDataReceived;
 
-    private readonly WebSocketIrcClient _client;
-    private readonly IrcHandler _ircHandler;
-    private readonly List<string> _ircChannels = new();
+    internal readonly WebSocketIrcClient _client;
+    internal readonly IrcHandler _ircHandler;
+    internal readonly List<string> _ircChannels = new();
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
     private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
@@ -185,7 +186,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
-    /// <inheritdoc cref="SendAsync(long,System.ReadOnlyMemory{char})"/>
+    /// <inheritdoc cref="SendAsync(long,ReadOnlyMemory{char})"/>
     public async ValueTask SendAsync(long channelId, string message)
     {
         await SendAsync(channelId, message.AsMemory());
@@ -212,7 +213,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
-    /// <inheritdoc cref="SendRawAsync(System.ReadOnlyMemory{char})"/>
+    /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
     public async ValueTask SendRawAsync(string rawMessage)
     {
         await SendRawAsync(rawMessage.AsMemory());
@@ -443,7 +444,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
         try
         {
-            if (_client.IsConnected || _client.IsConnecting)
+            if (_client.State is WebSocketState.Open or WebSocketState.Connecting)
             {
                 return;
             }

@@ -9,4 +9,14 @@ public static class PooledListMarshal<T> where T : IEquatable<T>
     {
         return PooledBufferWriterMarshal<T>.GetBuffer(list._bufferWriter);
     }
+
+    public static void SetCount(PooledList<T> list, int count)
+    {
+        PooledBufferWriterMarshal<T>.SetCount(list._bufferWriter, count);
+    }
+
+    public static Memory<T> AsMemory(PooledList<T> list)
+    {
+        return list._bufferWriter.WrittenMemory;
+    }
 }

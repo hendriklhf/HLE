@@ -36,7 +36,7 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public int Count => _dictionary.Count;
 
-    public IEnumerable<TValue> Values => _dictionary.Values;
+    public IReadOnlyCollection<TValue> Values => _dictionary.Values;
 
     internal readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> _dictionary;
     private readonly SemaphoreSlim _dictionaryLock = new(1);

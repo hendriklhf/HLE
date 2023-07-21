@@ -8,4 +8,10 @@ public static class PooledBufferWriterMarshal<T>
     {
         return writer._buffer._array;
     }
+
+    public static void SetCount(PooledBufferWriter<T> writer, int count)
+    {
+        writer.EnsureCapacity(count);
+        writer.Count = count;
+    }
 }

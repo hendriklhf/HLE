@@ -33,7 +33,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     /// <summary>
     /// The amount of written elements.
     /// </summary>
-    public int Count { get; private set; }
+    public int Count { get; internal set; }
 
     public int Capacity => _buffer.Length;
 
@@ -223,7 +223,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
 
     bool ICollection<T>.Remove(T item)
     {
-        int index = Array.IndexOf(_buffer, item);
+        int index = Array.IndexOf(_buffer._array, item);
         if (index < 0)
         {
             return false;
@@ -257,7 +257,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     {
         if (typeof(char) == typeof(T))
         {
-            ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.Reference);
+            ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.ManagedPointer);
             ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref charsReference, Count);
             return new(chars);
         }
