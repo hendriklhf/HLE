@@ -23,12 +23,50 @@ public ref struct ValueStack<T>
         Count = count;
     }
 
-    public void Push(T item) => _stack[Count++] = item;
+    public void Push(T item)
+    {
+        if (Count == Capacity)
+        {
+            ThrowStackIsFull();
+        }
 
-    public T Pop() => _stack[--Count];
+        _stack[Count++] = item;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowStackIsFull()
+    {
+        throw new InvalidOperationException("Stack is full.");
+    }
+
+    public T Pop()
+    {
+        if (Count == 0)
+        {
+            ThrowStackIsEmpty();
+        }
+
+        return _stack[--Count];
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowStackIsEmpty()
+    {
+        throw new InvalidOperationException("Stack is empty.");
+    }
 
     [Pure]
-    public readonly T Peek() => _stack[Count - 1];
+    public readonly T Peek()
+    {
+        if (Count == 0)
+        {
+            ThrowStackIsEmpty();
+        }
+
+        return _stack[Count - 1];
+    }
 
     public bool TryPush(T item)
     {
@@ -43,7 +81,7 @@ public ref struct ValueStack<T>
 
     public bool TryPop([MaybeNullWhen(false)] out T item)
     {
-        if (Count <= 0)
+        if (Count == 0)
         {
             item = default;
             return false;
@@ -55,7 +93,7 @@ public ref struct ValueStack<T>
 
     public readonly bool TryPeek([MaybeNullWhen(false)] out T item)
     {
-        if (Count <= 0)
+        if (Count == 0)
         {
             item = default;
             return false;
@@ -67,11 +105,12 @@ public ref struct ValueStack<T>
 
     public void Clear()
     {
-        Count = 0;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            _stack.Clear();
+            _stack[..Count].Clear();
         }
+
+        Count = 0;
     }
 
     [Pure]

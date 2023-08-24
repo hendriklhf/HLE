@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Collections;
@@ -13,7 +14,7 @@ public ref struct RangeEnumerator
     {
         if (range.End.IsFromEnd)
         {
-            throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
+            ThrowRangeEndStartsFromEnd();
         }
 
         Current = range.Start.Value - 1;
@@ -24,5 +25,12 @@ public ref struct RangeEnumerator
     public bool MoveNext()
     {
         return ++Current <= _end;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowRangeEndStartsFromEnd()
+    {
+        throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
     }
 }

@@ -99,11 +99,12 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
 
     public void Clear()
     {
-        Count = 0;
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            _buffer.Span.Clear();
+            WrittenSpan.Clear();
         }
+
+        Count = 0;
     }
 
     public void EnsureCapacity(int capacity)

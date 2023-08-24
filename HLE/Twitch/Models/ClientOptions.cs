@@ -1,5 +1,5 @@
 ﻿using System;
-using HLE.Memory;
+using HLE.Marshalling;
 
 namespace HLE.Twitch.Models;
 
@@ -32,7 +32,7 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
 
     public bool Equals(ClientOptions other)
     {
-        return this.EqualsBitwise(other);
+        return StructMarshal.EqualsBitwise(this, other);
     }
 
     public override bool Equals(object? obj)

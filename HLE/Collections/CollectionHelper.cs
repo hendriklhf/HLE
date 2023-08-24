@@ -251,8 +251,8 @@ public static class CollectionHelper
     [Pure]
     public static T[] Replace<T>(this T[] array, Func<T, bool> predicate, T replacement)
     {
-        T[] copy = new T[array.Length];
-        array.AsSpan().CopyTo(copy);
+        T[] copy = GC.AllocateUninitializedArray<T>(array.Length);
+        array.AsSpan().CopyToUnsafe(copy);
         Replace((Span<T>)copy, predicate, replacement);
         return copy;
     }
@@ -295,8 +295,8 @@ public static class CollectionHelper
     [Pure]
     public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> predicate, T replacement)
     {
-        T[] copy = new T[array.Length];
-        array.AsSpan().CopyTo(copy);
+        T[] copy = GC.AllocateUninitializedArray<T>(array.Length);
+        array.AsSpan().CopyToUnsafe(copy);
         Replace((Span<T>)copy, predicate, replacement);
         return copy;
     }
@@ -584,7 +584,7 @@ public static class CollectionHelper
             return IndicesOf(span, item);
         }
 
-        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible or IRefIndexerAccessible
+        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible
         int currentIndex = 0;
         using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         foreach (T t in collection)
@@ -666,7 +666,6 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(this Span<int> span, int start = 0)
     {
-#if NET8_0_OR_GREATER
         int vector512Count = Vector512<int>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
@@ -688,7 +687,6 @@ public static class CollectionHelper
 
             return;
         }
-#endif
 
         int vector256Count = Vector256<int>.Count;
         if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
@@ -764,7 +762,6 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(this Span<ushort> span, ushort start = 0)
     {
-#if NET8_0_OR_GREATER
         ushort vector512Count = (ushort)Vector512<ushort>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
@@ -788,7 +785,6 @@ public static class CollectionHelper
 
             return;
         }
-#endif
 
         ushort vector256Count = (ushort)Vector256<ushort>.Count;
         if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)

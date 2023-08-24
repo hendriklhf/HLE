@@ -195,10 +195,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
     public bool Equals(StringPool? other)
@@ -345,9 +342,6 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

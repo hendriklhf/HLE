@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
-using HLE.Strings;
 
 namespace HLE;
 
@@ -88,7 +89,7 @@ public static class RandomExtensions
             return string.Empty;
         }
 
-        string result = StringHelper.FastAllocateString(length, out Span<char> resultChars);
+        string result = StringMarshal.FastAllocateString(length, out Span<char> resultChars);
         Span<byte> resultBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(resultChars)), length << 1);
         random.NextBytes(resultBytes);
         for (int i = 0; i < length; i++)
@@ -108,7 +109,7 @@ public static class RandomExtensions
             return string.Empty;
         }
 
-        string result = StringHelper.FastAllocateString(length, out Span<char> resultSpan);
+        string result = StringMarshal.FastAllocateString(length, out Span<char> resultSpan);
         if (!MemoryHelper.UseStackAlloc<int>(length))
         {
             using RentedArray<int> randomIndicesBuffer = new(length);
@@ -144,7 +145,7 @@ public static class RandomExtensions
     public static T NextStruct<T>(this Random random) where T : struct
     {
         Unsafe.SkipInit(out T result);
-        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
+        Span<byte> bytes = StructMarshal.GetBytes(ref result);
         random.NextBytes(bytes);
         return result;
     }
@@ -153,7 +154,7 @@ public static class RandomExtensions
     public static void NextStruct<T>(this Random random, out T result) where T : struct
     {
         Unsafe.SkipInit(out result);
-        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
+        Span<byte> bytes = StructMarshal.GetBytes(ref result);
         random.NextBytes(bytes);
     }
 
@@ -180,13 +181,23 @@ public static class RandomExtensions
 
     public static T[] Shuffle<T>(this Random random, IEnumerable<T> collection)
     {
-        if (!collection.TryGetSpan<T>(out Span<T> span))
+        T[] result;
+        if (CollectionHelper.TryGetNonEnumeratedCount(collection, out int count))
         {
-            span = collection.ToArray();
+            result = GC.AllocateUninitializedArray<T>(count);
+            if (!collection.TryNonEnumeratedCopyTo(result))
+            {
+                bool success = collection.TryEnumerateInto(result, out _);
+                Debug.Assert(success);
+            }
+        }
+        else
+        {
+            result = collection.ToArray();
         }
 
-        random.Shuffle(span);
-        return span.ToArray();
+        random.Shuffle(result);
+        return result;
     }
 
     public static void Shuffle<T>(this Random random, List<T> collection)
@@ -307,7 +318,7 @@ public static class RandomExtensions
             return string.Empty;
         }
 
-        string result = StringHelper.FastAllocateString(length, out Span<char> chars);
+        string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
         Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(chars)), length << 1);
         random.GetBytes(bytes);
         return result;
@@ -316,9 +327,7 @@ public static class RandomExtensions
     [Pure]
     public static T GetStruct<T>(this RandomNumberGenerator random) where T : struct
     {
-        Unsafe.SkipInit(out T result);
-        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
-        random.GetBytes(bytes);
+        random.GetStruct(out T result);
         return result;
     }
 
@@ -326,7 +335,7 @@ public static class RandomExtensions
     public static void GetStruct<T>(this RandomNumberGenerator random, out T result) where T : struct
     {
         Unsafe.SkipInit(out result);
-        Span<byte> bytes = MemoryHelper.GetStructBytes(ref result);
+        Span<byte> bytes = StructMarshal.GetBytes(ref result);
         random.GetBytes(bytes);
     }
 

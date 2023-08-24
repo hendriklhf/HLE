@@ -11,7 +11,7 @@ public ref struct ValueQueue<T>
 
     public readonly int Capacity => _queue.Length;
 
-    private readonly Span<T> _queue = Span<T>.Empty;
+    internal readonly Span<T> _queue = Span<T>.Empty;
     private readonly int _lastIndex;
     private int _enqueueIndex;
     private int _dequeueIndex;
@@ -32,7 +32,7 @@ public ref struct ValueQueue<T>
         {
             if (_dequeueIndex == 0)
             {
-                throw new InvalidOperationException("Queue is full.");
+                ThrowQueueIsFull();
             }
 
             // copies the Span to the front of the queue
@@ -46,15 +46,29 @@ public ref struct ValueQueue<T>
         Count++;
     }
 
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowQueueIsFull()
+    {
+        throw new InvalidOperationException("Queue is full.");
+    }
+
     public T Dequeue()
     {
         if (Count == 0)
         {
-            throw new InvalidOperationException("Queue is empty.");
+            ThrowQueueIsEmpty();
         }
 
         Count--;
         return _queue[_dequeueIndex++];
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowQueueIsEmpty()
+    {
+        throw new InvalidOperationException("Queue is empty.");
     }
 
     [Pure]
@@ -62,7 +76,7 @@ public ref struct ValueQueue<T>
     {
         if (Count == 0)
         {
-            throw new InvalidOperationException("Queue is empty.");
+            ThrowQueueIsEmpty();
         }
 
         return _queue[_dequeueIndex];
@@ -105,14 +119,14 @@ public ref struct ValueQueue<T>
 
     public void Clear()
     {
-        Count = 0;
-        _enqueueIndex = 0;
-        _dequeueIndex = 0;
-
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
             _queue.Clear();
         }
+
+        Count = 0;
+        _enqueueIndex = 0;
+        _dequeueIndex = 0;
     }
 
     [Pure]

@@ -2,11 +2,10 @@ using System;
 using System.Buffers;
 using System.Diagnostics.Contracts;
 using System.Numerics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using HLE.Marshals;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -34,16 +33,6 @@ public static class StringHelper
     public const string RegexMetaChars = "\t\n\f\r #$()*+.?[\\^{|";
 
     private static readonly SearchValues<char> _regexMetaCharsSearchValues = SearchValues.Create(RegexMetaChars);
-    private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe string FastAllocateString(int length, out Span<char> chars)
-    {
-        string str = _fastAllocateString(length);
-        chars = StringMarshal.AsMutableSpan(str);
-        return str;
-    }
 
     [Pure]
     public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount)
@@ -414,12 +403,12 @@ public static class StringHelper
         {
             using RentedArray<char> rentedBuffer = new(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer);
-            return resultLength == input.Length ? input.AsStringUnsafe() : new(rentedBuffer[..resultLength]);
+            return resultLength == input.Length ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];
         resultLength = RegexEscape(input, buffer);
-        return resultLength == input.Length ? input.AsStringUnsafe() : new(buffer[..resultLength]);
+        return resultLength == input.Length ? StringMarshal.AsString(input) : new(buffer[..resultLength]);
     }
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
@@ -430,7 +419,6 @@ public static class StringHelper
         }
 
         ValueStringBuilder builder = new(escapedInput);
-        ref char inputReference = ref MemoryMarshal.GetReference(input);
         SearchValues<char> regexMetaCharsSearchValues = _regexMetaCharsSearchValues;
         while (true)
         {
@@ -440,7 +428,7 @@ public static class StringHelper
                 break;
             }
 
-            char metaChar = Unsafe.Add(ref inputReference, indexOfMetaChar);
+            char metaChar = input[indexOfMetaChar];
             metaChar = metaChar switch
             {
                 '\n' => 'n',
@@ -641,6 +629,6 @@ public static class StringHelper
         }
 
         ref char charsReference = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref charsReference), str.Length << 1);
+        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, byte>(ref charsReference), str.Length << 1);
     }
 }

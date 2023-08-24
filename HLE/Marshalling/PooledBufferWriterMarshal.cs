@@ -1,6 +1,6 @@
 using HLE.Memory;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
 public static class PooledBufferWriterMarshal<T>
 {

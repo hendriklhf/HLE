@@ -135,8 +135,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
             ClientWebSocket webSocket = _webSocket;
 
-            Memory<byte> byteBuffer = new byte[4096];
-            Memory<char> charBuffer = new char[4096];
+            char carriageReturn = _newLine[0];
+            char newLine = _newLine[1];
+
+            Memory<byte> byteBuffer = GC.AllocateUninitializedArray<byte>(4096);
+            Memory<char> charBuffer = GC.AllocateUninitializedArray<char>(4096);
             int bufferLength = 0;
             while (!cancellationTokenSource.IsCancellationRequested && State is WebSocketState.Open)
             {
@@ -150,7 +153,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
                 int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, charBuffer.Span[bufferLength..]);
                 ReadOnlyMemory<char> receivedChars = charBuffer[..(bufferLength + charCount)];
 
-                bool isEndOfMessage = receivedChars.Span[^2] == _newLine[0] && receivedChars.Span[^1] == _newLine[1];
+                bool isEndOfMessage = receivedChars.Span[^2] == carriageReturn && receivedChars.Span[^1] == newLine;
                 if (isEndOfMessage)
                 {
                     PassAllLines(receivedChars.Span);

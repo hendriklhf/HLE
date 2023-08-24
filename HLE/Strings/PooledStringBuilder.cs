@@ -204,7 +204,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
         {
             if (countOfFailedTries == maximumFormattingTries)
             {
-                throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
+                ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
             }
 
             ValueStringBuilder builder = new(FreeBufferSpan);
@@ -220,16 +220,24 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
         }
     }
 
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
+    {
+        throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
+    }
+
     void ICollection<char>.Clear() => Clear();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear(bool clearBuffer = false)
     {
-        Length = 0;
         if (clearBuffer)
         {
-            _buffer.Span.Clear();
+            _buffer.Span[..Length].Clear();
         }
+
+        Length = 0;
     }
 
     [Pure]
@@ -284,10 +292,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
         return WrittenSpan.Contains(c);
     }
 
-    bool ICollection<char>.Remove(char c)
-    {
-        throw new NotSupportedException();
-    }
+    bool ICollection<char>.Remove(char c) => throw new NotSupportedException();
 
     [Pure]
     public IEnumerator<char> GetEnumerator()
@@ -299,10 +304,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
     public bool Equals(PooledStringBuilder builder, StringComparison comparisonType)

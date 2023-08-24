@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshals;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -230,18 +230,9 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
         copier.CopyTo(destination);
     }
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        for (int i = 0; i < _bufferWriter.Count; i++)
-        {
-            yield return _bufferWriter.WrittenSpan[i];
-        }
-    }
+    public IEnumerator<T> GetEnumerator() => _bufferWriter.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void Dispose()
     {

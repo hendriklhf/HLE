@@ -12,11 +12,11 @@ namespace HLE.Collections;
 /// <typeparam name="T">The type of pooled objects.</typeparam>
 public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>
 {
+    public int Capacity { get; set; } = 64;
+
     private readonly ConcurrentStack<T> _rentableItems = new();
     internal Func<T> _itemFactory;
     internal Action<T>? _returnAction;
-
-    private const int _defaultMaximumPoolCapacity = 64;
 
     public ObjectPool(Func<T> itemFactory, Action<T>? returnAction = null)
     {
@@ -37,7 +37,7 @@ public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>
 
     public void Return(T item)
     {
-        if (_rentableItems.Count >= _defaultMaximumPoolCapacity)
+        if (_rentableItems.Count >= Capacity)
         {
             return;
         }

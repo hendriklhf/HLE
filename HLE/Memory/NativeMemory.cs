@@ -75,9 +75,10 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         Length = length;
     }
 
-    public NativeMemory(int length, bool clearMemory)
+    public NativeMemory(int length, bool zeroed)
     {
-        _pointer = clearMemory ? (T*)NativeMemory.AllocZeroed((nuint)(sizeof(T) * length)) : (T*)NativeMemory.Alloc((nuint)(sizeof(T) * length));
+        nuint byteCount = (nuint)(sizeof(T) * length);
+        _pointer = (T*)(zeroed ? NativeMemory.AllocZeroed(byteCount) : NativeMemory.Alloc(byteCount));
         Length = length;
     }
 
@@ -131,14 +132,18 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
     [Pure]
     public T[] ToArray()
     {
-        return AsSpan().ToArray();
+        T[] result = GC.AllocateUninitializedArray<T>(Length);
+        ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(result));
+        ref byte source = ref Unsafe.As<T, byte>(ref Unsafe.AsRef<T>(_pointer));
+        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * Length));
+        return result;
     }
 
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
     public void Clear()
     {
-        AsSpan().Clear();
+        Unsafe.InitBlock(_pointer, 0, (uint)(sizeof(T) * Length));
     }
 
     bool ICollection<T>.Contains(T item)

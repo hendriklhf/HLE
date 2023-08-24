@@ -25,13 +25,13 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
 
     public ref T this[Index index] => ref Span[index];
 
-    public Span<T> this[Range range] => Span[range];
+    public Span<T> this[Range range] => _array.AsSpan(range);
 
     public Span<T> Span => _array;
 
     public Memory<T> Memory => _array;
 
-    public ref T ManagedPointer => ref MemoryMarshal.GetReference(Span);
+    public ref T ManagedPointer => ref MemoryMarshal.GetArrayDataReference(_array);
 
     public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref ManagedPointer);
 

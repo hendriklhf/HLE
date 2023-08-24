@@ -25,11 +25,11 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     internal readonly FrozenDictionary<TPrimaryKey, TValue> _values;
     internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
 
-    public FrozenDoubleDictionary(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary, bool optimizeForReading, IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
+    public FrozenDoubleDictionary(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary, IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
         IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null)
     {
-        _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer, optimizeForReading);
-        _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer, optimizeForReading);
+        _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer);
+        _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
     }
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
@@ -68,10 +68,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
     public bool Equals(FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)

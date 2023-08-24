@@ -29,14 +29,15 @@ public static unsafe class MemoryHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
     {
-        return *(Span<T>*)&span;
+        ref T reference = ref MemoryMarshal.GetReference(span);
+        return MemoryMarshal.CreateSpan(ref reference, span.Length);
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
     {
-        return *(Memory<T>*)&memory;
+        return Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
     }
 
     /// <inheritdoc cref="AsMemoryUnsafe{T}(ReadOnlySpan{T})"/>
@@ -74,110 +75,6 @@ public static unsafe class MemoryHelper
         *memoryLengthField = memoryLength;
 
         return result;
-    }
-
-    /// <inheritdoc cref="AsStringUnsafe(System.ReadOnlySpan{char})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string AsStringUnsafe(this Span<char> span)
-    {
-        return AsStringUnsafe((ReadOnlySpan<char>)span);
-    }
-
-    /// <summary>
-    /// Converts a <see cref="ReadOnlySpan{T}"/> back to a <see cref="string"/>.
-    /// The caller has to be sure that the <see cref="ReadOnlySpan{T}"/> was definitely a <see cref="string"/>,
-    /// otherwise this method is potentially dangerous.
-    /// </summary>
-    /// <param name="span">The <see cref="ReadOnlySpan{T}"/> that will be converted to a <see cref="string"/>.</param>
-    /// <returns>The <see cref="ReadOnlySpan{T}"/> as a <see cref="string"/>.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string AsStringUnsafe(this ReadOnlySpan<char> span)
-    {
-        ref char charsReference = ref MemoryMarshal.GetReference(span);
-        ref byte charsAsBytesReference = ref Unsafe.As<char, byte>(ref charsReference);
-        ref byte stringDataReference = ref Unsafe.Subtract(ref charsAsBytesReference, sizeof(nuint) + sizeof(int));
-        return GetReferenceFromRawDataPointer<byte, string>(ref stringDataReference)!;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint GetRawDataPointer<T>(T reference) where T : class?
-    {
-        return *(nuint*)&reference;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TValue? GetReferenceFromRawDataPointer<TRef, TValue>(ref TRef reference) where TValue : class?
-    {
-        TValue* pointer = (TValue*)Unsafe.AsPointer(ref reference);
-        return GetReferenceFromRawDataPointer<TValue>((nuint)pointer);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T? GetReferenceFromRawDataPointer<T>(void* pointer) where T : class?
-    {
-        return GetReferenceFromRawDataPointer<T>((nuint)pointer);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T? GetReferenceFromRawDataPointer<T>(nuint pointer) where T : class?
-    {
-        return *(T*)&pointer;
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<byte> GetStructBytes<T>(ref T item) where T : struct
-    {
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<byte> GetStructBytes<T>(T item) where T : struct
-    {
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsBitwise<TLeft, TRight>(this TLeft left, TRight right) where TLeft : struct where TRight : struct
-    {
-        return EqualsBitwise(ref left, ref right);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsBitwise<TLeft, TRight>(this ref TLeft left, ref TRight right) where TLeft : struct where TRight : struct
-    {
-        if (sizeof(TLeft) != sizeof(TRight))
-        {
-            return false;
-        }
-
-        switch (sizeof(TLeft))
-        {
-            case sizeof(byte):
-                return Unsafe.As<TLeft, byte>(ref left) == Unsafe.As<TRight, byte>(ref right);
-            case sizeof(short):
-                return Unsafe.As<TLeft, short>(ref left) == Unsafe.As<TRight, short>(ref right);
-            case sizeof(int):
-                return Unsafe.As<TLeft, int>(ref left) == Unsafe.As<TRight, int>(ref right);
-            case sizeof(long):
-                return Unsafe.As<TLeft, long>(ref left) == Unsafe.As<TRight, long>(ref right);
-        }
-
-        if (Unsafe.AreSame(ref Unsafe.As<TLeft, byte>(ref left), ref Unsafe.As<TRight, byte>(ref right)))
-        {
-            return true;
-        }
-
-        ReadOnlySpan<byte> leftBytes = GetStructBytes(ref left);
-        ReadOnlySpan<byte> rightBytes = GetStructBytes(ref right);
-        return leftBytes.SequenceEqual(rightBytes);
     }
 
     /// <inheritdoc cref="CopyToUnsafe{T}(ReadOnlySpan{T},Span{T})"/>
@@ -237,6 +134,7 @@ public static unsafe class MemoryHelper
 #pragma warning restore CS9080
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> SliceUnsafe<T>(this Span<T> span, int start, int length)
     {
@@ -244,12 +142,14 @@ public static unsafe class MemoryHelper
         return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> SliceUnsafe<T>(this Span<T> span, int start)
     {
         return span.SliceUnsafe(start, span.Length - start);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> SliceUnsafe<T>(this Span<T> span, Range range)
     {
@@ -258,6 +158,7 @@ public static unsafe class MemoryHelper
         return span.SliceUnsafe(start, length);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, int start, int length)
     {
@@ -265,12 +166,14 @@ public static unsafe class MemoryHelper
         return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.Add(ref reference, start), length);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, int start)
     {
         return span.SliceUnsafe(start, span.Length - start);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, Range range)
     {
@@ -279,6 +182,7 @@ public static unsafe class MemoryHelper
         return span.SliceUnsafe(start, length);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsSpanUnsafe<T>(this T[] array, int start, int length)
     {
@@ -286,12 +190,14 @@ public static unsafe class MemoryHelper
         return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsSpanUnsafe<T>(this T[] array, int start)
     {
         return array.AsSpanUnsafe(start, array.Length - start);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsSpanUnsafe<T>(this T[] array, Range range)
     {

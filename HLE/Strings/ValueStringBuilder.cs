@@ -189,11 +189,6 @@ public ref partial struct ValueStringBuilder
     [Pure]
     public readonly bool Equals(ValueStringBuilder other)
     {
-        if (Length == other.Length)
-        {
-            return true;
-        }
-
         ref char bufferReference = ref MemoryMarshal.GetReference(_buffer);
         ref char otherBufferReference = ref MemoryMarshal.GetReference(other._buffer);
         return Unsafe.AreSame(ref bufferReference, ref otherBufferReference);
@@ -224,6 +219,7 @@ public ref partial struct ValueStringBuilder
         return string.GetHashCode(WrittenSpan, comparisonType);
     }
 
+    [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowNotEnoughSpaceException()
     {

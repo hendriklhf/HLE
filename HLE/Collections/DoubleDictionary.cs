@@ -26,7 +26,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
             ref TValue valueRef = ref CollectionsMarshal.GetValueRefOrNullRef(_values, primaryKey);
             if (Unsafe.IsNullRef(ref valueRef))
             {
-                throw new KeyNotFoundException("The primary key could not be found.");
+                ThrowKeyNotFoundException("The primary key could not be found.");
             }
 
             TValue oldValue = valueRef;
@@ -36,13 +36,13 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
             if (Unsafe.IsNullRef(ref primaryKeyRef))
             {
                 valueRef = oldValue;
-                throw new KeyNotFoundException("The secondary key could not be found.");
+                ThrowKeyNotFoundException("The secondary key could not be found.");
             }
 
             if (!primaryKeyRef.Equals(primaryKey))
             {
                 valueRef = oldValue;
-                throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
+                ThrowKeyNotFoundException("The given secondary key does not exists with the matching primary key.");
             }
 
             primaryKeyRef = primaryKey;
@@ -123,7 +123,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
                 _secondaryKeyTranslations.Remove(secondaryKey);
             }
 
-            throw new KeyNotFoundException("The given secondary key does not exists with the matching primary key.");
+            ThrowKeyNotFoundException("The given secondary key does not exists with the matching primary key.");
         }
 
         valueRef = value;
@@ -195,10 +195,17 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public TValue[] ToArray()
     {
-        TValue[] result = new TValue[Count];
+        TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
         _values.Values.TryEnumerateInto(result, out int writtenElementCount);
         Debug.Assert(writtenElementCount == Count);
         return result;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowKeyNotFoundException(string message)
+    {
+        throw new KeyNotFoundException(message);
     }
 
     public IEnumerator<TValue> GetEnumerator()

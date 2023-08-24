@@ -251,18 +251,9 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
         copier.CopyTo(destination);
     }
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        for (int i = 0; i < _list.Count; i++)
-        {
-            yield return _list[i];
-        }
-    }
+    public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void Dispose()
     {

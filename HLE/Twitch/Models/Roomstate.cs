@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using HLE.Memory;
+using HLE.Marshalling;
 
 namespace HLE.Twitch.Models;
 
@@ -64,7 +64,7 @@ public readonly struct Roomstate : IEquatable<Roomstate>
     public bool Equals(Roomstate other)
     {
         ref Roomstate thisRoomstate = ref Unsafe.AsRef(in this);
-        return thisRoomstate.EqualsBitwise(ref other);
+        return StructMarshal.EqualsBitwise(ref thisRoomstate, ref other);
     }
 
     public override bool Equals(object? obj)

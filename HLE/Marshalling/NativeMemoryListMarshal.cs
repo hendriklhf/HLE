@@ -2,7 +2,7 @@ using System;
 using HLE.Collections;
 using HLE.Memory;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
 public static class NativeMemoryListMarshal<T> where T : unmanaged, IEquatable<T>
 {

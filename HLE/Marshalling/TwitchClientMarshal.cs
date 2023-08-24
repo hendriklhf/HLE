@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using HLE.Twitch;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
 public static class TwitchClientMarshal
 {

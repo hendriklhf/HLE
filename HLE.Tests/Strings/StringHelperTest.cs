@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Strings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,7 +14,7 @@ public partial class StringHelperTest
     [TestMethod]
     public void FastAllocateStringTest()
     {
-        string str = StringHelper.FastAllocateString(5, out Span<char> chars);
+        string str = StringMarshal.FastAllocateString(5, out Span<char> chars);
         Assert.AreEqual(5, str.Length);
         "hello".CopyTo(chars);
         Assert.AreEqual("hello", str);

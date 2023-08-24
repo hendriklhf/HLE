@@ -1,7 +1,7 @@
 using System;
 using HLE.Strings;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
 public static class ValueStringBuilderMarshal
 {

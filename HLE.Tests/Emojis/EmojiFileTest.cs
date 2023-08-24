@@ -14,8 +14,8 @@ public class EmojiFileTest
         Assert.IsTrue(fields.Length > 0);
         foreach (FieldInfo f in fields)
         {
-            string value = (string)f.GetValue(null)!;
-            Assert.IsTrue(value.Length > 0);
+            object? value = f.GetValue(null);
+            Assert.IsTrue(value is string { Length: > 0 });
         }
     }
 }

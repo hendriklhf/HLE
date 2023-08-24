@@ -69,7 +69,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ReadOnlySpan<char> GetUsername(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, int displayNameLength)
     {
-        Debug.Assert(displayNameLength is >= 3 and <= 25);
+        Debug.Assert(displayNameLength > 0);
         ReadOnlySpan<char> username = ircMessage[(indicesOfWhitespaces[0] + 2)..][..displayNameLength];
         return username;
     }
@@ -124,7 +124,9 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     {
         bool isBackSlash = value[^2] == '\\';
         int asByte = Unsafe.As<bool, byte>(ref isBackSlash) << 1;
-        return value[..^asByte];
+        ReadOnlySpan<char> displayName = value[..^asByte];
+        Debug.Assert(displayName.Length > 0);
+        return displayName;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

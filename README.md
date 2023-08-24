@@ -1,2 +1,2 @@
 # HLE
-A class library containing usefull methods and data lists.
+A library containing useful methods and data lists.

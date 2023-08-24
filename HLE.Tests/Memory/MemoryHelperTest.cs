@@ -33,31 +33,6 @@ public class MemoryHelperTest
     }
 
     [TestMethod]
-    public unsafe void GetRawDataPointer_GetReferenceFromRawDataPointer_Test()
-    {
-        const string hello = "hello";
-        nuint stringToRawPointer = MemoryHelper.GetRawDataPointer(hello);
-        int* lengthPointer = (int*)(stringToRawPointer + (nuint)sizeof(nuint));
-        Assert.AreEqual(hello.Length, *lengthPointer);
-        char* chars = (char*)(stringToRawPointer + (nuint)sizeof(nuint) + sizeof(int));
-        ReadOnlySpan<char> span = new(chars, hello.Length);
-        Assert.IsTrue(span is hello);
-
-        string? stringFromRawPointer = MemoryHelper.GetReferenceFromRawDataPointer<string>(stringToRawPointer);
-        Assert.IsTrue(stringFromRawPointer is hello);
-        Assert.AreEqual(typeof(string), stringFromRawPointer.GetType());
-    }
-
-    [TestMethod]
-    public void AsStringDangerousTest()
-    {
-        ReadOnlySpan<char> str = "hello";
-        string actualString = str.AsStringUnsafe();
-        Assert.AreEqual("hello", actualString);
-        Assert.AreEqual(typeof(string), actualString.GetType());
-    }
-
-    [TestMethod]
     public void UnsafeSliceTest()
     {
         Span<int> span = stackalloc int[50];

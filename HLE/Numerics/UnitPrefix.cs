@@ -152,14 +152,19 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
     }
 
     [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
-    public static implicit operator double(UnitPrefix prefix)
+    public static implicit operator double(UnitPrefix? prefix)
     {
-        return prefix.Value;
+        return prefix?.Value ?? 0;
     }
 
     public override string ToString()
     {
         return Name;
+    }
+
+    public bool Equals(double value)
+    {
+        return Math.Abs(Value - value) == 0;
     }
 
     public bool Equals(UnitPrefix? other)

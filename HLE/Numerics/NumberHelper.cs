@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -105,11 +106,10 @@ public static class NumberHelper
             sizeof(int) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFFFFFF),
             sizeof(short) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFF),
             sizeof(sbyte) => T.CreateTruncating(number) & T.CreateTruncating(0x7F),
-            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+            _ => ThrowUnreachableException<T>("This shouldn't happen, as all number types are covered.")
         };
     }
 
-#if NET8_0_OR_GREATER
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static unsafe Vector512<T> SetSignBitToZero<T>(Vector512<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
     {
@@ -119,10 +119,9 @@ public static class NumberHelper
             sizeof(int) => numbers & Vector512.Create(T.CreateTruncating(0x7FFFFFFF)),
             sizeof(short) => numbers & Vector512.Create(T.CreateTruncating(0x7FFF)),
             sizeof(sbyte) => numbers & Vector512.Create(T.CreateTruncating(0x7F)),
-            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+            _ => ThrowUnreachableException<Vector512<T>>("This shouldn't happen, as all number types are covered.")
         };
     }
-#endif
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static unsafe Vector256<T> SetSignBitToZero<T>(Vector256<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
@@ -133,7 +132,7 @@ public static class NumberHelper
             sizeof(int) => numbers & Vector256.Create(T.CreateTruncating(0x7FFFFFFF)),
             sizeof(short) => numbers & Vector256.Create(T.CreateTruncating(0x7FFF)),
             sizeof(sbyte) => numbers & Vector256.Create(T.CreateTruncating(0x7F)),
-            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+            _ => ThrowUnreachableException<Vector256<T>>("This shouldn't happen, as all number types are covered.")
         };
     }
 
@@ -146,7 +145,7 @@ public static class NumberHelper
             sizeof(int) => numbers & Vector128.Create(T.CreateTruncating(0x7FFFFFFF)),
             sizeof(short) => numbers & Vector128.Create(T.CreateTruncating(0x7FFF)),
             sizeof(sbyte) => numbers & Vector128.Create(T.CreateTruncating(0x7F)),
-            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+            _ => ThrowUnreachableException<Vector128<T>>("This shouldn't happen, as all number types are covered.")
         };
     }
 
@@ -159,7 +158,7 @@ public static class NumberHelper
             sizeof(int) => numbers & Vector64.Create(T.CreateTruncating(0x7FFFFFFF)),
             sizeof(short) => numbers & Vector64.Create(T.CreateTruncating(0x7FFF)),
             sizeof(sbyte) => numbers & Vector64.Create(T.CreateTruncating(0x7F)),
-            _ => throw new UnreachableException("This shouldn't happen, as all number types are covered.")
+            _ => ThrowUnreachableException<Vector64<T>>("This shouldn't happen, as all number types are covered.")
         };
     }
 
@@ -178,14 +177,14 @@ public static class NumberHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T BringNumberIntoRange<T>(T number, T min, T max) where T : INumber<T>
     {
+        if (sizeof(T) == sizeof(Int128))
+        {
+            Throw128BitIntegerNotSupported();
+        }
+
         if (min == max)
         {
             return min;
-        }
-
-        if (sizeof(T) == sizeof(Int128))
-        {
-            throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
         }
 
         switch (sizeof(T))
@@ -216,6 +215,20 @@ public static class NumberHelper
                 return T.CreateTruncating(Int128.Abs(numberAsInt128 % rangeAsInt128) + minAsInt128);
         }
 
-        throw new UnreachableException("This shouldn't happen, as all number types are covered.");
+        return ThrowUnreachableException<T>("This shouldn't happen, as all number types are covered.");
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static T ThrowUnreachableException<T>(string message)
+    {
+        throw new UnreachableException(message);
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Throw128BitIntegerNotSupported()
+    {
+        throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
     }
 }

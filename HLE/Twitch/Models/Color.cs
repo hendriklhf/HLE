@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
@@ -64,9 +65,10 @@ public readonly struct Color : IEquatable<Color>
         return obj is Color other && Equals(other);
     }
 
-    public override int GetHashCode()
+    public override unsafe int GetHashCode()
     {
-        return HashCode.Combine(IsEmpty, Red, Green, Blue);
+        Debug.Assert(sizeof(Color) == sizeof(int));
+        return Unsafe.As<Color, int>(ref Unsafe.AsRef(in this));
     }
 
     public override string ToString()

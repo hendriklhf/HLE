@@ -1,7 +1,7 @@
 using System;
 using HLE.Collections.Concurrent;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
 public static class ConcurrentPooledListMarshal<T> where T : IEquatable<T>
 {

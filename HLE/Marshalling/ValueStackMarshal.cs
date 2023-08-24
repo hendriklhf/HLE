@@ -1,7 +1,7 @@
 using System;
 using HLE.Collections;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
 public static class ValueStackMarshal<T>
 {

@@ -201,7 +201,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         return GetEnumerator();
     }
 
-    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
+    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable")]
     private readonly struct Bucket : IEnumerable<Regex>, IDisposable
     {
         private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];

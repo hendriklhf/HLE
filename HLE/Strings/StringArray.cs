@@ -290,7 +290,8 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
             return;
         }
 
-        char[] newBuffer = new char[BitOperations.RoundUpToPowerOf2((nuint)(_stringChars.Length + neededSpace))];
+        nuint newBufferLength = BitOperations.RoundUpToPowerOf2((nuint)(_stringChars.Length + neededSpace));
+        char[] newBuffer = new char[newBufferLength];
         _stringChars.CopyTo(newBuffer.AsSpan());
         _stringChars = newBuffer;
     }

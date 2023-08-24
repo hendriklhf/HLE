@@ -1,16 +1,26 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Memory;
 
-namespace HLE.Marshals;
+namespace HLE.Marshalling;
 
-/// <summary>
-/// Provides methods for <see cref="string"/> manipulation.<br/>
-/// </summary>
 public static class StringMarshal
 {
+    private static readonly unsafe delegate*<int, string> _fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe string FastAllocateString(int length, out Span<char> chars)
+    {
+        string str = _fastAllocateString(length);
+        chars = AsMutableSpan(str);
+        return str;
+    }
+
     /// <summary>
     /// Creates a mutable <see cref="Span{Char}"/> over a <see cref="string"/>.
     /// </summary>
@@ -101,5 +111,28 @@ public static class StringMarshal
         Span<char> copyBuffer = stackalloc char[span.Length];
         span.CopyTo(copyBuffer);
         MemoryExtensions.ToUpper(copyBuffer, span, CultureInfo.InvariantCulture);
+    }
+
+    /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string AsString(Span<char> span)
+    {
+        return AsString((ReadOnlySpan<char>)span);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="ReadOnlySpan{T}"/> back to a <see cref="string"/>.
+    /// The caller has to be sure that the <see cref="ReadOnlySpan{T}"/> was definitely a <see cref="string"/>,
+    /// otherwise this method is potentially dangerous.
+    /// </summary>
+    /// <param name="span">The <see cref="ReadOnlySpan{T}"/> that will be converted to a <see cref="string"/>.</param>
+    /// <returns>The <see cref="ReadOnlySpan{T}"/> as a <see cref="string"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string AsString(ReadOnlySpan<char> span)
+    {
+        ref char charsReference = ref MemoryMarshal.GetReference(span);
+        ref byte charsAsBytesReference = ref Unsafe.As<char, byte>(ref charsReference);
+        ref byte stringDataReference = ref Unsafe.Subtract(ref charsAsBytesReference, sizeof(int));
+        return RawDataMarshal.GetObjectFromRawData<string>(ref stringDataReference);
     }
 }

@@ -15,29 +15,33 @@ public class RandomTest
     [TestMethod]
     public void CharTest()
     {
+        const char min = (char)32;
+        const char max = (char)127;
         for (int i = 0; i < _loopIterations; i++)
         {
-            char c = Random.Shared.NextChar((char)32, (char)127);
-            Assert.IsTrue(c is >= (char)32 and < (char)127);
+            char c = Random.Shared.NextChar(min, max);
+            Assert.IsTrue(c is >= min and < max);
         }
     }
 
     [TestMethod]
     public void NextStringTest()
     {
-        const byte strLength = 255;
+        const char min = (char)32;
+        const char max = (char)127;
+        const int strLength = 255;
         for (int i = 0; i < _loopIterations; i++)
         {
-            string s = Random.Shared.NextString(strLength, (char)32, (char)127);
-            Assert.AreEqual(strLength, s.Length);
-            Assert.IsTrue(s.All(static c => c is >= (char)32 and < (char)127));
+            string str = Random.Shared.NextString(strLength, min, max);
+            Assert.AreEqual(strLength, str.Length);
+            Assert.IsTrue(str.All(static c => c is >= min and < max));
         }
     }
 
     [TestMethod]
     public void NextString_FromChars_Test()
     {
-        const byte strLength = 255;
+        const int strLength = 255;
         const string chars = "hello";
         for (int i = 0; i < _loopIterations; i++)
         {

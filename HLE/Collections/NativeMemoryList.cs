@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshals;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -62,7 +62,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     [Pure]
     public T[] ToArray()
     {
-        return _buffer.ToArray();
+        return AsSpan().ToArray();
     }
 
     [Pure]

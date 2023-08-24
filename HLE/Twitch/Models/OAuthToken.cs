@@ -9,19 +9,21 @@ using HLE.Strings;
 namespace HLE.Twitch.Models;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToken>
+public readonly struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatable<OAuthToken>
 {
-    public char this[int index] => AsSpan()[index];
+    public char this[int index] => _token[index];
 
-    public char this[Index index] => AsSpan()[index];
+    public char this[Index index] => _token[index];
 
-    public ReadOnlySpan<char> this[Range range] => AsSpan()[range];
+    public ReadOnlySpan<char> this[Range range] => _token.AsSpan(range);
 
-    private readonly ReadOnlyMemory<char> _token = ReadOnlyMemory<char>.Empty;
+    int ICountable.Count => _token.Length;
+
+    private readonly string _token = string.Empty;
 
     public static OAuthToken Empty => new();
 
-    private static readonly Regex _tokenPattern = RegexPool.Shared.GetOrAdd(@"^(oauth:)?[a-z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+    private static readonly Regex _tokenPattern = RegexPool.Shared.GetOrAdd("^(oauth:)?[a-z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
 
     private const string _tokenPrefix = "oauth:";
     private const int _tokenLength = 36;
@@ -30,40 +32,36 @@ public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToke
     {
     }
 
-    public OAuthToken(string token) : this(token.AsMemory())
+    public OAuthToken(string token) : this(token.AsSpan())
     {
     }
 
     [SkipLocalsInit]
-    public OAuthToken(ReadOnlyMemory<char> token)
+    public OAuthToken(ReadOnlySpan<char> token)
     {
-        if (!_tokenPattern.IsMatch(token.Span))
+        if (!_tokenPattern.IsMatch(token))
         {
             throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {_tokenPattern}");
         }
 
         ValueStringBuilder builder = new(stackalloc char[_tokenLength]);
-        if (!token.Span.StartsWith(_tokenPrefix))
+        if (!token.StartsWith(_tokenPrefix))
         {
             builder.Append(_tokenPrefix);
         }
 
-        token.Span.ToLowerInvariant(builder.FreeBuffer);
+        token.ToLowerInvariant(builder.FreeBuffer);
         builder.Advance(token.Length);
-        _token = builder.ToString().AsMemory();
+        _token = builder.ToString();
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> AsSpan() => _token.Span;
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlyMemory<char> AsMemory() => _token;
+    public ReadOnlySpan<char> AsSpan() => _token;
 
     public bool Equals(OAuthToken other)
     {
-        return _token.Equals(other._token) || _token.Span.SequenceEqual(other._token.Span);
+        return _token == other._token;
     }
 
     public override bool Equals(object? obj)
@@ -73,12 +71,12 @@ public readonly struct OAuthToken : IIndexAccessible<char>, IEquatable<OAuthToke
 
     public override int GetHashCode()
     {
-        return string.GetHashCode(_token.Span);
+        return string.GetHashCode(_token);
     }
 
     public override string ToString()
     {
-        return new(_token.Span);
+        return _token;
     }
 
     public static bool operator ==(OAuthToken left, OAuthToken right)

@@ -20,11 +20,11 @@
         <Product>HLE</Product>
         <PackageId>HLE</PackageId>
         <Title>HLE</Title>
-        <Version>2.1.6</Version>
-        <PackageVersion>2.1.6</PackageVersion>
-        <AssemblyVersion>2.1.6</AssemblyVersion>
-        <FileVersion>2.1.6</FileVersion>
-        <Description>A class library containing usefull methods and data lists.</Description>
+        <Version>2.1.7</Version>
+        <PackageVersion>2.1.7</PackageVersion>
+        <AssemblyVersion>2.1.7</AssemblyVersion>
+        <FileVersion>2.1.7</FileVersion>
+        <Description>A library containing useful methods and data lists.</Description>
         <Authors>Hendrik</Authors>
         <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
         <PackageTags>library c# csharp .net8 dotnet</PackageTags>
@@ -32,20 +32,27 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <NoWarn>IDE0005</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DocumentationFile>.\bin\$(Configuration)\HLE.xml</DocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2023.2.0"/>
     </ItemGroup>
 
 </Project>

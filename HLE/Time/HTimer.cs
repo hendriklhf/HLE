@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Timers;
 
 namespace HLE.Time;
 
+// ReSharper disable UseNameofExpressionForPartOfTheString
+[DebuggerDisplay(nameof(Interval) + " = {Interval} " + nameof(RemainingTime) + " = {RemainingTime}")]
 public sealed class HTimer : IEquatable<HTimer>, IDisposable
 {
     public bool AutoReset { get; set; }
@@ -44,24 +47,35 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 
     public void Start()
     {
+        if (Enabled)
+        {
+            return;
+        }
+
         _end = DateTimeOffset.UtcNow + Interval;
         _timer.Start();
     }
 
     public void Stop()
     {
+        if (!Enabled)
+        {
+            return;
+        }
+
         _end = default;
         _timer.Stop();
     }
 
     private TimeSpan GetRemainingTime()
     {
-        if (_end == default || DateTimeOffset.UtcNow > _end)
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        if (_end == default || now >= _end)
         {
             return TimeSpan.Zero;
         }
 
-        return _end - DateTimeOffset.UtcNow;
+        return _end - now;
     }
 
     [Pure]
