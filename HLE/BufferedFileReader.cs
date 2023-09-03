@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,8 @@ using HLE.Strings;
 
 namespace HLE;
 
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("\"{FilePath}\"")]
 public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 {
     public string FilePath { get; }

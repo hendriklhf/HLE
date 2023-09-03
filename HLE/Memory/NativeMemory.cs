@@ -8,7 +8,7 @@ using HLE.Collections;
 
 namespace HLE.Memory;
 
-public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IIndexAccessible<T>, IReadOnlyCollection<T>
+public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index]
@@ -87,6 +87,8 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
     {
         return new(_pointer, Length);
     }
+
+    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
     public void Dispose()
     {

@@ -6,20 +6,21 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IIndexAccessible<char>, IReadOnlyCollection<char>
+public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IIndexAccessible<char>, IReadOnlyCollection<char>, ISpanProvider<char>
 {
-    public ref char this[int index] => ref Unsafe.AsRef(in WrittenSpan[index]);
+    public ref char this[int index] => ref WrittenSpan[index];
 
     char IIndexAccessible<char>.this[int index] => WrittenSpan[index];
 
-    public ref char this[Index index] => ref WrittenSpan.AsMutableSpan()[index];
+    public ref char this[Index index] => ref WrittenSpan[index];
 
-    public Span<char> this[Range range] => WrittenSpan.AsMutableSpan()[range];
+    public Span<char> this[Range range] => WrittenSpan[range];
 
     public int Length { get; private set; }
 
@@ -31,13 +32,13 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     public int Capacity => _buffer.Length;
 
-    public ReadOnlySpan<char> WrittenSpan => _buffer.Span[..Length];
+    public Span<char> WrittenSpan => _buffer.AsSpan()[..Length];
 
-    public ReadOnlyMemory<char> WrittenMemory => _buffer.Memory[..Length];
+    public Memory<char> WrittenMemory => _buffer.AsMemory()[..Length];
 
-    public Span<char> FreeBufferSpan => _buffer.Span[Length..];
+    public Span<char> FreeBufferSpan => _buffer.AsSpan()[Length..];
 
-    public Memory<char> FreeBufferMemory => _buffer.Memory[Length..];
+    public Memory<char> FreeBufferMemory => _buffer.AsMemory()[Length..];
 
     public int FreeBufferSize => Capacity - Length;
 
@@ -68,13 +69,15 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
         _buffer.Dispose();
     }
 
+    Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GrowBuffer(int sizeHint = 0)
     {
         int newSize = sizeHint < 1 ? _buffer.Length << 1 : _buffer.Length + sizeHint;
         RentedArray<char> newBuffer = new(newSize);
         Debug.Assert(newBuffer.Length > _buffer.Length);
-        _buffer.Span.CopyToUnsafe(newBuffer.Span);
+        _buffer.AsSpan().CopyToUnsafe(newBuffer.AsSpan());
         _buffer.Dispose();
         _buffer = newBuffer;
     }
@@ -230,13 +233,8 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
     void ICollection<char>.Clear() => Clear();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Clear(bool clearBuffer = false)
+    public void Clear()
     {
-        if (clearBuffer)
-        {
-            _buffer.Span[..Length].Clear();
-        }
-
         Length = 0;
     }
 
@@ -315,7 +313,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
     [Pure]
     public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
     {
-        return WrittenSpan.Equals(str, comparisonType);
+        return ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
     }
 
     public bool Equals(PooledStringBuilder? other)

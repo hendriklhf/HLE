@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace HLE.Tests.Collections;
 
 [TestClass]
-public class PoolBufferListTest
+public class PooledListTest
 {
     [TestMethod]
     public void IndexerTest()

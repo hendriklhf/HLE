@@ -9,7 +9,7 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
+public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index] => ref AsSpan()[index];
@@ -62,7 +62,10 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     [Pure]
     public T[] ToArray()
     {
-        return AsSpan().ToArray();
+        Span<T> items = AsSpan();
+        T[] result = GC.AllocateUninitializedArray<T>(Count);
+        items.CopyToUnsafe(result);
+        return result;
     }
 
     [Pure]
@@ -74,6 +77,8 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
         CopyTo(resultSpan);
         return result;
     }
+
+    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
     private void GrowIfNeeded(int neededSpace)
     {
@@ -97,16 +102,22 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     public unsafe void Add(T item)
     {
         GrowIfNeeded(1);
-        T* ptr = NativeMemoryMarshal<T>.GetPointer(_buffer);
-        ptr[Count++] = item;
+        T* destination = _buffer._pointer + Count++;
+        *destination = item;
     }
 
     public unsafe void AddRange(IEnumerable<T> items)
     {
+        if (items.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+        {
+            AddRange(span);
+            return;
+        }
+
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
             GrowIfNeeded(itemsCount);
-            T* destination = NativeMemoryMarshal<T>.GetPointer(_buffer) + Count;
+            T* destination = _buffer._pointer + Count;
             if (items is ICopyable<T> copyable)
             {
                 copyable.CopyTo(destination);
@@ -130,7 +141,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
 
     public void AddRange(List<T> items)
     {
-        AddRange(CollectionsMarshal.AsSpan(items));
+        AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
     }
 
     public void AddRange(params T[] items)
@@ -149,7 +160,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
         ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
 
         GrowIfNeeded(items.Length);
-        ref T destinationReference = ref Unsafe.AsRef<T>(NativeMemoryMarshal<T>.GetPointer(_buffer) + Count);
+        ref T destinationReference = ref Unsafe.AsRef<T>(_buffer._pointer + Count);
         ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
 
         Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * items.Length));

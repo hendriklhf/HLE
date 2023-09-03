@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -39,12 +40,12 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         if (!MemoryHelper.UseStackAlloc<char>(charLength))
         {
             using RentedArray<char> rentedBuffer = new(charLength);
-            chars = rentedBuffer.Span[..charLength];
+            chars = rentedBuffer.AsSpan()[..charLength];
             MemoryMarshal.Cast<char, ushort>(chars).FillAscending(minimumCharValue);
             return new(StringPool.Shared.GetOrAdd(chars));
         }
 
-        chars = MemoryHelper.ReturnStackAlloced(stackalloc char[charLength]);
+        chars = SpanMarshal.ReturnStackAlloced(stackalloc char[charLength]);
         MemoryMarshal.Cast<char, ushort>(chars).FillAscending(minimumCharValue);
         return new(StringPool.Shared.GetOrAdd(chars));
     }

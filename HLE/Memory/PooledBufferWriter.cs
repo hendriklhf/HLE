@@ -16,7 +16,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>
+public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
 {
     T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
 
@@ -28,7 +28,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     /// <summary>
     /// A <see cref="Memory{T}"/> view over the written elements.
     /// </summary>
-    public Memory<T> WrittenMemory => _buffer.Memory[..Count];
+    public Memory<T> WrittenMemory => _buffer.AsMemory()[..Count];
 
     /// <summary>
     /// The amount of written elements.
@@ -76,7 +76,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     public Memory<T> GetMemory(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return _buffer.Memory[Count..];
+        return _buffer.AsMemory()[Count..];
     }
 
     /// <inheritdoc/>
@@ -172,7 +172,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
         using RentedArray<T> oldBuffer = _buffer;
         int newCapacity = _buffer.Length + neededSpace;
         _buffer = new(newCapacity);
-        oldBuffer.CopyTo(_buffer.Span);
+        oldBuffer.CopyTo(_buffer.AsSpan());
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
@@ -210,6 +210,8 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
         DefaultCopier<T> copier = new(WrittenSpan);
         copier.CopyTo(destination);
     }
+
+    Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
 
     void ICollection<T>.Add(T item)
     {

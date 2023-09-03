@@ -17,19 +17,30 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 [DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>
+public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
 {
-    public ref T this[int index] => ref Span[index];
+    public ref T this[int index]
+    {
+        get
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)index, (uint)_array.Length);
+            return ref Unsafe.Add(ref ManagedPointer, index);
+        }
+    }
 
     T IIndexAccessible<T>.this[int index] => this[index];
 
-    public ref T this[Index index] => ref Span[index];
+    public ref T this[Index index]
+    {
+        get
+        {
+            int actualIndex = index.GetOffset(_array.Length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)actualIndex, (uint)_array.Length);
+            return ref Unsafe.Add(ref ManagedPointer, actualIndex);
+        }
+    }
 
     public Span<T> this[Range range] => _array.AsSpan(range);
-
-    public Span<T> Span => _array;
-
-    public Memory<T> Memory => _array;
 
     public ref T ManagedPointer => ref MemoryMarshal.GetArrayDataReference(_array);
 
@@ -74,47 +85,56 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         ArrayPool<T>.Shared.Return(_array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
     }
 
+    // TODO: create overload with start, length, range parameters
+    public Span<T> AsSpan() => _array;
+
+    // TODO: create overload with start, length, range parameters
+    public Memory<T> AsMemory() => _array;
+
+    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
+
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(Span);
+        DefaultCopier<T> copier = new(AsSpan());
         copier.CopyTo(destination);
     }
 
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    void ICollection<T>.Clear()
+    public unsafe void Clear()
     {
-        Span.Clear();
+        ref byte start = ref Unsafe.As<T, byte>(ref ManagedPointer);
+        Unsafe.InitBlock(ref start, 0, (uint)(Length * sizeof(T)));
     }
 
     bool ICollection<T>.Contains(T item)
@@ -157,6 +177,12 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     [Pure]
     public override string ToString()
     {
+        if (typeof(T) == typeof(char))
+        {
+            ReadOnlySpan<char> charSpan = Unsafe.As<T[], char[]>(ref Unsafe.AsRef(in _array));
+            return new(charSpan);
+        }
+
         Type thisType = typeof(RentedArray<T>);
         Type genericType = typeof(T);
         return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{_array.Length}]";
@@ -168,7 +194,7 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         int length = Length;
         for (int i = 0; i < length; i++)
         {
-            yield return Span[i];
+            yield return AsSpan()[i];
         }
     }
 
@@ -177,28 +203,6 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     {
         return GetEnumerator();
     }
-
-#pragma warning disable CA2225
-    public static implicit operator Span<T>(RentedArray<T> rentedArray)
-    {
-        return rentedArray._array;
-    }
-
-    public static implicit operator ReadOnlySpan<T>(RentedArray<T> rentedArray)
-    {
-        return rentedArray._array;
-    }
-
-    public static implicit operator Memory<T>(RentedArray<T> rentedArray)
-    {
-        return rentedArray._array;
-    }
-
-    public static implicit operator ReadOnlyMemory<T>(RentedArray<T> rentedArray)
-    {
-        return rentedArray._array;
-    }
-#pragma warning restore CA2225
 
     public static bool operator ==(RentedArray<T> left, RentedArray<T> right)
     {

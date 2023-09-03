@@ -12,7 +12,7 @@ public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICo
 
     public ReadOnlySpan<char> Span => _data[..Length];
 
-    public ReadOnlyMemory<char> Memory => _data.Memory[..Length];
+    public ReadOnlyMemory<char> Memory => _data.AsMemory()[..Length];
 
     public int Length { get; }
 
@@ -24,7 +24,7 @@ public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICo
     {
         Length = data.Length;
         _data = new(Length);
-        data.CopyTo(_data.Span);
+        data.CopyTo(_data.AsSpan());
     }
 
     public void Dispose()

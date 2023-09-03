@@ -96,7 +96,7 @@ public static class StringHelper
             {
                 if (bufferLength > 0) // buffer isn't empty, write buffer into result
                 {
-                    Unsafe.Add(ref resultReference, resultLength++) = charBuffer.Memory[..bufferLength];
+                    Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory()[..bufferLength];
                     bufferLength = 0;
                 }
 
@@ -107,17 +107,17 @@ public static class StringHelper
                 switch (bufferLength)
                 {
                     case > 0 when bufferLength + part.Length + 1 > charCount: // buffer is not empty and part doesn't fit in buffer
-                        Unsafe.Add(ref resultReference, resultLength++) = charBuffer.Memory[..bufferLength];
-                        part.CopyTo(charBuffer);
+                        Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory()[..bufferLength];
+                        part.CopyTo(charBuffer.AsMemory());
                         bufferLength = part.Length;
                         break;
                     case > 0 when bufferLength + part.Length + 1 <= charCount: // buffer is not empty and part fits into buffer
                         charBuffer[bufferLength++] = separator;
-                        part.CopyTo(charBuffer.Memory[bufferLength..]);
+                        part.CopyTo(charBuffer.AsMemory()[bufferLength..]);
                         bufferLength += part.Length;
                         break;
                     case 0: // buffer is empty and part fits into buffer
-                        part.CopyTo(charBuffer);
+                        part.CopyTo(charBuffer.AsMemory());
                         bufferLength = part.Length;
                         break;
                 }
@@ -126,7 +126,7 @@ public static class StringHelper
 
         if (bufferLength > 0) // if buffer isn't empty in the end, write buffer to result
         {
-            Unsafe.Add(ref resultReference, resultLength++) = charBuffer.Memory[..bufferLength];
+            Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory()[..bufferLength];
         }
 
         return resultLength == result.Length ? result : result[..resultLength];
@@ -140,7 +140,7 @@ public static class StringHelper
         if (!MemoryHelper.UseStackAlloc<char>(str.Length))
         {
             using RentedArray<char> rentedBuffer = new(str.Length);
-            resultLength = TrimAll(str, rentedBuffer);
+            resultLength = TrimAll(str, rentedBuffer.AsSpan());
             return new(rentedBuffer[..resultLength]);
         }
 
@@ -218,7 +218,7 @@ public static class StringHelper
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = new(span.Length);
-            length = IndicesOf(span, c, indicesBuffer);
+            length = IndicesOf(span, c, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
 
@@ -336,7 +336,7 @@ public static class StringHelper
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = new(span.Length);
-            length = IndicesOf(span, s, indicesBuffer);
+            length = IndicesOf(span, s, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
 
@@ -402,7 +402,7 @@ public static class StringHelper
         if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
         {
             using RentedArray<char> rentedBuffer = new(maximumResultLength);
-            resultLength = RegexEscape(input, rentedBuffer);
+            resultLength = RegexEscape(input, rentedBuffer.AsSpan());
             return resultLength == input.Length ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }
 

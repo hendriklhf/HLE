@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
-using HLE.Memory;
+using HLE.Marshalling;
 using HLE.Strings;
 using HLE.Twitch.Models;
 

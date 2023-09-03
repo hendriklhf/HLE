@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
@@ -97,8 +98,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private async ValueTask SendAsync(ReadOnlyMemory<char> message)
     {
         using RentedArray<byte> bytes = new(message.Length << 1);
-        int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.Span);
-        await SendAsync(bytes.Memory[..byteCount]);
+        int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.AsSpan());
+        await SendAsync(bytes.AsMemory()[..byteCount]);
     }
 
     private async ValueTask SendAsync(ReadOnlyMemory<byte> message)

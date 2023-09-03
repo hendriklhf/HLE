@@ -12,7 +12,7 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
+public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
     where T : IEquatable<T>
 {
     public T this[int index]
@@ -77,6 +77,8 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     {
         return _list.ToList();
     }
+
+    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
     public void Add(T item)
     {

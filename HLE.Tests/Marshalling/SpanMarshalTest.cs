@@ -1,12 +1,12 @@
 ﻿using System;
 using HLE.Collections;
-using HLE.Memory;
+using HLE.Marshalling;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace HLE.Tests.Memory;
+namespace HLE.Tests.Marshalling;
 
 [TestClass]
-public class MemoryHelperTest
+public class SpanMarshalTest
 {
     [TestMethod]
     public void AsMutableSpanTest()

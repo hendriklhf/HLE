@@ -10,7 +10,11 @@ namespace HLE.Time;
 [DebuggerDisplay(nameof(Interval) + " = {Interval} " + nameof(RemainingTime) + " = {RemainingTime}")]
 public sealed class HTimer : IEquatable<HTimer>, IDisposable
 {
-    public bool AutoReset { get; set; }
+    public bool AutoReset
+    {
+        get => _timer.AutoReset;
+        set => _timer.AutoReset = value;
+    }
 
     public bool Enabled => _timer.Enabled;
 
@@ -25,15 +29,12 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 
     public HTimer(TimeSpan interval)
     {
-        _timer = new(interval)
-        {
-            AutoReset = false
-        };
-
-        _timer.Elapsed += (_, _) =>
+        _timer = new(interval);
+        _timer.Elapsed += (sender, _) =>
         {
             OnElapsed?.Invoke(this, EventArgs.Empty);
-            if (AutoReset)
+            Timer timer = Unsafe.As<object?, Timer>(ref sender);
+            if (timer.AutoReset)
             {
                 Start();
             }
@@ -93,5 +94,15 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
     public override int GetHashCode()
     {
         return RuntimeHelpers.GetHashCode(this);
+    }
+
+    public static bool operator ==(HTimer? left, HTimer? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(HTimer? left, HTimer? right)
+    {
+        return !(left == right);
     }
 }

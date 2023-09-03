@@ -1,16 +1,25 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HLE.Memory;
+using HLE.Strings;
 
 namespace HLE;
 
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("\"{FilePath}\"")]
 public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 {
     public string FilePath { get; }
+
+    public BufferedFileWriter(ReadOnlySpan<char> filePath)
+    {
+        FilePath = StringPool.Shared.GetOrAdd(filePath);
+    }
 
     public BufferedFileWriter(string filePath)
     {
@@ -60,7 +69,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
         if (!MemoryHelper.UseStackAlloc<byte>(byteCount))
         {
             using RentedArray<byte> byteArrayBuffer = new(byteCount);
-            bytesWritten = fileEncoding.GetBytes(fileContent, byteArrayBuffer);
+            bytesWritten = fileEncoding.GetBytes(fileContent, byteArrayBuffer.AsSpan());
             WriteBytes(byteArrayBuffer[..bytesWritten]);
             return;
         }
@@ -75,8 +84,8 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     {
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
         using RentedArray<byte> byteBuffer = new(byteCount);
-        int bytesWritten = fileEncoding.GetBytes(fileContent.Span, byteBuffer);
-        await WriteBytesAsync(byteBuffer.Memory[..bytesWritten], append);
+        int bytesWritten = fileEncoding.GetBytes(fileContent.Span, byteBuffer.AsSpan());
+        await WriteBytesAsync(byteBuffer.AsMemory()[..bytesWritten], append);
     }
 
     public void WriteBytes(ReadOnlySpan<byte> fileBytes)

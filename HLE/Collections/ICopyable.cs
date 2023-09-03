@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace HLE.Memory;
+namespace HLE.Collections;
 
 public unsafe interface ICopyable<T>
 {

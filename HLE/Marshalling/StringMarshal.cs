@@ -76,7 +76,7 @@ public static class StringMarshal
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = new(span.Length);
-            span.CopyTo(rentedCopyBuffer);
+            span.CopyTo(rentedCopyBuffer.AsSpan());
             MemoryExtensions.ToLower(rentedCopyBuffer[..span.Length], span, CultureInfo.InvariantCulture);
             return;
         }
@@ -103,7 +103,7 @@ public static class StringMarshal
         if (!MemoryHelper.UseStackAlloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = new(span.Length);
-            span.CopyTo(rentedCopyBuffer);
+            span.CopyTo(rentedCopyBuffer.AsSpan());
             MemoryExtensions.ToUpper(rentedCopyBuffer[..span.Length], span, CultureInfo.InvariantCulture);
             return;
         }

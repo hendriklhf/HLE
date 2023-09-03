@@ -22,7 +22,7 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
 
     public ChatterinoSettingsReader()
     {
-        using PooledStringBuilder pathBuilder = new(100);
+        using PooledStringBuilder pathBuilder = new(128);
         pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
         _windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
     }

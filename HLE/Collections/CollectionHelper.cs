@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Strings;
 using JetBrains.Annotations;
@@ -109,7 +110,7 @@ public static class CollectionHelper
             if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
             {
                 using RentedArray<char> rentedBuffer = new(calculatedResultLength);
-                charsWritten = StringHelper.Join(chars, separator, rentedBuffer);
+                charsWritten = StringHelper.Join(chars, separator, rentedBuffer.AsSpan());
                 return new(rentedBuffer[..charsWritten]);
             }
 
@@ -142,7 +143,7 @@ public static class CollectionHelper
             if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
             {
                 using RentedArray<char> rentedBuffer = new(calculatedResultLength);
-                charsWritten = StringHelper.Join(chars, separator, rentedBuffer);
+                charsWritten = StringHelper.Join(chars, separator, rentedBuffer.AsSpan());
                 return new(rentedBuffer[..charsWritten]);
             }
 
@@ -170,7 +171,7 @@ public static class CollectionHelper
                 using RentedArray<char> rentedBuffer = new(elementCount);
                 if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer._array))
                 {
-                    return new(rentedBuffer);
+                    return new(rentedBuffer.AsSpan());
                 }
 
                 using PooledStringBuilder builderWithCapacity = new(elementCount);
@@ -418,7 +419,7 @@ public static class CollectionHelper
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = new(span.Length);
-            length = IndicesOf(span, predicate, indicesBuffer);
+            length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
 
@@ -546,7 +547,7 @@ public static class CollectionHelper
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = new(span.Length);
-            length = IndicesOf(span, predicate, indicesBuffer);
+            length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
 
@@ -631,7 +632,7 @@ public static class CollectionHelper
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = new(span.Length);
-            length = IndicesOf(span, item, indicesBuffer);
+            length = IndicesOf(span, item, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
 
@@ -669,8 +670,10 @@ public static class CollectionHelper
         int vector512Count = Vector512<int>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
-            var ascendingValueAdditions = Vector512.Create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 11, 12, 13, 14, 15);
+            var ascendingValueAdditions = Vector512.Create(
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14, 15
+            );
             while (span.Length >= vector512Count)
             {
                 Vector512<int> startValues = Vector512.Create(start);
@@ -765,10 +768,12 @@ public static class CollectionHelper
         ushort vector512Count = (ushort)Vector512<ushort>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
-            Vector512<ushort> ascendingValueAdditions = Vector512.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            Vector512<ushort> ascendingValueAdditions = Vector512.Create(
+                (ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
                 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-                30, 31);
+                30, 31
+            );
             while (span.Length >= vector512Count)
             {
                 Vector512<ushort> startValues = Vector512.Create(start);
@@ -789,8 +794,10 @@ public static class CollectionHelper
         ushort vector256Count = (ushort)Vector256<ushort>.Count;
         if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
         {
-            Vector256<ushort> ascendingValueAdditions = Vector256.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 11, 12, 13, 14, 15);
+            Vector256<ushort> ascendingValueAdditions = Vector256.Create(
+                (ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14, 15
+            );
             while (span.Length >= vector256Count)
             {
                 Vector256<ushort> startValues = Vector256.Create(start);
@@ -891,6 +898,12 @@ public static class CollectionHelper
             return true;
         }
 
+        if (collection is IReadOnlySpanProvider<T> spanProvider)
+        {
+            span = spanProvider.GetReadOnlySpan();
+            return true;
+        }
+
         span = ReadOnlySpan<T>.Empty;
         return false;
     }
@@ -914,8 +927,14 @@ public static class CollectionHelper
 
         if (collectionType == typeof(List<T>))
         {
-            var list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
+            List<T> list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
             span = CollectionsMarshal.AsSpan(list);
+            return true;
+        }
+
+        if (collection is ISpanProvider<T> spanProvider)
+        {
+            span = spanProvider.GetSpan();
             return true;
         }
 
@@ -996,6 +1015,12 @@ public static class CollectionHelper
         if (collection is ICountable countable)
         {
             elementCount = countable.Count;
+            return true;
+        }
+
+        if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+        {
+            elementCount = span.Length;
             return true;
         }
 

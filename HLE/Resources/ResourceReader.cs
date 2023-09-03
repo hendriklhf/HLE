@@ -105,4 +105,14 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     {
         return RuntimeHelpers.GetHashCode(this);
     }
+
+    public static bool operator ==(ResourceReader? left, ResourceReader? right)
+    {
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(ResourceReader? left, ResourceReader? right)
+    {
+        return !(left == right);
+    }
 }

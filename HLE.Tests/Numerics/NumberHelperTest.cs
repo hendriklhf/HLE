@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using HLE.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,9 +12,13 @@ public class NumberHelperTest
     [TestMethod]
     public void GetNumberLengthTest()
     {
-        for (int i = 0; i <= 10_000_000; i++)
+        int[] numbers = new int[10_000];
+        Random.Shared.Fill(numbers.AsSpan(1));
+        for (int i = 0; i < numbers.Length; i++)
         {
-            Assert.AreEqual(i.ToString().Length, NumberHelper.GetNumberLength(i));
+            int number = numbers[i];
+            bool isNegative = number < 0;
+            Assert.AreEqual(number.ToString().Length - Unsafe.As<bool, byte>(ref isNegative), NumberHelper.GetNumberLength(number));
         }
     }
 

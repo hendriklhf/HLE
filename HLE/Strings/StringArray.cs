@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -16,7 +17,7 @@ namespace HLE.Strings;
 /// <summary>
 /// An array that is specialized in storing strings by optimizing data locality, which makes search operations faster, but comes at the cost of higher memory usage.
 /// </summary>
-public sealed class StringArray : ICollection<string>, IReadOnlyCollection<string>, ICopyable<string>, ICountable, IIndexAccessible<string>, IEquatable<StringArray>
+public sealed class StringArray : ICollection<string>, IReadOnlyCollection<string>, ICopyable<string>, ICountable, IIndexAccessible<string>, IEquatable<StringArray>, IReadOnlySpanProvider<string>
 {
     public string this[int index]
     {
@@ -52,7 +53,11 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _strings = new string[length];
         _stringLengths = new int[length];
         _stringStarts = new int[length];
-        _stringChars = new char[(nuint)length << 2];
+        int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(roundedLength, 0x4000_0000, nameof(length));
+
+        int charBufferLength = roundedLength << 2;
+        _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
     }
 
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
@@ -67,15 +72,18 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _strings = strings.ToArray();
         _stringLengths = new int[_strings.Length];
         _stringStarts = new int[_strings.Length];
-        _stringChars = new char[(nuint)_strings.Length << 2];
+        int charBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)_strings.Length) << 2;
+        _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
 
         FillArray(_strings);
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int GetStringLength(int index) => _stringLengths[index];
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<char> GetChars(int index) => _stringChars.AsSpan().SliceUnsafe(_stringStarts[index], _stringLengths[index]);
 
     [Pure]
@@ -83,6 +91,8 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     [Pure]
     public string[] ToArray() => AsSpan().ToArray();
+
+    ReadOnlySpan<string> IReadOnlySpanProvider<string>.GetReadOnlySpan() => AsSpan();
 
     [Pure]
     public int IndexOf(string str, int startIndex = 0) => IndexOf(str.AsSpan(), startIndex);
@@ -168,6 +178,57 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     bool ICollection<string>.Remove(string str) => throw new NotSupportedException();
 
+    internal void MoveString(int sourceIndex, int destinationIndex)
+    {
+        if (sourceIndex == destinationIndex)
+        {
+            return;
+        }
+
+        Span<string> strings = _strings;
+        Span<int> stringLengths = _stringLengths;
+        Span<int> stringStarts = _stringStarts;
+        Span<char> stringChars = _stringChars;
+
+        string sourceString = strings[sourceIndex];
+        int sourceLength = stringLengths[sourceIndex];
+        int sourceStart = stringStarts[sourceIndex];
+        int destinationLength = stringLengths[destinationIndex];
+        int destinationStart = stringStarts[destinationIndex];
+
+        int greaterIndex = sourceIndex > destinationIndex ? sourceIndex : destinationIndex;
+        bool isSourceRightOfDestination = greaterIndex == sourceIndex;
+        int smallerIndex = isSourceRightOfDestination ? destinationIndex : sourceIndex;
+        if (isSourceRightOfDestination)
+        {
+            strings[destinationIndex..sourceIndex].CopyTo(strings[(destinationIndex + 1)..]);
+            stringLengths[destinationIndex..sourceIndex].CopyTo(stringLengths[(destinationIndex + 1)..]);
+            stringChars[destinationStart..sourceStart].CopyTo(stringChars[(destinationStart + sourceLength)..]);
+        }
+        else
+        {
+            strings[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(strings[sourceIndex..]);
+            stringLengths[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(stringLengths[sourceIndex..]);
+            stringChars[(sourceStart + sourceLength)..(destinationStart + destinationLength)].CopyTo(stringChars[sourceStart..]);
+        }
+
+        strings[destinationIndex] = sourceString;
+        stringLengths[destinationIndex] = sourceLength;
+        UpdateStringStarts(stringStarts, stringLengths, smallerIndex, greaterIndex);
+        sourceString.CopyTo(stringChars[stringStarts[destinationIndex]..]);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void UpdateStringStarts(Span<int> stringStarts, Span<int> stringLengths, int startIndex, int endIndex)
+    {
+        int nextStart = stringStarts[startIndex] + stringLengths[startIndex];
+        for (int i = startIndex + 1; i <= endIndex; i++)
+        {
+            stringStarts[i] = nextStart;
+            nextStart += stringLengths[i];
+        }
+    }
+
     private void FillArray(ReadOnlySpan<string> strings)
     {
         Debug.Assert(strings.Length == Length);
@@ -184,7 +245,6 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _strings.AsSpan().Clear();
         _stringLengths.AsSpan().Clear();
         _stringStarts.AsSpan().Clear();
-        _stringChars.AsSpan().Clear();
     }
 
     public IEnumerator<string> GetEnumerator()
@@ -282,7 +342,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     private void GrowBufferIfNeeded(int currentStringLength, int newStringLength)
     {
-        int stringLengthsSum = GetStringLengthsSum(..);
+        int stringLengthsSum = GetStringLengthsSum(Range.All);
         int freeBufferSpace = _stringChars.Length - stringLengthsSum;
         int neededSpace = newStringLength - currentStringLength;
         if (freeBufferSpace >= neededSpace)
@@ -290,8 +350,8 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
             return;
         }
 
-        nuint newBufferLength = BitOperations.RoundUpToPowerOf2((nuint)(_stringChars.Length + neededSpace));
-        char[] newBuffer = new char[newBufferLength];
+        int newBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)(_stringChars.Length + neededSpace));
+        char[] newBuffer = GC.AllocateUninitializedArray<char>(newBufferLength);
         _stringChars.CopyTo(newBuffer.AsSpan());
         _stringChars = newBuffer;
     }

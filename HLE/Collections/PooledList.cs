@@ -12,7 +12,7 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
+public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
     where T : IEquatable<T>
 {
     public ref T this[int index] => ref _bufferWriter.WrittenSpan[index];
@@ -70,7 +70,9 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
     [Pure]
     public T[] ToArray()
     {
-        return _bufferWriter.WrittenSpan.ToArray();
+        T[] result = GC.AllocateUninitializedArray<T>(Count);
+        _bufferWriter.WrittenSpan.CopyToUnsafe(result);
+        return result;
     }
 
     [Pure]
@@ -82,6 +84,8 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
         CopyTo(resultSpan);
         return result;
     }
+
+    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
     public void Add(T item)
     {
@@ -117,20 +121,11 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
         }
     }
 
-    public void AddRange(List<T> items)
-    {
-        AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
-    }
+    public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
 
-    public void AddRange(params T[] items)
-    {
-        AddRange((ReadOnlySpan<T>)items);
-    }
+    public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(Span<T> items)
-    {
-        AddRange((ReadOnlySpan<T>)items);
-    }
+    public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
     public unsafe void AddRange(ReadOnlySpan<T> items)
     {

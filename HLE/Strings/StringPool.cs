@@ -84,7 +84,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
         {
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
-            charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
+            charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
             return GetOrAdd(rentedCharBuffer[..charsWritten]);
         }
 
@@ -132,7 +132,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
         {
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
-            charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
+            charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
             return TryGet(rentedCharBuffer[..charsWritten], out value);
         }
 
@@ -166,7 +166,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
         {
             using RentedArray<char> rentedCharBuffer = new(bytes.Length);
-            charsWritten = encoding.GetChars(bytes, rentedCharBuffer);
+            charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
             return Contains(rentedCharBuffer[..charsWritten]);
         }
 

@@ -11,7 +11,7 @@ namespace HLE.Tests;
 [TestClass]
 public class BufferedFileOperationsTest
 {
-    private static readonly string _tempFileDirectory = $"{Path.GetTempPath()}HLE.Tests.FilesTest\\";
+    private static readonly string _tempFileDirectory = $"{Path.GetTempPath()}HLE.Tests.BufferedFileOperationsTest\\";
 
     [TestInitialize]
     public void Initialize()

@@ -113,7 +113,7 @@ public static class RandomExtensions
         if (!MemoryHelper.UseStackAlloc<int>(length))
         {
             using RentedArray<int> randomIndicesBuffer = new(length);
-            random.Fill(randomIndicesBuffer.Span);
+            random.Fill(randomIndicesBuffer.AsSpan());
             for (int i = 0; i < length; i++)
             {
                 int randomIndex = NumberHelper.SetSignBitToZero(randomIndicesBuffer[i]) % choices.Length;

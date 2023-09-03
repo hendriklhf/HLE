@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
-namespace HLE.Collections;
+namespace HLE.Memory;
 
 /// <summary>
 /// A pool of objects from which you can rent objects and return objects to in order to reuse them.<br/>
@@ -15,37 +15,38 @@ public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>
     public int Capacity { get; set; } = 64;
 
     private readonly ConcurrentStack<T> _rentableItems = new();
-    internal Func<T> _itemFactory;
+    internal Func<T> _objectFactory;
     internal Action<T>? _returnAction;
 
-    public ObjectPool(Func<T> itemFactory, Action<T>? returnAction = null)
+    public ObjectPool(Func<T> objectFactory, Action<T>? returnAction = null)
     {
-        _itemFactory = itemFactory;
+        _objectFactory = objectFactory;
         _returnAction = returnAction;
     }
 
     [Pure]
     public T Rent()
     {
-        if (!_rentableItems.TryPop(out T? item))
+        if (!_rentableItems.TryPop(out T? obj))
         {
-            item = _itemFactory();
+            obj = _objectFactory();
         }
 
-        return item;
+        return obj;
     }
 
-    public void Return(T item)
+    public void Return(T obj)
     {
         if (_rentableItems.Count >= Capacity)
         {
             return;
         }
 
-        _returnAction?.Invoke(item);
-        _rentableItems.Push(item);
+        _returnAction?.Invoke(obj);
+        _rentableItems.Push(obj);
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public void Clear()
     {
         _rentableItems.Clear();

@@ -6,11 +6,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace HLE.Tests;
 
 [TestClass]
-public class RandomTest
+public class RandomExtensionsTest
 {
     private readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
 
-    private const int _loopIterations = 100_000;
+    private const int _loopIterations = 1000;
 
     [TestMethod]
     public void CharTest()

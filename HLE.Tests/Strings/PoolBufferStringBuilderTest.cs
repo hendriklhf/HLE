@@ -77,8 +77,8 @@ public class PoolBufferStringBuilderTest
         using PooledStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder._buffer.Span.Length);
-        Assert.IsTrue(builder._buffer.Span.StartsWith("hello"));
+        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder._buffer.AsSpan().Length);
+        Assert.IsTrue(builder._buffer.AsSpan().StartsWith("hello"));
     }
 
     [TestMethod]
@@ -87,8 +87,8 @@ public class PoolBufferStringBuilderTest
         using PooledStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder._buffer.Memory.Length);
-        Assert.IsTrue(builder._buffer.Span.StartsWith("hello"));
+        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder._buffer.AsMemory().Length);
+        Assert.IsTrue(builder._buffer.AsSpan().StartsWith("hello"));
     }
 
     [TestMethod]

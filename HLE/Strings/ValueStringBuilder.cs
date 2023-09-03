@@ -4,24 +4,23 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Memory;
 
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
 public ref partial struct ValueStringBuilder
 {
-    public readonly ref char this[int index] => ref WrittenSpan.AsMutableSpan()[index];
+    public readonly ref char this[int index] => ref WrittenSpan[index];
 
-    public readonly ref char this[Index index] => ref WrittenSpan.AsMutableSpan()[index];
+    public readonly ref char this[Index index] => ref WrittenSpan[index];
 
-    public readonly Span<char> this[Range range] => WrittenSpan.AsMutableSpan()[range];
+    public readonly Span<char> this[Range range] => WrittenSpan[range];
 
     public int Length { get; private set; }
 
     public readonly int Capacity => _buffer.Length;
 
-    public readonly ReadOnlySpan<char> WrittenSpan => _buffer[..Length];
+    public readonly Span<char> WrittenSpan => _buffer[..Length];
 
     public readonly Span<char> FreeBuffer => _buffer[Length..];
 
@@ -163,13 +162,14 @@ public ref partial struct ValueStringBuilder
         return success;
     }
 
-    public void Clear(bool clearBuffer = false)
+    public void Clear()
     {
         Length = 0;
-        if (clearBuffer)
-        {
-            _buffer.Clear();
-        }
+    }
+
+    public readonly Enumerator GetEnumerator()
+    {
+        return new(WrittenSpan);
     }
 
     [Pure]
@@ -203,14 +203,14 @@ public ref partial struct ValueStringBuilder
     [Pure]
     public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
     {
-        return WrittenSpan.Equals(str, comparisonType);
+        return ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
     }
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly unsafe int GetHashCode()
+    public override readonly int GetHashCode()
     {
-        return HashCode.Combine((nuint)Unsafe.AsPointer(ref MemoryMarshal.GetReference(_buffer)), Length);
+        return GetHashCode(StringComparison.Ordinal);
     }
 
     [Pure]
@@ -234,5 +234,23 @@ public ref partial struct ValueStringBuilder
     public static bool operator !=(ValueStringBuilder left, ValueStringBuilder right)
     {
         return !(left == right);
+    }
+
+    public ref struct Enumerator
+    {
+        public char Current => _chars[_index++];
+
+        private readonly ReadOnlySpan<char> _chars;
+        private int _index;
+
+        public Enumerator(ReadOnlySpan<char> chars)
+        {
+            _chars = chars;
+        }
+
+        public readonly bool MoveNext()
+        {
+            return _index < _chars.Length;
+        }
     }
 }
