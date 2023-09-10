@@ -47,7 +47,15 @@ public ref struct ValueStack<T>
             ThrowStackIsEmpty();
         }
 
-        return _stack[--Count];
+        int index = --Count;
+        ref T itemReference = ref _stack[index];
+        T item = itemReference;
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            itemReference = default!;
+        }
+
+        return item;
     }
 
     [DoesNotReturn]

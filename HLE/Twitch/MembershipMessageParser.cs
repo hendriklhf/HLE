@@ -16,7 +16,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
         int whitespaceCount;
         if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = new(ircMessage.Length);
+            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.CreateRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
             return ParseLeftChannelMessage(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
         }
@@ -39,7 +39,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
         int whitespaceCount;
         if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = new(ircMessage.Length);
+            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.CreateRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
             return ParseJoinChannelMessage(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
         }

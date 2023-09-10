@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -161,38 +160,38 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     public readonly void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public readonly void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public readonly void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public readonly void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public readonly void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public readonly unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

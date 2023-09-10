@@ -112,7 +112,7 @@ public static class RandomExtensions
         string result = StringMarshal.FastAllocateString(length, out Span<char> resultSpan);
         if (!MemoryHelper.UseStackAlloc<int>(length))
         {
-            using RentedArray<int> randomIndicesBuffer = new(length);
+            using RentedArray<int> randomIndicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan());
             for (int i = 0; i < length; i++)
             {

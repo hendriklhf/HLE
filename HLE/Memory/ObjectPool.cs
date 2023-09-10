@@ -1,7 +1,8 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Collections;
+using HLE.Collections.Concurrent;
 
 namespace HLE.Memory;
 
@@ -10,8 +11,10 @@ namespace HLE.Memory;
 /// Objects rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.
 /// </summary>
 /// <typeparam name="T">The type of pooled objects.</typeparam>
-public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>
+public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>, IDisposable, ICountable
 {
+    public int Count => _rentableItems.Count;
+
     public int Capacity { get; set; } = 64;
 
     private readonly ConcurrentStack<T> _rentableItems = new();
@@ -46,10 +49,14 @@ public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>
         _rentableItems.Push(obj);
     }
 
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public void Clear()
     {
         _rentableItems.Clear();
+    }
+
+    public void Dispose()
+    {
+        _rentableItems.Dispose();
     }
 
     public bool Equals(ObjectPool<T>? other)

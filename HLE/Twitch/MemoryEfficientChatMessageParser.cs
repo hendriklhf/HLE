@@ -9,10 +9,6 @@ namespace HLE.Twitch;
 
 public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquatable<MemoryEfficientChatMessageParser>
 {
-    internal static readonly ObjectPool<Badge[]> _badgeArrayPool = new(static () => new Badge[5]);
-    internal static readonly ObjectPool<char[]> _nameArrayPool = new(static () => new char[25]);
-    internal static readonly ObjectPool<char[]> _messageArrayPool = new(static () => new char[512]);
-
     [Pure]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
@@ -86,9 +82,9 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         ReadOnlySpan<char> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageTags & ChatMessageTags.IsAction) == ChatMessageTags.IsAction);
 
-        char[] usernameBuffer = _nameArrayPool.Rent();
-        char[] displayNameBuffer = _nameArrayPool.Rent();
-        char[] messageBuffer = _messageArrayPool.Rent();
+        char[] usernameBuffer = ArrayPool<char>.Shared.Rent(25);
+        char[] displayNameBuffer = ArrayPool<char>.Shared.Rent(25);
+        char[] messageBuffer = ArrayPool<char>.Shared.Rent(512);
 
         username.CopyTo(usernameBuffer);
         displayName.CopyTo(displayNameBuffer);
@@ -117,7 +113,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
             return Array.Empty<Badge>();
         }
 
-        Badge[] badges = _badgeArrayPool.Rent();
+        Badge[] badges = ArrayPool<Badge>.Shared.Rent(5);
         while (value.Length > 0)
         {
             int indexOfComma = value.IndexOf(',');

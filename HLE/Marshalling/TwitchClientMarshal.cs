@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using HLE.Twitch;
 
 namespace HLE.Marshalling;
@@ -18,6 +17,6 @@ public static class TwitchClientMarshal
 
     public static ReadOnlySpan<string> GetConnectedChannels(TwitchClient client)
     {
-        return CollectionsMarshal.AsSpan(client._ircChannels);
+        return client._ircChannels.AsSpan();
     }
 }

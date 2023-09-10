@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using HLE.Numerics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -61,28 +60,6 @@ public class NumberHelperTest
     public void ParsePositiveNumberFromBytesTest()
     {
         Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
-    }
-
-    [TestMethod]
-    public void IsOnlyOneBitSetTest()
-    {
-        HashSet<int> numbersWithOnlyBitSet = new(32);
-        for (int i = 0; i <= 32; i++)
-        {
-            numbersWithOnlyBitSet.Add(1 << i);
-        }
-
-        for (int i = 0; i < 100_000; i++)
-        {
-            if (numbersWithOnlyBitSet.Contains(i))
-            {
-                Assert.IsTrue(NumberHelper.IsOnlyOneBitSet(i));
-            }
-            else
-            {
-                Assert.IsFalse(NumberHelper.IsOnlyOneBitSet(i));
-            }
-        }
     }
 
     [TestMethod]

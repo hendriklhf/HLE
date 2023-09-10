@@ -7,7 +7,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -22,6 +21,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public string this[int index]
     {
         get => _strings[index];
+        // ReSharper disable once PropertyCanBeMadeInitOnly.Global
         set => SetString(index, value);
     }
 
@@ -47,6 +47,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     internal readonly int[] _stringLengths;
     internal readonly int[] _stringStarts;
     internal char[] _stringChars;
+    private int _freeCharBufferSpace;
 
     public StringArray(int length)
     {
@@ -58,6 +59,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
         int charBufferLength = roundedLength << 2;
         _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
+        _freeCharBufferSpace = charBufferLength;
     }
 
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
@@ -74,6 +76,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _stringStarts = new int[_strings.Length];
         int charBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)_strings.Length) << 2;
         _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
+        _freeCharBufferSpace = charBufferLength;
 
         FillArray(_strings);
     }
@@ -242,9 +245,10 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     public void Clear()
     {
-        _strings.AsSpan().Clear();
-        _stringLengths.AsSpan().Clear();
-        _stringStarts.AsSpan().Clear();
+        Array.Clear(_strings);
+        Array.Clear(_stringLengths);
+        Array.Clear(_stringStarts);
+        _freeCharBufferSpace = _stringChars.Length;
     }
 
     public IEnumerator<string> GetEnumerator()
@@ -262,38 +266,38 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     public void CopyTo(List<string> destination, int offset = 0)
     {
-        DefaultCopier<string> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<string> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(string[] destination, int offset)
     {
-        DefaultCopier<string> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<string> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<string> destination)
     {
-        DefaultCopier<string> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<string> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<string> destination)
     {
-        DefaultCopier<string> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<string> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref string destination)
     {
-        DefaultCopier<string> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<string> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(string* destination)
     {
-        DefaultCopier<string> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<string> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     private void SetString(int index, string str)
@@ -310,7 +314,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         }
 
         int currentStringLength = _stringLengths[index];
-        int lengthOfLeftStrings = GetStringLengthsSum(..index);
+        int lengthOfLeftStrings = _stringLengths.AsSpan(..index).Sum();
         _strings[index] = str;
         _stringLengths[index] = stringLength;
         _stringStarts[index] = lengthOfLeftStrings;
@@ -342,31 +346,17 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     private void GrowBufferIfNeeded(int currentStringLength, int newStringLength)
     {
-        int stringLengthsSum = GetStringLengthsSum(Range.All);
-        int freeBufferSpace = _stringChars.Length - stringLengthsSum;
         int neededSpace = newStringLength - currentStringLength;
-        if (freeBufferSpace >= neededSpace)
+        if (_freeCharBufferSpace >= neededSpace)
         {
             return;
         }
 
         int newBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)(_stringChars.Length + neededSpace));
         char[] newBuffer = GC.AllocateUninitializedArray<char>(newBufferLength);
+        _freeCharBufferSpace += newBufferLength - _stringChars.Length;
         _stringChars.CopyTo(newBuffer.AsSpan());
         _stringChars = newBuffer;
-    }
-
-    private int GetStringLengthsSum(Range range)
-    {
-        // TODO: optimize
-        int sum = 0;
-        ReadOnlySpan<int> stringLengths = _stringLengths.AsSpan(range);
-        for (int i = 0; i < stringLengths.Length; i++)
-        {
-            sum += stringLengths[i];
-        }
-
-        return sum;
     }
 
     public bool Equals(StringArray? other)

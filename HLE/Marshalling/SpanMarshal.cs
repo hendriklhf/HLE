@@ -59,30 +59,6 @@ public static unsafe class SpanMarshal
         return result;
     }
 
-    /// <inheritdoc cref="CopyToUnsafe{T}(ReadOnlySpan{T},Span{T})"/>
-    public static void CopyToUnsafe<T>(this Span<T> source, Span<T> destination)
-    {
-        CopyToUnsafe((ReadOnlySpan<T>)source, destination);
-    }
-
-    /// <summary>
-    /// Copies the <paramref name="source"/> to the <paramref name="destination"/> without checking if enough space is available, so the caller has to verify that it is safe.
-    /// </summary>
-    /// <param name="source">The items that will be copied.</param>
-    /// <param name="destination">The destination where the items will be copied to.</param>
-    /// <typeparam name="T">The type of the items that will be copied.</typeparam>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void CopyToUnsafe<T>(this ReadOnlySpan<T> source, Span<T> destination)
-    {
-        ref T sourceReference = ref MemoryMarshal.GetReference(source);
-        ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
-
-        ref T destinationReference = ref MemoryMarshal.GetReference(destination);
-        ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
-
-        Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * source.Length));
-    }
-
     /// <summary>
     /// Returns the <see cref="Span{T}"/> that has been passed in. The method can be used to avoid a compiler error,
     /// but comes at the cost that the caller has to guarantee the safety of the code by themself.<br/>
@@ -114,78 +90,5 @@ public static unsafe class SpanMarshal
 #pragma warning disable CS9080
         return span;
 #pragma warning restore CS9080
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> SliceUnsafe<T>(this Span<T> span, int start, int length)
-    {
-        ref T reference = ref MemoryMarshal.GetReference(span);
-        return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> SliceUnsafe<T>(this Span<T> span, int start)
-    {
-        return span.SliceUnsafe(start, span.Length - start);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> SliceUnsafe<T>(this Span<T> span, Range range)
-    {
-        int start = range.Start.GetOffset(span.Length);
-        int length = range.End.GetOffset(span.Length) - start;
-        return span.SliceUnsafe(start, length);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, int start, int length)
-    {
-        ref T reference = ref MemoryMarshal.GetReference(span);
-        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.Add(ref reference, start), length);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, int start)
-    {
-        return span.SliceUnsafe(start, span.Length - start);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, Range range)
-    {
-        int start = range.Start.GetOffset(span.Length);
-        int length = range.End.GetOffset(span.Length) - start;
-        return span.SliceUnsafe(start, length);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, int start, int length)
-    {
-        ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
-        return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, int start)
-    {
-        return array.AsSpanUnsafe(start, array.Length - start);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, Range range)
-    {
-        int arrayLength = array.Length;
-        int start = range.Start.GetOffset(arrayLength);
-        int length = range.End.GetOffset(arrayLength) - start;
-        return array.AsSpanUnsafe(start, length);
     }
 }

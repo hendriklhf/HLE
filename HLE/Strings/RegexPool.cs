@@ -218,7 +218,15 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
 
         public void Clear()
         {
-            _regexes.AsSpan().Clear();
+            _regexesLock.Wait();
+            try
+            {
+                Array.Clear(_regexes);
+            }
+            finally
+            {
+                _regexesLock.Release();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

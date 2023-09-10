@@ -97,7 +97,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private async ValueTask SendAsync(ReadOnlyMemory<char> message)
     {
-        using RentedArray<byte> bytes = new(message.Length << 1);
+        using RentedArray<byte> bytes = ArrayPool<byte>.Shared.CreateRentedArray(message.Length << 1);
         int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.AsSpan());
         await SendAsync(bytes.AsMemory()[..byteCount]);
     }

@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -61,7 +60,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     public PooledStringBuilder(int initialBufferSize)
     {
-        _buffer = new(initialBufferSize);
+        _buffer = ArrayPool<char>.Shared.CreateRentedArray(initialBufferSize);
     }
 
     public void Dispose()
@@ -75,7 +74,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
     private void GrowBuffer(int sizeHint = 0)
     {
         int newSize = sizeHint < 1 ? _buffer.Length << 1 : _buffer.Length + sizeHint;
-        RentedArray<char> newBuffer = new(newSize);
+        RentedArray<char> newBuffer = ArrayPool<char>.Shared.CreateRentedArray(newSize);
         Debug.Assert(newBuffer.Length > _buffer.Length);
         _buffer.AsSpan().CopyToUnsafe(newBuffer.AsSpan());
         _buffer.Dispose();
@@ -246,38 +245,38 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     public void CopyTo(List<char> destination, int offset = 0)
     {
-        DefaultCopier<char> copier = new(WrittenSpan);
-        copier.CopyTo(destination, offset);
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(char[] destination, int offset = 0)
     {
-        DefaultCopier<char> copier = new(WrittenSpan);
-        copier.CopyTo(destination, offset);
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<char> destination)
     {
-        DefaultCopier<char> copier = new(WrittenSpan);
-        copier.CopyTo(destination);
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<char> destination)
     {
-        DefaultCopier<char> copier = new(WrittenSpan);
-        copier.CopyTo(destination);
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref char destination)
     {
-        DefaultCopier<char> copier = new(WrittenSpan);
-        copier.CopyTo(ref destination);
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(char* destination)
     {
-        DefaultCopier<char> copier = new(WrittenSpan);
-        copier.CopyTo(destination);
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
     }
 
     void ICollection<char>.Add(char c)

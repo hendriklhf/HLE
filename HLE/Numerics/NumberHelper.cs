@@ -163,18 +163,6 @@ public static class NumberHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsOnlyOneBitSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
-    {
-        return (number & (number - T.One)) == T.Zero && number != T.Zero;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsOnlyOneBitOrNoneSet<T>(T number) where T : INumberBase<T>, IBitwiseOperators<T, T, T>
-    {
-        return number == T.Zero || (number & (number - T.One)) == T.Zero;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T BringNumberIntoRange<T>(T number, T min, T max) where T : INumber<T>
     {
         if (sizeof(T) == sizeof(Int128))

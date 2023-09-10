@@ -68,7 +68,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
         if (!MemoryHelper.UseStackAlloc<byte>(byteCount))
         {
-            using RentedArray<byte> byteArrayBuffer = new(byteCount);
+            using RentedArray<byte> byteArrayBuffer = ArrayPool<byte>.Shared.CreateRentedArray(byteCount);
             bytesWritten = fileEncoding.GetBytes(fileContent, byteArrayBuffer.AsSpan());
             WriteBytes(byteArrayBuffer[..bytesWritten]);
             return;
@@ -83,7 +83,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     private async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding, [ConstantExpected] bool append)
     {
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
-        using RentedArray<byte> byteBuffer = new(byteCount);
+        using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.CreateRentedArray(byteCount);
         int bytesWritten = fileEncoding.GetBytes(fileContent.Span, byteBuffer.AsSpan());
         await WriteBytesAsync(byteBuffer.AsMemory()[..bytesWritten], append);
     }

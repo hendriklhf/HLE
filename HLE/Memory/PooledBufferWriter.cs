@@ -51,18 +51,11 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
 
     public PooledBufferWriter(int capacity)
     {
-        _buffer = new(capacity);
+        _buffer = ArrayPool<T>.Shared.CreateRentedArray(capacity);
     }
 
-    ~PooledBufferWriter()
-    {
-        _buffer.Dispose();
-    }
-
-    /// <inheritdoc/>
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
         _buffer.Dispose();
     }
 
@@ -121,7 +114,9 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     [Pure]
     public T[] ToArray()
     {
-        return WrittenSpan.ToArray();
+        T[] result = GC.AllocateUninitializedArray<T>(Count);
+        WrittenSpan.CopyToUnsafe(result);
+        return result;
     }
 
     [Pure]
@@ -171,44 +166,44 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
 
         using RentedArray<T> oldBuffer = _buffer;
         int newCapacity = _buffer.Length + neededSpace;
-        _buffer = new(newCapacity);
+        _buffer = ArrayPool<T>.Shared.CreateRentedArray(newCapacity);
         oldBuffer.CopyTo(_buffer.AsSpan());
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(WrittenSpan);
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(WrittenSpan);
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(WrittenSpan);
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(WrittenSpan);
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(WrittenSpan);
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(WrittenSpan);
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
     }
 
     Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
@@ -260,7 +255,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     {
         if (typeof(char) == typeof(T))
         {
-            ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.ManagedPointer);
+            ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.Reference);
             ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref charsReference, Count);
             return new(chars);
         }

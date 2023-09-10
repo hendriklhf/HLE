@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 
@@ -86,7 +87,7 @@ public static class StringHelper
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[rangesLength];
         ref ReadOnlyMemory<char> resultReference = ref MemoryMarshal.GetArrayDataReference(result);
-        using RentedArray<char> charBuffer = new(charCount);
+        using RentedArray<char> charBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(charCount);
         int resultLength = 0;
         int bufferLength = 0;
         for (int i = 0; i < rangesLength; i++)
@@ -139,7 +140,7 @@ public static class StringHelper
         int resultLength;
         if (!MemoryHelper.UseStackAlloc<char>(str.Length))
         {
-            using RentedArray<char> rentedBuffer = new(str.Length);
+            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
             return new(rentedBuffer[..resultLength]);
         }
@@ -217,7 +218,7 @@ public static class StringHelper
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = new(span.Length);
+            using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.CreateRentedArray(span.Length);
             length = IndicesOf(span, c, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
@@ -335,7 +336,7 @@ public static class StringHelper
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = new(span.Length);
+            using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.CreateRentedArray(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
@@ -401,7 +402,7 @@ public static class StringHelper
         int maximumResultLength = input.Length << 1;
         if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
         {
-            using RentedArray<char> rentedBuffer = new(maximumResultLength);
+            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan());
             return resultLength == input.Length ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }

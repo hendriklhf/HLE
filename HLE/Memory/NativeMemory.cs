@@ -51,6 +51,8 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     public int Length { get; }
 
+    public ref T Reference => ref Unsafe.AsRef<T>(_pointer);
+
     int IReadOnlyCollection<T>.Count => Length;
 
     int ICollection<T>.Count => Length;
@@ -97,47 +99,46 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     [Pure]
     public T[] ToArray()
     {
         T[] result = GC.AllocateUninitializedArray<T>(Length);
-        ref byte destination = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetArrayDataReference(result));
-        ref byte source = ref Unsafe.As<T, byte>(ref Unsafe.AsRef<T>(_pointer));
-        Unsafe.CopyBlock(ref destination, ref source, (uint)(sizeof(T) * Length));
+        CopyWorker<T> copyWorker = new(_pointer, Length);
+        copyWorker.CopyTo(result);
         return result;
     }
 
@@ -160,7 +161,7 @@ public readonly unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICo
         int length = Length;
         for (int i = 0; i < length; i++)
         {
-            yield return AsSpan()[i];
+            yield return Unsafe.Add(ref Reference, i);
         }
     }
 

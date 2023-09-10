@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +11,7 @@ using HLE.Collections;
 namespace HLE.Memory;
 
 /// <summary>
-/// Wraps an <see cref="Array"/> rented from the shared <see cref="ArrayPool{T}"/>
+/// Wraps an <see cref="Array"/> rented from an <see cref="ArrayPool{T}"/>
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
@@ -24,7 +23,7 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         get
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)index, (uint)_array.Length);
-            return ref Unsafe.Add(ref ManagedPointer, index);
+            return ref Unsafe.Add(ref Reference, index);
         }
     }
 
@@ -36,15 +35,13 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         {
             int actualIndex = index.GetOffset(_array.Length);
             ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)actualIndex, (uint)_array.Length);
-            return ref Unsafe.Add(ref ManagedPointer, actualIndex);
+            return ref Unsafe.Add(ref Reference, actualIndex);
         }
     }
 
     public Span<T> this[Range range] => _array.AsSpan(range);
 
-    public ref T ManagedPointer => ref MemoryMarshal.GetArrayDataReference(_array);
-
-    public unsafe T* Pointer => (T*)Unsafe.AsPointer(ref ManagedPointer);
+    public ref T Reference => ref MemoryMarshal.GetArrayDataReference(_array);
 
     public int Length => _array.Length;
 
@@ -59,30 +56,22 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     public static RentedArray<T> Empty => new();
 
     internal readonly T[] _array = Array.Empty<T>();
+    private readonly ArrayPool<T> _pool = ArrayPool<T>.Shared;
 
     public RentedArray()
     {
     }
 
-    public RentedArray(int minimumLength)
-    {
-        _array = ArrayPool<T>.Shared.Rent(minimumLength);
-    }
-
-    public RentedArray(T[] array)
+    internal RentedArray(T[] array, ArrayPool<T> pool)
     {
         _array = array;
+        _pool = pool;
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        if (ReferenceEquals(_array, Array.Empty<T>()))
-        {
-            return;
-        }
-
-        ArrayPool<T>.Shared.Return(_array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+        _pool.Return(_array);
     }
 
     // TODO: create overload with start, length, range parameters
@@ -95,46 +84,45 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public unsafe void Clear()
+    public void Clear()
     {
-        ref byte start = ref Unsafe.As<T, byte>(ref ManagedPointer);
-        Unsafe.InitBlock(ref start, 0, (uint)(Length * sizeof(T)));
+        Array.Clear(_array);
     }
 
     bool ICollection<T>.Contains(T item)
@@ -194,7 +182,7 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         int length = Length;
         for (int i = 0; i < length; i++)
         {
-            yield return AsSpan()[i];
+            yield return Unsafe.Add(ref Reference, i);
         }
     }
 

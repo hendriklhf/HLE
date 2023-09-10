@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -109,7 +108,7 @@ public static class CollectionHelper
             int calculatedResultLength = chars.Length << 1;
             if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
             {
-                using RentedArray<char> rentedBuffer = new(calculatedResultLength);
+                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(calculatedResultLength);
                 charsWritten = StringHelper.Join(chars, separator, rentedBuffer.AsSpan());
                 return new(rentedBuffer[..charsWritten]);
             }
@@ -142,7 +141,7 @@ public static class CollectionHelper
             int calculatedResultLength = chars.Length + separator.Length * chars.Length;
             if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
             {
-                using RentedArray<char> rentedBuffer = new(calculatedResultLength);
+                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(calculatedResultLength);
                 charsWritten = StringHelper.Join(chars, separator, rentedBuffer.AsSpan());
                 return new(rentedBuffer[..charsWritten]);
             }
@@ -168,7 +167,7 @@ public static class CollectionHelper
             IEnumerable<char> charCollection = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection);
             if (charCollection.TryGetNonEnumeratedCount(out int elementCount))
             {
-                using RentedArray<char> rentedBuffer = new(elementCount);
+                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(elementCount);
                 if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer._array))
                 {
                     return new(rentedBuffer.AsSpan());
@@ -418,7 +417,7 @@ public static class CollectionHelper
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = new(span.Length);
+            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
@@ -546,7 +545,7 @@ public static class CollectionHelper
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = new(span.Length);
+            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
@@ -631,7 +630,7 @@ public static class CollectionHelper
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = new(span.Length);
+            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(span.Length);
             length = IndicesOf(span, item, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
@@ -663,6 +662,8 @@ public static class CollectionHelper
 
     [Pure]
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
+
+    public static void FillAscending(this int[] array, int start = 0) => FillAscending(array.AsSpan(), start);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(this Span<int> span, int start = 0)
@@ -761,6 +762,12 @@ public static class CollectionHelper
             Unsafe.Add(ref firstItem, i) = start + i;
         }
     }
+
+    public static void FillAscending(this char[] array, char start = '\0') => FillAscending(array.AsSpan(), start);
+
+    public static void FillAscending(this Span<char> span, char start = '\0') => FillAscending(MemoryMarshal.Cast<char, ushort>(span), start);
+
+    public static void FillAscending(this ushort[] array, ushort start = 0) => FillAscending(array.AsSpan(), start);
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(this Span<ushort> span, ushort start = 0)
@@ -883,10 +890,8 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlySpan<T> span)
     {
-        // ReSharper disable once OperatorIsCanBeUsed
-        if (typeof(T) == typeof(char) && collection.GetType() == typeof(string))
+        if (typeof(T) == typeof(char) && collection is string str)
         {
-            string str = Unsafe.As<IEnumerable<T>, string>(ref collection);
             ref char firstChar = ref MemoryMarshal.GetReference(str.AsSpan());
             span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
             return true;
@@ -918,28 +923,24 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
     {
-        Type collectionType = collection.GetType();
-        if (collectionType == typeof(T[]))
+        if (collection.GetType() == typeof(T[]))
         {
             span = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
             return true;
         }
 
-        if (collectionType == typeof(List<T>))
+        switch (collection)
         {
-            List<T> list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
-            span = CollectionsMarshal.AsSpan(list);
-            return true;
+            case List<T> list:
+                span = CollectionsMarshal.AsSpan(list);
+                return true;
+            case ISpanProvider<T> spanProvider:
+                span = spanProvider.GetSpan();
+                return true;
+            default:
+                span = Span<T>.Empty;
+                return false;
         }
-
-        if (collection is ISpanProvider<T> spanProvider)
-        {
-            span = spanProvider.GetSpan();
-            return true;
-        }
-
-        span = Span<T>.Empty;
-        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -952,10 +953,9 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
     {
-        // ReSharper disable once OperatorIsCanBeUsed
-        if (typeof(T) == typeof(char) && collection.GetType() == typeof(string))
+        if (typeof(T) == typeof(char) && collection is string str)
         {
-            ReadOnlyMemory<char> stringMemory = Unsafe.As<IEnumerable<T>, string>(ref collection).AsMemory();
+            ReadOnlyMemory<char> stringMemory = str.AsMemory();
             memory = Unsafe.As<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(ref stringMemory);
             return true;
         }
@@ -980,16 +980,14 @@ public static class CollectionHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
     {
-        Type collectionType = collection.GetType();
-        if (collectionType == typeof(T[]))
+        if (collection.GetType() == typeof(T[]))
         {
             memory = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
             return true;
         }
 
-        if (collectionType == typeof(List<T>))
+        if (collection is List<T> list)
         {
-            var list = Unsafe.As<IEnumerable<T>, List<T>>(ref collection);
             memory = CollectionsMarshal.AsSpan(list).AsMemoryUnsafe();
             return true;
         }
@@ -1187,5 +1185,102 @@ public static class CollectionHelper
         }
 
         return true;
+    }
+
+    [Pure]
+    public static int Sum(this Span<int> span) => Sum((ReadOnlySpan<int>)span);
+
+    [Pure]
+    public static int Sum(this ReadOnlySpan<int> span)
+    {
+        switch (span.Length)
+        {
+            case 0:
+                return 0;
+            case 1:
+                return span[0];
+            case 2:
+                return span[0] + span[1];
+        }
+
+        int sum = 0;
+        int vector512Count = Vector512<int>.Count;
+        if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
+        {
+            while (span.Length >= vector512Count)
+            {
+                Vector512<int> vector = Vector512.LoadUnsafe(ref MemoryMarshal.GetReference(span));
+                sum += Vector512.Sum(vector);
+                span = span[vector512Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                sum += span[i];
+            }
+
+            return sum;
+        }
+
+        int vector256Count = Vector256<int>.Count;
+        if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
+        {
+            while (span.Length >= vector256Count)
+            {
+                Vector256<int> vector = Vector256.LoadUnsafe(ref MemoryMarshal.GetReference(span));
+                sum += Vector256.Sum(vector);
+                span = span[vector256Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                sum += span[i];
+            }
+
+            return sum;
+        }
+
+        int vector128Count = Vector128<int>.Count;
+        if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
+        {
+            while (span.Length >= vector128Count)
+            {
+                Vector128<int> vector = Vector128.LoadUnsafe(ref MemoryMarshal.GetReference(span));
+                sum += Vector128.Sum(vector);
+                span = span[vector128Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                sum += span[i];
+            }
+
+            return sum;
+        }
+
+        int vector64Count = Vector64<int>.Count;
+        if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
+        {
+            while (span.Length >= vector64Count)
+            {
+                Vector64<int> vector = Vector64.LoadUnsafe(ref MemoryMarshal.GetReference(span));
+                sum += Vector64.Sum(vector);
+                span = span[vector64Count..];
+            }
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                sum += span[i];
+            }
+
+            return sum;
+        }
+
+        for (int i = 0; i < span.Length; i++)
+        {
+            sum += span[i];
+        }
+
+        return sum;
     }
 }

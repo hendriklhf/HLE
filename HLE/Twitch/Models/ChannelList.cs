@@ -42,14 +42,8 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     /// </summary>
     private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();
 
-    ~ChannelList()
-    {
-        _channels.Dispose();
-    }
-
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
         _channels.Dispose();
     }
 

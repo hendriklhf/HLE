@@ -53,12 +53,6 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
         _list = new(bufferWriter);
     }
 
-    ~ConcurrentPooledList()
-    {
-        _list.Dispose();
-        _listLock.Dispose();
-    }
-
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
@@ -219,38 +213,38 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
@@ -259,7 +253,6 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
         _list.Dispose();
         _listLock.Dispose();
     }

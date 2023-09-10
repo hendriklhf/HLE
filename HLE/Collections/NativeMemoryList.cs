@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -156,14 +155,9 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
 
     public unsafe void AddRange(ReadOnlySpan<T> items)
     {
-        ref T sourceReference = ref MemoryMarshal.GetReference(items);
-        ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
-
         GrowIfNeeded(items.Length);
-        ref T destinationReference = ref Unsafe.AsRef<T>(_buffer._pointer + Count);
-        ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
-
-        Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * items.Length));
+        CopyWorker<T> copyWorker = new(items);
+        copyWorker.CopyTo(_buffer._pointer + Count);
         Count += items.Length;
     }
 
@@ -224,38 +218,38 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public IEnumerator<T> GetEnumerator()

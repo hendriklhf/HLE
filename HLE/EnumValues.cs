@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE;
 
@@ -24,10 +25,12 @@ public static class EnumValues
         ref byte valueBytesReference = ref Unsafe.As<TEnum, byte>(ref valuesReference);
 
         int byteCount = values.Length * sizeof(TEnum);
-        bytes = GC.AllocateUninitializedArray<byte>(byteCount);
+        bytes = new byte[byteCount];
 
         ref byte cacheBytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
-        Unsafe.CopyBlock(ref cacheBytesReference, ref valueBytesReference, (uint)byteCount);
+        CopyWorker<byte> copyWorker = new(ref valueBytesReference, byteCount);
+        copyWorker.CopyTo(ref cacheBytesReference);
+
         return values;
     }
 

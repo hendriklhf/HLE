@@ -75,20 +75,16 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     [SkipLocalsInit]
     public string GetOrAdd(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
-        if (bytes.Length == 0)
-        {
-            return string.Empty;
-        }
-
         int charsWritten;
-        if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
+        int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
+        if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
         {
-            using RentedArray<char> rentedCharBuffer = new(bytes.Length);
+            using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.CreateRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
             return GetOrAdd(rentedCharBuffer[..charsWritten]);
         }
 
-        Span<char> charBuffer = stackalloc char[bytes.Length];
+        Span<char> charBuffer = stackalloc char[maxCharCount];
         charsWritten = encoding.GetChars(bytes, charBuffer);
         return GetOrAdd(charBuffer[..charsWritten]);
     }
@@ -121,22 +117,17 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     [SkipLocalsInit]
     public bool TryGet(ReadOnlySpan<byte> bytes, Encoding encoding, [MaybeNullWhen(false)] out string value)
     {
-        if (bytes.Length == 0)
-        {
-            value = string.Empty;
-            return true;
-        }
-
         value = null;
         int charsWritten;
-        if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
+        int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
+        if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
         {
-            using RentedArray<char> rentedCharBuffer = new(bytes.Length);
+            using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.CreateRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
             return TryGet(rentedCharBuffer[..charsWritten], out value);
         }
 
-        Span<char> charBuffer = stackalloc char[bytes.Length];
+        Span<char> charBuffer = stackalloc char[maxCharCount];
         charsWritten = encoding.GetChars(bytes, charBuffer);
         return TryGet(charBuffer[..charsWritten], out value);
     }
@@ -157,20 +148,16 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     [SkipLocalsInit]
     public bool Contains(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
-        if (bytes.Length == 0)
-        {
-            return false;
-        }
-
         int charsWritten;
-        if (!MemoryHelper.UseStackAlloc<char>(bytes.Length))
+        int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
+        if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
         {
-            using RentedArray<char> rentedCharBuffer = new(bytes.Length);
+            using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.CreateRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
             return Contains(rentedCharBuffer[..charsWritten]);
         }
 
-        Span<char> charBuffer = stackalloc char[bytes.Length];
+        Span<char> charBuffer = stackalloc char[maxCharCount];
         charsWritten = encoding.GetChars(bytes, charBuffer);
         return Contains(charBuffer[..charsWritten]);
     }
@@ -228,12 +215,12 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
     internal readonly struct Bucket : IEnumerable<string>, IDisposable
     {
-        internal readonly string?[] _strings;
+        internal readonly StringArray _strings;
         private readonly SemaphoreSlim _stringsLock = new(1);
 
         public Bucket(int bucketCapacity = _defaultBucketCapacity)
         {
-            _strings = new string[bucketCapacity];
+            _strings = new(bucketCapacity);
         }
 
         public void Dispose()
@@ -243,7 +230,15 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
 
         public void Clear()
         {
-            _strings.AsSpan().Clear();
+            _stringsLock.Wait();
+            try
+            {
+                _strings.Clear();
+            }
+            finally
+            {
+                _stringsLock.Release();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -265,9 +260,8 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
             _stringsLock.Wait();
             try
             {
-                Span<string?> strings = _strings;
-                strings[..^1].CopyTo(strings[1..]);
-                strings[0] = value;
+                _strings[^1] = value;
+                _strings.MoveString(_strings.Length - 1, 0);
             }
             finally
             {
@@ -278,51 +272,15 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            ref string? stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-            int stringsLength = _strings.Length;
-            for (int i = 0; i < stringsLength; i++)
+            int index = IndexOf(_strings, span);
+            if (index < 0)
             {
-                string? current = Unsafe.Add(ref stringsReference, i);
-                if (current is null)
-                {
-                    // a null reference can only be followed by more null references,
-                    // so we can exit early because the string can definitely not be found
-                    value = null;
-                    return false;
-                }
-
-                if (!span.SequenceEqual(current))
-                {
-                    continue;
-                }
-
-                if (i > 3)
-                {
-                    MoveStringByFourIndices(i);
-                }
-
-                value = current;
-                return true;
+                value = null;
+                return false;
             }
 
-            value = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Moves a matching item by four places, so that it can be found faster next time.
-        /// </summary>
-        private void MoveStringByFourIndices(int indexOfMatchingString)
-        {
-            _stringsLock.Wait();
-            try
-            {
-                _strings.MoveItem(indexOfMatchingString, indexOfMatchingString - 4);
-            }
-            finally
-            {
-                _stringsLock.Release();
-            }
+            value = _strings[index];
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -331,10 +289,51 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
             return TryGet(span, out _);
         }
 
+        [SkipLocalsInit]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int IndexOf(StringArray stringArray, ReadOnlySpan<char> span)
+        {
+            int arrayLength = stringArray.Length;
+            ReadOnlySpan<char> stringChars = stringArray._stringChars;
+            ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._strings);
+            ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._stringLengths);
+            ref int startReference = ref MemoryMarshal.GetArrayDataReference(stringArray._stringStarts);
+            for (int i = 0; i < arrayLength; i++)
+            {
+                int length = Unsafe.Add(ref lengthsReference, i);
+                if (length == 0)
+                {
+                    return -1;
+                }
+
+                if (length != span.Length)
+                {
+                    continue;
+                }
+
+                ref char spanReference = ref MemoryMarshal.GetReference(span);
+                ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
+                if (Unsafe.AreSame(ref spanReference, ref stringReference))
+                {
+                    return i;
+                }
+
+                int start = Unsafe.Add(ref startReference, i);
+                ReadOnlySpan<char> bufferString = stringChars.SliceUnsafe(start, length);
+                if (span.SequenceEqual(bufferString))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public IEnumerator<string> GetEnumerator()
         {
             foreach (string? str in _strings)
             {
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 if (str is not null)
                 {
                     yield return str;

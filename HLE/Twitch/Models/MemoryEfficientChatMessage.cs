@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
@@ -21,7 +22,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
             }
 
             _displayName = StringPool.Shared.GetOrAdd(_displayNameBuffer.AsSpan(.._nameLength));
-            MemoryEfficientChatMessageParser._nameArrayPool.Return(_displayNameBuffer!);
+            ArrayPool<char>.Shared.Return(_displayNameBuffer!);
             _displayNameBuffer = null;
             return _displayName;
         }
@@ -38,7 +39,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
             }
 
             _username = StringPool.Shared.GetOrAdd(_usernameBuffer.AsSpan(.._nameLength));
-            MemoryEfficientChatMessageParser._nameArrayPool.Return(_usernameBuffer!);
+            ArrayPool<char>.Shared.Return(_usernameBuffer!);
             _usernameBuffer = null;
             return _username;
         }
@@ -56,7 +57,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
 
             ReadOnlySpan<char> message = _messageBuffer.AsSpan(.._messageLength);
             _message = message.Length <= _maxMessagePoolingLength ? StringPool.Shared.GetOrAdd(message) : new(message);
-            MemoryEfficientChatMessageParser._messageArrayPool.Return(_messageBuffer!);
+            ArrayPool<char>.Shared.Return(_messageBuffer!);
             _messageBuffer = null;
             return _message;
         }
@@ -101,60 +102,24 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
         _messageLength = messageLength;
     }
 
-    ~MemoryEfficientChatMessage()
-    {
-        if (!ReferenceEquals(_badgeInfos, Array.Empty<Badge>()))
-        {
-            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badgeInfos);
-        }
-
-        if (!ReferenceEquals(_badges, Array.Empty<Badge>()))
-        {
-            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badges);
-        }
-
-        if (_displayNameBuffer is not null)
-        {
-            MemoryEfficientChatMessageParser._nameArrayPool.Return(_displayNameBuffer);
-        }
-
-        if (_usernameBuffer is not null)
-        {
-            MemoryEfficientChatMessageParser._nameArrayPool.Return(_usernameBuffer);
-        }
-
-        if (_messageBuffer is not null)
-        {
-            MemoryEfficientChatMessageParser._messageArrayPool.Return(_messageBuffer);
-        }
-    }
-
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
-        if (!ReferenceEquals(_badgeInfos, Array.Empty<Badge>()))
-        {
-            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badgeInfos);
-        }
-
-        if (!ReferenceEquals(_badges, Array.Empty<Badge>()))
-        {
-            MemoryEfficientChatMessageParser._badgeArrayPool.Return(_badges);
-        }
+        ArrayPool<Badge>.Shared.Return(_badgeInfos);
+        ArrayPool<Badge>.Shared.Return(_badges);
 
         if (_displayNameBuffer is not null)
         {
-            MemoryEfficientChatMessageParser._nameArrayPool.Return(_displayNameBuffer);
+            ArrayPool<char>.Shared.Return(_displayNameBuffer);
         }
 
         if (_usernameBuffer is not null)
         {
-            MemoryEfficientChatMessageParser._nameArrayPool.Return(_usernameBuffer);
+            ArrayPool<char>.Shared.Return(_usernameBuffer);
         }
 
         if (_messageBuffer is not null)
         {
-            MemoryEfficientChatMessageParser._messageArrayPool.Return(_messageBuffer);
+            ArrayPool<char>.Shared.Return(_messageBuffer);
         }
     }
 

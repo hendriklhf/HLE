@@ -23,7 +23,7 @@ public readonly struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICo
     public ReceivedData(ReadOnlySpan<char> data)
     {
         Length = data.Length;
-        _data = new(Length);
+        _data = ArrayPool<char>.Shared.CreateRentedArray(data.Length);
         data.CopyTo(_data.AsSpan());
     }
 

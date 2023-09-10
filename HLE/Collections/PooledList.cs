@@ -55,11 +55,6 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
         _bufferWriter = bufferWriter;
     }
 
-    ~PooledList()
-    {
-        _bufferWriter.Dispose();
-    }
-
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
@@ -127,16 +122,13 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
 
     public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
-    public unsafe void AddRange(ReadOnlySpan<T> items)
+    public void AddRange(ReadOnlySpan<T> items)
     {
-        ref T sourceReference = ref MemoryMarshal.GetReference(items);
-        ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
-
         ref T destinationReference = ref _bufferWriter.GetReference(items.Length);
-        ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
-
         Debug.Assert(_bufferWriter.Capacity - _bufferWriter.Count >= items.Length);
-        Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * items.Length));
+
+        CopyWorker<T> copyWorker = new(items);
+        copyWorker.CopyTo(ref destinationReference);
         _bufferWriter.Advance(items.Length);
     }
 
@@ -191,38 +183,38 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination, offset);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(ref destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        DefaultCopier<T> copier = new(AsSpan());
-        copier.CopyTo(destination);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(destination);
     }
 
     public IEnumerator<T> GetEnumerator() => _bufferWriter.GetEnumerator();
@@ -231,7 +223,6 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
         _bufferWriter.Dispose();
     }
 
