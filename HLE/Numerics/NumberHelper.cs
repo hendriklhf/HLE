@@ -51,18 +51,21 @@ public static class NumberHelper
         return writtenDigits;
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static char DigitToChar(byte digit)
     {
         return (char)(digit + (byte)'0');
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte CharToDigit(char c)
     {
         return (byte)(c - '0');
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte CharToDigit(byte c)
     {

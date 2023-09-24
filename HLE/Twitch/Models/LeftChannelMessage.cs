@@ -6,26 +6,18 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// Arguments used when a user left a channel.
 /// </summary>
-public readonly struct LeftChannelMessage : IMembershipMessage<LeftChannelMessage>, IEquatable<LeftChannelMessage>
+public readonly struct LeftChannelMessage(string username, string channel)
+    : IMembershipMessage<LeftChannelMessage>, IEquatable<LeftChannelMessage>
 {
     /// <summary>
     /// The username of the user that left the channel. All lower case.
     /// </summary>
-    public string Username { get; }
+    public string Username { get; } = username;
 
     /// <summary>
     /// The channel the user left. All lower case, without '#'.
     /// </summary>
-    public string Channel { get; }
-
-    /// <summary>
-    /// The default constructor of <see cref="LeftChannelMessage"/>.
-    /// </summary>
-    public LeftChannelMessage(string username, string channel)
-    {
-        Username = username;
-        Channel = channel;
-    }
+    public string Channel { get; } = channel;
 
     [Pure]
     public static LeftChannelMessage Create(string username, string channel)

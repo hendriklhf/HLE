@@ -87,7 +87,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> GetChars(int index) => _stringChars.AsSpan().SliceUnsafe(_stringStarts[index], _stringLengths[index]);
+    public ReadOnlySpan<char> GetChars(int index) => _stringChars.AsSpanUnsafe(_stringStarts[index], _stringLengths[index]);
 
     [Pure]
     public ReadOnlySpan<string> AsSpan() => _strings;

@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using HLE.Collections;
+using HLE.Memory;
 
 namespace HLE.Strings;
 
@@ -32,10 +33,11 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
 
     public void Dispose()
     {
-        ReadOnlySpan<Bucket> buckets = _buckets;
+        Span<Bucket> buckets = _buckets;
         for (int i = 0; i < buckets.Length; i++)
         {
-            buckets[i].Dispose();
+            ref Bucket bucket = ref buckets[i];
+            bucket.Dispose();
         }
     }
 
@@ -90,10 +92,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         Add(regex);
     }
 
-    public void Add(Regex regex)
-    {
-        GetBucket(regex).Add(regex);
-    }
+    public void Add(Regex regex) => GetBucket(regex).Add(regex);
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, [MaybeNullWhen(false)] out Regex regex)
     {
@@ -111,10 +110,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
     }
 
     [Pure]
-    public bool Contains(Regex regex)
-    {
-        return Contains(regex.ToString(), regex.Options, regex.MatchTimeout);
-    }
+    public bool Contains(Regex regex) => Contains(regex.ToString(), regex.Options, regex.MatchTimeout);
 
     [Pure]
     public bool Contains([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
@@ -127,24 +123,13 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         return GetBucket(pattern, options, timeout).Contains(pattern, options, timeout);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Bucket GetBucket(Regex regex)
-    {
-        int index = GetBucketIndex(regex);
-        return _buckets[index];
-    }
+    private Bucket GetBucket(Regex regex) => GetBucket(regex.ToString(), regex.Options, regex.MatchTimeout);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
         int index = GetBucketIndex(pattern, options, timeout);
-        return _buckets[index];
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int GetBucketIndex(Regex regex)
-    {
-        return GetBucketIndex(regex.ToString(), regex.Options, regex.MatchTimeout);
+        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), index);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -196,16 +181,13 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable")]
-    private readonly struct Bucket : IEnumerable<Regex>, IDisposable
+    [SuppressMessage("Design", "CA1001", Justification = "it does implement IDisposable?")]
+    private struct Bucket : IEnumerable<Regex>, IDisposable
     {
         private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];
-        private readonly SemaphoreSlim _regexesLock = new(1);
+        private SemaphoreSlim? _regexesLock = new(1);
 
         public Bucket()
         {
@@ -213,11 +195,14 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
 
         public void Dispose()
         {
-            _regexesLock.Dispose();
+            _regexesLock?.Dispose();
+            _regexesLock = null;
         }
 
-        public void Clear()
+        public readonly void Clear()
         {
+            ObjectDisposedException.ThrowIf(_regexesLock is null, typeof(RegexPool));
+
             _regexesLock.Wait();
             try
             {
@@ -230,7 +215,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Regex GetOrAdd(string pattern, RegexOptions options, TimeSpan timeout)
+        public readonly Regex GetOrAdd(string pattern, RegexOptions options, TimeSpan timeout)
         {
             if (TryGet(pattern, options, timeout, out Regex? regex))
             {
@@ -243,7 +228,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Regex GetOrAdd(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
+        public readonly Regex GetOrAdd(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
         {
             if (TryGet(pattern, options, timeout, out Regex? regex))
             {
@@ -256,14 +241,17 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Add(Regex regex)
+        public readonly void Add(Regex regex)
         {
+            ObjectDisposedException.ThrowIf(_regexesLock is null, typeof(RegexPool));
+
             _regexesLock.Wait();
             try
             {
-                Span<Regex?> regexes = _regexes;
-                regexes[..^1].CopyTo(regexes[1..]);
-                regexes[0] = regex;
+                ref Regex? source = ref MemoryMarshal.GetArrayDataReference(_regexes);
+                ref Regex? destination = ref Unsafe.Add(ref source, 1);
+                CopyWorker<Regex?>.Memmove(ref destination, ref source, (nuint)(_regexes.Length - 1));
+                source = regex;
             }
             finally
             {
@@ -272,7 +260,7 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
+        public readonly bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
             ref Regex? regexesReference = ref MemoryMarshal.GetArrayDataReference(_regexes);
             int regexesLength = _regexes.Length;
@@ -308,8 +296,10 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         /// <summary>
         /// Moves a matching item by four places, so that it can be found faster next time.
         /// </summary>
-        private void MoveRegexByFourIndices(int indexOfMatchingRegex)
+        private readonly void MoveRegexByFourIndices(int indexOfMatchingRegex)
         {
+            ObjectDisposedException.ThrowIf(_regexesLock is null, typeof(RegexPool));
+
             _regexesLock.Wait();
             try
             {
@@ -322,18 +312,12 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Contains(Regex regex)
-        {
-            return TryGet(regex.ToString(), regex.Options, regex.MatchTimeout, out _);
-        }
+        public readonly bool Contains(Regex regex) => TryGet(regex.ToString(), regex.Options, regex.MatchTimeout, out _);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Contains(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
-        {
-            return TryGet(pattern, options, timeout, out _);
-        }
+        public readonly bool Contains(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout) => TryGet(pattern, options, timeout, out _);
 
-        public IEnumerator<Regex> GetEnumerator()
+        public readonly IEnumerator<Regex> GetEnumerator()
         {
             foreach (Regex? regex in _regexes)
             {
@@ -344,9 +328,6 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

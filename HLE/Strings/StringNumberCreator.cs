@@ -4,14 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Strings;
 
-public readonly struct StringNumberCreator : IEquatable<StringNumberCreator>
+public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatable<StringNumberCreator>
 {
-    public StringNumberFormat Format { get; }
-
-    public StringNumberCreator(StringNumberFormat format)
-    {
-        Format = format;
-    }
+    public StringNumberFormat Format { get; } = format;
 
     [SkipLocalsInit]
     public string Create(int number)

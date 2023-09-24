@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Numerics;
@@ -10,8 +11,25 @@ namespace HLE.Numerics;
 /// </summary>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("{Name}")]
-public sealed class UnitPrefix : IEquatable<UnitPrefix>
+public sealed class UnitPrefix(string name, string symbol, double value) : IEquatable<UnitPrefix>
 {
+    /// <summary>
+    /// The name of the prefix.
+    /// </summary>
+    public string Name { get; } = name;
+
+    /// <summary>
+    /// The symbol of the prefix.
+    /// </summary>
+    public string Symbol { get; } = symbol;
+
+    /// <summary>
+    /// The value of the prefix.
+    /// </summary>
+    public double Value { get; } = value;
+
+    #region Static UnitPrefixes
+
     /// <summary>
     /// The representation of the unit prefix Yotta.
     /// </summary>
@@ -117,34 +135,16 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
     /// </summary>
     public static UnitPrefix Yocto { get; } = new("Yocto", "y", 1e-24);
 
-    /// <summary>
-    /// The name of the prefix.
-    /// </summary>
-    public string Name { get; }
+    #endregion Static UnitPrefixes
 
-    /// <summary>
-    /// The symbol of the prefix.
-    /// </summary>
-    public string Symbol { get; }
-
-    /// <summary>
-    /// The value of the prefix.
-    /// </summary>
-    public double Value { get; }
-
-    public UnitPrefix(string name, string symbol, double value)
-    {
-        Name = name;
-        Symbol = symbol;
-        Value = value;
-    }
-
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double Convert(double value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
     {
         return value * (fromPrefix / toPrefix);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Convert(float value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
     {
@@ -157,26 +157,31 @@ public sealed class UnitPrefix : IEquatable<UnitPrefix>
         return prefix?.Value ?? 0;
     }
 
+    [Pure]
     public override string ToString()
     {
         return Name;
     }
 
+    [Pure]
     public bool Equals(double value)
     {
         return Math.Abs(Value - value) == 0;
     }
 
+    [Pure]
     public bool Equals(UnitPrefix? other)
     {
         return Name == other?.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) == 0;
     }
 
+    [Pure]
     public override bool Equals(object? obj)
     {
         return obj is UnitPrefix other && Equals(other);
     }
 
+    [Pure]
     public override int GetHashCode()
     {
         return HashCode.Combine(Name, Symbol, Value);

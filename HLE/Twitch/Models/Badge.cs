@@ -5,28 +5,17 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// Represents a badge or badge info of a user.
 /// </summary>
-public readonly struct Badge : IEquatable<Badge>
+public readonly struct Badge(string name, string level) : IEquatable<Badge>
 {
     /// <summary>
     /// The name of the badge.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; } = name;
 
     /// <summary>
     /// The level of the badge.
     /// </summary>
-    public string Level { get; }
-
-    /// <summary>
-    /// The default constructor of <see cref="Badge"/>.
-    /// </summary>
-    /// <param name="name">The name of the badge.</param>
-    /// <param name="level">The level of the badge.</param>
-    public Badge(string name, string level)
-    {
-        Name = name;
-        Level = level;
-    }
+    public string Level { get; } = level;
 
     public bool Equals(Badge other)
     {

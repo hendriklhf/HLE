@@ -15,48 +15,57 @@ namespace HLE.Memory;
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
-[DebuggerDisplay("Length = {_array.Length}")]
-public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
+[DebuggerDisplay("Length = {Array.Length}")]
+public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
 {
-    public ref T this[int index]
+    public readonly ref T this[int index]
     {
         get
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)index, (uint)_array.Length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Array.Length);
             return ref Unsafe.Add(ref Reference, index);
         }
     }
 
-    T IIndexAccessible<T>.this[int index] => this[index];
+    readonly T IIndexAccessible<T>.this[int index] => this[index];
 
-    public ref T this[Index index]
+    public readonly ref T this[Index index]
     {
         get
         {
-            int actualIndex = index.GetOffset(_array.Length);
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)actualIndex, (uint)_array.Length);
+            int actualIndex = index.GetOffset(Array.Length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)actualIndex, (uint)Array.Length);
             return ref Unsafe.Add(ref Reference, actualIndex);
         }
     }
 
-    public Span<T> this[Range range] => _array.AsSpan(range);
+    public readonly Span<T> this[Range range] => AsSpan(range);
 
-    public ref T Reference => ref MemoryMarshal.GetArrayDataReference(_array);
+    public readonly ref T Reference => ref MemoryMarshal.GetArrayDataReference(Array);
 
-    public int Length => _array.Length;
+    public readonly int Length => Array.Length;
 
-    int ICountable.Count => Length;
+    readonly int ICountable.Count => Length;
 
-    int ICollection<T>.Count => Length;
+    readonly int ICollection<T>.Count => Length;
 
-    int IReadOnlyCollection<T>.Count => Length;
+    readonly int IReadOnlyCollection<T>.Count => Length;
 
-    bool ICollection<T>.IsReadOnly => false;
+    readonly bool ICollection<T>.IsReadOnly => false;
+
+    internal readonly T[] Array
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_array is null, typeof(RentedArray<T>));
+            return _array;
+        }
+    }
 
     public static RentedArray<T> Empty => new();
 
-    internal readonly T[] _array = Array.Empty<T>();
-    private readonly ArrayPool<T> _pool = ArrayPool<T>.Shared;
+    internal T[]? _array = System.Array.Empty<T>();
+    internal readonly ArrayPool<T> _pool = ArrayPool<T>.Shared;
 
     public RentedArray()
     {
@@ -68,116 +77,140 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
         _pool = pool;
     }
 
-    /// <inheritdoc/>
     public void Dispose()
     {
-        _pool.Return(_array);
+        _pool.Return(_array!);
+        _array = null;
     }
 
-    // TODO: create overload with start, length, range parameters
-    public Span<T> AsSpan() => _array;
+    [Pure]
+    public readonly Span<T> AsSpan() => Array;
 
-    // TODO: create overload with start, length, range parameters
-    public Memory<T> AsMemory() => _array;
+    [Pure]
+    public readonly Span<T> AsSpan(int start) => Array.AsSpan(start);
 
-    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
+    [Pure]
+    public readonly Span<T> AsSpan(int start, int length) => Array.AsSpan(start, length);
 
-    public void CopyTo(List<T> destination, int offset = 0)
+    [Pure]
+    public readonly Span<T> AsSpan(Range range) => Array.AsSpan(range);
+
+    [Pure]
+    public readonly Memory<T> AsMemory() => Array;
+
+    [Pure]
+    public readonly Memory<T> AsMemory(int start) => Array.AsMemory(start);
+
+    [Pure]
+    public readonly Memory<T> AsMemory(int start, int length) => Array.AsMemory(start, length);
+
+    [Pure]
+    public readonly Memory<T> AsMemory(Range range) => Array.AsMemory(range);
+
+    readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
+
+    [Pure]
+    public readonly T[] ToArray()
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
+        T[] result = GC.AllocateUninitializedArray<T>(Length);
+        Array.CopyToUnsafe(result);
+        return result;
+    }
+
+    [Pure]
+    public readonly List<T> ToList()
+    {
+        List<T> result = new(Length);
+        CopyWorker<T> copyWorker = new(Array);
+        copyWorker.CopyTo(result);
+        return result;
+    }
+
+    public readonly void CopyTo(List<T> destination, int offset = 0)
+    {
+        CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(destination, offset);
     }
 
-    public void CopyTo(T[] destination, int offset = 0)
+    public readonly void CopyTo(T[] destination, int offset = 0)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
+        CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(destination, offset);
     }
 
-    public void CopyTo(Memory<T> destination)
+    public readonly void CopyTo(Memory<T> destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
+        CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(destination);
     }
 
-    public void CopyTo(Span<T> destination)
+    public readonly void CopyTo(Span<T> destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
+        CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(destination);
     }
 
-    public void CopyTo(ref T destination)
+    public readonly void CopyTo(ref T destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
+        CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(ref destination);
     }
 
-    public unsafe void CopyTo(T* destination)
+    public readonly unsafe void CopyTo(T* destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
+        CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(destination);
     }
 
-    void ICollection<T>.Add(T item) => throw new NotSupportedException();
+    readonly void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public void Clear()
-    {
-        Array.Clear(_array);
-    }
+    public readonly void Clear() => System.Array.Clear(Array);
 
-    bool ICollection<T>.Contains(T item)
-    {
-        return _array.Contains(item);
-    }
+    readonly bool ICollection<T>.Contains(T item) => Array.Contains(item);
 
-    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
+    readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     [Pure]
-    public override bool Equals(object? obj)
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly bool Equals(object? obj)
     {
         return obj switch
         {
-            RentedArray<T> rentedArray => Equals(rentedArray._array),
+            RentedArray<T> rentedArray => Equals(rentedArray.Array),
             T[] array => Equals(array),
             _ => false
         };
     }
 
     [Pure]
-    public bool Equals(RentedArray<T> other)
-    {
-        return Equals(other._array);
-    }
+    public readonly bool Equals(RentedArray<T> other) => Equals(other.Array);
 
     [Pure]
-    public bool Equals(T[]? array)
-    {
-        return ReferenceEquals(_array, array);
-    }
+    public readonly bool Equals(T[]? array) => ReferenceEquals(Array, array);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return _array.GetHashCode();
-    }
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly int GetHashCode() => Array.GetHashCode();
 
     /// <inheritdoc/>
     [Pure]
-    public override string ToString()
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly string ToString()
     {
         if (typeof(T) == typeof(char))
         {
-            ReadOnlySpan<char> charSpan = Unsafe.As<T[], char[]>(ref Unsafe.AsRef(in _array));
+            T[] array = Array;
+            ReadOnlySpan<char> charSpan = Unsafe.As<T[], char[]>(ref array);
             return new(charSpan);
         }
 
         Type thisType = typeof(RentedArray<T>);
         Type genericType = typeof(T);
-        return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{_array.Length}]";
+        return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{Array.Length}]";
     }
 
     /// <inheritdoc/>
-    public IEnumerator<T> GetEnumerator()
+    public readonly IEnumerator<T> GetEnumerator()
     {
         int length = Length;
         for (int i = 0; i < length; i++)
@@ -187,10 +220,7 @@ public readonly struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T
     }
 
     /// <inheritdoc/>
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static bool operator ==(RentedArray<T> left, RentedArray<T> right)
     {

@@ -15,10 +15,10 @@ public class UnmanagedStringTest
             using UnmanagedString unmanagedString = UnmanagedString.Create(length);
 
             Assert.AreEqual(length, unmanagedString.Length);
-            Assert.AreEqual(length, unmanagedString.String.Length);
+            Assert.AreEqual(length, unmanagedString.AsString().Length);
             Assert.AreEqual(length, unmanagedString.AsSpan().Length);
 
-            Assert.IsTrue(unmanagedString.AsSpan().SequenceEqual(unmanagedString.String));
+            Assert.IsTrue(unmanagedString.AsSpan().SequenceEqual(unmanagedString.AsString()));
 
             if (length == 0)
             {
@@ -36,11 +36,11 @@ public class UnmanagedStringTest
             using UnmanagedString unmanagedString = UnmanagedString.Create(span);
 
             Assert.AreEqual(span.Length, unmanagedString.Length);
-            Assert.AreEqual(span.Length, unmanagedString.String.Length);
+            Assert.AreEqual(span.Length, unmanagedString.AsString().Length);
             Assert.AreEqual(span.Length, unmanagedString.AsSpan().Length);
 
-            Assert.IsTrue(unmanagedString.AsSpan().SequenceEqual(unmanagedString.String));
-            Assert.IsTrue(span.SequenceEqual(unmanagedString.String));
+            Assert.IsTrue(unmanagedString.AsSpan().SequenceEqual(unmanagedString.AsString()));
+            Assert.IsTrue(span.SequenceEqual(unmanagedString.AsString()));
 
             if (length == 0)
             {

@@ -16,8 +16,8 @@ public static class NativeMemoryListMarshal<T> where T : unmanaged, IEquatable<T
         return NativeMemoryMarshal<T>.GetPointer(list._buffer);
     }
 
-    public static ref T GetManagedPointer(NativeMemoryList<T> list)
+    public static ref T GetReference(NativeMemoryList<T> list)
     {
-        return ref NativeMemoryMarshal<T>.GetManagedPointer(list._buffer);
+        return ref NativeMemoryMarshal<T>.GetReference(list._buffer);
     }
 }

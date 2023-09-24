@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -97,7 +98,7 @@ public static class StringHelper
             {
                 if (bufferLength > 0) // buffer isn't empty, write buffer into result
                 {
-                    Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory()[..bufferLength];
+                    Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory(..bufferLength);
                     bufferLength = 0;
                 }
 
@@ -108,13 +109,13 @@ public static class StringHelper
                 switch (bufferLength)
                 {
                     case > 0 when bufferLength + part.Length + 1 > charCount: // buffer is not empty and part doesn't fit in buffer
-                        Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory()[..bufferLength];
+                        Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory(..bufferLength);
                         part.CopyTo(charBuffer.AsMemory());
                         bufferLength = part.Length;
                         break;
                     case > 0 when bufferLength + part.Length + 1 <= charCount: // buffer is not empty and part fits into buffer
                         charBuffer[bufferLength++] = separator;
-                        part.CopyTo(charBuffer.AsMemory()[bufferLength..]);
+                        part.CopyTo(charBuffer.AsMemory(bufferLength..));
                         bufferLength += part.Length;
                         break;
                     case 0: // buffer is empty and part fits into buffer
@@ -127,7 +128,7 @@ public static class StringHelper
 
         if (bufferLength > 0) // if buffer isn't empty in the end, write buffer to result
         {
-            Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory()[..bufferLength];
+            Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory(..bufferLength);
         }
 
         return resultLength == result.Length ? result : result[..resultLength];
@@ -389,37 +390,43 @@ public static class StringHelper
     }
 
     [Pure]
-    public static string RegexEscape(string? input)
-    {
-        return input is null ? string.Empty : RegexEscape(input.AsSpan());
-    }
+    public static string RegexEscape(string? input) => input is null ? string.Empty : RegexEscape(input, true);
 
     [Pure]
     [SkipLocalsInit]
-    public static string RegexEscape(ReadOnlySpan<char> input)
+    public static string RegexEscape(ReadOnlySpan<char> input) => RegexEscape(input, false);
+
+    [Pure]
+    [SkipLocalsInit]
+    private static string RegexEscape(ReadOnlySpan<char> input, [ConstantExpected] bool inputIsString)
     {
+        if (input.Length == 0)
+        {
+            return string.Empty;
+        }
+
         int resultLength;
         int maximumResultLength = input.Length << 1;
         if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan());
-            return resultLength == input.Length ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
+            return inputIsString && input.Length == resultLength && inputIsString ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];
         resultLength = RegexEscape(input, buffer);
-        return resultLength == input.Length ? StringMarshal.AsString(input) : new(buffer[..resultLength]);
+        return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(buffer[..resultLength]);
     }
 
-    public static int RegexEscape(ReadOnlySpan<char> input, Span<char> escapedInput)
+    public static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination)
     {
         if (input.Length == 0)
         {
             return 0;
         }
 
-        ValueStringBuilder builder = new(escapedInput);
+        ValueStringBuilder builder = new(destination);
         SearchValues<char> regexMetaCharsSearchValues = _regexMetaCharsSearchValues;
         while (true)
         {
@@ -448,14 +455,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Join(Span<string> strings, char separator, Span<char> result)
+    public static int Join(char separator, ReadOnlySpan<string> strings, Span<char> destination)
     {
-        return Join((ReadOnlySpan<string>)strings, separator, result);
-    }
-
-    public static int Join(ReadOnlySpan<string> strings, char separator, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
@@ -470,14 +472,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Join(Span<ReadOnlyMemory<char>> strings, char separator, Span<char> result)
+    public static int Join(char separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
-        return Join((ReadOnlySpan<ReadOnlyMemory<char>>)strings, separator, result);
-    }
-
-    public static int Join(ReadOnlySpan<ReadOnlyMemory<char>> strings, char separator, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
@@ -492,14 +489,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Join(Span<string> strings, ReadOnlySpan<char> separator, Span<char> result)
+    public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<string> strings, Span<char> destination)
     {
-        return Join((ReadOnlySpan<string>)strings, separator, result);
-    }
-
-    public static int Join(ReadOnlySpan<string> strings, ReadOnlySpan<char> separator, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
@@ -513,14 +505,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Join(Span<ReadOnlyMemory<char>> strings, ReadOnlySpan<char> separator, Span<char> result)
+    public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
-        return Join((ReadOnlySpan<ReadOnlyMemory<char>>)strings, separator, result);
-    }
-
-    public static int Join(ReadOnlySpan<ReadOnlyMemory<char>> strings, ReadOnlySpan<char> separator, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLengthMinus1; i++)
@@ -534,14 +521,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Join(Span<char> chars, char separator, Span<char> result)
+    public static int Join(char separator, ReadOnlySpan<char> chars, Span<char> destination)
     {
-        return Join((ReadOnlySpan<char>)chars, separator, result);
-    }
-
-    public static int Join(ReadOnlySpan<char> chars, char separator, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int charsLengthMinus1 = chars.Length - 1;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
         for (int i = 0; i < charsLengthMinus1; i++)
@@ -555,14 +537,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Join(Span<char> chars, ReadOnlySpan<char> separator, Span<char> result)
+    public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<char> chars, Span<char> destination)
     {
-        return Join((ReadOnlySpan<char>)chars, separator, result);
-    }
-
-    public static int Join(ReadOnlySpan<char> chars, ReadOnlySpan<char> separator, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int charsLengthMinus1 = chars.Length - 1;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
         for (int i = 0; i < charsLengthMinus1; i++)
@@ -577,14 +554,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Concat(Span<string> strings, Span<char> result)
+    public static int Concat(ReadOnlySpan<string> strings, Span<char> destination)
     {
-        return Concat((ReadOnlySpan<string>)strings, result);
-    }
-
-    public static int Concat(ReadOnlySpan<string> strings, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int stringsLength = strings.Length;
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLength; i++)
@@ -596,14 +568,9 @@ public static class StringHelper
         return builder.Length;
     }
 
-    public static int Concat(Span<ReadOnlyMemory<char>> strings, Span<char> result)
+    public static int Concat(ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
-        return Concat((ReadOnlySpan<ReadOnlyMemory<char>>)strings, result);
-    }
-
-    public static int Concat(ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> result)
-    {
-        ValueStringBuilder builder = new(result);
+        ValueStringBuilder builder = new(destination);
         int stringsLength = strings.Length;
         ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
         for (int i = 0; i < stringsLength; i++)

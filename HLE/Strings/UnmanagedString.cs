@@ -10,24 +10,31 @@ using HLE.Memory;
 namespace HLE.Strings;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
-[DebuggerDisplay("\"{String}\"")]
-public readonly unsafe struct UnmanagedString : IDisposable, IEquatable<UnmanagedString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
+[DebuggerDisplay("\"{AsString()}\"")]
+public unsafe struct UnmanagedString : IDisposable, IEquatable<UnmanagedString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
 {
-    public ref char this[int index] => ref AsSpan()[index];
+    public readonly ref char this[int index]
+    {
+        get
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length);
+            return ref Unsafe.Add(ref CharsReference, index);
+        }
+    }
 
-    char IIndexAccessible<char>.this[int index] => AsSpan()[index];
+    readonly char IIndexAccessible<char>.this[int index] => this[index];
 
-    public ref char this[Index index] => ref AsSpan()[index];
+    public readonly ref char this[Index index] => ref this[index.GetOffset(Length)];
 
-    public Span<char> this[Range range] => AsSpan()[range];
+    public readonly Span<char> this[Range range] => AsSpan(range);
 
-    public string String => Length == 0 ? string.Empty : RawDataMarshal.GetObjectFromRawData<string>(ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), sizeof(nuint)));
+    public readonly ref char CharsReference => ref Unsafe.As<byte, char>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint) + sizeof(int)));
 
     public int Length { get; }
 
-    int ICountable.Count => Length;
+    readonly int ICountable.Count => Length;
 
-    private readonly byte[] _buffer = Array.Empty<byte>();
+    private RentedArray<byte> _buffer = RentedArray<byte>.Empty;
 
     public static UnmanagedString Empty => new();
 
@@ -35,33 +42,42 @@ public readonly unsafe struct UnmanagedString : IDisposable, IEquatable<Unmanage
     {
     }
 
-    private UnmanagedString(int length, byte[] buffer)
+    private UnmanagedString(int length, RentedArray<byte> buffer)
     {
         _buffer = buffer;
         Length = length;
     }
 
-    [Pure]
-    public Span<char> AsSpan()
-    {
-        ref byte byteReference = ref MemoryMarshal.GetArrayDataReference(_buffer);
-        ref char charsReference = ref Unsafe.As<byte, char>(ref Unsafe.Add(ref byteReference, sizeof(nuint) + sizeof(int)));
-        return MemoryMarshal.CreateSpan(ref charsReference, Length);
-    }
-
-    Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
-
     public void Dispose()
     {
-        ArrayPool<byte>.Shared.Return(_buffer);
+        _buffer.Dispose();
     }
+
+    [Pure]
+    public readonly string AsString()
+    {
+        return Length == 0 ? string.Empty : RawDataMarshal.GetObjectFromRawData<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)));
+    }
+
+    [Pure]
+    public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref CharsReference, Length);
+
+    [Pure]
+    public readonly Span<char> AsSpan(int start) => new Slicer<char>(ref CharsReference, Length).CreateSpan(start);
+
+    [Pure]
+    public readonly Span<char> AsSpan(int start, int length) => new Slicer<char>(ref CharsReference, Length).CreateSpan(start, length);
+
+    [Pure]
+    public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref CharsReference, Length).CreateSpan(range);
+
+    readonly Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
 
     [Pure]
     public static UnmanagedString Create(int length)
     {
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(GetNeededByteCount(length));
-        ref byte bufferReference = ref MemoryMarshal.GetArrayDataReference(buffer);
-        WriteMetadata(length, ref bufferReference);
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(GetNeededByteCount(length));
+        WriteMetadata(length, ref buffer.Reference);
         buffer.AsSpan(sizeof(nuint) + sizeof(int), length * sizeof(char)).Clear();
         return new(length, buffer);
     }
@@ -70,10 +86,9 @@ public readonly unsafe struct UnmanagedString : IDisposable, IEquatable<Unmanage
     public static UnmanagedString Create(ReadOnlySpan<char> chars)
     {
         int length = chars.Length;
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(GetNeededByteCount(length));
-        ref byte bufferReference = ref MemoryMarshal.GetArrayDataReference(buffer);
-        WriteMetadata(length, ref bufferReference);
-        Span<char> charBuffer = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, char>(ref Unsafe.Add(ref bufferReference, sizeof(nuint) + sizeof(int))), length + 1);
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(GetNeededByteCount(length));
+        WriteMetadata(length, ref buffer.Reference);
+        Span<char> charBuffer = MemoryMarshal.CreateSpan(ref Unsafe.As<byte, char>(ref Unsafe.Add(ref buffer.Reference, sizeof(nuint) + sizeof(int))), length + 1);
         chars.CopyToUnsafe(charBuffer);
         charBuffer[^1] = '\0';
         return new(length, buffer);
@@ -89,29 +104,33 @@ public readonly unsafe struct UnmanagedString : IDisposable, IEquatable<Unmanage
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetNeededByteCount(int length)
+    private static int GetNeededByteCount(int stringLength)
     {
-        return sizeof(nuint) + sizeof(int) + length * sizeof(char) + sizeof(char);
+        return sizeof(nuint) /* method table pointer */ +
+               sizeof(int) /* string length */ +
+               stringLength * sizeof(char) /* chars */ +
+               sizeof(char) /* zero-char */;
     }
 
-    public override string ToString()
+    [Pure]
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly string ToString() => new(AsSpan());
+
+    public readonly bool Equals(UnmanagedString other)
     {
-        return String;
+        return AsString() == other.AsString();
     }
 
-    public bool Equals(UnmanagedString other)
-    {
-        return String == other.String;
-    }
-
-    public override bool Equals(object? obj)
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly bool Equals(object? obj)
     {
         return obj is UnmanagedString other && Equals(other);
     }
 
-    public override int GetHashCode()
+    // ReSharper disable once ArrangeModifiersOrder
+    public override readonly int GetHashCode()
     {
-        return String.GetHashCode();
+        return AsString().GetHashCode();
     }
 
     public static bool operator ==(UnmanagedString left, UnmanagedString right)

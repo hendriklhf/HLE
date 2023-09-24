@@ -8,6 +8,6 @@ public static class RentedArrayMarshal<T>
     [Pure]
     public static T[] GetArray(RentedArray<T> rentedArray)
     {
-        return rentedArray._array;
+        return rentedArray.Array;
     }
 }

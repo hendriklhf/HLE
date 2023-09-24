@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
 using HLE.Memory;
@@ -11,7 +12,8 @@ using HLE.Memory;
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IIndexAccessible<char>, IReadOnlyCollection<char>, ISpanProvider<char>
+public sealed partial class PooledStringBuilder(int capacity)
+    : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IIndexAccessible<char>, IReadOnlyCollection<char>, ISpanProvider<char>
 {
     public ref char this[int index] => ref WrittenSpan[index];
 
@@ -31,36 +33,25 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     public int Capacity => _buffer.Length;
 
-    public Span<char> WrittenSpan => _buffer.AsSpan()[..Length];
+    public Span<char> WrittenSpan => _buffer.AsSpan(..Length);
 
-    public Memory<char> WrittenMemory => _buffer.AsMemory()[..Length];
+    public Memory<char> WrittenMemory => _buffer.AsMemory(..Length);
 
-    public Span<char> FreeBufferSpan => _buffer.AsSpan()[Length..];
+    public Span<char> FreeBufferSpan => _buffer.AsSpan(Length..);
 
-    public Memory<char> FreeBufferMemory => _buffer.AsMemory()[Length..];
+    public Memory<char> FreeBufferMemory => _buffer.AsMemory(Length..);
 
     public int FreeBufferSize => Capacity - Length;
 
     bool ICollection<char>.IsReadOnly => false;
 
-    internal RentedArray<char> _buffer;
+    internal RentedArray<char> _buffer = ArrayPool<char>.Shared.CreateRentedArray(capacity);
 
-    internal const int DefaultBufferSize = 32;
-
-    public static PooledStringBuilder Empty => new(RentedArray<char>.Empty);
-
-    private PooledStringBuilder(RentedArray<char> buffer)
-    {
-        _buffer = buffer;
-    }
+    internal const int DefaultBufferSize = ArrayPool<char>.MinimumArrayLength;
+    private const int _maximumBufferSize = 1 << 30;
 
     public PooledStringBuilder() : this(DefaultBufferSize)
     {
-    }
-
-    public PooledStringBuilder(int initialBufferSize)
-    {
-        _buffer = ArrayPool<char>.Shared.CreateRentedArray(initialBufferSize);
     }
 
     public void Dispose()
@@ -70,15 +61,29 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void GrowBuffer(int sizeHint = 0)
+    private void GrowBuffer(int sizeHint)
     {
-        int newSize = sizeHint < 1 ? _buffer.Length << 1 : _buffer.Length + sizeHint;
-        RentedArray<char> newBuffer = ArrayPool<char>.Shared.CreateRentedArray(newSize);
-        Debug.Assert(newBuffer.Length > _buffer.Length);
-        _buffer.AsSpan().CopyToUnsafe(newBuffer.AsSpan());
-        _buffer.Dispose();
-        _buffer = newBuffer;
+        if (_buffer.Length == _maximumBufferSize)
+        {
+            ThrowMaximumBufferSizeReached();
+        }
+
+        int newSize = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + sizeHint));
+        if (newSize < _buffer.Length)
+        {
+            ThrowMaximumBufferSizeReached();
+        }
+
+        using RentedArray<char> oldBuffer = _buffer;
+        _buffer = ArrayPool<char>.Shared.CreateRentedArray(newSize);
+        oldBuffer[..Length].CopyToUnsafe(_buffer.AsSpan());
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ThrowMaximumBufferSizeReached()
+    {
+        throw new InvalidOperationException("The maximum buffer size has been reached.");
     }
 
     public void Advance(int length)
@@ -102,7 +107,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
     {
         if (FreeBufferSize <= 0)
         {
-            GrowBuffer();
+            GrowBuffer(1);
         }
 
         _buffer[Length++] = c;
@@ -200,7 +205,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
     {
-        const int maximumFormattingTries = 10;
+        const int maximumFormattingTries = 5;
         int countOfFailedTries = 0;
         while (true)
         {
@@ -213,7 +218,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
             if (!builder.TryAppend(spanFormattable, format))
             {
                 countOfFailedTries++;
-                GrowBuffer();
+                GrowBuffer(128);
                 continue;
             }
 
@@ -231,7 +236,6 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
 
     void ICollection<char>.Clear() => Clear();
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear()
     {
         Length = 0;
@@ -294,8 +298,7 @@ public sealed partial class PooledStringBuilder : IDisposable, ICollection<char>
     [Pure]
     public IEnumerator<char> GetEnumerator()
     {
-        int length = Length;
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < Length; i++)
         {
             yield return WrittenSpan[i];
         }

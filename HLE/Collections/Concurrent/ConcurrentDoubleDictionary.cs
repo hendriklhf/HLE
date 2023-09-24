@@ -17,11 +17,13 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public TValue this[TSecondaryKey key] => _dictionary[key];
 
-    [SuppressMessage("Design", "CA1044:Properties should not be write only")]
+    [SuppressMessage("Design", "CA1044:Properties should not be write only", Justification = "reading doesn't make sense")]
     public TValue this[TPrimaryKey primaryKey, TSecondaryKey secondaryKey]
     {
         set
         {
+            ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
+
             _dictionaryLock.Wait();
             try
             {
@@ -39,11 +41,13 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     public IReadOnlyCollection<TValue> Values => _dictionary.Values;
 
     internal readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> _dictionary;
-    private readonly SemaphoreSlim _dictionaryLock = new(1);
+    private SemaphoreSlim? _dictionaryLock = new(1);
 
     public ConcurrentDoubleDictionary()
     {
+#pragma warning disable IDE0028
         _dictionary = new();
+#pragma warning restore IDE0028
     }
 
     public ConcurrentDoubleDictionary(int capacity, IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
@@ -58,11 +62,14 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public void Dispose()
     {
-        _dictionaryLock.Dispose();
+        _dictionaryLock?.Dispose();
+        _dictionaryLock = null;
     }
 
     public bool TryAdd(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
     {
+        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
+
         _dictionaryLock.Wait();
         try
         {
@@ -76,6 +83,8 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public void AddOrSet(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
     {
+        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
+
         _dictionaryLock.Wait();
         try
         {
@@ -99,6 +108,8 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public bool Remove(TPrimaryKey primaryKey, TSecondaryKey secondaryKey)
     {
+        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
+
         _dictionaryLock.Wait();
         try
         {
@@ -112,6 +123,8 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public void Clear()
     {
+        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
+
         _dictionaryLock.Wait();
         try
         {
@@ -164,8 +177,5 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     }
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(_dictionary, _dictionaryLock);
-    }
+    public override int GetHashCode() => _dictionary.GetHashCode();
 }

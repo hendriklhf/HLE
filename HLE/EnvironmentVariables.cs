@@ -10,7 +10,7 @@ using HLE.Strings;
 
 namespace HLE;
 
-public sealed unsafe partial class EnvironmentVariables : IReadOnlyDictionary<string, string>, ICountable, IEquatable<EnvironmentVariables>
+public sealed partial class EnvironmentVariables : IReadOnlyDictionary<string, string>, ICountable, IEquatable<EnvironmentVariables>
 {
     public string? this[string name]
     {
@@ -50,7 +50,7 @@ public sealed unsafe partial class EnvironmentVariables : IReadOnlyDictionary<st
         return _environmentVariables.TryGetValue(key, out value);
     }
 
-    public static EnvironmentVariables Create()
+    public static unsafe EnvironmentVariables Create()
     {
         Dictionary<string, string> environmentVariables = new(64);
         char* environmentStrings = GetEnvironmentStrings();
@@ -113,7 +113,7 @@ public sealed unsafe partial class EnvironmentVariables : IReadOnlyDictionary<st
 
     public static bool operator !=(EnvironmentVariables? left, EnvironmentVariables? right)
     {
-        return !Equals(left, right);
+        return !(left == right);
     }
 
     [LibraryImport("kernel32.dll", EntryPoint = "GetEnvironmentStringsW")]

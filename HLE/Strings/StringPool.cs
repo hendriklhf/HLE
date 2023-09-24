@@ -26,6 +26,11 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     private const int _defaultPoolCapacity = 4096;
     private const int _defaultBucketCapacity = 32;
 
+    /// <summary>
+    /// Constructor for a <see cref="StringPool"/>.
+    /// </summary>
+    /// <param name="poolCapacity">The amount of buckets in the pool.</param>
+    /// <param name="bucketCapacity">The amount of strings per bucket in the pool.</param>
     public StringPool(int poolCapacity = _defaultPoolCapacity, int bucketCapacity = _defaultBucketCapacity)
     {
         _buckets = new Bucket[poolCapacity];
@@ -37,9 +42,11 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
 
     public void Dispose()
     {
-        for (int i = 0; i < _buckets.Length; i++)
+        Span<Bucket> buckets = _buckets;
+        for (int i = 0; i < buckets.Length; i++)
         {
-            _buckets[i].Dispose();
+            ref Bucket bucket = ref buckets[i];
+            bucket.Dispose();
         }
     }
 
@@ -213,23 +220,22 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     }
 
     [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
-    internal readonly struct Bucket : IEnumerable<string>, IDisposable
+    internal struct Bucket(int bucketCapacity = _defaultBucketCapacity)
+        : IEnumerable<string>, IDisposable
     {
-        internal readonly StringArray _strings;
-        private readonly SemaphoreSlim _stringsLock = new(1);
-
-        public Bucket(int bucketCapacity = _defaultBucketCapacity)
-        {
-            _strings = new(bucketCapacity);
-        }
+        internal readonly StringArray _strings = new(bucketCapacity);
+        private SemaphoreSlim? _stringsLock = new(1);
 
         public void Dispose()
         {
-            _stringsLock.Dispose();
+            _stringsLock?.Dispose();
+            _stringsLock = null;
         }
 
-        public void Clear()
+        public readonly void Clear()
         {
+            ObjectDisposedException.ThrowIf(_stringsLock is null, typeof(StringPool));
+
             _stringsLock.Wait();
             try
             {
@@ -242,7 +248,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string GetOrAdd(ReadOnlySpan<char> span)
+        public readonly string GetOrAdd(ReadOnlySpan<char> span)
         {
             if (TryGet(span, out string? value))
             {
@@ -255,8 +261,10 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Add(string value)
+        public readonly void Add(string value)
         {
+            ObjectDisposedException.ThrowIf(_stringsLock is null, typeof(StringPool));
+
             _stringsLock.Wait();
             try
             {
@@ -270,7 +278,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
+        public readonly bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
             int index = IndexOf(_strings, span);
             if (index < 0)
@@ -284,7 +292,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Contains(ReadOnlySpan<char> span)
+        public readonly bool Contains(ReadOnlySpan<char> span)
         {
             return TryGet(span, out _);
         }
@@ -329,7 +337,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
             return -1;
         }
 
-        public IEnumerator<string> GetEnumerator()
+        public readonly IEnumerator<string> GetEnumerator()
         {
             foreach (string? str in _strings)
             {
@@ -341,6 +349,6 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

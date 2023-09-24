@@ -46,6 +46,11 @@ public ref partial struct ValueStringBuilder
 
     public void Append(scoped ReadOnlySpan<char> span)
     {
+        if (span.Length == 0)
+        {
+            return;
+        }
+
         span.CopyTo(FreeBuffer);
         Advance(span.Length);
     }
@@ -236,17 +241,12 @@ public ref partial struct ValueStringBuilder
         return !(left == right);
     }
 
-    public ref struct Enumerator
+    public ref struct Enumerator(ReadOnlySpan<char> chars)
     {
         public char Current => _chars[_index++];
 
-        private readonly ReadOnlySpan<char> _chars;
+        private readonly ReadOnlySpan<char> _chars = chars;
         private int _index;
-
-        public Enumerator(ReadOnlySpan<char> chars)
-        {
-            _chars = chars;
-        }
 
         public readonly bool MoveNext()
         {

@@ -58,8 +58,10 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     public DoubleDictionary()
     {
+#pragma warning disable IDE0028
         _values = new();
         _secondaryKeyTranslations = new();
+#pragma warning restore IDE0028
     }
 
     public DoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer)
@@ -231,8 +233,5 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
     }
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(_secondaryKeyTranslations, _values);
-    }
+    public override int GetHashCode() => HashCode.Combine(_values, _secondaryKeyTranslations);
 }

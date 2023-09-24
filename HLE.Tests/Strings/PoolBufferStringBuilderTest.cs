@@ -137,14 +137,6 @@ public class PoolBufferStringBuilderTest
     }
 
     [TestMethod]
-    public void EmptyTest()
-    {
-        PooledStringBuilder empty = PooledStringBuilder.Empty;
-        Assert.AreEqual(0, empty.Length);
-        Assert.AreEqual(0, empty.Capacity);
-    }
-
-    [TestMethod]
     public void Constructor_NoParameter_Test()
     {
         using PooledStringBuilder builder = new();

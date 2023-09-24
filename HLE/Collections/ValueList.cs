@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -49,9 +50,8 @@ public ref struct ValueList<T> where T : IEquatable<T>
     public readonly List<T> ToList()
     {
         List<T> result = new(Count);
-        CollectionsMarshal.SetCount(result, Count);
-        Span<T> resultSpan = CollectionsMarshal.AsSpan(result);
-        CopyTo(resultSpan);
+        CopyWorker<T> copyWorker = new(AsSpan());
+        copyWorker.CopyTo(result);
         return result;
     }
 
@@ -115,10 +115,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
     }
 
     [Pure]
-    public readonly bool Contains(T item)
-    {
-        return IndexOf(item) >= 0;
-    }
+    public readonly bool Contains(T item) => IndexOf(item) >= 0;
 
     public bool Remove(T item)
     {
@@ -135,10 +132,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
     }
 
     [Pure]
-    public readonly int IndexOf(T item)
-    {
-        return _buffer[..Count].IndexOf(item);
-    }
+    public readonly int IndexOf(T item) => _buffer[..Count].IndexOf(item);
 
     public void Insert(int index, T item)
     {
@@ -194,20 +188,26 @@ public ref struct ValueList<T> where T : IEquatable<T>
         copyWorker.CopyTo(destination);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly void ThrowIfNotEnoughSpace(int itemsToAdd)
     {
         if (itemsToAdd > Capacity - Count)
         {
-            throw new InvalidOperationException("Maximum buffer capacity reached.");
+            ThrowNotEnoughSpace();
         }
     }
 
-    public readonly Enumerator GetEnumerator()
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowNotEnoughSpace()
     {
-        return new(_buffer[..Count]);
+        throw new InvalidOperationException("Maximum buffer capacity reached.");
     }
 
+    [Pure]
+    public readonly Enumerator GetEnumerator() => new(_buffer[..Count]);
+
+    [Pure]
     public readonly bool Equals(ValueList<T> other)
     {
         ref T thisReference = ref MemoryMarshal.GetReference(_buffer);
@@ -215,12 +215,14 @@ public ref struct ValueList<T> where T : IEquatable<T>
         return Unsafe.AreSame(ref thisReference, ref otherReference) && Count == other.Count;
     }
 
+    [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly bool Equals(object? obj)
     {
         return false;
     }
 
+    [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode()
     {
@@ -237,18 +239,14 @@ public ref struct ValueList<T> where T : IEquatable<T>
         return !(left == right);
     }
 
-    public ref struct Enumerator
+    public ref struct Enumerator(ReadOnlySpan<T> buffer)
     {
         public ref readonly T Current => ref _buffer[_index++];
 
-        private readonly ReadOnlySpan<T> _buffer;
+        private readonly ReadOnlySpan<T> _buffer = buffer;
         private int _index;
 
-        public Enumerator(ReadOnlySpan<T> buffer)
-        {
-            _buffer = buffer;
-        }
-
+        [Pure]
         public readonly bool MoveNext() => _index < _buffer.Length;
     }
 }

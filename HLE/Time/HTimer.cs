@@ -12,19 +12,41 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 {
     public bool AutoReset
     {
-        get => _timer.AutoReset;
-        set => _timer.AutoReset = value;
+        get
+        {
+            ObjectDisposedException.ThrowIf(_timer is null, typeof(HTimer));
+            return _timer.AutoReset;
+        }
+        set
+        {
+            ObjectDisposedException.ThrowIf(_timer is null, typeof(HTimer));
+            _timer.AutoReset = value;
+        }
     }
 
-    public bool Enabled => _timer.Enabled;
+    public bool Enabled
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_timer is null, typeof(HTimer));
+            return _timer.Enabled;
+        }
+    }
 
-    public TimeSpan Interval => TimeSpan.FromMilliseconds(_timer.Interval);
+    public TimeSpan Interval
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_timer is null, typeof(HTimer));
+            return TimeSpan.FromMilliseconds(_timer.Interval);
+        }
+    }
 
     public TimeSpan RemainingTime => GetRemainingTime();
 
     public event EventHandler? OnElapsed;
 
-    private readonly Timer _timer;
+    private Timer? _timer;
     private DateTimeOffset _end;
 
     public HTimer(TimeSpan interval)
@@ -43,11 +65,14 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 
     public void Dispose()
     {
-        _timer.Dispose();
+        _timer?.Dispose();
+        _timer = null;
     }
 
     public void Start()
     {
+        ObjectDisposedException.ThrowIf(_timer is null, typeof(HTimer));
+
         if (Enabled)
         {
             return;
@@ -59,6 +84,8 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 
     public void Stop()
     {
+        ObjectDisposedException.ThrowIf(_timer is null, typeof(HTimer));
+
         if (!Enabled)
         {
             return;

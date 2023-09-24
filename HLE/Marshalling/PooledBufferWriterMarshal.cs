@@ -6,7 +6,7 @@ public static class PooledBufferWriterMarshal<T>
 {
     public static T[] GetBuffer(PooledBufferWriter<T> writer)
     {
-        return writer._buffer._array;
+        return writer._buffer.Array;
     }
 
     public static void SetCount(PooledBufferWriter<T> writer, int count)

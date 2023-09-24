@@ -3,8 +3,10 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
@@ -16,19 +18,20 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
+public sealed class PooledBufferWriter<T>(int capacity)
+    : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
 {
     T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
 
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
-    public Span<T> WrittenSpan => _buffer[..Count];
+    public Span<T> WrittenSpan => _buffer.AsSpan(..Count);
 
     /// <summary>
     /// A <see cref="Memory{T}"/> view over the written elements.
     /// </summary>
-    public Memory<T> WrittenMemory => _buffer.AsMemory()[..Count];
+    public Memory<T> WrittenMemory => _buffer.AsMemory(..Count);
 
     /// <summary>
     /// The amount of written elements.
@@ -41,17 +44,13 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal RentedArray<T> _buffer;
+    internal RentedArray<T> _buffer = ArrayPool<T>.Shared.CreateRentedArray(capacity);
 
-    private const int _defaultCapacity = 16;
+    private const int _defaultCapacity = ArrayPool<T>.MinimumArrayLength;
+    private const int _maximumCapacity = 1 << 30;
 
     public PooledBufferWriter() : this(_defaultCapacity)
     {
-    }
-
-    public PooledBufferWriter(int capacity)
-    {
-        _buffer = ArrayPool<T>.Shared.CreateRentedArray(capacity);
     }
 
     public void Dispose()
@@ -60,6 +59,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Advance(int count)
     {
         Count += count;
@@ -69,14 +69,14 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     public Memory<T> GetMemory(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return _buffer.AsMemory()[Count..];
+        return _buffer.AsMemory(Count..);
     }
 
     /// <inheritdoc/>
     public Span<T> GetSpan(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return _buffer[Count..];
+        return _buffer.AsSpan(Count..);
     }
 
     /// <summary>
@@ -100,16 +100,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
         Count = 0;
     }
 
-    public void EnsureCapacity(int capacity)
-    {
-        if (Capacity >= capacity)
-        {
-            return;
-        }
-
-        int neededSpace = capacity - Capacity;
-        Grow(neededSpace);
-    }
+    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
     [Pure]
     public T[] ToArray()
@@ -123,9 +114,8 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
     public List<T> ToList()
     {
         List<T> result = new(Count);
-        CollectionsMarshal.SetCount(result, Count);
-        Span<T> resultSpan = CollectionsMarshal.AsSpan(result);
-        CopyTo(resultSpan);
+        CopyWorker<T> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(result);
         return result;
     }
 
@@ -146,28 +136,29 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
             return;
         }
 
-        int neededSpace = sizeHint - freeSpace;
-        bool neededSpaceLargerThanCurrentBuffer = neededSpace > _buffer.Length;
-        int twiceTheNeededSpace = neededSpace << 1;
-        int elementGrowth = neededSpaceLargerThanCurrentBuffer ? twiceTheNeededSpace : neededSpace;
-        Grow(elementGrowth);
-    }
-
-    /// <summary>
-    /// Grows the buffer by the given needed space.
-    /// </summary>
-    /// <param name="neededSpace">The needed space. If <paramref name="neededSpace"/> is 0, the default capacity will be taken.</param>
-    private void Grow(int neededSpace = 0)
-    {
-        if (neededSpace == 0)
+        if (Capacity == _maximumCapacity)
         {
-            neededSpace = _buffer.Length == 0 ? _defaultCapacity : _buffer.Length;
+            ThrowMaximumBufferCapacityReached();
+        }
+
+        int neededSpace = sizeHint - freeSpace;
+        int newBufferSize = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + neededSpace));
+        if (newBufferSize < Capacity)
+        {
+            ThrowMaximumBufferCapacityReached();
         }
 
         using RentedArray<T> oldBuffer = _buffer;
-        int newCapacity = _buffer.Length + neededSpace;
-        _buffer = ArrayPool<T>.Shared.CreateRentedArray(newCapacity);
-        oldBuffer.CopyTo(_buffer.AsSpan());
+        _buffer = ArrayPool<T>.Shared.CreateRentedArray(newBufferSize);
+        CopyWorker<T> copyWorker = new(ref oldBuffer.Reference, Count);
+        copyWorker.CopyTo(ref _buffer.Reference);
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumBufferCapacityReached()
+    {
+        throw new InvalidOperationException("The maximum buffer capacity has been reached.");
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
@@ -221,7 +212,7 @@ public sealed class PooledBufferWriter<T> : IBufferWriter<T>, ICollection<T>, ID
 
     bool ICollection<T>.Remove(T item)
     {
-        int index = Array.IndexOf(_buffer._array, item);
+        int index = Array.IndexOf(_buffer.Array, item);
         if (index < 0)
         {
             return false;

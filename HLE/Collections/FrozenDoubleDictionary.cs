@@ -11,8 +11,14 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
-    where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
+public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
+        IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null
+    )
+    : IEnumerable<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
+    where TPrimaryKey : IEquatable<TPrimaryKey>
+    where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
 
@@ -22,15 +28,8 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public ImmutableArray<TValue> Values => _values.Values;
 
-    internal readonly FrozenDictionary<TPrimaryKey, TValue> _values;
-    internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
-
-    public FrozenDoubleDictionary(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary, IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null)
-    {
-        _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer);
-        _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
-    }
+    internal readonly FrozenDictionary<TPrimaryKey, TValue> _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer);
+    internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
     {

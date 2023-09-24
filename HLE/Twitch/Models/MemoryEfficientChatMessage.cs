@@ -8,9 +8,23 @@ namespace HLE.Twitch.Models;
 
 public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEquatable<MemoryEfficientChatMessage>
 {
-    public override ReadOnlySpan<Badge> BadgeInfos => _badgeInfos.AsSpan(.._badgeInfoCount);
+    public override ReadOnlySpan<Badge> BadgeInfos
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_badgeInfos is null, typeof(MemoryEfficientChatMessage));
+            return _badgeInfos.AsSpan(.._badgeInfoCount);
+        }
+    }
 
-    public override ReadOnlySpan<Badge> Badges => _badges.AsSpan(.._badgeCount);
+    public override ReadOnlySpan<Badge> Badges
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(_badges is null, typeof(MemoryEfficientChatMessage));
+            return _badges.AsSpan(.._badgeCount);
+        }
+    }
 
     public override required string DisplayName
     {
@@ -20,6 +34,8 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
             {
                 return _displayName;
             }
+
+            ObjectDisposedException.ThrowIf(_displayNameBuffer is null, typeof(MemoryEfficientChatMessage));
 
             _displayName = StringPool.Shared.GetOrAdd(_displayNameBuffer.AsSpan(.._nameLength));
             ArrayPool<char>.Shared.Return(_displayNameBuffer!);
@@ -38,6 +54,8 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 return _username;
             }
 
+            ObjectDisposedException.ThrowIf(_usernameBuffer is null, typeof(MemoryEfficientChatMessage));
+
             _username = StringPool.Shared.GetOrAdd(_usernameBuffer.AsSpan(.._nameLength));
             ArrayPool<char>.Shared.Return(_usernameBuffer!);
             _usernameBuffer = null;
@@ -55,6 +73,8 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 return _message;
             }
 
+            ObjectDisposedException.ThrowIf(_messageBuffer is null, typeof(MemoryEfficientChatMessage));
+
             ReadOnlySpan<char> message = _messageBuffer.AsSpan(.._messageLength);
             _message = message.Length <= _maxMessagePoolingLength ? StringPool.Shared.GetOrAdd(message) : new(message);
             ArrayPool<char>.Shared.Return(_messageBuffer!);
@@ -64,9 +84,10 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
         init { }
     }
 
-    private readonly Badge[] _badgeInfos;
+    private Badge[]? _badgeInfos;
     private readonly int _badgeInfoCount;
-    private readonly Badge[] _badges;
+
+    private Badge[]? _badges;
     private readonly int _badgeCount;
 
     private string? _displayName;
@@ -104,22 +125,34 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
 
     public void Dispose()
     {
-        ArrayPool<Badge>.Shared.Return(_badgeInfos);
-        ArrayPool<Badge>.Shared.Return(_badges);
+        if (_badgeInfos is not null)
+        {
+            ArrayPool<Badge>.Shared.Return(_badgeInfos);
+            _badgeInfos = null;
+        }
+
+        if (_badges is not null)
+        {
+            ArrayPool<Badge>.Shared.Return(_badges);
+            _badges = null;
+        }
 
         if (_displayNameBuffer is not null)
         {
             ArrayPool<char>.Shared.Return(_displayNameBuffer);
+            _displayNameBuffer = null;
         }
 
         if (_usernameBuffer is not null)
         {
             ArrayPool<char>.Shared.Return(_usernameBuffer);
+            _usernameBuffer = null;
         }
 
         if (_messageBuffer is not null)
         {
             ArrayPool<char>.Shared.Return(_messageBuffer);
+            _messageBuffer = null;
         }
     }
 

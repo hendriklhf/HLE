@@ -6,26 +6,18 @@ namespace HLE.Twitch.Models;
 /// <summary>
 /// Arguments used when a user joined a channel.
 /// </summary>
-public readonly struct JoinChannelMessage : IMembershipMessage<JoinChannelMessage>, IEquatable<JoinChannelMessage>
+public readonly struct JoinChannelMessage(string username, string channel)
+    : IMembershipMessage<JoinChannelMessage>, IEquatable<JoinChannelMessage>
 {
     /// <summary>
     /// The username of the user that joined the channel. All lower case.
     /// </summary>
-    public string Username { get; }
+    public string Username { get; } = username;
 
     /// <summary>
     /// The channel the user joined. All lower case, without '#'.
     /// </summary>
-    public string Channel { get; }
-
-    /// <summary>
-    /// The default constructor of <see cref="JoinChannelMessage"/>.
-    /// </summary>
-    public JoinChannelMessage(string username, string channel)
-    {
-        Username = username;
-        Channel = channel;
-    }
+    public string Channel { get; } = channel;
 
     [Pure]
     public static JoinChannelMessage Create(string username, string channel)

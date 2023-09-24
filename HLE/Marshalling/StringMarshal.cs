@@ -114,6 +114,7 @@ public static class StringMarshal
     }
 
     /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string AsString(Span<char> span)
     {
@@ -127,6 +128,7 @@ public static class StringMarshal
     /// </summary>
     /// <param name="span">The <see cref="ReadOnlySpan{T}"/> that will be converted to a <see cref="string"/>.</param>
     /// <returns>The <see cref="ReadOnlySpan{T}"/> as a <see cref="string"/>.</returns>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string AsString(ReadOnlySpan<char> span)
     {

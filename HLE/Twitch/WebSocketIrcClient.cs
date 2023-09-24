@@ -43,7 +43,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     /// <summary>
     /// Is invoked if the client receives data. If this event is subscribed to, the <see cref="ReceivedData"/> instance has to be manually disposed.
-    /// Read more in the documentation of the <see cref="ReceivedData"/> class.
     /// </summary>
     public event EventHandler<ReceivedData>? OnDataReceived;
 
@@ -99,7 +98,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         using RentedArray<byte> bytes = ArrayPool<byte>.Shared.CreateRentedArray(message.Length << 1);
         int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.AsSpan());
-        await SendAsync(bytes.AsMemory()[..byteCount]);
+        await SendAsync(bytes.AsMemory(..byteCount));
     }
 
     private async ValueTask SendAsync(ReadOnlyMemory<byte> message)

@@ -1,10 +1,11 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE.Collections;
 
-public static unsafe class CopyToUnsafeExtensions
+public static class CopyToUnsafeExtensions
 {
     /// <inheritdoc cref="CopyToUnsafe{T}(ReadOnlySpan{T},Span{T})"/>
     public static void CopyToUnsafe<T>(this T[] source, Span<T> destination) => CopyToUnsafe((ReadOnlySpan<T>)source, destination);
@@ -21,18 +22,8 @@ public static unsafe class CopyToUnsafeExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void CopyToUnsafe<T>(this ReadOnlySpan<T> source, Span<T> destination)
     {
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            source.CopyTo(MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(destination), source.Length));
-            return;
-        }
-
         ref T sourceReference = ref MemoryMarshal.GetReference(source);
-        ref byte sourceReferenceAsByte = ref Unsafe.As<T, byte>(ref sourceReference);
-
         ref T destinationReference = ref MemoryMarshal.GetReference(destination);
-        ref byte destinationReferenceAsByte = ref Unsafe.As<T, byte>(ref destinationReference);
-
-        Unsafe.CopyBlock(ref destinationReferenceAsByte, ref sourceReferenceAsByte, (uint)(sizeof(T) * source.Length));
+        CopyWorker<T>.Memmove(ref destinationReference, ref sourceReference, (nuint)source.Length);
     }
 }

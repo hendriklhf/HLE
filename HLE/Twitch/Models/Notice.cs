@@ -4,20 +4,14 @@ using System.Diagnostics;
 namespace HLE.Twitch.Models;
 
 [DebuggerDisplay("{Type}: \"{Message}\"")]
-public readonly struct Notice : IEquatable<Notice>
+public readonly struct Notice(NoticeType type, string message, string channel)
+    : IEquatable<Notice>
 {
-    public NoticeType Type { get; }
+    public NoticeType Type { get; } = type;
 
-    public string Message { get; }
+    public string Message { get; } = message;
 
-    public string Channel { get; }
-
-    public Notice(NoticeType type, string message, string channel)
-    {
-        Type = type;
-        Message = message;
-        Channel = channel;
-    }
+    public string Channel { get; } = channel;
 
     public bool Equals(Notice other)
     {

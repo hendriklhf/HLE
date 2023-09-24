@@ -68,7 +68,8 @@ public readonly struct Color : IEquatable<Color>
     public override unsafe int GetHashCode()
     {
         Debug.Assert(sizeof(Color) == sizeof(int));
-        return Unsafe.As<Color, int>(ref Unsafe.AsRef(in this));
+        Color self = this;
+        return Unsafe.As<Color, int>(ref self);
     }
 
     public override string ToString()

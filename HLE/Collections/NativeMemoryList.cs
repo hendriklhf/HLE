@@ -1,17 +1,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
 
 namespace HLE.Collections;
 
-public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
+public sealed class NativeMemoryList<T>(int capacity)
+    : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
-    public ref T this[int index] => ref AsSpan()[index];
+    public ref T this[int index]
+    {
+        get
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Count);
+            return ref Unsafe.Add(ref _buffer.Reference, index);
+        }
+    }
 
     T IIndexAccessible<T>.this[int index] => this[index];
 
@@ -19,13 +29,13 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
 
     T IList<T>.this[int index]
     {
-        get => AsSpan()[index];
-        set => AsSpan()[index] = value;
+        get => this[index];
+        set => this[index] = value;
     }
 
-    public ref T this[Index index] => ref AsSpan()[index];
+    public ref T this[Index index] => ref this[index.GetOffset(Count)];
 
-    public Span<T> this[Range range] => AsSpan()[range];
+    public Span<T> this[Range range] => AsSpan(range);
 
     public int Count { get; private set; }
 
@@ -33,30 +43,31 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal NativeMemory<T> _buffer;
+    internal NativeMemory<T> _buffer = new((int)BitOperations.RoundUpToPowerOf2((uint)capacity), false);
 
-    private const int _defaultCapacity = 16;
+    private const int _defaultCapacity = 8;
+    private const int _maximumCapacity = 1 << 30;
 
     public NativeMemoryList() : this(_defaultCapacity)
     {
     }
 
-    public NativeMemoryList(int capacity)
-    {
-        _buffer = new(capacity, false);
-    }
-
-    ~NativeMemoryList()
+    public void Dispose()
     {
         _buffer.Dispose();
     }
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Span<T> AsSpan()
-    {
-        return _buffer[..Count];
-    }
+    public Span<T> AsSpan() => _buffer.AsSpan(..Count);
+
+    [Pure]
+    public unsafe Span<T> AsSpan(int start) => new Slicer<T>(_buffer.Pointer, Count).CreateSpan(start);
+
+    [Pure]
+    public unsafe Span<T> AsSpan(int start, int length) => new Slicer<T>(_buffer.Pointer, Count).CreateSpan(start, length);
+
+    [Pure]
+    public unsafe Span<T> AsSpan(Range range) => new Slicer<T>(_buffer.Pointer, Count).CreateSpan(range);
 
     [Pure]
     public T[] ToArray()
@@ -68,41 +79,54 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     }
 
     [Pure]
-    public List<T> ToList()
+    public unsafe List<T> ToList()
     {
         List<T> result = new(Count);
-        CollectionsMarshal.SetCount(result, Count);
-        Span<T> resultSpan = CollectionsMarshal.AsSpan(result);
-        CopyTo(resultSpan);
+        CopyWorker<T> copyWorker = new(_buffer.Pointer, Count);
+        copyWorker.CopyTo(result);
         return result;
     }
 
     Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
-    private void GrowIfNeeded(int neededSpace)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void GrowIfNeeded(int sizeHint)
     {
         int freeSpace = Capacity - Count;
-        if (freeSpace >= neededSpace)
+        if (freeSpace >= sizeHint)
         {
             return;
         }
 
-        if (neededSpace < _defaultCapacity)
+        if (Capacity == _maximumCapacity)
         {
-            neededSpace = _defaultCapacity;
+            ThrowMaximumListCapacityReached();
         }
 
+        int neededSize = sizeHint - freeSpace;
         using NativeMemory<T> oldBuffer = _buffer;
-        NativeMemory<T> newBuffer = new(oldBuffer.Length + neededSpace, false);
-        oldBuffer.CopyTo(newBuffer.AsSpan());
-        _buffer = newBuffer;
+        int newLength = (int)BitOperations.RoundUpToPowerOf2((uint)(oldBuffer.Length + neededSize));
+        if (newLength < Capacity)
+        {
+            ThrowMaximumListCapacityReached();
+        }
+
+        _buffer = new(newLength, false);
+        CopyWorker<T> copyWorker = new(oldBuffer.Pointer, Count);
+        copyWorker.CopyTo(_buffer.Pointer);
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumListCapacityReached()
+    {
+        throw new InvalidOperationException("The maximum list capacity has been reached.");
     }
 
     public unsafe void Add(T item)
     {
         GrowIfNeeded(1);
-        T* destination = _buffer._pointer + Count++;
-        *destination = item;
+        _buffer.Pointer[Count++] = item;
     }
 
     public unsafe void AddRange(IEnumerable<T> items)
@@ -116,7 +140,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
             GrowIfNeeded(itemsCount);
-            T* destination = _buffer._pointer + Count;
+            T* destination = _buffer.Pointer + Count;
             if (items is ICopyable<T> copyable)
             {
                 copyable.CopyTo(destination);
@@ -157,7 +181,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     {
         GrowIfNeeded(items.Length);
         CopyWorker<T> copyWorker = new(items);
-        copyWorker.CopyTo(_buffer._pointer + Count);
+        copyWorker.CopyTo(_buffer.Pointer + Count);
         Count += items.Length;
     }
 
@@ -191,7 +215,7 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
             return false;
         }
 
-        AsSpan()[(index + 1)..].CopyTo(AsSpan()[index..]);
+        AsSpan((index + 1)..).CopyTo(AsSpan(index..));
         Count--;
         return true;
     }
@@ -206,13 +230,13 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     {
         GrowIfNeeded(1);
         Count++;
-        AsSpan()[index..^1].CopyTo(AsSpan()[(index + 1)..]);
+        AsSpan(index..^1).CopyTo(AsSpan((index + 1)..));
         AsSpan()[index] = item;
     }
 
     public void RemoveAt(int index)
     {
-        AsSpan()[(index + 1)..].CopyTo(AsSpan()[index..]);
+        AsSpan((index + 1)..).CopyTo(AsSpan(index..));
         Count--;
     }
 
@@ -263,12 +287,6 @@ public sealed class NativeMemoryList<T> : IList<T>, ICopyable<T>, ICountable, IE
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-        _buffer.Dispose();
     }
 
     [Pure]

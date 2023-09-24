@@ -7,15 +7,10 @@ namespace HLE.Strings;
 /// <summary>
 /// Used to quickly hash a string, as this algorithm executes in constant time, because it doesn't depend on the string's length.
 /// </summary>
-public readonly ref struct SimpleStringHasher
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
 {
-    private readonly ReadOnlySpan<char> _chars;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SimpleStringHasher(ReadOnlySpan<char> chars)
-    {
-        _chars = chars;
-    }
+    private readonly ReadOnlySpan<char> _chars = chars;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Hash()

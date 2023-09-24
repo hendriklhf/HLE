@@ -11,28 +11,22 @@ namespace HLE.Memory;
 /// Objects rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.
 /// </summary>
 /// <typeparam name="T">The type of pooled objects.</typeparam>
-public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>, IDisposable, ICountable
+public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
+    : IEquatable<ObjectPool<T>>, IDisposable, ICountable
 {
     public int Count => _rentableItems.Count;
 
     public int Capacity { get; set; } = 64;
 
     private readonly ConcurrentStack<T> _rentableItems = new();
-    internal Func<T> _objectFactory;
-    internal Action<T>? _returnAction;
-
-    public ObjectPool(Func<T> objectFactory, Action<T>? returnAction = null)
-    {
-        _objectFactory = objectFactory;
-        _returnAction = returnAction;
-    }
+    internal readonly IFactory _factory = factory;
 
     [Pure]
     public T Rent()
     {
         if (!_rentableItems.TryPop(out T? obj))
         {
-            obj = _objectFactory();
+            obj = _factory.Create();
         }
 
         return obj;
@@ -45,7 +39,7 @@ public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>, IDisposable, ICou
             return;
         }
 
-        _returnAction?.Invoke(obj);
+        _factory.Return(obj);
         _rentableItems.Push(obj);
     }
 
@@ -64,11 +58,13 @@ public sealed class ObjectPool<T> : IEquatable<ObjectPool<T>>, IDisposable, ICou
         return ReferenceEquals(this, other);
     }
 
+    [Pure]
     public override bool Equals(object? obj)
     {
         return obj is ObjectPool<T> other && Equals(other);
     }
 
+    [Pure]
     public override int GetHashCode()
     {
         return RuntimeHelpers.GetHashCode(this);

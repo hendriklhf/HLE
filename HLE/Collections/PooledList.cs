@@ -2,20 +2,29 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
+public sealed class PooledList<T>(int capacity)
+    : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
     where T : IEquatable<T>
 {
-    public ref T this[int index] => ref _bufferWriter.WrittenSpan[index];
+    public ref T this[int index]
+    {
+        get
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Count);
+            return ref Unsafe.Add(ref _buffer.Reference, index);
+        }
+    }
 
     T IIndexAccessible<T>.this[int index] => this[index];
 
@@ -23,50 +32,52 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
 
     T IList<T>.this[int index]
     {
-        get => _bufferWriter.WrittenSpan[index];
-        set => _bufferWriter.WrittenSpan[index] = value;
+        get => this[index];
+        set => this[index] = value;
     }
 
-    public ref T this[Index index] => ref _bufferWriter.WrittenSpan[index];
+    public ref T this[Index index] => ref this[index.GetOffset(Count)];
 
-    public Span<T> this[Range range] => _bufferWriter.WrittenSpan[range];
+    public Span<T> this[Range range] => AsSpan(range);
 
-    public int Count => _bufferWriter.Count;
+    public int Count { get; private set; }
 
-    public int Capacity => _bufferWriter.Capacity;
+    public int Capacity => _buffer.Length;
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal readonly PooledBufferWriter<T> _bufferWriter;
+    internal RentedArray<T> _buffer = ArrayPool<T>.Shared.CreateRentedArray(capacity);
 
-    private const int _defaultCapacity = 16;
+    private const int _defaultCapacity = ArrayPool<T>.MinimumArrayLength;
+    private const int _maximumCapacity = 1 << 30;
 
     public PooledList() : this(_defaultCapacity)
     {
     }
 
-    public PooledList(int capacity)
+    public void Dispose()
     {
-        _bufferWriter = new(capacity);
-    }
-
-    public PooledList(PooledBufferWriter<T> bufferWriter)
-    {
-        _bufferWriter = bufferWriter;
+        _buffer.Dispose();
     }
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Span<T> AsSpan()
-    {
-        return _bufferWriter.WrittenSpan;
-    }
+    public Span<T> AsSpan() => _buffer.AsSpan(..Count);
+
+    [Pure]
+    public Span<T> AsSpan(int start) => new Slicer<T>(ref _buffer.Reference, Count).CreateSpan(start);
+
+    [Pure]
+    public Span<T> AsSpan(int start, int length) => new Slicer<T>(ref _buffer.Reference, Count).CreateSpan(start, length);
+
+    [Pure]
+    public Span<T> AsSpan(Range range) => new Slicer<T>(ref _buffer.Reference, Count).CreateSpan(range);
 
     [Pure]
     public T[] ToArray()
     {
         T[] result = GC.AllocateUninitializedArray<T>(Count);
-        _bufferWriter.WrittenSpan.CopyToUnsafe(result);
+        ref T destination = ref MemoryMarshal.GetArrayDataReference(result);
+        CopyWorker<T>.Memmove(ref destination, ref _buffer.Reference, (nuint)Count);
         return result;
     }
 
@@ -74,39 +85,71 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
     public List<T> ToList()
     {
         List<T> result = new(Count);
-        CollectionsMarshal.SetCount(result, Count);
-        Span<T> resultSpan = CollectionsMarshal.AsSpan(result);
-        CopyTo(resultSpan);
+        CopyWorker<T> copyWorker = new(ref _buffer.Reference, Count);
+        copyWorker.CopyTo(result);
         return result;
     }
 
     Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
+    private void GrowIfNeeded(int sizeHint)
+    {
+        int freeSpace = Capacity - Count;
+        if (freeSpace >= sizeHint)
+        {
+            return;
+        }
+
+        if (Capacity == _maximumCapacity)
+        {
+            ThrowMaximumListCapacityReached();
+        }
+
+        int neededSpace = sizeHint - freeSpace;
+        int newSize = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + neededSpace));
+        if (newSize < Capacity)
+        {
+            ThrowMaximumListCapacityReached();
+        }
+
+        using RentedArray<T> oldBuffer = _buffer;
+        _buffer = ArrayPool<T>.Shared.CreateRentedArray(newSize);
+        oldBuffer.AsSpan(..Count).CopyTo(_buffer.AsSpan());
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumListCapacityReached()
+    {
+        throw new InvalidOperationException("The maximum list capacity has been reached.");
+    }
+
     public void Add(T item)
     {
-        _bufferWriter.GetReference() = item;
-        _bufferWriter.Advance(1);
+        GrowIfNeeded(1);
+        Unsafe.Add(ref _buffer.Reference, Count++) = item;
     }
 
     public void AddRange(IEnumerable<T> items)
     {
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
-            ref T destination = ref _bufferWriter.GetReference(itemsCount);
-            T[] buffer = PooledBufferWriterMarshal<T>.GetBuffer(_bufferWriter);
+            GrowIfNeeded(itemsCount);
+            T[] buffer = _buffer.Array;
             if (items.TryNonEnumeratedCopyTo(buffer, Count))
             {
-                _bufferWriter.Advance(itemsCount);
+                Count += itemsCount;
                 return;
             }
 
+            ref T destination = ref _buffer.Reference;
             int i = 0;
             foreach (T item in items)
             {
                 Unsafe.Add(ref destination, i++) = item;
             }
 
-            _bufferWriter.Advance(itemsCount);
+            Count += itemsCount;
             return;
         }
 
@@ -124,29 +167,27 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
 
     public void AddRange(ReadOnlySpan<T> items)
     {
-        ref T destinationReference = ref _bufferWriter.GetReference(items.Length);
-        Debug.Assert(_bufferWriter.Capacity - _bufferWriter.Count >= items.Length);
-
+        GrowIfNeeded(items.Length);
+        ref T destination = ref _buffer.Reference;
         CopyWorker<T> copyWorker = new(items);
-        copyWorker.CopyTo(ref destinationReference);
-        _bufferWriter.Advance(items.Length);
+        copyWorker.CopyTo(ref destination);
+        Count += items.Length;
     }
 
     public void Clear()
     {
-        _bufferWriter.Clear();
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            _buffer.AsSpan(..Count).Clear();
+        }
+
+        Count = 0;
     }
 
-    public void EnsureCapacity(int capacity)
-    {
-        _bufferWriter.EnsureCapacity(capacity);
-    }
+    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
     [Pure]
-    public bool Contains(T item)
-    {
-        return _bufferWriter.WrittenSpan.Contains(item);
-    }
+    public bool Contains(T item) => _buffer.AsSpan(..Count).Contains(item);
 
     public bool Remove(T item)
     {
@@ -156,29 +197,26 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
             return false;
         }
 
-        _bufferWriter.WrittenSpan[(index + 1)..].CopyTo(_bufferWriter.WrittenSpan[index..]);
-        _bufferWriter.Advance(-1);
+        _buffer.AsSpan((index + 1)..).CopyTo(_buffer.AsSpan(index..));
+        Count--;
         return true;
     }
 
     [Pure]
-    public int IndexOf(T item)
-    {
-        return _bufferWriter.WrittenSpan.IndexOf(item);
-    }
+    public int IndexOf(T item) => _buffer.AsSpan(..Count).IndexOf(item);
 
     public void Insert(int index, T item)
     {
-        _bufferWriter.GetSpan();
-        _bufferWriter.Advance(1);
-        _bufferWriter.WrittenSpan[index..^1].CopyTo(_bufferWriter.WrittenSpan[(index + 1)..]);
-        _bufferWriter.WrittenSpan[index] = item;
+        GrowIfNeeded(1);
+        Count++;
+        _buffer.AsSpan(index..^1).CopyTo(_buffer.AsSpan((index + 1)..));
+        _buffer[index] = item;
     }
 
     public void RemoveAt(int index)
     {
-        _bufferWriter.WrittenSpan[(index + 1)..].CopyTo(_bufferWriter.WrittenSpan[index..]);
-        _bufferWriter.Advance(-1);
+        _buffer.AsSpan((index + 1)..).CopyTo(_buffer.AsSpan(index..));
+        Count--;
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
@@ -217,20 +255,21 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
         copyWorker.CopyTo(destination);
     }
 
-    public IEnumerator<T> GetEnumerator() => _bufferWriter.GetEnumerator();
+    [Pure]
+    public IEnumerator<T> GetEnumerator()
+    {
+        int count = Count;
+        T[] buffer = _buffer.Array;
+        for (int i = 0; i < count; i++)
+        {
+            yield return buffer[i];
+        }
+    }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public void Dispose()
-    {
-        _bufferWriter.Dispose();
-    }
-
     [Pure]
-    public bool Equals(PooledList<T>? other)
-    {
-        return ReferenceEquals(this, other) || Count == other?.Count && _bufferWriter.Equals(other._bufferWriter);
-    }
+    public bool Equals(PooledList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals(object? obj)
@@ -239,8 +278,15 @@ public sealed class PooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatab
     }
 
     [Pure]
-    public override int GetHashCode()
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+
+    public static bool operator ==(PooledList<T>? left, PooledList<T>? right)
     {
-        return _bufferWriter.GetHashCode();
+        return Equals(left, right);
+    }
+
+    public static bool operator !=(PooledList<T>? left, PooledList<T>? right)
+    {
+        return !(left == right);
     }
 }

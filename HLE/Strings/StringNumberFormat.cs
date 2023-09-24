@@ -39,7 +39,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         if (!MemoryHelper.UseStackAlloc<char>(charLength))
         {
             using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(charLength);
-            chars = rentedBuffer.AsSpan()[..charLength];
+            chars = rentedBuffer.AsSpan(..charLength);
             chars.FillAscending(minimumCharValue);
             return new(StringPool.Shared.GetOrAdd(chars));
         }

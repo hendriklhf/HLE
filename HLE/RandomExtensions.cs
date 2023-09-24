@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -82,19 +82,31 @@ public static class RandomExtensions
     }
 
     [Pure]
-    public static string NextString(this Random random, int length, char min = char.MinValue, char max = char.MaxValue)
+    public static string NextString(this Random random, int length)
     {
         if (length <= 0)
         {
             return string.Empty;
         }
 
-        string result = StringMarshal.FastAllocateString(length, out Span<char> resultChars);
-        Span<byte> resultBytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(resultChars)), length << 1);
-        random.NextBytes(resultBytes);
+        string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
+        random.Fill(chars);
+        return result;
+    }
+
+    [Pure]
+    public static string NextString(this Random random, int length, char min, char max)
+    {
+        if (length <= 0)
+        {
+            return string.Empty;
+        }
+
+        string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
+        random.Fill(chars);
         for (int i = 0; i < length; i++)
         {
-            resultChars[i] = NumberHelper.BringNumberIntoRange(resultChars[i], min, max);
+            chars[i] = NumberHelper.BringNumberIntoRange(chars[i], min, max);
         }
 
         return result;
@@ -110,6 +122,11 @@ public static class RandomExtensions
         }
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> resultSpan);
+        if (choices.Length == 0)
+        {
+            return result;
+        }
+
         if (!MemoryHelper.UseStackAlloc<int>(length))
         {
             using RentedArray<int> randomIndicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(length);
@@ -179,6 +196,7 @@ public static class RandomExtensions
         random.Write(ref MemoryMarshal.GetReference(span), span.Length);
     }
 
+    [Pure]
     public static T[] Shuffle<T>(this Random random, IEnumerable<T> collection)
     {
         T[] result;
@@ -187,8 +205,7 @@ public static class RandomExtensions
             result = GC.AllocateUninitializedArray<T>(count);
             if (!collection.TryNonEnumeratedCopyTo(result))
             {
-                bool success = collection.TryEnumerateInto(result, out _);
-                Debug.Assert(success);
+                collection.TryEnumerateInto(result, out _);
             }
         }
         else
@@ -203,6 +220,45 @@ public static class RandomExtensions
     public static void Shuffle<T>(this Random random, List<T> collection)
     {
         random.Shuffle(CollectionsMarshal.AsSpan(collection));
+    }
+
+    [Pure]
+    public static ref T GetItem<T>(this Random random, List<T> list)
+    {
+        return ref random.GetItem(CollectionsMarshal.AsSpan(list));
+    }
+
+    [Pure]
+    public static ref T GetItem<T>(this Random random, T[] array)
+    {
+        return ref random.GetItem((ReadOnlySpan<T>)array);
+    }
+
+    [Pure]
+    public static ref T GetItem<T>(this Random random, Span<T> span)
+    {
+        return ref random.GetItem((ReadOnlySpan<T>)span);
+    }
+
+    [Pure]
+    public static ref T GetItem<T>(this Random random, ReadOnlySpan<T> span)
+    {
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            ThrowCantGetItemFromEmptyCollection();
+        }
+
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        int randomIndex = random.Next(spanLength);
+        return ref Unsafe.Add(ref firstItem, randomIndex)!;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ThrowCantGetItemFromEmptyCollection()
+    {
+        throw new InvalidOperationException("Can't get a random item from an empty collection.");
     }
 
     [Pure]
@@ -319,8 +375,7 @@ public static class RandomExtensions
         }
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
-        Span<byte> bytes = MemoryMarshal.CreateSpan(ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(chars)), length << 1);
-        random.GetBytes(bytes);
+        random.Fill(chars);
         return result;
     }
 
@@ -352,5 +407,37 @@ public static class RandomExtensions
     public static void Fill<T>(this RandomNumberGenerator random, Span<T> span) where T : struct
     {
         random.Write(ref MemoryMarshal.GetReference(span), span.Length);
+    }
+
+    [Pure]
+    public static ref T? GetItem<T>(this RandomNumberGenerator random, List<T> list)
+    {
+        return ref random.GetItem(CollectionsMarshal.AsSpan(list));
+    }
+
+    [Pure]
+    public static ref T? GetItem<T>(this RandomNumberGenerator random, T[] array)
+    {
+        return ref random.GetItem(array.AsSpan());
+    }
+
+    [Pure]
+    public static ref T? GetItem<T>(this RandomNumberGenerator random, Span<T> span)
+    {
+        return ref random.GetItem((ReadOnlySpan<T>)span);
+    }
+
+    [Pure]
+    public static ref T? GetItem<T>(this RandomNumberGenerator random, ReadOnlySpan<T> span)
+    {
+        int spanLength = span.Length;
+        if (spanLength == 0)
+        {
+            return ref Unsafe.NullRef<T?>();
+        }
+
+        ref T firstItem = ref MemoryMarshal.GetReference(span);
+        int randomIndex = random.GetInt32(0, spanLength);
+        return ref Unsafe.Add(ref firstItem, randomIndex)!;
     }
 }

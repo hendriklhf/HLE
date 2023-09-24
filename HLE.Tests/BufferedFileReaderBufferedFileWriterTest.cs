@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace HLE.Tests;
 
 [TestClass]
-public class BufferedFileOperationsTest
+public class BufferedFileReaderBufferedFileWriterTest
 {
     private static readonly string _tempFileDirectory = $"{Path.GetTempPath()}HLE.Tests.BufferedFileOperationsTest\\";
 

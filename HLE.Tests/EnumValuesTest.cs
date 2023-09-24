@@ -40,11 +40,28 @@ public class EnumValuesTest
 
         values = EnumValues.GetValuesAsUnderlyingType<TestEnum, int>();
         Assert.IsTrue(values.SequenceEqual(actualValues));
+    }
 
-        Span<int> sortedValues = values.ToArray().AsSpan();
+    [TestMethod]
+    public void ValuesAreSortedTest()
+    {
+        ReadOnlySpan<TestEnum> values = EnumValues.GetValues<TestEnum>();
+        Span<TestEnum> sortedValues = stackalloc TestEnum[values.Length];
+        values.CopyTo(sortedValues);
         sortedValues.Sort();
-        Assert.IsTrue(sortedValues.SequenceEqual(values));
-        Assert.IsTrue(sortedValues.SequenceEqual(actualValues));
+
+        Assert.IsTrue(values.SequenceEqual(sortedValues));
+    }
+
+    [TestMethod]
+    public void ValuesAsUnderlyingTypeAreSortedTest()
+    {
+        ReadOnlySpan<int> values = EnumValues.GetValuesAsUnderlyingType<TestEnum, int>();
+        Span<int> sortedValues = stackalloc int[values.Length];
+        values.CopyTo(sortedValues);
+        sortedValues.Sort();
+
+        Assert.IsTrue(values.SequenceEqual(sortedValues));
     }
 
     [TestMethod]

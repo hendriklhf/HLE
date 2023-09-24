@@ -7,7 +7,8 @@ namespace HLE.Memory;
 
 /// <summary>
 /// A pool of arrays from which you can rent arrays and return arrays to in order to reuse them.<br/>
-/// Arrays rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.
+/// Arrays rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.<br/>
+/// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
 public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
@@ -15,20 +16,20 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     public static ArrayPool<T> Shared { get; } = new();
 
     private readonly ObjectPool<T[]>[] _pools;
-    private readonly int _indexOffset = BitOperations.TrailingZeroCount(_minimumArrayLength);
+    private readonly int _indexOffset = BitOperations.TrailingZeroCount(MinimumArrayLength);
 
-    private const int _minimumArrayLength = 0x10; // has to be pow of 2
-    private const int _maximumArrayLength = 0x100000; // has to be pow of 2
+    internal const int MinimumArrayLength = 0x10; // has to be pow of 2
+    internal const int MaximumArrayLength = 0x100000; // has to be pow of 2
 
     public ArrayPool()
     {
-        int poolCount = BitOperations.TrailingZeroCount(_maximumArrayLength) - BitOperations.TrailingZeroCount(_minimumArrayLength) + 1;
+        int poolCount = BitOperations.TrailingZeroCount(MaximumArrayLength) - BitOperations.TrailingZeroCount(MinimumArrayLength) + 1;
         _pools = new ObjectPool<T[]>[poolCount];
-        for (int i = _minimumArrayLength; i <= _maximumArrayLength; i <<= 1)
+        for (int arrayLength = MinimumArrayLength; arrayLength <= MaximumArrayLength; arrayLength <<= 1)
         {
-            int poolIndex = BitOperations.TrailingZeroCount(i) - _indexOffset;
-            int arrayLength = i;
-            _pools[poolIndex] = new(() => GC.AllocateUninitializedArray<T>(arrayLength));
+            int poolIndex = BitOperations.TrailingZeroCount(arrayLength) - _indexOffset;
+            ObjectPool<T[]>.ArrayFactory<T> factory = new(arrayLength, true);
+            _pools[poolIndex] = new(factory);
         }
     }
 
@@ -43,15 +44,15 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
         int length = (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
         switch (length)
         {
-            case > _maximumArrayLength:
+            case > MaximumArrayLength:
                 return GC.AllocateUninitializedArray<T>(length);
-            case < _minimumArrayLength:
-                length = _minimumArrayLength;
+            case < MinimumArrayLength:
+                length = MinimumArrayLength;
                 break;
         }
 
         int poolIndex = BitOperations.TrailingZeroCount(length) - _indexOffset;
-        ObjectPool<T[]> pool = _pools[poolIndex];
+        ObjectPool<T[]> pool = _pools[poolIndex]; // TODO: make it rent from a pool of larger arrays if the exact pool doesnt have any arrays available
         return pool.Rent();
     }
 
@@ -80,7 +81,7 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryGetPoolIndex(T[] array, out int poolIndex)
     {
-        if (array is not { Length: >= _minimumArrayLength and <= _maximumArrayLength })
+        if (array is not { Length: >= MinimumArrayLength and <= MaximumArrayLength })
         {
             poolIndex = -1;
             return false;
@@ -104,16 +105,19 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
         }
     }
 
+    [Pure]
     public bool Equals(ArrayPool<T>? other)
     {
         return ReferenceEquals(this, other);
     }
 
+    [Pure]
     public override bool Equals(object? obj)
     {
         return obj is ArrayPool<T> other && Equals(other);
     }
 
+    [Pure]
     public override int GetHashCode()
     {
         return RuntimeHelpers.GetHashCode(this);

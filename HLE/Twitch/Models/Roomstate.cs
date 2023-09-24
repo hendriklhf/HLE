@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using HLE.Marshalling;
 
 namespace HLE.Twitch.Models;
 
@@ -8,7 +7,7 @@ namespace HLE.Twitch.Models;
 /// Arguments used when the state of a chat room changed.
 /// For example, if emote-only mode has been turned on.<br/>
 /// </summary>
-public readonly struct Roomstate : IEquatable<Roomstate>
+public readonly struct Roomstate(ChangedRoomStates changedRoomStates) : IEquatable<Roomstate>
 {
     /// <summary>
     /// Indicates whether emote-only mode is turned on or off.
@@ -50,21 +49,14 @@ public readonly struct Roomstate : IEquatable<Roomstate>
     /// <summary>
     /// Flags of the states that changed.
     /// </summary>
-    public ChangedRoomStates ChangedStates { get; }
-
-    /// <summary>
-    /// The default constructor of <see cref="Roomstate"/>.
-    /// </summary>
-    public Roomstate(ChangedRoomStates changedStates)
-    {
-        ChangedStates = changedStates;
-    }
+    public ChangedRoomStates ChangedStates { get; } = changedRoomStates;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(Roomstate other)
     {
-        ref Roomstate thisRoomstate = ref Unsafe.AsRef(in this);
-        return StructMarshal.EqualsBitwise(ref thisRoomstate, ref other);
+        return EmoteOnly == other.EmoteOnly && FollowersOnly == other.FollowersOnly && R9K == other.R9K &&
+               Channel == other.Channel && Channel == other.Channel && SlowMode == other.SlowMode
+               && SubsOnly == other.SubsOnly && ChangedStates == other.ChangedStates;
     }
 
     public override bool Equals(object? obj)

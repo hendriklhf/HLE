@@ -8,7 +8,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// A class that handles incoming IRC messages.
 /// </summary>
-public sealed class IrcHandler : IEquatable<IrcHandler>
+public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
 {
     /// <summary>
     /// Is invoked if a JOIN command has been received.
@@ -45,7 +45,14 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     /// </summary>
     public event EventHandler<Notice>? OnNoticeReceived;
 
-    private readonly ChatMessageParser _chatMessageParser;
+    private readonly ChatMessageParser _chatMessageParser = parsingMode switch
+    {
+        ParsingMode.TimeEfficient => new TimeEfficientChatMessageParser(),
+        ParsingMode.Balanced => new BalancedChatMessageParser(),
+        ParsingMode.MemoryEfficient => new MemoryEfficientChatMessageParser(),
+        _ => throw new ArgumentOutOfRangeException(nameof(parsingMode), parsingMode, null)
+    };
+
     private readonly RoomstateParser _roomstateParser = new();
     private readonly MembershipMessageParser _membershipMessageParser = new();
     private readonly NoticeParser _noticeParser = new();
@@ -60,17 +67,6 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     // TODO: WHISPER, CLEARMSG, CLEARCHAT, USERSTATE, USERNOTICE
 
     private const int _maximumWhitespacesNeededToHandle = 5;
-
-    public IrcHandler(ParsingMode parsingMode)
-    {
-        _chatMessageParser = parsingMode switch
-        {
-            ParsingMode.TimeEfficient => new TimeEfficientChatMessageParser(),
-            ParsingMode.Balanced => new BalancedChatMessageParser(),
-            ParsingMode.MemoryEfficient => new MemoryEfficientChatMessageParser(),
-            _ => throw new ArgumentOutOfRangeException(nameof(parsingMode), parsingMode, null)
-        };
-    }
 
     /// <summary>
     /// Handles a messages and invokes an event, if the message could be handled.

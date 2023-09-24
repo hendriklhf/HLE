@@ -12,11 +12,10 @@ public class CollectionHelperTest
     [TestMethod]
     public void RandomTest()
     {
-        const int arrLength = 10;
-        string[] arr = TestHelper.CreateRandomStringArray(arrLength, 10);
+        string[] array = Enumerable.Range(0, 1000).Select(static _ => Random.Shared.NextString(25)).ToArray();
         for (int i = 0; i < 1000; i++)
         {
-            Assert.IsTrue(arr.Contains(arr.Random()));
+            Assert.IsTrue(array.Contains(Random.Shared.GetItem(array)));
         }
     }
 

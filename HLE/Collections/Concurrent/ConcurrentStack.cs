@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -22,21 +23,35 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
     public int Capacity => _buffer.Length;
 
     internal T[] _buffer;
-    private readonly SemaphoreSlim _bufferLock = new(1);
+    private SemaphoreSlim? _bufferLock = new(1);
 
     private const int _defaultCapacity = 4;
+    private const int _maximumCapacity = 1 << 30;
+
+    public ConcurrentStack(int capacity)
+    {
+        if (capacity < _defaultCapacity)
+        {
+            capacity = _defaultCapacity;
+        }
+
+        _buffer = GC.AllocateUninitializedArray<T>(capacity);
+    }
 
     public ConcurrentStack() : this(_defaultCapacity)
     {
     }
 
-    public ConcurrentStack(int capacity)
+    public void Dispose()
     {
-        _buffer = new T[capacity];
+        _bufferLock?.Dispose();
+        _bufferLock = null;
     }
 
     public void Push(T item)
     {
+        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
+
         _bufferLock.Wait();
         try
         {
@@ -55,12 +70,14 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
 
     public T Pop()
     {
+        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
+
         _bufferLock.Wait();
         try
         {
             if (Count == 0)
             {
-                throw new InvalidOperationException("The stack is empty.");
+                ThrowStackIsEmpty();
             }
 
             int index = --Count;
@@ -79,8 +96,17 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         }
     }
 
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowStackIsEmpty()
+    {
+        throw new InvalidOperationException("The stack is empty.");
+    }
+
     public bool TryPop([MaybeNullWhen(false)] out T item)
     {
+        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
+
         _bufferLock.Wait();
         try
         {
@@ -108,6 +134,8 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
 
     public void Clear()
     {
+        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
+
         _bufferLock.Wait();
         try
         {
@@ -127,15 +155,23 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GrowBuffer()
     {
-        if (_buffer.Length == int.MaxValue)
+        if (_buffer.Length == _maximumCapacity)
         {
-            throw new InvalidOperationException("The maximum stack capacity has been reached.");
+            ThrowMaximumStackCapacityReached();
         }
 
         int newBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + 1));
         T[] newBuffer = GC.AllocateUninitializedArray<T>(newBufferLength);
-        _buffer.CopyToUnsafe(newBuffer);
+        CopyWorker<T> copyWorker = new(_buffer.AsSpan(0, Count));
+        copyWorker.CopyTo(newBuffer);
         _buffer = newBuffer;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumStackCapacityReached()
+    {
+        throw new InvalidOperationException("The maximum stack capacity has been reached.");
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
@@ -179,11 +215,6 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         return _buffer.AsSpan(0, Count);
     }
 
-    public void Dispose()
-    {
-        _bufferLock.Dispose();
-    }
-
     public IEnumerator<T> GetEnumerator()
     {
         for (int i = 0; i < Count; i++)
@@ -192,11 +223,9 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+    [Pure]
     public bool Equals(ConcurrentStack<T>? other)
     {
         return ReferenceEquals(this, other);

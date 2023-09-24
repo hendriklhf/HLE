@@ -187,7 +187,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Color ParseHexColor(ref char numberReference)
     {
         const byte charAAndZeroDiff = _upperCaseAMinus10 - _charZero;
