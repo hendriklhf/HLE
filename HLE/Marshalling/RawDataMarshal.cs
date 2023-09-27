@@ -29,7 +29,7 @@ public static unsafe class RawDataMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref nuint GetMethodTablePointer<T>(T obj) where T : class
+    private static ref nuint GetMethodTablePointer<T>(T obj) where T : class
     {
         nuint pointer = *(nuint*)&obj;
         return ref Unsafe.AsRef<nuint>((void*)pointer);
