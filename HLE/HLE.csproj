@@ -3,17 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <OutputType>Library</OutputType>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>disable</ImplicitUsings>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-        <NeutralLanguage>en-US</NeutralLanguage>
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <WarningsAsErrors>Nullable</WarningsAsErrors>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <DebugType>embedded</DebugType>
-        <NoWarn>CS1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -32,10 +22,6 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <NoWarn>IDE0005</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

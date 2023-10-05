@@ -202,8 +202,7 @@ public class RentedArrayTest
         array.Dispose();
         array.Dispose();
 
-        Assert.AreEqual(null, array._array);
-        Assert.IsTrue(ReferenceEquals(null, array._array));
+        Assert.IsTrue(array is { _array: null });
 
         Assert.ThrowsException<ObjectDisposedException>(static () =>
         {
@@ -238,12 +237,12 @@ public class RentedArrayTest
     public void AsSpan_Integer_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
-        Assert.IsTrue(array.AsSpan(5) == array._array.AsSpan(5));
+        Assert.IsTrue(array.AsSpan(5..) == array._array.AsSpan(5));
 
         Assert.ThrowsException<ArgumentOutOfRangeException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
-            _ = array.AsSpan(array.Length + 1);
+            _ = array.AsSpan((array.Length + 1)..);
         });
     }
 
@@ -284,12 +283,12 @@ public class RentedArrayTest
     public void AsMemory_Integer_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
-        Assert.IsTrue(array.AsMemory(5).Equals(array._array.AsMemory(5)));
+        Assert.IsTrue(array.AsMemory(5..).Equals(array._array.AsMemory(5)));
 
         Assert.ThrowsException<ArgumentOutOfRangeException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
-            _ = array.AsMemory(array.Length + 1);
+            _ = array.AsMemory((array.Length + 1)..);
         });
     }
 
