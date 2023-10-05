@@ -16,6 +16,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     };
 
     private const int _maxAmountOfArguments = 8;
+    private const string _indentation = "    ";
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -73,7 +74,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private static string CreateAppendMethod(ReadOnlySpan<string> argumentTypes)
     {
         StringBuilder methodBuilder = new();
-        methodBuilder.Append("public void Append(");
+        methodBuilder.Append(_indentation).Append("public void Append(");
         for (int i = 0; i < argumentTypes.Length; i++)
         {
             if (i > 0)
@@ -84,13 +85,13 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
             methodBuilder.Append(argumentTypes[i]).Append(" arg").Append(i);
         }
 
-        methodBuilder.AppendLine(")").AppendLine("{");
+        methodBuilder.AppendLine(")").Append(_indentation).AppendLine("{");
         for (int i = 0; i < argumentTypes.Length; i++)
         {
-            methodBuilder.Append("Append(arg").Append(i).AppendLine(");");
+            methodBuilder.Append(_indentation + _indentation).Append("Append(arg").Append(i).AppendLine(");");
         }
 
-        methodBuilder.AppendLine("}");
+        methodBuilder.Append(_indentation).AppendLine("}");
         return methodBuilder.ToString();
     }
 }

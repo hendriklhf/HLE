@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -15,22 +16,43 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
 {
     public static ArrayPool<T> Shared { get; } = new();
 
+    internal static bool IsCommonlyPooledType => GetIsCommonlyPooledType();
+
+    internal static ReadOnlySpan<int> ObjectPoolCapacities => new[]
+    {
+        // 16,32,64,128,256,512
+        128, 128, 128, 64, 64, 64,
+        // 1024,2048,4096,8192
+        32, 32, 32, 32,
+        // 16384,32768,65536,
+        16, 16, 16,
+        // 131072,262144,524288,1048576
+        8, 8, 8, 8
+    };
+
     private readonly ObjectPool<T[]>[] _pools;
-    private readonly int _indexOffset = BitOperations.TrailingZeroCount(MinimumArrayLength);
 
     internal const int MinimumArrayLength = 0x10; // has to be pow of 2
     internal const int MaximumArrayLength = 0x100000; // has to be pow of 2
+    internal const int IndexOffset = 4; // BitOperations.TrailingZeroCount(MinimumArrayLength)
 
     public ArrayPool()
     {
         int poolCount = BitOperations.TrailingZeroCount(MaximumArrayLength) - BitOperations.TrailingZeroCount(MinimumArrayLength) + 1;
         _pools = new ObjectPool<T[]>[poolCount];
-        for (int arrayLength = MinimumArrayLength; arrayLength <= MaximumArrayLength; arrayLength <<= 1)
+        int arrayLength = MinimumArrayLength;
+        for (int i = 0; i < _pools.Length; i++)
         {
-            int poolIndex = BitOperations.TrailingZeroCount(arrayLength) - _indexOffset;
             ObjectPool<T[]>.ArrayFactory<T> factory = new(arrayLength, true);
-            _pools[poolIndex] = new(factory);
+            _pools[i] = new(factory)
+            {
+                Capacity = ObjectPoolCapacities[i]
+            };
+            arrayLength <<= 1;
         }
+
+        Debug.Assert(ObjectPoolCapacities.Length == _pools.Length);
+        Debug.Assert(arrayLength >> 1 == MaximumArrayLength);
     }
 
     [Pure]
@@ -51,9 +73,25 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
                 break;
         }
 
-        int poolIndex = BitOperations.TrailingZeroCount(length) - _indexOffset;
-        ObjectPool<T[]> pool = _pools[poolIndex]; // TODO: make it rent from a pool of larger arrays if the exact pool doesnt have any arrays available
-        return pool.Rent();
+        int poolIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
+        ref ObjectPool<T[]> pool = ref _pools[poolIndex];
+        ObjectPool<T[]> initialPool = pool;
+        int poolsLength = _pools.Length;
+        int tryCount = 0;
+        const int maximumTryCount = 3;
+        while (poolIndex < poolsLength && tryCount < maximumTryCount)
+        {
+            if (pool.TryRent(out T[]? array))
+            {
+                return array;
+            }
+
+            pool = ref Unsafe.Add(ref pool, 1);
+            poolIndex++;
+            tryCount++;
+        }
+
+        return initialPool.Rent();
     }
 
     [Pure]
@@ -79,7 +117,7 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool TryGetPoolIndex(T[] array, out int poolIndex)
+    private static bool TryGetPoolIndex(T[] array, out int poolIndex)
     {
         if (array is not { Length: >= MinimumArrayLength and <= MaximumArrayLength })
         {
@@ -93,7 +131,7 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
             length = (int)(BitOperations.RoundUpToPowerOf2((uint)length) >> 1);
         }
 
-        poolIndex = BitOperations.TrailingZeroCount(length) - _indexOffset;
+        poolIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
         return true;
     }
 
@@ -106,16 +144,30 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [Pure]
-    public bool Equals(ArrayPool<T>? other)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool GetIsCommonlyPooledType()
     {
-        return ReferenceEquals(this, other);
+        return typeof(T) == typeof(byte) ||
+               typeof(T) == typeof(sbyte) ||
+               typeof(T) == typeof(short) ||
+               typeof(T) == typeof(ushort) ||
+               typeof(T) == typeof(int) ||
+               typeof(T) == typeof(uint) ||
+               typeof(T) == typeof(long) ||
+               typeof(T) == typeof(ulong) ||
+               typeof(T) == typeof(nint) ||
+               typeof(T) == typeof(nuint) ||
+               typeof(T) == typeof(bool) ||
+               typeof(T) == typeof(string) ||
+               typeof(T) == typeof(char) ||
+               typeof(T).IsEnum;
     }
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is ArrayPool<T> other && Equals(other);
-    }
+    public bool Equals(ArrayPool<T>? other) => ReferenceEquals(this, other);
+
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode()

@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -80,128 +81,99 @@ public sealed partial class PooledStringBuilder(int capacity)
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumBufferSizeReached()
-    {
-        throw new InvalidOperationException("The maximum buffer size has been reached.");
-    }
+        => throw new InvalidOperationException("The maximum buffer size has been reached.");
 
-    public void Advance(int length)
-    {
-        Length += length;
-    }
+    public void Advance(int length) => Length += length;
 
     public void Append(scoped ReadOnlySpan<char> span)
     {
+        switch (span.Length)
+        {
+            case 0:
+                return;
+            case 1:
+                Append(span[0]);
+                return;
+        }
+
         if (FreeBufferSize < span.Length)
         {
             GrowBuffer(span.Length);
         }
 
-        ValueStringBuilder builder = new(FreeBufferSpan);
-        builder.Append(span);
-        Advance(builder.Length);
+        Debug.Assert(FreeBufferSize >= span.Length);
+
+        ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);
+        ref char source = ref MemoryMarshal.GetReference(span);
+        CopyWorker<char>.Memmove(ref destination, ref source, (nuint)span.Length);
+        Length += span.Length;
     }
 
     public void Append(char c)
     {
-        if (FreeBufferSize <= 0)
+        if (Length == Capacity)
         {
             GrowBuffer(1);
         }
 
-        _buffer[Length++] = c;
+        Unsafe.Add(ref _buffer.Reference, Length++) = c;
     }
 
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<byte>(value, format);
-    }
+        => Append<byte>(value, format);
 
     public void Append(sbyte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<sbyte>(value, format);
-    }
+        => Append<sbyte>(value, format);
 
     public void Append(short value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<short>(value, format);
-    }
+        => Append<short>(value, format);
 
     public void Append(ushort value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<ushort>(value, format);
-    }
+        => Append<ushort>(value, format);
 
     public void Append(int value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<int>(value, format);
-    }
+        => Append<int>(value, format);
 
     public void Append(uint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<uint>(value, format);
-    }
+        => Append<uint>(value, format);
 
     public void Append(long value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<long>(value, format);
-    }
+        => Append<long>(value, format);
 
     public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<ulong>(value, format);
-    }
+        => Append<ulong>(value, format);
 
     public void Append(Int128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<Int128>(value, format);
-    }
+        => Append<Int128>(value, format);
 
     public void Append(UInt128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<UInt128>(value, format);
-    }
+        => Append<UInt128>(value, format);
 
     public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<float>(value, format);
-    }
+        => Append<float>(value, format);
 
     public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<double>(value, format);
-    }
+        => Append<double>(value, format);
 
     public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<DateTime>(dateTime, format);
-    }
+        => Append<DateTime>(dateTime, format);
 
     public void Append(DateTimeOffset dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<DateTimeOffset>(dateTime, format);
-    }
+        => Append<DateTimeOffset>(dateTime, format);
 
     public void Append(TimeSpan timeSpan, [StringSyntax(StringSyntaxAttribute.TimeSpanFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<TimeSpan>(timeSpan, format);
-    }
+        => Append<TimeSpan>(timeSpan, format);
 
     public void Append(DateOnly dateOnly, [StringSyntax(StringSyntaxAttribute.DateOnlyFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<DateOnly>(dateOnly, format);
-    }
+        => Append<DateOnly>(dateOnly, format);
 
     public void Append(TimeOnly timeOnly, [StringSyntax(StringSyntaxAttribute.TimeOnlyFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<TimeOnly>(timeOnly, format);
-    }
+        => Append<TimeOnly>(timeOnly, format);
 
     public void Append(Guid guid, [StringSyntax(StringSyntaxAttribute.GuidFormat)] ReadOnlySpan<char> format = default)
-    {
-        Append<Guid>(guid, format);
-    }
+        => Append<Guid>(guid, format);
 
     public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
     {
@@ -230,22 +202,14 @@ public sealed partial class PooledStringBuilder(int capacity)
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
-    {
-        throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
-    }
+        => throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
 
     void ICollection<char>.Clear() => Clear();
 
-    public void Clear()
-    {
-        Length = 0;
-    }
+    public void Clear() => Length = 0;
 
     [Pure]
-    public override string ToString()
-    {
-        return new(WrittenSpan);
-    }
+    public override string ToString() => new(WrittenSpan);
 
     public void CopyTo(List<char> destination, int offset = 0)
     {
@@ -283,26 +247,15 @@ public sealed partial class PooledStringBuilder(int capacity)
         copyWorker.CopyTo(destination);
     }
 
-    void ICollection<char>.Add(char c)
-    {
-        Append(c);
-    }
+    void ICollection<char>.Add(char c) => Append(c);
 
-    bool ICollection<char>.Contains(char c)
-    {
-        return WrittenSpan.Contains(c);
-    }
+    bool ICollection<char>.Contains(char c) => WrittenSpan.Contains(c);
 
     bool ICollection<char>.Remove(char c) => throw new NotSupportedException();
 
-    [Pure]
-    public IEnumerator<char> GetEnumerator()
-    {
-        for (int i = 0; i < Length; i++)
-        {
-            yield return WrittenSpan[i];
-        }
-    }
+    public ArrayEnumerator<char> GetEnumerator() => new(_buffer.Array, 0, Length);
+
+    IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

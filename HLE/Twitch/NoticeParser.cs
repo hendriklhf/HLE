@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
@@ -72,20 +73,14 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
         }
     }
 
-    public bool Equals(NoticeParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(NoticeParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is NoticeParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(NoticeParser? left, NoticeParser? right)
     {

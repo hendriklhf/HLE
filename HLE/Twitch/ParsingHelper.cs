@@ -8,7 +8,7 @@ namespace HLE.Twitch;
 
 internal static class ParsingHelper
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetIndicesOfWhitespaces(ReadOnlySpan<char> ircMessage, ref int indicesBufferReference, int maximumOfIndicesNeeded)
     {
         int indicesLength = 0;

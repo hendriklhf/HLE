@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
@@ -17,7 +18,7 @@ namespace HLE.Twitch;
 /// <summary>
 /// Represents a Twitch chat client.
 /// </summary>
-public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
+public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
 {
     /// <summary>
     /// The username of the client.
@@ -91,8 +92,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     internal readonly PooledList<string> _ircChannels = new();
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
-    private static readonly Regex _channelPattern = RegexPool.Shared.GetOrAdd(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-
     private const string _anonymousUsername = "justinfan123";
     private const char _channelPrefix = '#';
     private const string _pongPrefix = "PONG :";
@@ -138,27 +137,18 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
-        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(_ircChannels.AsSpan().AsMemoryUnsafe());
+        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
         _ircHandler.OnNoticeReceived += (_, e) => OnNoticeReceived?.Invoke(this, e);
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    public async ValueTask SendAsync(string channel, string message)
-    {
-        await SendAsync(channel.AsMemory(), message.AsMemory());
-    }
+    public async ValueTask SendAsync(string channel, string message) => await SendAsync(channel.AsMemory(), message.AsMemory());
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    public async ValueTask SendAsync(string channel, ReadOnlyMemory<char> message)
-    {
-        await SendAsync(channel.AsMemory(), message);
-    }
+    public async ValueTask SendAsync(string channel, ReadOnlyMemory<char> message) => await SendAsync(channel.AsMemory(), message);
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    public async ValueTask SendAsync(ReadOnlyMemory<char> channel, string message)
-    {
-        await SendAsync(channel, message.AsMemory());
-    }
+    public async ValueTask SendAsync(ReadOnlyMemory<char> channel, string message) => await SendAsync(channel, message.AsMemory());
 
     /// <summary>
     /// Asynchronously sends a chat message.
@@ -182,10 +172,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="SendAsync(long,ReadOnlyMemory{char})"/>
-    public async ValueTask SendAsync(long channelId, string message)
-    {
-        await SendAsync(channelId, message.AsMemory());
-    }
+    public async ValueTask SendAsync(long channelId, string message) => await SendAsync(channelId, message.AsMemory());
 
     /// <summary>
     /// Asynchronously sends a chat message.
@@ -209,10 +196,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
-    public async ValueTask SendRawAsync(string rawMessage)
-    {
-        await SendRawAsync(rawMessage.AsMemory());
-    }
+    public async ValueTask SendRawAsync(string rawMessage) => await SendRawAsync(rawMessage.AsMemory());
 
     /// <summary>
     /// Asynchronously sends a raw message to the chat server.
@@ -238,13 +222,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        await ConnectAsync(_ircChannels.AsSpan().AsMemoryUnsafe());
+        await ConnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
     }
 
-    private async Task ConnectAsync(ReadOnlyMemory<string> ircChannels)
-    {
-        await _client.ConnectAsync(ircChannels);
-    }
+    private async Task ConnectAsync(ReadOnlyMemory<string> ircChannels) => await _client.ConnectAsync(ircChannels);
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask JoinChannelsAsync(IEnumerable<string> channels)
@@ -261,15 +242,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask JoinChannelsAsync(List<string> channels)
-    {
-        await JoinChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
-    }
+        => await JoinChannelsAsync(SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(channels)));
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    public async ValueTask JoinChannelsAsync(params string[] channels)
-    {
-        await JoinChannelsAsync(channels.AsMemory());
-    }
+    public async ValueTask JoinChannelsAsync(params string[] channels) => await JoinChannelsAsync(channels.AsMemory());
 
     /// <summary>
     /// If the client is not connected, adds the channels to the channel list, otherwise asynchronously connects the client to the channels.
@@ -285,10 +261,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="JoinChannelAsync(ReadOnlyMemory{char})"/>
-    public async ValueTask JoinChannelAsync(string channel)
-    {
-        await JoinChannelAsync(channel.AsMemory());
-    }
+    public async ValueTask JoinChannelAsync(string channel) => await JoinChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// If the client is not connected, adds the channel to the channel list, otherwise asynchronously connects the client to the channel.
@@ -306,10 +279,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="LeaveChannelAsync(ReadOnlyMemory{char})"/>
-    public async ValueTask LeaveChannelAsync(string channel)
-    {
-        await LeaveChannelAsync(channel.AsMemory());
-    }
+    public async ValueTask LeaveChannelAsync(string channel) => await LeaveChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// If the client is not connected, removes the channel from the channel list, otherwise asynchronously leaves the channel.
@@ -346,15 +316,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask LeaveChannelsAsync(List<string> channels)
-    {
-        await LeaveChannelsAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
-    }
+        => await LeaveChannelsAsync(SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(channels)));
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
-    public async ValueTask LeaveChannelsAsync(params string[] channels)
-    {
-        await LeaveChannelsAsync(channels.AsMemory());
-    }
+    public async ValueTask LeaveChannelsAsync(params string[] channels) => await LeaveChannelsAsync(channels.AsMemory());
 
     /// <summary>
     /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
@@ -375,7 +340,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (IsConnected)
         {
-            await LeaveChannelsAsync(_ircChannels.AsSpan().AsMemoryUnsafe());
+            await LeaveChannelsAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
         }
 
         Channels.Clear();
@@ -409,9 +374,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     private void IrcHandlerOnChatMessageReceived(object? sender, IChatMessage msg)
-    {
-        OnChatMessageReceived?.Invoke(this, msg);
-    }
+        => OnChatMessageReceived?.Invoke(this, msg);
 
     private void IrcHandlerOnRoomstateReceived(object? sender, Roomstate roomstate)
     {
@@ -446,7 +409,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
             _client.CancelTasks();
             await Task.Delay(TimeSpan.FromSeconds(10));
-            await _client.ConnectAsync(_ircChannels.AsSpan().AsMemoryUnsafe());
+            await _client.ConnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
             await Task.Delay(TimeSpan.FromSeconds(5));
         }
         finally
@@ -465,7 +428,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     private static int FormatChannel(ReadOnlySpan<char> channel, bool withHashtag, Span<char> result)
     {
-        if (!_channelPattern.IsMatch(channel))
+        if (!GetChannelPattern().IsMatch(channel))
         {
             throw new FormatException($"The channel name (\"{channel}\") is in an invalid format.");
         }
@@ -493,6 +456,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         return channel.Length;
     }
 
+    [GeneratedRegex(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
+    private static partial Regex GetChannelPattern();
+
     /// <inheritdoc cref="IDisposable.Dispose"/>
     public void Dispose()
     {
@@ -501,20 +467,14 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _ircChannels.Dispose();
     }
 
-    public bool Equals(TwitchClient? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(TwitchClient? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is TwitchClient other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(TwitchClient? left, TwitchClient? right)
     {

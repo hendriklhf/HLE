@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -8,13 +7,6 @@ namespace HLE.Memory;
 
 public sealed partial class ObjectPool<T>
 {
-    public interface IFactory
-    {
-        T Create();
-
-        void Return(T obj);
-    }
-
     public sealed class ArrayFactory<TElement> : IFactory
     {
         public int ArrayLength { get; }
@@ -45,7 +37,6 @@ public sealed partial class ObjectPool<T>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Create()
         {
-            Debug.Assert(typeof(TElement[]) == typeof(T));
             TElement[] array = GC.AllocateUninitializedArray<TElement>(ArrayLength);
             return Unsafe.As<TElement[], T>(ref array);
         }
@@ -58,7 +49,6 @@ public sealed partial class ObjectPool<T>
                 return;
             }
 
-            Debug.Assert(typeof(T) == typeof(TElement[]));
             TElement[] array = Unsafe.As<T, TElement[]>(ref obj);
             Array.Clear(array);
         }
@@ -66,25 +56,11 @@ public sealed partial class ObjectPool<T>
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowGenericParameterIsNotArrayElementType()
-        {
-            throw new InvalidOperationException($"Generic parameter {typeof(TElement)} is not the element type of generic parameter {typeof(T)}");
-        }
+            => throw new InvalidOperationException($"Generic parameter {typeof(TElement)} is not the element type of generic parameter {typeof(T)}");
 
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowGenericParameterIsNotArray()
-        {
-            throw new InvalidOperationException($"Generic parameter {typeof(T)} is not an array type.");
-        }
-    }
-
-    public sealed class AnonymousFactory(Func<T> createFunction, Action<T>? returnAction = null) : IFactory
-    {
-        private readonly Func<T> _createFunction = createFunction;
-        private readonly Action<T>? _returnAction = returnAction;
-
-        public T Create() => _createFunction();
-
-        public void Return(T obj) => _returnAction?.Invoke(obj);
+            => throw new InvalidOperationException($"Generic parameter {typeof(T)} is not an array type.");
     }
 }

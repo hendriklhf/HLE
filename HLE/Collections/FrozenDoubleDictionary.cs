@@ -72,16 +72,10 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode()

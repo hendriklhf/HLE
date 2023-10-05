@@ -128,20 +128,14 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         return badges;
     }
 
-    public bool Equals(MemoryEfficientChatMessageParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(MemoryEfficientChatMessageParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is MemoryEfficientChatMessageParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(MemoryEfficientChatMessageParser? left, MemoryEfficientChatMessageParser? right)
     {

@@ -12,7 +12,7 @@ public class PooledStringTest
     {
         for (int length = 0; length <= 10_000; length *= 10)
         {
-            using PooledString pooledString = PooledString.Create(length);
+            using PooledString pooledString = new(length);
 
             Assert.AreEqual(length, pooledString.Length);
             Assert.AreEqual(length, pooledString.AsString().Length);
@@ -33,7 +33,7 @@ public class PooledStringTest
         for (int length = 0; length <= 10_000; length *= 10)
         {
             ReadOnlySpan<char> span = Random.Shared.NextString(length);
-            using PooledString pooledString = PooledString.Create(span);
+            using PooledString pooledString = new(span);
 
             Assert.AreEqual(span.Length, pooledString.Length);
             Assert.AreEqual(span.Length, pooledString.AsString().Length);

@@ -25,7 +25,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
     internal T[] _buffer;
     private SemaphoreSlim? _bufferLock = new(1);
 
-    private const int _defaultCapacity = 4;
+    private const int _defaultCapacity = 8;
     private const int _maximumCapacity = 1 << 30;
 
     public ConcurrentStack(int capacity)
@@ -215,26 +215,16 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         return _buffer.AsSpan(0, Count);
     }
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        for (int i = 0; i < Count; i++)
-        {
-            yield return _buffer[i];
-        }
-    }
+    public ArrayEnumerator<T> GetEnumerator() => new(_buffer, 0, Count);
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(ConcurrentStack<T>? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(ConcurrentStack<T>? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is ConcurrentStack<T> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     public override int GetHashCode()
     {

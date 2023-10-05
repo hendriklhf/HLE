@@ -12,9 +12,7 @@ public static class NumberHelper
 {
     [Pure]
     public static int GetNumberLength<T>(T number) where T : INumber<T>
-    {
-        return number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(Math.Abs(double.CreateTruncating(number))) + 1);
-    }
+        => number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(Math.Abs(double.CreateTruncating(number))) + 1);
 
     [Pure]
     [SkipLocalsInit]
@@ -53,24 +51,15 @@ public static class NumberHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static char DigitToChar(byte digit)
-    {
-        return (char)(digit + (byte)'0');
-    }
+    public static char DigitToChar(byte digit) => (char)(digit + (byte)'0');
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte CharToDigit(char c)
-    {
-        return (byte)(c - '0');
-    }
+    public static byte CharToDigit(char c) => (byte)(c - '0');
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte CharToDigit(byte c)
-    {
-        return (byte)(c - '0');
-    }
+    public static byte CharToDigit(byte c) => (byte)(c - '0');
 
     [Pure]
     public static T ParsePositiveNumber<T>(ReadOnlySpan<char> number) where T : INumberBase<T>
@@ -102,8 +91,7 @@ public static class NumberHelper
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T SetSignBitToZero<T>(T number) where T : IBinaryInteger<T>, ISignedNumber<T>
-    {
-        return sizeof(T) switch
+        => sizeof(T) switch
         {
             sizeof(long) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFFFFFFFFFFFFFF),
             sizeof(int) => T.CreateTruncating(number) & T.CreateTruncating(0x7FFFFFFF),
@@ -111,12 +99,10 @@ public static class NumberHelper
             sizeof(sbyte) => T.CreateTruncating(number) & T.CreateTruncating(0x7F),
             _ => ThrowUnreachableException<T>("This shouldn't happen, as all number types are covered.")
         };
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static unsafe Vector512<T> SetSignBitToZero<T>(Vector512<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
-    {
-        return sizeof(T) switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe Vector512<T> SetSignBitToZero<T>(this Vector512<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+        => sizeof(T) switch
         {
             sizeof(long) => numbers & Vector512.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
             sizeof(int) => numbers & Vector512.Create(T.CreateTruncating(0x7FFFFFFF)),
@@ -124,12 +110,10 @@ public static class NumberHelper
             sizeof(sbyte) => numbers & Vector512.Create(T.CreateTruncating(0x7F)),
             _ => ThrowUnreachableException<Vector512<T>>("This shouldn't happen, as all number types are covered.")
         };
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static unsafe Vector256<T> SetSignBitToZero<T>(Vector256<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
-    {
-        return sizeof(T) switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe Vector256<T> SetSignBitToZero<T>(this Vector256<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+        => sizeof(T) switch
         {
             sizeof(long) => numbers & Vector256.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
             sizeof(int) => numbers & Vector256.Create(T.CreateTruncating(0x7FFFFFFF)),
@@ -137,12 +121,10 @@ public static class NumberHelper
             sizeof(sbyte) => numbers & Vector256.Create(T.CreateTruncating(0x7F)),
             _ => ThrowUnreachableException<Vector256<T>>("This shouldn't happen, as all number types are covered.")
         };
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static unsafe Vector128<T> SetSignBitToZero<T>(Vector128<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
-    {
-        return sizeof(T) switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe Vector128<T> SetSignBitToZero<T>(this Vector128<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+        => sizeof(T) switch
         {
             sizeof(long) => numbers & Vector128.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
             sizeof(int) => numbers & Vector128.Create(T.CreateTruncating(0x7FFFFFFF)),
@@ -150,12 +132,10 @@ public static class NumberHelper
             sizeof(sbyte) => numbers & Vector128.Create(T.CreateTruncating(0x7F)),
             _ => ThrowUnreachableException<Vector128<T>>("This shouldn't happen, as all number types are covered.")
         };
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static unsafe Vector64<T> SetSignBitToZero<T>(Vector64<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
-    {
-        return sizeof(T) switch
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe Vector64<T> SetSignBitToZero<T>(this Vector64<T> numbers) where T : struct, IBinaryInteger<T>, ISignedNumber<T>
+        => sizeof(T) switch
         {
             sizeof(long) => numbers & Vector64.Create(T.CreateTruncating(0x7FFFFFFFFFFFFFFF)),
             sizeof(int) => numbers & Vector64.Create(T.CreateTruncating(0x7FFFFFFF)),
@@ -163,7 +143,6 @@ public static class NumberHelper
             sizeof(sbyte) => numbers & Vector64.Create(T.CreateTruncating(0x7F)),
             _ => ThrowUnreachableException<Vector64<T>>("This shouldn't happen, as all number types are covered.")
         };
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T BringNumberIntoRange<T>(T number, T min, T max) where T : INumber<T>
@@ -210,16 +189,11 @@ public static class NumberHelper
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T ThrowUnreachableException<T>(string message)
-    {
-        throw new UnreachableException(message);
-    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static T ThrowUnreachableException<T>(string message) => throw new UnreachableException(message);
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Throw128BitIntegerNotSupported()
-    {
-        throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
-    }
+        => throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
 }

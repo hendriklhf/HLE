@@ -60,10 +60,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Advance(int count)
-    {
-        Count += count;
-    }
+    public void Advance(int count) => Count += count;
 
     /// <inheritdoc/>
     public Memory<T> GetMemory(int sizeHint = 0)
@@ -157,9 +154,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumBufferCapacityReached()
-    {
-        throw new InvalidOperationException("The maximum buffer capacity has been reached.");
-    }
+        => throw new InvalidOperationException("The maximum buffer capacity has been reached.");
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
@@ -205,10 +200,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
         Advance(1);
     }
 
-    bool ICollection<T>.Contains(T item)
-    {
-        return _buffer.Contains(item);
-    }
+    bool ICollection<T>.Contains(T item) => _buffer.Contains(item);
 
     bool ICollection<T>.Remove(T item)
     {
@@ -226,14 +218,11 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [Pure]
     public bool Equals(PooledBufferWriter<T>? other)
     {
-        return ReferenceEquals(this, other) || Count == other?.Count && _buffer.Equals(other._buffer);
+        return ReferenceEquals(this, other);
     }
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is PooledBufferWriter<T> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode()
@@ -256,18 +245,9 @@ public sealed class PooledBufferWriter<T>(int capacity)
         return $"{thisType.Name}.{nameof(PooledBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Count}]";
     }
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        RentedArray<T> buffer = _buffer;
-        int length = Count;
-        for (int i = 0; i < length; i++)
-        {
-            yield return buffer[i];
-        }
-    }
+    public ArrayEnumerator<T> GetEnumerator() => new(_buffer.Array, 0, Count);
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

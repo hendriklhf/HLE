@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -49,41 +50,39 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
         ReadOnlySpan<byte> nameProperty = "name"u8;
         ReadOnlySpan<byte> typeProperty = "type"u8;
         ReadOnlySpan<byte> twitchTypeValue = "twitch"u8;
+
         while (jsonReader.Read())
         {
-            switch (jsonReader.TokenType)
+            if (jsonReader.TokenType != JsonTokenType.PropertyName || !jsonReader.ValueTextEquals(dataProperty))
             {
-                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(dataProperty):
-                    jsonReader.Read();
-                    jsonReader.Read();
-                    if (!jsonReader.ValueTextEquals(nameProperty))
-                    {
-                        continue;
-                    }
+                continue;
+            }
 
-                    jsonReader.Read();
-                    ReadOnlySpan<byte> channelNameAsBytes = jsonReader.ValueSpan;
-                    jsonReader.Read();
-                    if (!jsonReader.ValueTextEquals(typeProperty))
-                    {
-                        continue;
-                    }
+            jsonReader.Read();
+            jsonReader.Read();
+            if (!jsonReader.ValueTextEquals(nameProperty))
+            {
+                continue;
+            }
 
-                    jsonReader.Read();
-                    if (!jsonReader.ValueTextEquals(twitchTypeValue))
-                    {
-                        continue;
-                    }
+            jsonReader.Read();
+            ReadOnlySpan<byte> channelNameAsBytes = jsonReader.ValueSpan;
+            jsonReader.Read();
+            if (!jsonReader.ValueTextEquals(typeProperty))
+            {
+                continue;
+            }
 
-                    string channel = StringPool.Shared.GetOrAdd(channelNameAsBytes, Encoding.UTF8);
-                    if (!channels.Contains(channel))
-                    {
-                        channels.Add(channel);
-                    }
+            jsonReader.Read();
+            if (!jsonReader.ValueTextEquals(twitchTypeValue))
+            {
+                continue;
+            }
 
-                    break;
-                default:
-                    continue;
+            string channel = StringPool.Shared.GetOrAdd(channelNameAsBytes, Encoding.UTF8);
+            if (!channels.Contains(channel))
+            {
+                channels.Add(channel);
             }
         }
 
@@ -94,23 +93,17 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
     private void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
     {
         BufferedFileReader fileReader = new(_windowLayoutPath);
-        fileReader.ReadBytes(windowLayoutFileContentWriter, 20_000);
+        fileReader.ReadBytes(windowLayoutFileContentWriter);
     }
 
-    public bool Equals(ChatterinoSettingsReader? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(ChatterinoSettingsReader? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is ChatterinoSettingsReader other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right)
     {

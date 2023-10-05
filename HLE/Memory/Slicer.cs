@@ -27,13 +27,13 @@ internal readonly ref struct Slicer<T>
     {
     }
 
-    public unsafe Slicer(T* pointer, int length) : this(ref Unsafe.AsRef<T>(pointer), length)
+    public unsafe Slicer(T* buffer, int length) : this(ref Unsafe.AsRef<T>(buffer), length)
     {
     }
 
-    public Slicer(ref T bufferReference, int length)
+    public Slicer(ref T buffer, int length)
     {
-        _buffer = ref bufferReference;
+        _buffer = ref buffer;
         _length = length;
     }
 

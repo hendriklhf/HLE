@@ -262,21 +262,17 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
         copyWorker.CopyTo(destination);
     }
 
-    public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
+    public ArrayEnumerator<T> GetEnumerator() => _list.GetEnumerator();
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(ConcurrentPooledList<T>? other)
-    {
-        return ReferenceEquals(this, other) || Count == other?.Count && _list.Equals(other._list);
-    }
+    public bool Equals(ConcurrentPooledList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is ConcurrentPooledList<T> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => _list.GetHashCode();

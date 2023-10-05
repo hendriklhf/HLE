@@ -2,9 +2,4 @@ using System;
 
 namespace HLE.Twitch;
 
-public sealed class AnonymousClientException : Exception
-{
-    public AnonymousClientException() : base("The client is connected anonymously, therefore cannot send messages.")
-    {
-    }
-}
+public sealed class AnonymousClientException() : Exception("The client is connected anonymously, therefore cannot send messages.");

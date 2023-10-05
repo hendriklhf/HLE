@@ -17,7 +17,7 @@ namespace HLE.Collections;
 /// <summary>
 /// A class to help with any kind of collections.
 /// </summary>
-public static class CollectionHelper
+public static partial class CollectionHelper
 {
     [Pure]
     [SkipLocalsInit]
@@ -213,7 +213,7 @@ public static class CollectionHelper
     public static unsafe T[] Replace<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate, T replacement)
     {
         T[] array = collection.ToArray();
-        Replace((Span<T>)array, predicate, replacement);
+        Replace(array.AsSpan(), predicate, replacement);
         return array;
     }
 
@@ -254,351 +254,10 @@ public static class CollectionHelper
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
-    {
-        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
-        {
-            return IndicesOf(span, predicate);
-        }
-
-        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        switch (collection)
-        {
-            case IList<T> iList:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(iList[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            case IReadOnlyList<T> iReadOnlyList:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(iReadOnlyList[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            case IIndexAccessible<T> indexAccessible:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(indexAccessible[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            default:
-            {
-                int currentIndex = 0;
-                foreach (T item in collection)
-                {
-                    if (predicate(item))
-                    {
-                        indices.Add(currentIndex);
-                    }
-
-                    currentIndex++;
-                }
-
-                break;
-            }
-        }
-
-        return indices.ToArray();
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this List<T> list, Func<T, bool> predicate)
-    {
-        return IndicesOf((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), predicate);
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this T[] array, Func<T, bool> predicate)
-    {
-        return IndicesOf((ReadOnlySpan<T>)array, predicate);
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this Span<T> span, Func<T, bool> predicate)
-    {
-        return IndicesOf((ReadOnlySpan<T>)span, predicate);
-    }
-
-    public static int IndicesOf<T>(this Span<T> span, Func<T, bool> predicate, Span<int> destination)
-    {
-        return IndicesOf((ReadOnlySpan<T>)span, predicate, destination);
-    }
-
-    [Pure]
-    [SkipLocalsInit]
-    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate)
-    {
-        int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
-        {
-            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(span.Length);
-            length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
-        }
-
-        Span<int> indices = stackalloc int[span.Length];
-        length = IndicesOf(span, predicate, indices);
-        return indices[..length].ToArray();
-    }
-
-    public static int IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate, Span<int> destination)
-    {
-        int length = 0;
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return 0;
-        }
-
-        ref T firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            if (predicate(Unsafe.Add(ref firstItem, i)))
-            {
-                destination[length++] = i;
-            }
-        }
-
-        return length;
-    }
-
-    [Pure]
-    public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate)
-    {
-        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
-        {
-            return IndicesOf(span, predicate);
-        }
-
-        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        switch (collection)
-        {
-            case IList<T> iList:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(iList[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            case IReadOnlyList<T> iReadOnlyList:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(iReadOnlyList[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            case IIndexAccessible<T> indexAccessible:
-            {
-                for (int i = 0; i < elementCount; i++)
-                {
-                    if (predicate(indexAccessible[i]))
-                    {
-                        indices.Add(i);
-                    }
-                }
-
-                break;
-            }
-            default:
-            {
-                int currentIndex = 0;
-                foreach (T item in collection)
-                {
-                    if (predicate(item))
-                    {
-                        indices.Add(currentIndex);
-                    }
-
-                    currentIndex++;
-                }
-
-                break;
-            }
-        }
-
-        return indices.ToArray();
-    }
-
-    [Pure]
-    public static unsafe int[] IndicesOf<T>(this List<T> list, delegate*<T, bool> predicate)
-    {
-        return IndicesOf((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), predicate);
-    }
-
-    [Pure]
-    public static unsafe int[] IndicesOf<T>(this T[] array, delegate*<T, bool> predicate)
-    {
-        return IndicesOf((ReadOnlySpan<T>)array, predicate);
-    }
-
-    [Pure]
-    public static unsafe int[] IndicesOf<T>(this Span<T> span, delegate*<T, bool> predicate)
-    {
-        return IndicesOf((ReadOnlySpan<T>)span, predicate);
-    }
-
-    public static unsafe int IndicesOf<T>(this Span<T> span, delegate*<T, bool> predicate, Span<int> destination)
-    {
-        return IndicesOf((ReadOnlySpan<T>)span, predicate, destination);
-    }
-
-    [Pure]
-    [SkipLocalsInit]
-    public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate)
-    {
-        int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
-        {
-            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(span.Length);
-            length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
-        }
-
-        Span<int> indices = stackalloc int[span.Length];
-        length = IndicesOf(span, predicate, indices);
-        return indices[..length].ToArray();
-    }
-
-    public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate, Span<int> destination)
-    {
-        int spanLength = span.Length;
-        if (spanLength == 0)
-        {
-            return 0;
-        }
-
-        int length = 0;
-        ref T spanReference = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            bool equals = predicate(Unsafe.Add(ref spanReference, i));
-            int equalsAsByte = Unsafe.As<bool, byte>(ref equals);
-            destination[length] = i;
-            length += equalsAsByte;
-        }
-
-        return length;
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item) where T : IEquatable<T>
-    {
-        if (TryGetReadOnlySpan<T>(collection, out ReadOnlySpan<T> span))
-        {
-            return IndicesOf(span, item);
-        }
-
-        // TODO: check if collection is ICollection, ICountable, IIndexerAccessible
-        int currentIndex = 0;
-        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        foreach (T t in collection)
-        {
-            if (t.Equals(item))
-            {
-                indices.Add(currentIndex);
-            }
-
-            currentIndex++;
-        }
-
-        return indices.ToArray();
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this List<T> list, T item) where T : IEquatable<T>
-    {
-        return IndicesOf((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(list), item);
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this T[] array, T item) where T : IEquatable<T>
-    {
-        return IndicesOf((ReadOnlySpan<T>)array, item);
-    }
-
-    [Pure]
-    public static int[] IndicesOf<T>(this Span<T> span, T item) where T : IEquatable<T>
-    {
-        return IndicesOf((ReadOnlySpan<T>)span, item);
-    }
-
-    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> destination) where T : IEquatable<T>
-    {
-        return IndicesOf((ReadOnlySpan<T>)span, item, destination);
-    }
-
-    [Pure]
-    [SkipLocalsInit]
-    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item) where T : IEquatable<T>
-    {
-        int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
-        {
-            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(span.Length);
-            length = IndicesOf(span, item, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
-        }
-
-        Span<int> indices = stackalloc int[span.Length];
-        length = IndicesOf(span, item, indices);
-        return indices[..length].ToArray();
-    }
-
-    public static int IndicesOf<T>(this ReadOnlySpan<T> span, T item, Span<int> destination) where T : IEquatable<T>
-    {
-        if (span.Length == 0)
-        {
-            return 0;
-        }
-
-        int indicesLength = 0;
-        int indexOfItem = span.IndexOf(item);
-        int spanStartIndex = indexOfItem;
-        while (indexOfItem >= 0)
-        {
-            destination[indicesLength++] = spanStartIndex;
-            indexOfItem = span.SliceUnsafe(++spanStartIndex).IndexOf(item);
-            spanStartIndex += indexOfItem;
-        }
-
-        return indicesLength;
-    }
-
-    [Pure]
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
 
     public static void FillAscending(this int[] array, int start = 0) => FillAscending(array.AsSpan(), start);
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(this Span<int> span, int start = 0)
     {
         int vector512Count = Vector512<int>.Count;
@@ -702,7 +361,6 @@ public static class CollectionHelper
 
     public static void FillAscending(this ushort[] array, ushort start = 0) => FillAscending(array.AsSpan(), start);
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static void FillAscending(this Span<ushort> span, ushort start = 0)
     {
         ushort vector512Count = (ushort)Vector512<ushort>.Count;
@@ -714,6 +372,7 @@ public static class CollectionHelper
                 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
                 30, 31
             );
+
             while (span.Length >= vector512Count)
             {
                 Vector512<ushort> startValues = Vector512.Create(start);
@@ -738,6 +397,7 @@ public static class CollectionHelper
                 (ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15
             );
+
             while (span.Length >= vector256Count)
             {
                 Vector256<ushort> startValues = Vector256.Create(start);
@@ -759,6 +419,7 @@ public static class CollectionHelper
         if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
             Vector128<ushort> ascendingValueAdditions = Vector128.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7);
+
             while (span.Length >= vector128Count)
             {
                 Vector128<ushort> startValues = Vector128.Create(start);
@@ -780,6 +441,7 @@ public static class CollectionHelper
         if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
             Vector64<ushort> ascendingValueAdditions = Vector64.Create((ushort)0, 1, 2, 3);
+
             while (span.Length >= vector64Count)
             {
                 Vector64<ushort> startValues = Vector64.Create(start);
@@ -807,9 +469,7 @@ public static class CollectionHelper
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AddOrSet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
-    {
-        CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out _) = value;
-    }
+        => CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out _) = value;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AddOrSet<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
@@ -847,7 +507,7 @@ public static class CollectionHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetReadOnlySpan<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out ReadOnlySpan<TTo> span)
+    internal static bool TryGetReadOnlySpan<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out ReadOnlySpan<TTo> span)
     {
         IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
         return TryGetReadOnlySpan<TTo>(resultCollection, out span);
@@ -877,7 +537,7 @@ public static class CollectionHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetSpan<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out Span<TTo> span)
+    internal static bool TryGetSpan<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out Span<TTo> span)
     {
         IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
         return TryGetSpan<TTo>(resultCollection, out span);
@@ -904,7 +564,7 @@ public static class CollectionHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetReadOnlyMemory<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out ReadOnlyMemory<TTo> memory)
+    internal static bool TryGetReadOnlyMemory<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out ReadOnlyMemory<TTo> memory)
     {
         IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
         return TryGetReadOnlyMemory<TTo>(resultCollection, out memory);
@@ -921,7 +581,7 @@ public static class CollectionHelper
 
         if (collection is List<T> list)
         {
-            memory = CollectionsMarshal.AsSpan(list).AsMemoryUnsafe();
+            memory = SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(list));
             return true;
         }
 
@@ -930,7 +590,7 @@ public static class CollectionHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetMemory<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out Memory<TTo> memory)
+    internal static bool TryGetMemory<TFrom, TTo>([NoEnumeration] this IEnumerable<TFrom> collection, out Memory<TTo> memory)
     {
         IEnumerable<TTo> resultCollection = Unsafe.As<IEnumerable<TFrom>, IEnumerable<TTo>>(ref collection);
         return TryGetMemory<TTo>(resultCollection, out memory);
@@ -1016,15 +676,11 @@ public static class CollectionHelper
 
     /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
     public static void MoveItem<T>(this List<T> list, int sourceIndex, int destinationIndex)
-    {
-        MoveItem(CollectionsMarshal.AsSpan(list), sourceIndex, destinationIndex);
-    }
+        => MoveItem(CollectionsMarshal.AsSpan(list), sourceIndex, destinationIndex);
 
     /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
     public static void MoveItem<T>(this T[] array, int sourceIndex, int destinationIndex)
-    {
-        MoveItem((Span<T>)array, sourceIndex, destinationIndex);
-    }
+        => MoveItem(array.AsSpan(), sourceIndex, destinationIndex);
 
     /// <summary>
     /// Moves an item in the collection from the source to the destination index
@@ -1070,16 +726,16 @@ public static class CollectionHelper
     /// </summary>
     /// <remarks>This method is in some cases much more efficient than calling <c>.ToArray()</c> on an <see cref="IEnumerable{T}"/> and enables using a rented <see cref="Array"/> from an <see cref="ArrayPool{T}"/> to store the elements.</remarks>
     /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be enumerated and elements will be taken from.</param>
-    /// <param name="buffer">The buffer the elements will be written into.</param>
+    /// <param name="destination">The buffer the elements will be written into.</param>
     /// <param name="writtenElements">The amount of written elements.</param>
     /// <typeparam name="T">The type of elements in the <see cref="IEnumerable{T}"/>.</typeparam>
     /// <returns>True, if a full enumeration into the buffer was possible, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryEnumerateInto<T>(this IEnumerable<T> collection, Span<T> buffer, out int writtenElements)
+    public static bool TryEnumerateInto<T>(this IEnumerable<T> collection, Span<T> destination, out int writtenElements)
     {
         if (collection.TryGetNonEnumeratedCount(out int elementCount))
         {
-            if (elementCount > buffer.Length)
+            if (elementCount > destination.Length)
             {
                 writtenElements = 0;
                 return false;
@@ -1087,7 +743,7 @@ public static class CollectionHelper
 
             if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
             {
-                span.CopyTo(buffer);
+                span.CopyTo(destination);
                 writtenElements = span.Length;
                 return true;
             }
@@ -1095,14 +751,14 @@ public static class CollectionHelper
             switch (collection)
             {
                 case ICopyable<T> copyable:
-                    copyable.CopyTo(buffer);
+                    copyable.CopyTo(destination);
                     writtenElements = elementCount;
                     return true;
                 case IIndexAccessible<T> indexAccessible:
                 {
                     for (int i = 0; i < elementCount; i++)
                     {
-                        buffer[i] = indexAccessible[i];
+                        destination[i] = indexAccessible[i];
                     }
 
                     break;
@@ -1113,21 +769,28 @@ public static class CollectionHelper
         writtenElements = 0;
         foreach (T item in collection)
         {
-            if (writtenElements >= buffer.Length)
+            if (writtenElements >= destination.Length)
             {
                 return false;
             }
 
-            buffer[writtenElements++] = item;
+            destination[writtenElements++] = item;
         }
 
         return true;
     }
 
+    /// <inheritdoc cref="Sum(System.ReadOnlySpan{int})"/>
     [Pure]
     public static int Sum(this Span<int> span) => Sum((ReadOnlySpan<int>)span);
 
+    /// <summary>
+    /// Computes the sum of all elements without checking for arithmetic overflow.
+    /// </summary>
+    /// <param name="span">The elements that will be summed up.</param>
+    /// <returns>The sum of all elements.</returns>
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static int Sum(this ReadOnlySpan<int> span)
     {
         switch (span.Length)
@@ -1144,13 +807,16 @@ public static class CollectionHelper
         int vector512Count = Vector512<int>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
+            Vector512<int> vectorSum = Vector512<int>.Zero;
             while (span.Length >= vector512Count)
             {
-                Vector512<int> vector = Vector512.LoadUnsafe(ref MemoryMarshal.GetReference(span));
-                sum += Vector512.Sum(vector);
-                span = span[vector512Count..];
+                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                Vector512<int> vector = Vector512.LoadUnsafe(ref valuesReference);
+                vectorSum += vector;
+                span = span.SliceUnsafe(vector512Count);
             }
 
+            sum = Vector512.Sum(vectorSum);
             for (int i = 0; i < span.Length; i++)
             {
                 sum += span[i];
@@ -1162,13 +828,15 @@ public static class CollectionHelper
         int vector256Count = Vector256<int>.Count;
         if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
         {
+            Vector256<int> vectorSum = Vector256<int>.Zero;
             while (span.Length >= vector256Count)
             {
-                Vector256<int> vector = Vector256.LoadUnsafe(ref MemoryMarshal.GetReference(span));
-                sum += Vector256.Sum(vector);
-                span = span[vector256Count..];
+                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                vectorSum += Vector256.LoadUnsafe(ref valuesReference);
+                span = span.SliceUnsafe(vector256Count);
             }
 
+            sum = Vector256.Sum(vectorSum);
             for (int i = 0; i < span.Length; i++)
             {
                 sum += span[i];
@@ -1180,13 +848,15 @@ public static class CollectionHelper
         int vector128Count = Vector128<int>.Count;
         if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
+            Vector128<int> vectorSum = Vector128<int>.Zero;
             while (span.Length >= vector128Count)
             {
-                Vector128<int> vector = Vector128.LoadUnsafe(ref MemoryMarshal.GetReference(span));
-                sum += Vector128.Sum(vector);
-                span = span[vector128Count..];
+                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                vectorSum += Vector128.LoadUnsafe(ref valuesReference);
+                span = span.SliceUnsafe(vector128Count);
             }
 
+            sum = Vector128.Sum(vectorSum);
             for (int i = 0; i < span.Length; i++)
             {
                 sum += span[i];
@@ -1198,13 +868,15 @@ public static class CollectionHelper
         int vector64Count = Vector64<int>.Count;
         if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
+            Vector64<int> vectorSum = Vector64<int>.Zero;
             while (span.Length >= vector64Count)
             {
-                Vector64<int> vector = Vector64.LoadUnsafe(ref MemoryMarshal.GetReference(span));
-                sum += Vector64.Sum(vector);
-                span = span[vector64Count..];
+                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                vectorSum += Vector64.LoadUnsafe(ref valuesReference);
+                span = span.SliceUnsafe(vector64Count);
             }
 
+            sum = Vector64.Sum(vectorSum);
             for (int i = 0; i < span.Length; i++)
             {
                 sum += span[i];

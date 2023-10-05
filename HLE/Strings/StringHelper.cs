@@ -1,11 +1,10 @@
 using System;
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
@@ -190,145 +189,14 @@ public static class StringHelper
     }
 
     [Pure]
-    public static int[] IndicesOf(this string? str, char c)
-    {
-        return IndicesOf((ReadOnlySpan<char>)str, c);
-    }
+    public static int[] IndicesOf(this string? str, char c) => str.AsSpan().IndicesOf(c);
 
-    public static int IndicesOf(this string? str, char c, Span<int> indices)
-    {
-        return IndicesOf((ReadOnlySpan<char>)str, c, indices);
-    }
+    public static int IndicesOf(this string? str, char c, Span<int> destination) => str.AsSpan().IndicesOf(c, destination);
 
     [Pure]
-    public static int[] IndicesOf(this Span<char> span, char c)
-    {
-        return IndicesOf((ReadOnlySpan<char>)span, c);
-    }
+    public static int[] IndicesOf(this string? str, ReadOnlySpan<char> s) => IndicesOf((ReadOnlySpan<char>)str, s);
 
-    [Pure]
-    public static int IndicesOf(this Span<char> span, char c, Span<int> indices)
-    {
-        return IndicesOf((ReadOnlySpan<char>)span, c, indices);
-    }
-
-    [Pure]
-    [SkipLocalsInit]
-    public static int[] IndicesOf(this ReadOnlySpan<char> span, char c)
-    {
-        int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
-        {
-            using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.CreateRentedArray(span.Length);
-            length = IndicesOf(span, c, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
-        }
-
-        Span<int> indices = stackalloc int[span.Length];
-        length = IndicesOf(span, c, indices);
-        return indices[..length].ToArray();
-    }
-
-    [SkipLocalsInit]
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static int IndicesOf(this ReadOnlySpan<char> span, char c, Span<int> indices)
-    {
-        int indicesLength = 0;
-        ReadOnlySpan<ushort> spanAsShort = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, ushort>(ref MemoryMarshal.GetReference(span)), span.Length);
-
-        int vector512Count = Vector512<ushort>.Count;
-        if (Vector512.IsHardwareAccelerated && spanAsShort.Length >= vector512Count)
-        {
-            Vector512<ushort> whitespaceVector = Vector512.Create((ushort)c);
-            int startIndex = 0;
-            while (spanAsShort.Length - startIndex >= vector512Count)
-            {
-                Vector512<ushort> charsVector = Vector512.LoadUnsafe(ref Unsafe.Add(ref MemoryMarshal.GetReference(spanAsShort), startIndex));
-                uint equals = (uint)Vector512.Equals(charsVector, whitespaceVector).ExtractMostSignificantBits();
-                while (equals > 0)
-                {
-                    int index = BitOperations.TrailingZeroCount(equals);
-                    indices[indicesLength++] = startIndex + index;
-                    equals &= equals - 1;
-                }
-
-                startIndex += vector512Count;
-            }
-
-            ref char remainingCharsReference = ref Unsafe.Add(ref MemoryMarshal.GetReference(span), startIndex);
-            int remainingLength = span.Length - startIndex;
-            for (int i = 0; i < remainingLength; i++)
-            {
-                if (Unsafe.Add(ref remainingCharsReference, i) == c)
-                {
-                    indices[indicesLength++] = startIndex + i;
-                }
-            }
-
-            return indicesLength;
-        }
-
-        int vector256Count = Vector256<ushort>.Count;
-        if (Vector256.IsHardwareAccelerated && spanAsShort.Length >= vector256Count)
-        {
-            Vector256<ushort> whitespaceVector = Vector256.Create((ushort)' ');
-            int startIndex = 0;
-            while (spanAsShort.Length - startIndex >= vector256Count)
-            {
-                Vector256<ushort> charsVector = Vector256.LoadUnsafe(ref Unsafe.Add(ref MemoryMarshal.GetReference(spanAsShort), startIndex));
-                ushort equals = (ushort)Vector256.Equals(charsVector, whitespaceVector).ExtractMostSignificantBits();
-                while (equals > 0)
-                {
-                    int index = BitOperations.TrailingZeroCount(equals);
-                    indices[indicesLength++] = startIndex + index;
-                    equals &= (ushort)(equals - 1);
-                }
-
-                startIndex += vector256Count;
-            }
-
-            ref char remainingCharsReference = ref Unsafe.Add(ref MemoryMarshal.GetReference(span), startIndex);
-            int remainingLength = span.Length - startIndex;
-            for (int i = 0; i < remainingLength; i++)
-            {
-                if (Unsafe.Add(ref remainingCharsReference, i) == ' ')
-                {
-                    indices[indicesLength++] = startIndex + i;
-                }
-            }
-
-            return indicesLength;
-        }
-
-        return IndicesOfNonOptimizedFallback(span, c, indices);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int IndicesOfNonOptimizedFallback(ReadOnlySpan<char> ircMessage, char c, Span<int> indices)
-    {
-        int indicesLength = 0;
-        int indexOfWhitespace = ircMessage.IndexOf(c);
-        int spanStartIndex = indexOfWhitespace;
-        while (indexOfWhitespace >= 0)
-        {
-            indices[indicesLength++] = spanStartIndex;
-            indexOfWhitespace = ircMessage[++spanStartIndex..].IndexOf(c);
-            spanStartIndex += indexOfWhitespace;
-        }
-
-        return indicesLength;
-    }
-
-    [Pure]
-    public static int[] IndicesOf(this string? str, ReadOnlySpan<char> s)
-    {
-        return IndicesOf((ReadOnlySpan<char>)str, s);
-    }
-
-    public static int IndicesOf(this string? str, ReadOnlySpan<char> s, Span<int> indices)
-    {
-        return IndicesOf((ReadOnlySpan<char>)str, s, indices);
-    }
+    public static int IndicesOf(this string? str, ReadOnlySpan<char> s, Span<int> destination) => IndicesOf((ReadOnlySpan<char>)str, s, destination);
 
     [Pure]
     [SkipLocalsInit]
@@ -347,7 +215,7 @@ public static class StringHelper
         return indices[..length].ToArray();
     }
 
-    public static int IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s, Span<int> indices)
+    public static int IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s, Span<int> destination)
     {
         if (span.Length == 0)
         {
@@ -359,30 +227,9 @@ public static class StringHelper
         int spanStartIndex = idx;
         while (idx >= 0)
         {
-            indices[indicesLength++] = spanStartIndex;
+            destination[indicesLength++] = spanStartIndex;
             spanStartIndex += s.Length;
             idx = span[spanStartIndex..].IndexOf(s, StringComparison.Ordinal);
-            spanStartIndex += idx;
-        }
-
-        return indicesLength;
-    }
-
-    public static int IndicesOf(this ReadOnlySpan<byte> span, byte b, Span<int> indices)
-    {
-        // TODO: optimize like IndicesOf(ReadOnlySpan<char>,char,Span<int>)
-        if (span.Length == 0)
-        {
-            return 0;
-        }
-
-        int indicesLength = 0;
-        int idx = span.IndexOf(b);
-        int spanStartIndex = idx;
-        while (idx >= 0)
-        {
-            indices[indicesLength++] = spanStartIndex;
-            idx = span[++spanStartIndex..].IndexOf(b);
             spanStartIndex += idx;
         }
 
@@ -405,22 +252,41 @@ public static class StringHelper
             return string.Empty;
         }
 
+        int indexOfMetaChar = input.IndexOfAny(_regexMetaCharsSearchValues);
+        if (indexOfMetaChar < 0)
+        {
+            return inputIsString ? StringMarshal.AsString(input) : new(input);
+        }
+
         int resultLength;
         int maximumResultLength = input.Length << 1;
         if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(maximumResultLength);
-            resultLength = RegexEscape(input, rentedBuffer.AsSpan());
-            return inputIsString && input.Length == resultLength && inputIsString ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
+            resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
+            return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];
-        resultLength = RegexEscape(input, buffer);
+        resultLength = RegexEscape(input, buffer, indexOfMetaChar);
         return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(buffer[..resultLength]);
     }
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination)
     {
+        int indexOfMetaChar = input.IndexOfAny(_regexMetaCharsSearchValues);
+        if (indexOfMetaChar >= 0)
+        {
+            return RegexEscape(input, destination, indexOfMetaChar);
+        }
+
+        input.CopyTo(destination);
+        return input.Length;
+    }
+
+    private static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination, int indexOfMetaChar)
+    {
+        Debug.Assert(indexOfMetaChar >= 0);
         if (input.Length == 0)
         {
             return 0;
@@ -430,12 +296,6 @@ public static class StringHelper
         SearchValues<char> regexMetaCharsSearchValues = _regexMetaCharsSearchValues;
         while (true)
         {
-            int indexOfMetaChar = input.IndexOfAny(regexMetaCharsSearchValues);
-            if (indexOfMetaChar < 0)
-            {
-                break;
-            }
-
             char metaChar = input[indexOfMetaChar];
             metaChar = metaChar switch
             {
@@ -449,6 +309,11 @@ public static class StringHelper
             builder.Append(input.SliceUnsafe(0, indexOfMetaChar));
             builder.Append('\\', metaChar);
             input = input.SliceUnsafe(indexOfMetaChar + 1);
+            indexOfMetaChar = input.IndexOfAny(regexMetaCharsSearchValues);
+            if (indexOfMetaChar < 0)
+            {
+                break;
+            }
         }
 
         builder.Append(input);

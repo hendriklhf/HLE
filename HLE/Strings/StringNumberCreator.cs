@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -73,7 +74,7 @@ public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatab
             int index = chars.IndexOf(c);
             if (index < 0)
             {
-                throw new FormatException($"The provided number is in an invalid format. It does not match the provided {typeof(StringNumberFormat)}");
+                ThrowWrongNumberFormat();
             }
 
             checked
@@ -83,6 +84,13 @@ public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatab
         }
 
         return result;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowWrongNumberFormat()
+    {
+        throw new FormatException($"The provided number is in an invalid format. It does not match the provided {typeof(StringNumberFormat)}");
     }
 
     public bool Equals(StringNumberCreator other)

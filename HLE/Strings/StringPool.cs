@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -58,11 +57,16 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
     }
 
+    [Pure]
     public string GetOrAdd(string str)
     {
-        if (str.Length == 0)
+        switch (str.Length)
         {
-            return string.Empty;
+            case 0:
+                return string.Empty;
+            case 1:
+                SingleCharStringPool.Add(str);
+                return str;
         }
 
         Bucket bucket = GetBucket(str);
@@ -74,14 +78,26 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         return str;
     }
 
+    [Pure]
     public string GetOrAdd(ReadOnlySpan<char> span)
     {
-        return span.Length == 0 ? string.Empty : GetBucket(span).GetOrAdd(span);
+        return span.Length switch
+        {
+            0 => string.Empty,
+            1 => SingleCharStringPool.GetOrAdd(span[0]),
+            _ => GetBucket(span).GetOrAdd(span)
+        };
     }
 
+    [Pure]
     [SkipLocalsInit]
     public string GetOrAdd(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
+        if (bytes.Length == 0)
+        {
+            return string.Empty;
+        }
+
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
         if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
@@ -98,9 +114,13 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
 
     public void Add(string value)
     {
-        if (value.Length == 0)
+        switch (value.Length)
         {
-            return;
+            case 0:
+                return;
+            case 1:
+                SingleCharStringPool.Add(value);
+                break;
         }
 
         Bucket bucket = GetBucket(value);
@@ -112,19 +132,27 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
 
     public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
     {
-        if (span.Length != 0)
+        switch (span.Length)
         {
-            return GetBucket(span).TryGet(span, out value);
+            case 0:
+                value = string.Empty;
+                return true;
+            case 1:
+                return SingleCharStringPool.TryGet(span[0], out value);
+            default:
+                return GetBucket(span).TryGet(span, out value);
         }
-
-        value = string.Empty;
-        return true;
     }
 
     [SkipLocalsInit]
     public bool TryGet(ReadOnlySpan<byte> bytes, Encoding encoding, [MaybeNullWhen(false)] out string value)
     {
-        value = null;
+        if (bytes.Length == 0)
+        {
+            value = string.Empty;
+            return true;
+        }
+
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
         if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
@@ -148,13 +176,18 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     [Pure]
     public bool Contains(ReadOnlySpan<char> span)
     {
-        return span.Length != 0 && GetBucket(span).Contains(span);
+        return span.Length == 0 || GetBucket(span).Contains(span);
     }
 
     [Pure]
     [SkipLocalsInit]
     public bool Contains(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
+        if (bytes.Length == 0)
+        {
+            return true;
+        }
+
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
         if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
@@ -174,7 +207,6 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     {
         int hash = SimpleStringHasher.Hash(span);
         int index = (int)((uint)hash % _buckets.Length);
-        Debug.Assert(index >= 0 && index < _buckets.Length);
         return _buckets[index];
     }
 
@@ -192,22 +224,13 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(StringPool? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(StringPool? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is StringPool other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(StringPool? left, StringPool? right)
     {

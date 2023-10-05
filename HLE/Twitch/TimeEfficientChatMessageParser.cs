@@ -94,7 +94,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         };
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Badge[] GetBadges(ReadOnlySpan<char> value, out int badgeCount)
     {
         badgeCount = 0;
@@ -118,20 +118,14 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         return badges;
     }
 
-    public bool Equals(TimeEfficientChatMessageParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(TimeEfficientChatMessageParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is TimeEfficientChatMessageParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(TimeEfficientChatMessageParser? left, TimeEfficientChatMessageParser? right)
     {

@@ -9,7 +9,7 @@ using HLE.Strings;
 namespace HLE.Twitch.Models;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatable<OAuthToken>
+public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatable<OAuthToken>
 {
     public char this[int index] => _token[index];
 
@@ -23,7 +23,8 @@ public readonly struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatab
 
     public static OAuthToken Empty => new();
 
-    private static readonly Regex _tokenPattern = RegexPool.Shared.GetOrAdd("^(oauth:)?[a-z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+    [GeneratedRegex("^(oauth:)?[a-z0-9]{30}?", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
+    private static partial Regex GetTokenPattern();
 
     private const string _tokenPrefix = "oauth:";
     private const int _tokenLength = 36;
@@ -39,9 +40,9 @@ public readonly struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatab
     [SkipLocalsInit]
     public OAuthToken(ReadOnlySpan<char> token)
     {
-        if (!_tokenPattern.IsMatch(token))
+        if (!GetTokenPattern().IsMatch(token))
         {
-            throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {_tokenPattern}");
+            throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {GetTokenPattern()}");
         }
 
         ValueStringBuilder builder = new(stackalloc char[_tokenLength]);
@@ -52,7 +53,7 @@ public readonly struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatab
 
         token.ToLowerInvariant(builder.FreeBuffer);
         builder.Advance(token.Length);
-        _token = builder.ToString();
+        _token = StringPool.Shared.GetOrAdd(builder.WrittenSpan);
     }
 
     [Pure]

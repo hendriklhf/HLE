@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -11,8 +11,8 @@ using Microsoft.CodeAnalysis;
 
 namespace HLE.SourceGenerators;
 
-[SuppressMessage("ReSharper", "ReplaceSliceWithRangeIndexer")]
 [Generator]
+[SuppressMessage("ReSharper", "ReplaceSliceWithRangeIndexer")]
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
     private byte[]? _emojiJsonBytes;
@@ -56,6 +56,21 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         WriteBytesToCacheFile(_emojiJsonBytes);
     }
 
+    public void Execute(GeneratorExecutionContext context)
+    {
+        if (_emojiJsonBytes is not { Length: > 0 })
+        {
+            throw new InvalidOperationException("The HTTP request of the emojis failed.");
+        }
+
+        StringBuilder sourceBuilder = new();
+        sourceBuilder.AppendLine("namespace HLE.Emojis;").AppendLine();
+        sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
+        AppendEmojis(sourceBuilder);
+        sourceBuilder.AppendLine("}");
+        context.AddSource("HLE.Emoji.g.cs", sourceBuilder.ToString());
+    }
+
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
     private static bool TryGetEmojiJsonBytesFromCache(out byte[]? emojiJsonBytes)
     {
@@ -96,21 +111,6 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
         string emojiJsonPath = cacheDirectory + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         File.WriteAllBytes(emojiJsonPath, emojiJsonBytes);
-    }
-
-    public void Execute(GeneratorExecutionContext context)
-    {
-        if (_emojiJsonBytes is null or { Length: 0 })
-        {
-            throw new InvalidOperationException("The HTTP request of the emojis failed.");
-        }
-
-        StringBuilder sourceBuilder = new();
-        sourceBuilder.AppendLine("namespace HLE.Emojis;").AppendLine();
-        sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
-        AppendEmojis(sourceBuilder);
-        sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Emoji.g.cs", sourceBuilder.ToString());
     }
 
     private void AppendEmojis(StringBuilder sourceBuilder)

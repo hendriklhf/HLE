@@ -6,21 +6,21 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-internal readonly unsafe ref struct StringMetaDataWriter
+internal readonly unsafe ref struct StringRawDataWriter
 {
     private readonly ref byte _buffer;
 
-    public StringMetaDataWriter(Span<byte> buffer)
+    public StringRawDataWriter(Span<byte> buffer)
     {
         _buffer = ref MemoryMarshal.GetReference(buffer);
     }
 
-    public StringMetaDataWriter(ref byte buffer)
+    public StringRawDataWriter(ref byte buffer)
     {
         _buffer = ref buffer;
     }
 
-    public StringMetaDataWriter(byte* buffer)
+    public StringRawDataWriter(byte* buffer)
     {
         _buffer = ref Unsafe.AsRef<byte>(buffer);
     }
@@ -48,9 +48,9 @@ internal readonly unsafe ref struct StringMetaDataWriter
     public static int GetNeededBufferSize(int stringLength)
     {
         return sizeof(nuint) /* object header */ +
-            sizeof(nuint) /* method table pointer */ +
-            sizeof(int) /* string length */ +
-            stringLength * sizeof(char) /* chars */ +
-            sizeof(char) /* zero-char */;
+               sizeof(nuint) /* method table pointer */ +
+               sizeof(int) /* string length */ +
+               stringLength * sizeof(char) /* chars */ +
+               sizeof(char) /* zero-char */;
     }
 }

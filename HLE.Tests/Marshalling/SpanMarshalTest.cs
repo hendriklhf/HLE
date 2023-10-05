@@ -28,7 +28,7 @@ public class SpanMarshalTest
     public void AsMemoryDangerousTest()
     {
         Span<char> span = "hello".ToCharArray();
-        Memory<char> memory = span.AsMemoryUnsafe();
+        Memory<char> memory = SpanMarshal.AsMemoryUnsafe(span);
         Assert.IsTrue(memory.Span is "hello");
     }
 

@@ -1,6 +1,3 @@
-using System;
-using System.Runtime.InteropServices;
-using HLE.Collections;
 using HLE.Marshalling;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -20,32 +17,17 @@ public class RawDataMarshalTest
     }
 
     [TestMethod]
-    public void GetRawDataTest()
+    public void GetMethodTablePointerTest()
     {
-        int[] arr = new int[5];
-        arr.AsSpan().FillAscending(1);
-        Span<int> data = MemoryMarshal.Cast<byte, int>(RawDataMarshal.GetRawData(arr));
-        if (Environment.Is64BitProcess)
-        {
-            Assert.IsTrue(data is [5, 0, 1, 2, 3, 4, 5]);
-        }
-        else
-        {
-            Assert.IsTrue(data is [5, 1, 2, 3, 4, 5]);
-        }
-
-        ref byte dataRef = ref RawDataMarshal.GetRawDataReference(arr);
-        Span<byte> dataByRef = MemoryMarshal.CreateSpan(ref dataRef, (int)RawDataMarshal.GetRawDataSize(arr));
-        Span<int> dataByRefAsInt = MemoryMarshal.Cast<byte, int>(dataByRef);
-        Assert.IsTrue(data.SequenceEqual(dataByRefAsInt));
+        Assert.AreEqual((nuint)typeof(string).TypeHandle.Value, RawDataMarshal.GetMethodTablePointer(string.Empty));
     }
 
     [TestMethod]
-    public void GetObjectFromRawDataTest()
+    public void ReadObjectTest()
     {
-        int[] arr = new int[5];
-        Span<byte> data = RawDataMarshal.GetRawData(arr);
-        int[] obj = RawDataMarshal.GetObjectFromRawData<int[]>(data);
-        Assert.IsTrue(ReferenceEquals(arr, obj));
+        ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTablePointer("hello");
+        string hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
+        Assert.AreEqual("hello", hello);
+        Assert.IsTrue(ReferenceEquals("hello", hello));
     }
 }

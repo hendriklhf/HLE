@@ -1,23 +1,23 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE;
 
 public static class EnumValues
 {
-    private static readonly Dictionary<Type, byte[]> _valuesCache = new();
+    private static readonly ConcurrentDictionary<Type, byte[]> _valuesCache = new();
 
     public static unsafe ReadOnlySpan<TEnum> GetValues<TEnum>() where TEnum : struct, Enum
     {
-        ref byte[]? bytes = ref CollectionsMarshal.GetValueRefOrAddDefault(_valuesCache, typeof(TEnum), out bool exists);
-        if (exists)
+        if (_valuesCache.TryGetValue(typeof(TEnum), out byte[]? bytes))
         {
-            ref byte bytesReference = ref MemoryMarshal.GetArrayDataReference(bytes!);
-            return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<byte, TEnum>(ref bytesReference), bytes!.Length / sizeof(TEnum));
+            ref byte bytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
+            return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<byte, TEnum>(ref bytesReference), bytes.Length / sizeof(TEnum));
         }
 
         ReadOnlySpan<TEnum> values = Enum.GetValues<TEnum>();
@@ -25,7 +25,8 @@ public static class EnumValues
         ref byte valueBytesReference = ref Unsafe.As<TEnum, byte>(ref valuesReference);
 
         int byteCount = values.Length * sizeof(TEnum);
-        bytes = new byte[byteCount];
+        bytes = GC.AllocateUninitializedArray<byte>(byteCount, true);
+        _valuesCache.AddOrSet(typeof(TEnum), bytes);
 
         ref byte cacheBytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
         CopyWorker<byte> copyWorker = new(ref valueBytesReference, byteCount);
@@ -51,20 +52,14 @@ public static class EnumValues
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetValueCount<TEnum>() where TEnum : struct, Enum
-    {
-        return GetValues<TEnum>().Length;
-    }
+        => GetValues<TEnum>().Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TEnum GetMaxValue<TEnum>() where TEnum : struct, Enum
-    {
-        return GetValues<TEnum>()[^1];
-    }
+        => GetValues<TEnum>()[^1];
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
-    {
-        throw new InvalidOperationException($"{enumType} and {underlyingType} have different instance sizes.");
-    }
+        => throw new InvalidOperationException($"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be the underlying type.");
 }

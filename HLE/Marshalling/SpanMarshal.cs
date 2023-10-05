@@ -18,17 +18,13 @@ public static unsafe class SpanMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
-    {
-        return Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
-    }
+        => Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
 
     /// <inheritdoc cref="AsMemoryUnsafe{T}(System.ReadOnlySpan{T})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Memory<T> AsMemoryUnsafe<T>(this Span<T> span)
-    {
-        return AsMemoryUnsafe((ReadOnlySpan<T>)span).AsMutableMemory();
-    }
+    public static Memory<T> AsMemoryUnsafe<T>(Span<T> span)
+        => AsMemoryUnsafe((ReadOnlySpan<T>)span).AsMutableMemory();
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{T}"/> to a <see cref="ReadOnlyMemory{T}"/>. Does not allocate any memory. <br/>
@@ -37,26 +33,29 @@ public static unsafe class SpanMarshal
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    public static ReadOnlyMemory<T> AsMemoryUnsafe<T>(this ReadOnlySpan<T> span)
+    public static ReadOnlyMemory<T> AsMemoryUnsafe<T>(ReadOnlySpan<T> span)
     {
         Unsafe.SkipInit(out ReadOnlyMemory<T> result);
-        byte* spanPointerAsBytePointer = (byte*)&span;
-        byte* memoryPointerAsBytePointer = (byte*)&result;
+        fixed (T* _ = span)
+        {
+            byte* spanPointerAsBytePointer = (byte*)&span;
+            byte* memoryPointerAsBytePointer = (byte*)&result;
 
-        // pointers to the three fields Memory<T> consists off
-        nuint* memoryReferenceField = (nuint*)memoryPointerAsBytePointer;
-        int* memoryIndexField = (int*)(memoryPointerAsBytePointer + sizeof(nuint));
-        int* memoryLengthField = (int*)(memoryPointerAsBytePointer + sizeof(nuint) + sizeof(int));
+            // pointers to the three fields Memory<T> consists off
+            nuint* memoryReferenceField = (nuint*)memoryPointerAsBytePointer;
+            int* memoryIndexField = (int*)(memoryPointerAsBytePointer + sizeof(nuint));
+            int* memoryLengthField = (int*)(memoryPointerAsBytePointer + sizeof(nuint) + sizeof(int));
 
-        nuint spanReferenceFieldValue = *(nuint*)spanPointerAsBytePointer - (nuint)(sizeof(nuint) << 1);
-        *memoryReferenceField = spanReferenceFieldValue;
+            nuint spanReferenceFieldValue = *(nuint*)spanPointerAsBytePointer - (nuint)(sizeof(nuint) << 1);
+            *memoryReferenceField = spanReferenceFieldValue;
 
-        *memoryIndexField = 0;
+            *memoryIndexField = 0;
 
-        int memoryLength = *(int*)(spanPointerAsBytePointer + sizeof(nuint));
-        *memoryLengthField = memoryLength;
+            int memoryLength = *(int*)(spanPointerAsBytePointer + sizeof(nuint));
+            *memoryLengthField = memoryLength;
 
-        return result;
+            return result;
+        }
     }
 
     /// <summary>

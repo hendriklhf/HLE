@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
@@ -262,16 +263,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
-    public async Task ConnectAsync(string[] channels)
-    {
-        await ConnectAsync(channels.AsMemory());
-    }
+    public async Task ConnectAsync(string[] channels) => await ConnectAsync(channels.AsMemory());
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
     public async Task ConnectAsync(List<string> channels)
-    {
-        await ConnectAsync(CollectionsMarshal.AsSpan(channels).AsMemoryUnsafe());
-    }
+        => await ConnectAsync(SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(channels)));
 
     /// <summary>
     /// Asynchronously connects the client to the Twitch IRC server.
@@ -318,25 +314,17 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
-    public async ValueTask SendRawAsync(string rawMessage)
-    {
-        await SendAsync(rawMessage.AsMemory());
-    }
+    public async ValueTask SendRawAsync(string rawMessage) => await SendAsync(rawMessage.AsMemory());
 
     /// <summary>
     /// Asynchronously sends a raw message to the Twitch IRC server.
     /// </summary>
     /// <param name="rawMessage">The IRC message.</param>
-    public async ValueTask SendRawAsync(ReadOnlyMemory<char> rawMessage)
-    {
-        await SendAsync(rawMessage);
-    }
+    public async ValueTask SendRawAsync(ReadOnlyMemory<char> rawMessage) => await SendAsync(rawMessage);
 
     /// <inheritdoc cref="SendMessageAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
     public async ValueTask SendMessageAsync(string channel, string message)
-    {
-        await SendMessageAsync(channel.AsMemory(), message.AsMemory());
-    }
+        => await SendMessageAsync(channel.AsMemory(), message.AsMemory());
 
     /// <summary>
     /// Asynchronously sends a chat message to a channel.
@@ -344,9 +332,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="channel">The channel the message will be sent to.</param>
     /// <param name="builder">The builder that contains the message that will be sent.</param>
     public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, PooledStringBuilder builder)
-    {
-        await SendMessageAsync(channel, builder.WrittenMemory);
-    }
+        => await SendMessageAsync(channel, builder.WrittenMemory);
 
     /// <summary>
     /// Asynchronously sends a chat message to a channel.
@@ -361,10 +347,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     /// <inheritdoc cref="JoinChannelAsync(ReadOnlyMemory{char})"/>
-    public async ValueTask JoinChannelAsync(string channel)
-    {
-        await JoinChannelAsync(channel.AsMemory());
-    }
+    public async ValueTask JoinChannelAsync(string channel) => await JoinChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// Asynchronously joins one channel.
@@ -378,10 +361,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     /// <inheritdoc cref="LeaveChannelAsync(ReadOnlyMemory{char})"/>
-    public async ValueTask LeaveChannelAsync(string channel)
-    {
-        await LeaveChannelAsync(channel.AsMemory());
-    }
+    public async ValueTask LeaveChannelAsync(string channel) => await LeaveChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// Asynchronously leaves one channel.
@@ -401,15 +381,15 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             return;
         }
 
-        bool isVerifiedBot = _isVerifiedBot;
-        int maxJoinsInPeriod = 20 + 180 * Unsafe.As<bool, byte>(ref isVerifiedBot);
+        int isVerifiedBotFactor = _isVerifiedBot ? 1 : 0;
+        int maximumJoinsInPeriod = 20 + 180 * isVerifiedBotFactor;
         TimeSpan period = TimeSpan.FromSeconds(10);
 
         using PooledStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
         DateTimeOffset start = DateTimeOffset.UtcNow;
         for (int i = 0; i < channels.Length && !_cancellationTokenSource.IsCancellationRequested; i++)
         {
-            if (i > 0 && i % maxJoinsInPeriod == 0)
+            if (i > 0 && i % maximumJoinsInPeriod == 0)
             {
                 TimeSpan waitTime = period - (DateTimeOffset.UtcNow - start);
                 if (waitTime.TotalMilliseconds > 0)
@@ -430,6 +410,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         if (OnDataReceived is null)
         {
+            // ReSharper disable once PossiblyImpureMethodCallOnReadonlyVariable
+            // doesnt matter, because lifetime of the struct ends here
             data.Dispose();
             return;
         }
@@ -452,18 +434,14 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         _cancellationTokenSource.Dispose();
     }
 
-    public bool Equals(WebSocketIrcClient? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(WebSocketIrcClient? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return ReferenceEquals(this, obj);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+
+    // TODO: equality operators
 }

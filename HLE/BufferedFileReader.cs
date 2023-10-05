@@ -1,7 +1,9 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HLE.Memory;
@@ -25,42 +27,49 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
         FilePath = filePath;
     }
 
-    public void ReadBytes<TWriter>(TWriter writer, int fileSizeHint = 100_000) where TWriter : IBufferWriter<byte>
+    public void ReadBytes<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
     {
         using FileStream fileStream = File.OpenRead(FilePath);
-        int bytesRead = fileStream.Read(writer.GetSpan(fileSizeHint));
-        writer.Advance(bytesRead);
-        while (bytesRead > 0)
+        if (fileStream.Length > int.MaxValue)
         {
-            bytesRead = fileStream.Read(writer.GetSpan(fileSizeHint));
-            writer.Advance(bytesRead);
+            ThrowFileSizeExceedsInt32MaxValue();
         }
+
+        int bytesRead = fileStream.Read(writer.GetSpan((int)fileStream.Length));
+        Debug.Assert(bytesRead == fileStream.Length);
+        writer.Advance(bytesRead);
     }
 
-    public async ValueTask ReadBytesAsync<TWriter>(TWriter writer, int fileSizeHint = 100_000) where TWriter : IBufferWriter<byte>
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowFileSizeExceedsInt32MaxValue()
+        => throw new NotSupportedException($"The file size exceeds the the maximum {typeof(int)} value.");
+
+    public async ValueTask ReadBytesAsync<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
     {
         await using FileStream fileStream = File.OpenRead(FilePath);
-        int bytesRead = await fileStream.ReadAsync(writer.GetMemory(fileSizeHint));
-        writer.Advance(bytesRead);
-        while (bytesRead > 0)
+        if (fileStream.Length > int.MaxValue)
         {
-            bytesRead = await fileStream.ReadAsync(writer.GetMemory(fileSizeHint));
-            writer.Advance(bytesRead);
+            ThrowFileSizeExceedsInt32MaxValue();
         }
+
+        int bytesRead = await fileStream.ReadAsync(writer.GetMemory((int)fileStream.Length));
+        Debug.Assert(bytesRead == fileStream.Length);
+        writer.Advance(bytesRead);
     }
 
-    public void ReadChars<TWriter>(TWriter writer, Encoding fileEncoding, int fileSizeHint = 100_000) where TWriter : IBufferWriter<char>
+    public void ReadChars<TWriter>(TWriter writer, Encoding fileEncoding) where TWriter : IBufferWriter<char>
     {
-        using PooledBufferWriter<byte> byteWriter = new(fileSizeHint);
+        using PooledBufferWriter<byte> byteWriter = new();
         ReadBytes(byteWriter);
         int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
         int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, writer.GetSpan(charCount));
         writer.Advance(charsWritten);
     }
 
-    public async ValueTask ReadCharsAsync<TWriter>(TWriter writer, Encoding fileEncoding, int fileSizeHint = 100_000) where TWriter : IBufferWriter<char>
+    public async ValueTask ReadCharsAsync<TWriter>(TWriter writer, Encoding fileEncoding) where TWriter : IBufferWriter<char>
     {
-        using PooledBufferWriter<byte> byteWriter = new(fileSizeHint);
+        using PooledBufferWriter<byte> byteWriter = new();
         await ReadBytesAsync(byteWriter);
         int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
         int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, writer.GetSpan(charCount));

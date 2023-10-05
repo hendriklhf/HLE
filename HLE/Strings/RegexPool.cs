@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -95,19 +94,13 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
     public void Add(Regex regex) => GetBucket(regex).Add(regex);
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, [MaybeNullWhen(false)] out Regex regex)
-    {
-        return TryGet(pattern, RegexOptions.None, Regex.InfiniteMatchTimeout, out regex);
-    }
+        => TryGet(pattern, RegexOptions.None, Regex.InfiniteMatchTimeout, out regex);
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, RegexOptions options, [MaybeNullWhen(false)] out Regex regex)
-    {
-        return TryGet(pattern, options, Regex.InfiniteMatchTimeout, out regex);
-    }
+        => TryGet(pattern, options, Regex.InfiniteMatchTimeout, out regex);
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
-    {
-        return GetBucket(pattern, options, timeout).TryGet(pattern, options, timeout, out regex);
-    }
+        => GetBucket(pattern, options, timeout).TryGet(pattern, options, timeout, out regex);
 
     [Pure]
     public bool Contains(Regex regex) => Contains(regex.ToString(), regex.Options, regex.MatchTimeout);
@@ -128,37 +121,20 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
-        int index = GetBucketIndex(pattern, options, timeout);
-        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), index);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int GetBucketIndex(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
-    {
         int patternHash = SimpleStringHasher.Hash(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
         int index = (int)((uint)hash % _buckets.Length);
-        Debug.Assert(index >= 0 && index < _buckets.Length);
-        return index;
+        return _buckets[index];
     }
 
     [Pure]
-    public bool Equals(RegexPool? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(RegexPool? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is RegexPool other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(RegexPool? left, RegexPool? right)
     {

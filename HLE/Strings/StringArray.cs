@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -21,7 +22,6 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public string this[int index]
     {
         get => _strings[index];
-        // ReSharper disable once PropertyCanBeMadeInitOnly.Global
         set => SetString(index, value);
     }
 
@@ -55,7 +55,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _stringLengths = new int[length];
         _stringStarts = new int[length];
         int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(roundedLength, 0x4000_0000, nameof(length));
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(roundedLength, 1 << 30, nameof(length));
 
         int charBufferLength = roundedLength << 2;
         _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
@@ -101,47 +101,19 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public int IndexOf(string str, int startIndex = 0) => IndexOf(str.AsSpan(), startIndex);
 
     [Pure]
-    public int IndexOf(ReadOnlySpan<char> chars, int startIndex = 0)
-    {
-        int arrayLength = Length;
-        ReadOnlySpan<char> charBuffer = _stringChars;
-        ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-        ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(_stringLengths);
-        ref int startReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
-        for (int i = startIndex; i < arrayLength; i++)
-        {
-            int length = Unsafe.Add(ref lengthsReference, i);
-            if (length != chars.Length)
-            {
-                continue;
-            }
-
-            ref char charsReference = ref MemoryMarshal.GetReference(chars);
-            ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
-            if (Unsafe.AreSame(ref charsReference, ref stringReference))
-            {
-                return i;
-            }
-
-            int start = Unsafe.Add(ref startReference, i);
-            ReadOnlySpan<char> bufferString = charBuffer.SliceUnsafe(start, length);
-            if (chars.SequenceEqual(bufferString))
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
+    public int IndexOf(ReadOnlySpan<char> chars, int startIndex = 0) => IndexOf(chars, StringComparison.Ordinal, startIndex);
 
     [Pure]
     public int IndexOf(string str, StringComparison comparison, int startIndex = 0) => IndexOf(str.AsSpan(), comparison, startIndex);
+
+    // TODO: the indexof methods should be merged and need some special decision making
 
     [Pure]
     public int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
         int arrayLength = Length;
         ReadOnlySpan<char> charBuffer = _stringChars;
+        ref char charsReference = ref MemoryMarshal.GetReference(chars);
         ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
         ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(_stringLengths);
         ref int startReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
@@ -153,7 +125,6 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
                 continue;
             }
 
-            ref char charsReference = ref MemoryMarshal.GetReference(chars);
             ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
             if (Unsafe.AreSame(ref charsReference, ref stringReference))
             {
@@ -165,6 +136,77 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
             if (chars.Equals(bufferSlice, comparison))
             {
                 return i;
+            }
+        }
+
+        return -1;
+    }
+
+    [Pure]
+    public int IndexOf_v1(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    {
+        ReadOnlySpan<string> strings = _strings;
+        ReadOnlySpan<int> starts = _stringStarts;
+        ReadOnlySpan<char> charBuffer = _stringChars;
+
+        ref char charsReference = ref MemoryMarshal.GetReference(chars);
+        Span<int> stringLengths = _stringLengths;
+        Span<int> lengths = stringLengths[startIndex..];
+
+        int indexOfSameLength = lengths.IndexOf(chars.Length);
+        while (indexOfSameLength >= 0)
+        {
+            int actualIndex = indexOfSameLength + startIndex;
+            ReadOnlySpan<char> str = strings[actualIndex].AsSpan();
+            ref char stringReference = ref MemoryMarshal.GetReference(str);
+            if (Unsafe.AreSame(ref charsReference, ref stringReference))
+            {
+                return actualIndex;
+            }
+
+            int strStart = starts[actualIndex];
+            if (chars.Equals(charBuffer[strStart..(strStart + chars.Length)], comparison))
+            {
+                return actualIndex;
+            }
+
+            startIndex += indexOfSameLength + 1;
+            lengths = stringLengths[startIndex..];
+            indexOfSameLength = lengths.IndexOf(chars.Length);
+        }
+
+        return -1;
+    }
+
+    [Pure]
+    public int IndexOf_v2(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    {
+        ReadOnlySpan<string> strings = _strings;
+        ReadOnlySpan<int> starts = _stringStarts;
+        ReadOnlySpan<char> charBuffer = _stringChars;
+        Span<int> stringLengths = _stringLengths;
+
+        ref char charsReference = ref MemoryMarshal.GetReference(chars);
+        Span<int> lengths = stringLengths[startIndex..];
+
+        Span<int> indices = stackalloc int[lengths.Length];
+        int indicesLength = lengths.IndicesOf(chars.Length, indices);
+        indices = indices[..indicesLength];
+
+        for (int i = 0; i < indices.Length; i++)
+        {
+            int actualIndex = indices[i] + startIndex;
+            ReadOnlySpan<char> str = strings[actualIndex].AsSpan();
+            ref char stringReference = ref MemoryMarshal.GetReference(str);
+            if (Unsafe.AreSame(ref charsReference, ref stringReference))
+            {
+                return actualIndex;
+            }
+
+            int strStart = starts[actualIndex];
+            if (chars.Equals(charBuffer[strStart..(strStart + chars.Length)], comparison))
+            {
+                return actualIndex;
             }
         }
 
@@ -251,18 +293,11 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _freeCharBufferSpace = _stringChars.Length;
     }
 
-    public IEnumerator<string> GetEnumerator()
-    {
-        foreach (string str in _strings)
-        {
-            yield return str;
-        }
-    }
+    public ArrayEnumerator<string> GetEnumerator() => new(_strings, 0, _strings.Length);
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator<string> IEnumerable<string>.GetEnumerator() => GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void CopyTo(List<string> destination, int offset = 0)
     {
@@ -270,7 +305,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         copyWorker.CopyTo(destination, offset);
     }
 
-    public void CopyTo(string[] destination, int offset)
+    public void CopyTo(string[] destination, int offset = 0)
     {
         CopyWorker<string> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination, offset);
@@ -321,11 +356,12 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
         if (currentStringLength > stringLength)
         {
-            str.CopyTo(_stringChars.AsSpan(lengthOfLeftStrings..));
-
             Span<char> charsToCopy = _stringChars.AsSpan((lengthOfLeftStrings + currentStringLength)..);
             Span<char> charDestination = _stringChars.AsSpan((lengthOfLeftStrings + stringLength)..);
             charsToCopy.CopyTo(charDestination);
+
+            str.CopyTo(_stringChars.AsSpan(lengthOfLeftStrings..));
+            _freeCharBufferSpace -= currentStringLength - stringLength;
             return;
         }
 
@@ -333,11 +369,12 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         {
             GrowBufferIfNeeded(currentStringLength, stringLength);
 
-            Span<char> charsToCopy = _stringChars.AsSpan((lengthOfLeftStrings + currentStringLength)..(lengthOfLeftStrings + currentStringLength + (_stringChars.Length - (lengthOfLeftStrings + stringLength))));
+            Span<char> charsToCopy = _stringChars.AsSpan((lengthOfLeftStrings + currentStringLength)..(_stringChars.Length - _freeCharBufferSpace));
             Span<char> charDestination = _stringChars.AsSpan((lengthOfLeftStrings + stringLength)..);
             charsToCopy.CopyTo(charDestination);
 
             str.CopyTo(_stringChars.AsSpan(lengthOfLeftStrings..));
+            _freeCharBufferSpace -= stringLength - currentStringLength;
             return;
         }
 
@@ -346,33 +383,42 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     private void GrowBufferIfNeeded(int currentStringLength, int newStringLength)
     {
-        int neededSpace = newStringLength - currentStringLength;
-        if (_freeCharBufferSpace >= neededSpace)
+        int neededSpace = Math.Abs(newStringLength - currentStringLength);
+        if (_freeCharBufferSpace > neededSpace)
         {
             return;
         }
 
         int newBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)(_stringChars.Length + neededSpace));
+        if (newBufferLength < _stringChars.Length)
+        {
+            ThrowMaximumBufferCapacityReached();
+        }
+
         char[] newBuffer = GC.AllocateUninitializedArray<char>(newBufferLength);
         _freeCharBufferSpace += newBufferLength - _stringChars.Length;
-        _stringChars.CopyTo(newBuffer.AsSpan());
+        _stringChars.CopyToUnsafe(newBuffer.AsSpan());
+
+        char[] oldBuffer = _stringChars;
         _stringChars = newBuffer;
+        if (ArrayPool<char>.IsCommonlyPooledType)
+        {
+            ArrayPool<char>.Shared.Return(oldBuffer);
+        }
     }
 
-    public bool Equals(StringArray? other)
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumBufferCapacityReached()
     {
-        return ReferenceEquals(this, other);
+        throw new InvalidOperationException("The maximum buffer capacity has been reached.");
     }
 
-    public override bool Equals(object? obj)
-    {
-        return obj is StringArray other && Equals(other);
-    }
+    public bool Equals(StringArray? other) => ReferenceEquals(this, other);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(StringArray? left, StringArray? right)
     {

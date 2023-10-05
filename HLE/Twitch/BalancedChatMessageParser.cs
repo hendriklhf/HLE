@@ -93,20 +93,14 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
         };
     }
 
-    public bool Equals(BalancedChatMessageParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(BalancedChatMessageParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is BalancedChatMessageParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(BalancedChatMessageParser? left, BalancedChatMessageParser? right)
     {

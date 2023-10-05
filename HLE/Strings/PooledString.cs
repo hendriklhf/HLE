@@ -42,10 +42,28 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     {
     }
 
-    private PooledString(int length, RentedArray<byte> buffer)
+    public PooledString(int length)
     {
-        _buffer = buffer;
+        int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(neededBufferSize);
+        buffer.AsSpan(..neededBufferSize).Clear();
+        StringRawDataWriter writer = new(ref buffer.Reference);
+        writer.Write(length);
+
         Length = length;
+        _buffer = buffer;
+    }
+
+    public PooledString(ReadOnlySpan<char> chars)
+    {
+        int length = chars.Length;
+        int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(neededBufferSize);
+        StringRawDataWriter writer = new(ref buffer.Reference);
+        writer.Write(chars);
+
+        Length = length;
+        _buffer = buffer;
     }
 
     public void Dispose()
@@ -56,7 +74,7 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     [Pure]
     public readonly string AsString()
     {
-        return Length == 0 ? string.Empty : RawDataMarshal.GetObjectFromRawData<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint) * 2));
+        return Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)));
     }
 
     [Pure]
@@ -72,28 +90,6 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref CharsReference, Length).CreateSpan(range);
 
     readonly Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
-
-    [Pure]
-    public static PooledString Create(int length)
-    {
-        int neededBufferSize = StringMetaDataWriter.GetNeededBufferSize(length);
-        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(neededBufferSize);
-        buffer.AsSpan(..neededBufferSize).Clear();
-        StringMetaDataWriter writer = new(ref buffer.Reference);
-        writer.Write(length);
-        return new(length, buffer);
-    }
-
-    [Pure]
-    public static PooledString Create(ReadOnlySpan<char> chars)
-    {
-        int length = chars.Length;
-        int neededBufferSize = StringMetaDataWriter.GetNeededBufferSize(length);
-        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(neededBufferSize);
-        StringMetaDataWriter writer = new(ref buffer.Reference);
-        writer.Write(chars);
-        return new(length, buffer);
-    }
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

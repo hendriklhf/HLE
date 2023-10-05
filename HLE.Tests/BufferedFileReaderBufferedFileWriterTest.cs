@@ -66,12 +66,12 @@ public class BufferedFileReaderBufferedFileWriterTest
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
         using PooledBufferWriter<char> writer = new(10);
-        new BufferedFileReader(filePath).ReadChars(writer, Encoding.Unicode, 10);
+        new BufferedFileReader(filePath).ReadChars(writer, Encoding.Unicode);
         Assert.IsTrue(writer.WrittenSpan is "hello");
 
         filePath = CreateFile("hello", Encoding.UTF8);
         writer.Clear();
-        new BufferedFileReader(filePath).ReadChars(writer, Encoding.UTF8, 10);
+        new BufferedFileReader(filePath).ReadChars(writer, Encoding.UTF8);
         Assert.IsTrue(writer.WrittenSpan is "hello");
     }
 
@@ -80,12 +80,12 @@ public class BufferedFileReaderBufferedFileWriterTest
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
         using PooledBufferWriter<char> writer = new(10);
-        await new BufferedFileReader(filePath).ReadCharsAsync(writer, Encoding.Unicode, 10);
+        await new BufferedFileReader(filePath).ReadCharsAsync(writer, Encoding.Unicode);
         Assert.IsTrue(writer.WrittenSpan is "hello");
 
         filePath = CreateFile("hello", Encoding.UTF8);
         writer.Clear();
-        await new BufferedFileReader(filePath).ReadCharsAsync(writer, Encoding.UTF8, 10);
+        await new BufferedFileReader(filePath).ReadCharsAsync(writer, Encoding.UTF8);
         Assert.IsTrue(writer.WrittenSpan is "hello");
     }
 

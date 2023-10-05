@@ -30,12 +30,12 @@ public static class StringMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<char> AsMutableSpan(string? str)
     {
-        return ((ReadOnlySpan<char>)str).AsMutableSpan();
+        return str.AsSpan().AsMutableSpan();
     }
 
     public static void Replace(string? str, char oldChar, char newChar)
     {
-        Replace((ReadOnlySpan<char>)str, oldChar, newChar);
+        Replace(str.AsSpan(), oldChar, newChar);
     }
 
     public static void Replace(ReadOnlySpan<char> span, char oldChar, char newChar)
@@ -130,11 +130,10 @@ public static class StringMarshal
     /// <returns>The <see cref="ReadOnlySpan{T}"/> as a <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string AsString(ReadOnlySpan<char> span)
+    public static unsafe string AsString(ReadOnlySpan<char> span)
     {
-        ref char charsReference = ref MemoryMarshal.GetReference(span);
-        ref byte charsAsBytesReference = ref Unsafe.As<char, byte>(ref charsReference);
-        ref byte stringDataReference = ref Unsafe.Subtract(ref charsAsBytesReference, sizeof(int));
-        return RawDataMarshal.GetObjectFromRawData<string>(ref stringDataReference);
+        ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
+        charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));
+        return RawDataMarshal.ReadObject<string>(ref charsReference);
     }
 }

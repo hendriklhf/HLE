@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Numerics;
 using HLE.Strings;
@@ -99,24 +100,14 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySpan<char> GetChannel(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
-    {
-        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespaces[^1] + 2)..];
-        return channel;
-    }
+        => ircMessage[(indicesOfWhitespaces[^1] + 2)..];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetEmoteOnly(ReadOnlySpan<char> value) => value[0] == '1';
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int GetFollowersOnly(ReadOnlySpan<char> value)
-    {
-        if (value[0] == '-')
-        {
-            return -1;
-        }
-
-        return NumberHelper.ParsePositiveNumber<int>(value);
-    }
+        => value[0] == '-' ? -1 : NumberHelper.ParsePositiveNumber<int>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetR9K(ReadOnlySpan<char> value) => value[0] == '1';
@@ -130,20 +121,13 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
 
-    public bool Equals(RoomstateParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(RoomstateParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is RoomstateParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(RoomstateParser? left, RoomstateParser? right)
     {

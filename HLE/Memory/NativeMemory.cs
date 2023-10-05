@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -51,6 +52,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         set
         {
             byte valueAsByte = Unsafe.As<bool, byte>(ref value);
+            Debug.Assert(valueAsByte is 0 or 1);
             _lengthAndDisposed = (_lengthAndDisposed & 0x7FFFFFFF) | ((uint)valueAsByte << 31);
         }
     }
@@ -84,8 +86,12 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         Length = length;
         IsDisposed = false;
 
-        nuint byteCount = (nuint)(sizeof(T) * length);
-        _pointer = (T*)(zeroed ? NativeMemory.AllocZeroed(byteCount) : NativeMemory.Alloc(byteCount));
+        uint byteCount = (uint)(sizeof(T) * length);
+        _pointer = (T*)NativeMemory.AlignedAlloc(byteCount, (nuint)sizeof(nuint));
+        if (zeroed)
+        {
+            Unsafe.InitBlock(_pointer, 0, byteCount);
+        }
     }
 
     [Pure]
@@ -109,7 +115,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
             return;
         }
 
-        NativeMemory.Free(_pointer);
+        NativeMemory.AlignedFree(_pointer);
         IsDisposed = true;
     }
 
@@ -160,23 +166,15 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     readonly void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public readonly void Clear()
-    {
-        Unsafe.InitBlock(Pointer, 0, (uint)(sizeof(T) * Length));
-    }
+    public readonly void Clear() => Unsafe.InitBlock(Pointer, 0, (uint)(sizeof(T) * Length));
 
     readonly bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
 
     readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
-    public readonly IEnumerator<T> GetEnumerator()
-    {
-        int length = Length;
-        for (int i = 0; i < length; i++)
-        {
-            yield return Unsafe.Add(ref Reference, i);
-        }
-    }
+    public readonly NativeMemoryEnumerator<T> GetEnumerator() => new(_pointer, Length);
+
+    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

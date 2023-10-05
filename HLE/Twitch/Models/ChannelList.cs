@@ -127,16 +127,13 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
         return _channels.ToArray();
     }
 
-    public bool Equals(ChannelList? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(ChannelList? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is ChannelList other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
+    [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public IEnumerator<Channel> GetEnumerator()

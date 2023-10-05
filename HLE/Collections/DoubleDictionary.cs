@@ -11,7 +11,8 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnumerable<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
+    : IEnumerable<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
@@ -205,32 +206,17 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IEnum
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowKeyNotFoundException(string message)
-    {
-        throw new KeyNotFoundException(message);
-    }
+    private static void ThrowKeyNotFoundException(string message) => throw new KeyNotFoundException(message);
 
-    public IEnumerator<TValue> GetEnumerator()
-    {
-        return Values.GetEnumerator();
-    }
+    public IEnumerator<TValue> GetEnumerator() => Values.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(_values, _secondaryKeyTranslations);

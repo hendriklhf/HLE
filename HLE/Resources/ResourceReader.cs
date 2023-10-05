@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
@@ -17,7 +17,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     public int Count => _resources.Count;
 
     private readonly string _assemblyName;
-    private readonly ConcurrentDictionary<string, byte[]?> _resources = new();
+    private readonly Dictionary<string, byte[]?> _resources = new();
 
     public ResourceReader(Assembly assembly, bool readAllResourcesOnInitialization = false)
     {
@@ -36,12 +36,17 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     [SkipLocalsInit]
     public byte[]? Read(ReadOnlySpan<char> resourceName)
     {
+        string resourcePath = BuildResourcePath(resourceName);
+        return ReadResourceFromPath(resourcePath);
+    }
+
+    private string BuildResourcePath(ReadOnlySpan<char> resourceName)
+    {
         ValueStringBuilder pathBuilder = new(stackalloc char[1 + _assemblyName.Length + resourceName.Length]);
         pathBuilder.Append(_assemblyName);
         pathBuilder.Append('.');
         pathBuilder.Append(resourceName);
-        string resourcePath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
-        return ReadResourceFromPath(resourcePath);
+        return StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
     }
 
     private void ReadAllResources()
@@ -72,6 +77,7 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
             throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
         }
 
+        // TODO: do something
         int streamLength = (int)stream.Length;
         using PooledBufferWriter<byte> bufferWriter = new(streamLength);
         int sizeHint = streamLength < 1000 ? streamLength : 1000;
@@ -89,16 +95,10 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     }
 
     [Pure]
-    public bool Equals(ResourceReader? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(ResourceReader? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return ReferenceEquals(this, obj);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode()

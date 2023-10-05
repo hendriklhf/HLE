@@ -1,12 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Models;
 
 /// <summary>
-/// A class that represents a channel with all its room states.
+/// A class that represents a channel with all its states.
 /// </summary>
 public sealed class Channel : IEquatable<Channel>
 {
@@ -49,8 +47,6 @@ public sealed class Channel : IEquatable<Channel>
 
     internal readonly string _prefixedName;
 
-    private static readonly ChangedRoomStates[] _allChangedRoomStatesValues = Enum.GetValues<ChangedRoomStates>();
-
     internal Channel(in Roomstate args)
     {
         Name = args.Channel;
@@ -65,10 +61,10 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in Roomstate args)
     {
-        ref ChangedRoomStates changedRoomStatesReference = ref MemoryMarshal.GetArrayDataReference(_allChangedRoomStatesValues);
-        for (int i = 0; i < _allChangedRoomStatesValues.Length; i++)
+        ReadOnlySpan<ChangedRoomStates> allChangedRoomStatesValues = EnumValues.GetValues<ChangedRoomStates>();
+        for (int i = 0; i < allChangedRoomStatesValues.Length; i++)
         {
-            ChangedRoomStates roomState = Unsafe.Add(ref changedRoomStatesReference, i);
+            ChangedRoomStates roomState = allChangedRoomStatesValues[i];
             bool roomstateChanged = (args.ChangedStates & roomState) == roomState;
             if (!roomstateChanged)
             {

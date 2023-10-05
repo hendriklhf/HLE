@@ -10,16 +10,12 @@ public static unsafe class StructMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<byte> GetBytes<T>(ref T item) where T : struct
-    {
-        return MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
-    }
+        => MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBitwise<TLeft, TRight>(TLeft left, TRight right) where TLeft : struct where TRight : struct
-    {
-        return EqualsBitwise(ref left, ref right);
-    }
+        => EqualsBitwise(ref left, ref right);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

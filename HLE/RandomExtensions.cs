@@ -17,9 +17,7 @@ public static class RandomExtensions
 {
     [Pure]
     public static char NextChar(this Random random, char min = char.MinValue, char max = char.MaxValue)
-    {
-        return (char)random.NextUInt16(min, max);
-    }
+        => (char)random.NextUInt16(min, max);
 
     [Pure]
     public static byte NextUInt8(this Random random, byte min = byte.MinValue, byte max = byte.MaxValue)
@@ -37,21 +35,15 @@ public static class RandomExtensions
 
     [Pure]
     public static short NextInt16(this Random random, short min = short.MinValue, short max = short.MaxValue)
-    {
-        return (short)random.Next(min, max);
-    }
+        => (short)random.Next(min, max);
 
     [Pure]
     public static ushort NextUInt16(this Random random, ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
-    {
-        return (ushort)random.Next(min, max);
-    }
+        => (ushort)random.Next(min, max);
 
     [Pure]
     public static int NextInt32(this Random random, int min = int.MinValue, int max = int.MaxValue)
-    {
-        return random.Next(min, max);
-    }
+        => random.Next(min, max);
 
     [Pure]
     public static uint NextUInt32(this Random random, uint min = uint.MinValue, uint max = uint.MaxValue)
@@ -78,6 +70,13 @@ public static class RandomExtensions
     public static UInt128 NextUInt128(this Random random)
     {
         random.NextStruct(out UInt128 result);
+        return result;
+    }
+
+    [Pure]
+    public static decimal NextDecimal(this Random random)
+    {
+        random.NextStruct(out decimal result);
         return result;
     }
 
@@ -154,7 +153,7 @@ public static class RandomExtensions
     [Pure]
     public static bool NextBool(this Random random)
     {
-        byte randomByte = random.NextUInt8();
+        byte randomByte = (byte)(random.NextUInt8() & 1);
         return Unsafe.As<byte, bool>(ref randomByte);
     }
 
@@ -176,9 +175,7 @@ public static class RandomExtensions
     }
 
     public static unsafe void Write<T>(this Random random, T* destination, int elementCount) where T : struct
-    {
-        random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
-    }
+        => random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
 
     public static unsafe void Write<T>(this Random random, ref T destination, int elementCount) where T : struct
     {
@@ -187,14 +184,10 @@ public static class RandomExtensions
     }
 
     public static void Fill<T>(this Random random, T[] array) where T : struct
-    {
-        random.Fill(array.AsSpan());
-    }
+        => random.Fill(array.AsSpan());
 
     public static void Fill<T>(this Random random, Span<T> span) where T : struct
-    {
-        random.Write(ref MemoryMarshal.GetReference(span), span.Length);
-    }
+        => random.Write(ref MemoryMarshal.GetReference(span), span.Length);
 
     [Pure]
     public static T[] Shuffle<T>(this Random random, IEnumerable<T> collection)
@@ -217,28 +210,19 @@ public static class RandomExtensions
         return result;
     }
 
-    public static void Shuffle<T>(this Random random, List<T> collection)
-    {
-        random.Shuffle(CollectionsMarshal.AsSpan(collection));
-    }
+    public static void Shuffle<T>(this Random random, List<T> collection) => random.Shuffle(CollectionsMarshal.AsSpan(collection));
 
     [Pure]
     public static ref T GetItem<T>(this Random random, List<T> list)
-    {
-        return ref random.GetItem(CollectionsMarshal.AsSpan(list));
-    }
+        => ref random.GetItem(CollectionsMarshal.AsSpan(list));
 
     [Pure]
     public static ref T GetItem<T>(this Random random, T[] array)
-    {
-        return ref random.GetItem((ReadOnlySpan<T>)array);
-    }
+        => ref random.GetItem(array.AsSpan());
 
     [Pure]
     public static ref T GetItem<T>(this Random random, Span<T> span)
-    {
-        return ref random.GetItem((ReadOnlySpan<T>)span);
-    }
+        => ref random.GetItem((ReadOnlySpan<T>)span);
 
     [Pure]
     public static ref T GetItem<T>(this Random random, ReadOnlySpan<T> span)
@@ -246,7 +230,7 @@ public static class RandomExtensions
         int spanLength = span.Length;
         if (spanLength == 0)
         {
-            ThrowCantGetItemFromEmptyCollection();
+            ThrowCantGetRandomItemFromEmptyCollection();
         }
 
         ref T firstItem = ref MemoryMarshal.GetReference(span);
@@ -255,16 +239,14 @@ public static class RandomExtensions
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ThrowCantGetItemFromEmptyCollection()
-    {
-        throw new InvalidOperationException("Can't get a random item from an empty collection.");
-    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowCantGetRandomItemFromEmptyCollection()
+        => throw new InvalidOperationException("Can't get a random item from an empty collection.");
 
     [Pure]
     public static bool GetBool(this RandomNumberGenerator random)
     {
-        byte result = random.GetUInt8();
+        byte result = (byte)(random.GetUInt8() & 1);
         return Unsafe.As<byte, bool>(ref result);
     }
 
@@ -339,7 +321,7 @@ public static class RandomExtensions
     }
 
     [Pure]
-    public static float GetFloat(this RandomNumberGenerator random)
+    public static float GetSingle(this RandomNumberGenerator random)
     {
         random.GetStruct(out float result);
         return result;
@@ -395,49 +377,37 @@ public static class RandomExtensions
     }
 
     public static unsafe void Write<T>(this RandomNumberGenerator random, T* destination, int elementCount) where T : struct
-    {
-        random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
-    }
+        => random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
 
     public static unsafe void Write<T>(this RandomNumberGenerator random, ref T destination, int elementCount) where T : struct
-    {
-        random.GetBytes(MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref destination), elementCount * sizeof(T)));
-    }
+        => random.GetBytes(MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref destination), elementCount * sizeof(T)));
 
     public static void Fill<T>(this RandomNumberGenerator random, Span<T> span) where T : struct
-    {
-        random.Write(ref MemoryMarshal.GetReference(span), span.Length);
-    }
+        => random.Write(ref MemoryMarshal.GetReference(span), span.Length);
 
     [Pure]
-    public static ref T? GetItem<T>(this RandomNumberGenerator random, List<T> list)
-    {
-        return ref random.GetItem(CollectionsMarshal.AsSpan(list));
-    }
+    public static ref T GetItem<T>(this RandomNumberGenerator random, List<T> list)
+        => ref random.GetItem(CollectionsMarshal.AsSpan(list));
 
     [Pure]
-    public static ref T? GetItem<T>(this RandomNumberGenerator random, T[] array)
-    {
-        return ref random.GetItem(array.AsSpan());
-    }
+    public static ref T GetItem<T>(this RandomNumberGenerator random, T[] array)
+        => ref random.GetItem(array.AsSpan());
 
     [Pure]
-    public static ref T? GetItem<T>(this RandomNumberGenerator random, Span<T> span)
-    {
-        return ref random.GetItem((ReadOnlySpan<T>)span);
-    }
+    public static ref T GetItem<T>(this RandomNumberGenerator random, Span<T> span)
+        => ref random.GetItem((ReadOnlySpan<T>)span);
 
     [Pure]
-    public static ref T? GetItem<T>(this RandomNumberGenerator random, ReadOnlySpan<T> span)
+    public static ref T GetItem<T>(this RandomNumberGenerator random, ReadOnlySpan<T> span)
     {
         int spanLength = span.Length;
         if (spanLength == 0)
         {
-            return ref Unsafe.NullRef<T?>();
+            ThrowCantGetRandomItemFromEmptyCollection();
         }
 
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         int randomIndex = random.GetInt32(0, spanLength);
-        return ref Unsafe.Add(ref firstItem, randomIndex)!;
+        return ref Unsafe.Add(ref firstItem, randomIndex);
     }
 }

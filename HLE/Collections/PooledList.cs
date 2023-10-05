@@ -256,15 +256,9 @@ public sealed class PooledList<T>(int capacity)
     }
 
     [Pure]
-    public IEnumerator<T> GetEnumerator()
-    {
-        int count = Count;
-        T[] buffer = _buffer.Array;
-        for (int i = 0; i < count; i++)
-        {
-            yield return buffer[i];
-        }
-    }
+    public ArrayEnumerator<T> GetEnumerator() => new(_buffer.Array, 0, Count);
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -272,10 +266,7 @@ public sealed class PooledList<T>(int capacity)
     public bool Equals(PooledList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is PooledList<T> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

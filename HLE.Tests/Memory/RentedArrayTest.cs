@@ -269,7 +269,7 @@ public class RentedArrayTest
         Assert.ThrowsException<ArgumentOutOfRangeException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
-            _ = array.AsSpan(5..20);
+            _ = array.AsSpan(5..(array.Length + 10));
         });
     }
 
@@ -315,7 +315,7 @@ public class RentedArrayTest
         Assert.ThrowsException<ArgumentOutOfRangeException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
-            _ = array.AsMemory(5..20);
+            _ = array.AsMemory(5..(array.Length + 10));
         });
     }
 

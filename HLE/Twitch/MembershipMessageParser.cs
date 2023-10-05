@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;
@@ -28,9 +29,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
 
     [Pure]
     public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
-    {
-        return Parse<LeftChannelMessage>(ircMessage, indicesOfWhitespaces);
-    }
+        => Parse<LeftChannelMessage>(ircMessage, indicesOfWhitespaces);
 
     [Pure]
     [SkipLocalsInit]
@@ -51,9 +50,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
 
     [Pure]
     public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
-    {
-        return Parse<JoinChannelMessage>(ircMessage, indicesOfWhitespaces);
-    }
+        => Parse<JoinChannelMessage>(ircMessage, indicesOfWhitespaces);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static T Parse<T>(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces) where T : IMembershipMessage<T>
@@ -65,20 +62,14 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
         return T.Create(username, channel);
     }
 
-    public bool Equals(MembershipMessageParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(MembershipMessageParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is MembershipMessageParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(MembershipMessageParser? left, MembershipMessageParser? right)
     {

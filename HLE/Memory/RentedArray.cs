@@ -71,7 +71,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     {
     }
 
-    internal RentedArray(T[] array, ArrayPool<T> pool)
+    public RentedArray(T[] array, ArrayPool<T> pool)
     {
         _array = array;
         _pool = pool;
@@ -79,7 +79,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     public void Dispose()
     {
-        _pool.Return(_array!);
+        _pool.Return(_array!); // Return handles null
         _array = null;
     }
 
@@ -183,7 +183,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     }
 
     [Pure]
-    public readonly bool Equals(RentedArray<T> other) => Equals(other.Array);
+    public readonly bool Equals(RentedArray<T> other) => ReferenceEquals(Array, other.Array);
 
     [Pure]
     public readonly bool Equals(T[]? array) => ReferenceEquals(Array, array);
@@ -209,17 +209,10 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
         return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{Array.Length}]";
     }
 
-    /// <inheritdoc/>
-    public readonly IEnumerator<T> GetEnumerator()
-    {
-        int length = Length;
-        for (int i = 0; i < length; i++)
-        {
-            yield return Unsafe.Add(ref Reference, i);
-        }
-    }
+    public readonly ArrayEnumerator<T> GetEnumerator() => new(Array, 0, Array.Length);
 
-    /// <inheritdoc/>
+    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static bool operator ==(RentedArray<T> left, RentedArray<T> right)

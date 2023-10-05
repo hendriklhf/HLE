@@ -47,10 +47,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ReadOnlySpan<char> GetChannel(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
-    {
-        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespaces[2] + 1)..indicesOfWhitespaces[3]][1..];
-        return channel;
-    }
+        => ircMessage[(indicesOfWhitespaces[2] + 1)..indicesOfWhitespaces[3]][1..];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ChatMessageTags GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
@@ -84,8 +81,8 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         }
 
         // skipping chars to speed up .IndexOf
-        const int maximumOfCharsThatCanBeIgnored = 242;
-        ircMessage = ircMessage[maximumOfCharsThatCanBeIgnored..];
+        const int maximumAmountOfCharsThatCanBeIgnored = 242;
+        ircMessage = ircMessage[maximumAmountOfCharsThatCanBeIgnored..];
         return ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1];
     }
 
@@ -97,6 +94,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
             return Array.Empty<Badge>();
         }
 
+        // TODO: IndicesOf
         Badge[] badges = new Badge[value.Count(',') + 1];
         int badgeCount = 0;
         while (value.Length > 0)
@@ -115,9 +113,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static Color GetColor(ReadOnlySpan<char> value)
-    {
-        return value.Length == 0 ? Color.Empty : ParseHexColor(ref Unsafe.Add(ref MemoryMarshal.GetReference(value), 1));
-    }
+        => value.Length == 0 ? Color.Empty : ParseHexColor(ref Unsafe.Add(ref MemoryMarshal.GetReference(value), 1));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ReadOnlySpan<char> GetDisplayName(ReadOnlySpan<char> value)
@@ -190,7 +186,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Color ParseHexColor(ref char numberReference)
     {
-        const byte charAAndZeroDiff = _upperCaseAMinus10 - _charZero;
+        const int charAAndZeroDiff = _upperCaseAMinus10 - _charZero;
 
         char firstChar = Unsafe.Add(ref numberReference, 0);
         char thirdChar = Unsafe.Add(ref numberReference, 2);
@@ -229,20 +225,14 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         return hexChar > '9';
     }
 
-    public bool Equals(ChatMessageParser? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(ChatMessageParser? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is ChatMessageParser other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(ChatMessageParser? left, ChatMessageParser? right)
     {

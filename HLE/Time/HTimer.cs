@@ -107,21 +107,13 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
     }
 
     [Pure]
-    public bool Equals(HTimer? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(HTimer? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is HTimer other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(HTimer? left, HTimer? right)
     {

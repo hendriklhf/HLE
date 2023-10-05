@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
@@ -14,23 +15,34 @@ namespace HLE.Memory;
 public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
     : IEquatable<ObjectPool<T>>, IDisposable, ICountable
 {
+    /// <summary>
+    /// Gets the amount of items in the pool.
+    /// </summary>
     public int Count => _rentableItems.Count;
 
-    public int Capacity { get; set; } = 64;
+    /// <summary>
+    /// Gets or sets the maximum amount of items allowed in the pool.
+    /// </summary>
+    public int Capacity { get; set; } = _defaultCapacity;
+
+    public IFactory Factory { get; } = factory;
 
     private readonly ConcurrentStack<T> _rentableItems = new();
-    internal readonly IFactory _factory = factory;
+
+    private const int _defaultCapacity = 64;
 
     [Pure]
     public T Rent()
     {
         if (!_rentableItems.TryPop(out T? obj))
         {
-            obj = _factory.Create();
+            obj = Factory.Create();
         }
 
         return obj;
     }
+
+    public bool TryRent([MaybeNullWhen(false)] out T obj) => _rentableItems.TryPop(out obj);
 
     public void Return(T obj)
     {
@@ -39,7 +51,7 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
             return;
         }
 
-        _factory.Return(obj);
+        Factory.Return(obj);
         _rentableItems.Push(obj);
     }
 
@@ -53,22 +65,13 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
         _rentableItems.Dispose();
     }
 
-    public bool Equals(ObjectPool<T>? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(ObjectPool<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is ObjectPool<T> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(ObjectPool<T>? left, ObjectPool<T>? right)
     {

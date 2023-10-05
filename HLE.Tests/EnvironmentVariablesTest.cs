@@ -10,7 +10,12 @@ public class EnvironmentVariablesTest
     [TestMethod]
     public void CreateTest()
     {
-        EnvironmentVariables environmentVariables = EnvironmentVariables.Create();
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        EnvironmentVariables environmentVariables = EnvironmentVariableProvider.Create().GetEnvironmentVariables();
         IDictionary actualEnvironmentVariables = Environment.GetEnvironmentVariables();
         Assert.AreEqual(actualEnvironmentVariables.Count, environmentVariables.Count);
 

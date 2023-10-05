@@ -276,30 +276,17 @@ public sealed class NativeMemoryList<T>(int capacity)
         copyWorker.CopyTo(destination);
     }
 
-    public IEnumerator<T> GetEnumerator()
-    {
-        for (int i = 0; i < Count; i++)
-        {
-            yield return _buffer[i];
-        }
-    }
+    public unsafe NativeMemoryEnumerator<T> GetEnumerator() => new(_buffer.Pointer, Count);
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(NativeMemoryList<T>? other)
-    {
-        return ReferenceEquals(this, other) || Count == other?.Count && _buffer.Equals(other._buffer);
-    }
+    public bool Equals(NativeMemoryList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is NativeMemoryList<T> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Twitch.Models;
@@ -237,18 +238,13 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    public bool Equals(IrcHandler? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    [Pure]
+    public bool Equals(IrcHandler? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is IrcHandler other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+
+    // TODO: equality operators
 }

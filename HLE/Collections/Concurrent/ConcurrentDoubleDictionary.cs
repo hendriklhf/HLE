@@ -137,44 +137,24 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     }
 
     [Pure]
-    public bool ContainsPrimaryKey(TPrimaryKey key)
-    {
-        return _dictionary.ContainsPrimaryKey(key);
-    }
+    public bool ContainsPrimaryKey(TPrimaryKey key) => _dictionary.ContainsPrimaryKey(key);
 
     [Pure]
-    public bool ContainsSecondaryKey(TSecondaryKey key)
-    {
-        return _dictionary.ContainsSecondaryKey(key);
-    }
+    public bool ContainsSecondaryKey(TSecondaryKey key) => _dictionary.ContainsSecondaryKey(key);
 
     [Pure]
-    public TValue[] ToArray()
-    {
-        return _dictionary.ToArray();
-    }
+    public TValue[] ToArray() => _dictionary.ToArray();
 
-    public IEnumerator<TValue> GetEnumerator()
-    {
-        return Values.GetEnumerator();
-    }
+    public IEnumerator<TValue> GetEnumerator() => Values.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
     public bool Equals(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+        => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> other && Equals(other);
-    }
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => _dictionary.GetHashCode();
