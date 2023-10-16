@@ -1,62 +1,69 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE;
 
-public static class EnumValues
+public static class EnumValues<TEnum> where TEnum : struct, Enum
 {
-    private static readonly ConcurrentDictionary<Type, byte[]> _valuesCache = new();
+    [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
+    private static byte[]? _bytes;
 
-    public static unsafe ReadOnlySpan<TEnum> GetValues<TEnum>() where TEnum : struct, Enum
+    [Pure]
+    public static unsafe ReadOnlySpan<TEnum> GetValues()
     {
-        if (_valuesCache.TryGetValue(typeof(TEnum), out byte[]? bytes))
+        byte[]? bytes = _bytes;
+        if (bytes is null)
         {
-            ref byte bytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
-            return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<byte, TEnum>(ref bytesReference), bytes.Length / sizeof(TEnum));
+            return GetAndCacheValues();
         }
 
-        ReadOnlySpan<TEnum> values = Enum.GetValues<TEnum>();
-        ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
-        ref byte valueBytesReference = ref Unsafe.As<TEnum, byte>(ref valuesReference);
-
-        int byteCount = values.Length * sizeof(TEnum);
-        bytes = GC.AllocateUninitializedArray<byte>(byteCount, true);
-        _valuesCache.AddOrSet(typeof(TEnum), bytes);
-
-        ref byte cacheBytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
-        CopyWorker<byte> copyWorker = new(ref valueBytesReference, byteCount);
-        copyWorker.CopyTo(ref cacheBytesReference);
-
-        return values;
+        ref byte bytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
+        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<byte, TEnum>(ref bytesReference), bytes.Length / sizeof(TEnum));
     }
 
-    public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAsUnderlyingType<TEnum, TUnderlyingType>()
-        where TEnum : struct, Enum
-        where TUnderlyingType : struct
+    [Pure]
+    public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAsUnderlyingType<TUnderlyingType>()
+        where TUnderlyingType : unmanaged
     {
         if (sizeof(TEnum) != sizeof(TUnderlyingType))
         {
             ThrowDifferentInstanceSize(typeof(TEnum), typeof(TUnderlyingType));
         }
 
-        ReadOnlySpan<TEnum> values = GetValues<TEnum>();
+        ReadOnlySpan<TEnum> values = GetValues();
         ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
         ref TUnderlyingType underlyingTypeReference = ref Unsafe.As<TEnum, TUnderlyingType>(ref valuesReference);
         return MemoryMarshal.CreateReadOnlySpan(ref underlyingTypeReference, values.Length);
     }
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetValueCount<TEnum>() where TEnum : struct, Enum
-        => GetValues<TEnum>().Length;
+    public static int GetValueCount() => GetValues().Length;
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TEnum GetMaxValue<TEnum>() where TEnum : struct, Enum
-        => GetValues<TEnum>()[^1];
+    public static TEnum GetMaxValue() => GetValues()[^1];
+
+    private static unsafe ReadOnlySpan<TEnum> GetAndCacheValues()
+    {
+        ReadOnlySpan<TEnum> values = Enum.GetValues<TEnum>();
+        ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
+        ref byte valueBytesReference = ref Unsafe.As<TEnum, byte>(ref valuesReference);
+
+        int byteCount = values.Length * sizeof(TEnum);
+        byte[] bytes = GC.AllocateUninitializedArray<byte>(byteCount, true);
+
+        ref byte cacheBytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
+        CopyWorker<byte> copyWorker = new(ref valueBytesReference, byteCount);
+        copyWorker.CopyTo(ref cacheBytesReference);
+
+        _bytes = bytes;
+        return values;
+    }
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

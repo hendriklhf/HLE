@@ -5,8 +5,5 @@ namespace HLE.Marshalling;
 
 public static class ValueStringBuilderMarshal
 {
-    public static Span<char> GetBuffer(ValueStringBuilder builder)
-    {
-        return builder._buffer;
-    }
+    public static Span<char> GetBuffer(ValueStringBuilder builder) => builder._buffer;
 }

@@ -84,10 +84,7 @@ public static unsafe class SpanMarshal
     /// <typeparam name="T">The type of elements in the <see cref="Span{T}"/>.</typeparam>
     /// <returns>The <see cref="Span{T}"/> that has been passed in.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> ReturnStackAlloced<T>(scoped Span<T> span)
-    {
-#pragma warning disable CS9080
-        return span;
-#pragma warning restore CS9080
-    }
+#pragma warning disable CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
+    public static Span<T> ReturnStackAlloced<T>(scoped Span<T> span) => span;
+#pragma warning restore CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
 }

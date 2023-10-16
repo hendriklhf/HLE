@@ -105,13 +105,7 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right) => Equals(left, right);
 
-    public static bool operator !=(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right) => !(left == right);
 }

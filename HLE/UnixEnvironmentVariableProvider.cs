@@ -73,12 +73,8 @@ public sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvid
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(UnixEnvironmentVariableProvider? left, UnixEnvironmentVariableProvider? right)
-    {
-        return Equals(left, right);
-    }
+        => Equals(left, right);
 
     public static bool operator !=(UnixEnvironmentVariableProvider? left, UnixEnvironmentVariableProvider? right)
-    {
-        return !(left == right);
-    }
+        => !(left == right);
 }

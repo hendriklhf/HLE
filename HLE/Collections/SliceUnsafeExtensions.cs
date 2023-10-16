@@ -17,10 +17,7 @@ public static class SliceUnsafeExtensions
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> SliceUnsafe<T>(this Span<T> span, int start)
-    {
-        return span.SliceUnsafe(start, span.Length - start);
-    }
+    public static Span<T> SliceUnsafe<T>(this Span<T> span, int start) => span.SliceUnsafe(start, span.Length - start);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,9 +39,7 @@ public static class SliceUnsafeExtensions
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, int start)
-    {
-        return span.SliceUnsafe(start, span.Length - start);
-    }
+        => span.SliceUnsafe(start, span.Length - start);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

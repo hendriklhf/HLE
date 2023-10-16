@@ -18,6 +18,9 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
     internal static bool IsCommonlyPooledType => GetIsCommonlyPooledType();
 
+    /// <summary>
+    /// Stores the maximum amount of arrays per length that the ArrayPool can hold.
+    /// </summary>
     internal static ReadOnlySpan<int> ObjectPoolCapacities => new[]
     {
         // 16,32,64,128,256,512
@@ -27,13 +30,15 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
         // 16384,32768,65536,
         16, 16, 16,
         // 131072,262144,524288,1048576
-        8, 8, 8, 8
+        8, 8, 8, 8,
+        // 2097152,4194304
+        4, 4
     };
 
     private readonly ObjectPool<T[]>[] _pools;
 
     internal const int MinimumArrayLength = 0x10; // has to be pow of 2
-    internal const int MaximumArrayLength = 0x100000; // has to be pow of 2
+    internal const int MaximumArrayLength = 0x400000; // has to be pow of 2
     internal const int IndexOffset = 4; // BitOperations.TrailingZeroCount(MinimumArrayLength)
 
     public ArrayPool()
@@ -95,10 +100,7 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [Pure]
-    public RentedArray<T> CreateRentedArray(int minimumLength)
-    {
-        return new(Rent(minimumLength), this);
-    }
+    public RentedArray<T> CreateRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
     public void Return(T[] array)
     {
@@ -145,23 +147,21 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetIsCommonlyPooledType()
-    {
-        return typeof(T) == typeof(byte) ||
-               typeof(T) == typeof(sbyte) ||
-               typeof(T) == typeof(short) ||
-               typeof(T) == typeof(ushort) ||
-               typeof(T) == typeof(int) ||
-               typeof(T) == typeof(uint) ||
-               typeof(T) == typeof(long) ||
-               typeof(T) == typeof(ulong) ||
-               typeof(T) == typeof(nint) ||
-               typeof(T) == typeof(nuint) ||
-               typeof(T) == typeof(bool) ||
-               typeof(T) == typeof(string) ||
-               typeof(T) == typeof(char) ||
-               typeof(T).IsEnum;
-    }
+    private static bool GetIsCommonlyPooledType() =>
+        typeof(T) == typeof(byte) ||
+        typeof(T) == typeof(sbyte) ||
+        typeof(T) == typeof(short) ||
+        typeof(T) == typeof(ushort) ||
+        typeof(T) == typeof(int) ||
+        typeof(T) == typeof(uint) ||
+        typeof(T) == typeof(long) ||
+        typeof(T) == typeof(ulong) ||
+        typeof(T) == typeof(nint) ||
+        typeof(T) == typeof(nuint) ||
+        typeof(T) == typeof(bool) ||
+        typeof(T) == typeof(string) ||
+        typeof(T) == typeof(char) ||
+        typeof(T).IsEnum;
 
     [Pure]
     public bool Equals(ArrayPool<T>? other) => ReferenceEquals(this, other);
@@ -170,18 +170,9 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(ArrayPool<T>? left, ArrayPool<T>? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ArrayPool<T>? left, ArrayPool<T>? right) => Equals(left, right);
 
-    public static bool operator !=(ArrayPool<T>? left, ArrayPool<T>? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ArrayPool<T>? left, ArrayPool<T>? right) => !(left == right);
 }

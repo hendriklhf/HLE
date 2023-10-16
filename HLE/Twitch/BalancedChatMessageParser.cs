@@ -102,13 +102,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(BalancedChatMessageParser? left, BalancedChatMessageParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(BalancedChatMessageParser? left, BalancedChatMessageParser? right) => Equals(left, right);
 
-    public static bool operator !=(BalancedChatMessageParser? left, BalancedChatMessageParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(BalancedChatMessageParser? left, BalancedChatMessageParser? right) => !(left == right);
 }

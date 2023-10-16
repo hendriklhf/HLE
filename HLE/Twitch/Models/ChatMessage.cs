@@ -57,36 +57,18 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     }
 
     [Pure]
-    public bool Equals(ChatMessage? other)
-    {
-        return Equals((IChatMessage?)other);
-    }
+    public bool Equals(ChatMessage? other) => Equals((IChatMessage?)other);
 
     [Pure]
-    public bool Equals(IChatMessage? other)
-    {
-        return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
-    }
+    public bool Equals(IChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is IChatMessage other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is IChatMessage other && Equals(other);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, TmiSentTs);
-    }
+    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 
-    public static bool operator ==(ChatMessage? left, ChatMessage? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ChatMessage? left, ChatMessage? right) => Equals(left, right);
 
-    public static bool operator !=(ChatMessage? left, ChatMessage? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ChatMessage? left, ChatMessage? right) => !(left == right);
 }

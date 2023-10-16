@@ -12,12 +12,12 @@
     </PropertyGroup>
 
     <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>CS1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
-        <NoWarn Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">IDE0005</NoWarn>
+        <NoWarn Condition="'$(Configuration)'=='Debug'">IDE0005</NoWarn>
     </PropertyGroup>
 </Project>

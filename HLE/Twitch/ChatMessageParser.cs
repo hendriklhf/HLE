@@ -220,10 +220,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsHexLetter(char hexChar)
-    {
-        return hexChar > '9';
-    }
+    private static bool IsHexLetter(char hexChar) => hexChar > '9';
 
     [Pure]
     public bool Equals(ChatMessageParser? other) => ReferenceEquals(this, other);
@@ -234,13 +231,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(ChatMessageParser? left, ChatMessageParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ChatMessageParser? left, ChatMessageParser? right) => Equals(left, right);
 
-    public static bool operator !=(ChatMessageParser? left, ChatMessageParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ChatMessageParser? left, ChatMessageParser? right) => !(left == right);
 }

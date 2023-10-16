@@ -5,46 +5,46 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Marshalling;
 
-public static unsafe class StructMarshal
+public static unsafe class StructMarshal<T> where T : struct
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<byte> GetBytes<T>(ref T item) where T : struct
+    public static Span<byte> GetBytes(ref T item)
         => MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsBitwise<TLeft, TRight>(TLeft left, TRight right) where TLeft : struct where TRight : struct
+    public static bool EqualsBitwise<TOther>(T left, TOther right) where TOther : struct
         => EqualsBitwise(ref left, ref right);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsBitwise<TLeft, TRight>(ref TLeft left, ref TRight right) where TLeft : struct where TRight : struct
+    public static bool EqualsBitwise<TOther>(ref T left, ref TOther right) where TOther : struct
     {
-        if (sizeof(TLeft) != sizeof(TRight))
+        if (sizeof(T) != sizeof(TOther))
         {
             return false;
         }
 
-        switch (sizeof(TLeft))
+        switch (sizeof(T))
         {
             case sizeof(byte):
-                return Unsafe.As<TLeft, byte>(ref left) == Unsafe.As<TRight, byte>(ref right);
+                return Unsafe.As<T, byte>(ref left) == Unsafe.As<TOther, byte>(ref right);
             case sizeof(short):
-                return Unsafe.As<TLeft, short>(ref left) == Unsafe.As<TRight, short>(ref right);
+                return Unsafe.As<T, short>(ref left) == Unsafe.As<TOther, short>(ref right);
             case sizeof(int):
-                return Unsafe.As<TLeft, int>(ref left) == Unsafe.As<TRight, int>(ref right);
+                return Unsafe.As<T, int>(ref left) == Unsafe.As<TOther, int>(ref right);
             case sizeof(long):
-                return Unsafe.As<TLeft, long>(ref left) == Unsafe.As<TRight, long>(ref right);
+                return Unsafe.As<T, long>(ref left) == Unsafe.As<TOther, long>(ref right);
         }
 
-        if (Unsafe.AreSame(ref Unsafe.As<TLeft, byte>(ref left), ref Unsafe.As<TRight, byte>(ref right)))
+        if (Unsafe.AreSame(ref Unsafe.As<T, byte>(ref left), ref Unsafe.As<TOther, byte>(ref right)))
         {
             return true;
         }
 
         ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
-        ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
+        ReadOnlySpan<byte> rightBytes = StructMarshal<TOther>.GetBytes(ref right);
         return leftBytes.SequenceEqual(rightBytes);
     }
 }

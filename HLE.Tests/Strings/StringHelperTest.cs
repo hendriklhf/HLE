@@ -79,10 +79,7 @@ public partial class StringHelperTest
         Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
     }
 
-    private static string TrimAllWithRegex(string str)
-    {
-        return GetMultipleSpacesRegex().Replace(str.Trim(), " ");
-    }
+    private static string TrimAllWithRegex(string str) => GetMultipleSpacesRegex().Replace(str.Trim(), " ");
 
     [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled)]
     private static partial Regex GetMultipleSpacesRegex();

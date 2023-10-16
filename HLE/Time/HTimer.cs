@@ -115,13 +115,7 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(HTimer? left, HTimer? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(HTimer? left, HTimer? right) => Equals(left, right);
 
-    public static bool operator !=(HTimer? left, HTimer? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(HTimer? left, HTimer? right) => !(left == right);
 }

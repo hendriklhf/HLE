@@ -139,25 +139,18 @@ internal readonly unsafe ref struct CopyWorker<T>
 
     public void CopyTo(T* destination) => CopyTo(ref Unsafe.AsRef<T>(destination));
 
-    private static delegate*<ref TValue, ref TValue, nuint, void> GetMemmoveFunctionPointer<TValue>()
-    {
-        return (delegate*<ref TValue, ref TValue, nuint, void>)
-            typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault(static m => m is { Name: "Memmove", IsGenericMethod: true })!
-                .MakeGenericMethod(typeof(TValue)).MethodHandle
-                .GetFunctionPointer();
-    }
+    private static delegate*<ref TValue, ref TValue, nuint, void> GetMemmoveFunctionPointer<TValue>() =>
+        (delegate*<ref TValue, ref TValue, nuint, void>)
+        typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault(static m => m is { Name: "Memmove", IsGenericMethod: true })!
+            .MakeGenericMethod(typeof(TValue)).MethodHandle
+            .GetFunctionPointer();
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDestinationTooShort()
-    {
-        throw new InvalidOperationException("The destination length is shorter than the source length.");
-    }
+    private static void ThrowDestinationTooShort() => throw new InvalidOperationException("The destination length is shorter than the source length.");
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowItemsToCopyExceedsInt32MaxValue()
-    {
-        throw new InvalidOperationException("The amount of items needed to be copied is greater than the maximum value of a 32-bit signed integer, thus can't be copied to the destination.");
-    }
+        => throw new InvalidOperationException("The amount of items needed to be copied is greater than the maximum value of a 32-bit signed integer, thus can't be copied to the destination.");
 }

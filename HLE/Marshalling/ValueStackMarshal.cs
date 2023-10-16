@@ -5,8 +5,5 @@ namespace HLE.Marshalling;
 
 public static class ValueStackMarshal<T>
 {
-    public static Span<T> GetBuffer(ValueStack<T> stack)
-    {
-        return stack._stack;
-    }
+    public static Span<T> GetBuffer(ValueStack<T> stack) => stack._stack;
 }

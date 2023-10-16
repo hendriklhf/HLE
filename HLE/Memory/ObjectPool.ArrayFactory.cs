@@ -29,9 +29,7 @@ public sealed partial class ObjectPool<T>
         }
 
         internal ArrayFactory(int arrayLength, bool skipClearing) : this(arrayLength)
-        {
-            _skipClearing = skipClearing;
-        }
+            => _skipClearing = skipClearing;
 
         [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

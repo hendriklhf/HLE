@@ -16,7 +16,7 @@ namespace HLE.Collections.Concurrent;
 /// <typeparam name="T">The type of stored items.</typeparam>
 public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDisposable, IReadOnlyCollection<T>, ICopyable<T>, IReadOnlySpanProvider<T>, ICountable, IIndexAccessible<T>
 {
-    T IIndexAccessible<T>.this[int index] => GetReadOnlySpan()[index];
+    T IIndexAccessible<T>.this[int index] => AsSpan()[index];
 
     public int Count { get; private set; }
 
@@ -47,6 +47,8 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         _bufferLock?.Dispose();
         _bufferLock = null;
     }
+
+    public ReadOnlySpan<T> AsSpan() => _buffer.AsSpan(..Count);
 
     public void Push(T item)
     {
@@ -98,10 +100,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowStackIsEmpty()
-    {
-        throw new InvalidOperationException("The stack is empty.");
-    }
+    private static void ThrowStackIsEmpty() => throw new InvalidOperationException("The stack is empty.");
 
     public bool TryPop([MaybeNullWhen(false)] out T item)
     {
@@ -170,50 +169,45 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumStackCapacityReached()
-    {
-        throw new InvalidOperationException("The maximum stack capacity has been reached.");
-    }
+        => throw new InvalidOperationException("The maximum stack capacity has been reached.");
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        CopyWorker<T> copyWorker = new(GetReadOnlySpan());
+        CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyWorker<T> copyWorker = new(GetReadOnlySpan());
+        CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyWorker<T> copyWorker = new(GetReadOnlySpan());
+        CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<T> destination)
     {
-        CopyWorker<T> copyWorker = new(GetReadOnlySpan());
+        CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref T destination)
     {
-        CopyWorker<T> copyWorker = new(GetReadOnlySpan());
+        CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(ref destination);
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        CopyWorker<T> copyWorker = new(GetReadOnlySpan());
+        CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination);
     }
 
-    public ReadOnlySpan<T> GetReadOnlySpan()
-    {
-        return _buffer.AsSpan(0, Count);
-    }
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
 
     public ArrayEnumerator<T> GetEnumerator() => new(_buffer, 0, Count);
 
@@ -226,18 +220,9 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
 
     public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(ConcurrentStack<T>? left, ConcurrentStack<T>? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ConcurrentStack<T>? left, ConcurrentStack<T>? right) => Equals(left, right);
 
-    public static bool operator !=(ConcurrentStack<T>? left, ConcurrentStack<T>? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ConcurrentStack<T>? left, ConcurrentStack<T>? right) => !(left == right);
 }

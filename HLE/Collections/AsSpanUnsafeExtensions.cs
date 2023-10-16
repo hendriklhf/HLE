@@ -9,10 +9,7 @@ public static class AsSpanUnsafeExtensions
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, int start)
-    {
-        return array.AsSpanUnsafe(start, array.Length - start);
-    }
+    public static Span<T> AsSpanUnsafe<T>(this T[] array, int start) => array.AsSpanUnsafe(start, array.Length - start);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

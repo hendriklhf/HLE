@@ -12,10 +12,12 @@ public static partial class Interop
 
         public static bool FreeEnvironmentStrings(char* ptr) => _FreeEnvironmentStrings(ptr);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [LibraryImport("kernel32.dll", EntryPoint = "GetEnvironmentStringsW")]
         private static partial char* _GetEnvironmentStrings();
 
         [return: MarshalAs(UnmanagedType.Bool)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
         [LibraryImport("kernel32.dll", EntryPoint = "FreeEnvironmentStringsW")]
         private static partial bool _FreeEnvironmentStrings(char* ptr);
     }

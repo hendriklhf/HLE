@@ -52,10 +52,7 @@ public sealed class NativeMemoryList<T>(int capacity)
     {
     }
 
-    public void Dispose()
-    {
-        _buffer.Dispose();
-    }
+    public void Dispose() => _buffer.Dispose();
 
     [Pure]
     public Span<T> AsSpan() => _buffer.AsSpan(..Count);
@@ -118,10 +115,7 @@ public sealed class NativeMemoryList<T>(int capacity)
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumListCapacityReached()
-    {
-        throw new InvalidOperationException("The maximum list capacity has been reached.");
-    }
+    private static void ThrowMaximumListCapacityReached() => throw new InvalidOperationException("The maximum list capacity has been reached.");
 
     public unsafe void Add(T item)
     {
@@ -162,20 +156,11 @@ public sealed class NativeMemoryList<T>(int capacity)
         }
     }
 
-    public void AddRange(List<T> items)
-    {
-        AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
-    }
+    public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
 
-    public void AddRange(params T[] items)
-    {
-        AddRange((ReadOnlySpan<T>)items);
-    }
+    public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(Span<T> items)
-    {
-        AddRange((ReadOnlySpan<T>)items);
-    }
+    public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
     public unsafe void AddRange(ReadOnlySpan<T> items)
     {
@@ -185,10 +170,7 @@ public sealed class NativeMemoryList<T>(int capacity)
         Count += items.Length;
     }
 
-    public void Clear()
-    {
-        Count = 0;
-    }
+    public void Clear() => Count = 0;
 
     public void EnsureCapacity(int capacity)
     {
@@ -202,10 +184,7 @@ public sealed class NativeMemoryList<T>(int capacity)
     }
 
     [Pure]
-    public bool Contains(T item)
-    {
-        return AsSpan().Contains(item);
-    }
+    public bool Contains(T item) => AsSpan().Contains(item);
 
     public bool Remove(T item)
     {
@@ -221,10 +200,7 @@ public sealed class NativeMemoryList<T>(int capacity)
     }
 
     [Pure]
-    public int IndexOf(T item)
-    {
-        return AsSpan().IndexOf(item);
-    }
+    public int IndexOf(T item) => AsSpan().IndexOf(item);
 
     public void Insert(int index, T item)
     {
@@ -289,8 +265,5 @@ public sealed class NativeMemoryList<T>(int capacity)
     public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 }

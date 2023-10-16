@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Twitch.Models;
@@ -51,31 +52,20 @@ public readonly struct Roomstate(ChangedRoomStates changedRoomStates) : IEquatab
     /// </summary>
     public ChangedRoomStates ChangedStates { get; } = changedRoomStates;
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(Roomstate other)
-    {
-        return EmoteOnly == other.EmoteOnly && FollowersOnly == other.FollowersOnly && R9K == other.R9K &&
-               Channel == other.Channel && Channel == other.Channel && SlowMode == other.SlowMode
-               && SubsOnly == other.SubsOnly && ChangedStates == other.ChangedStates;
-    }
+    public bool Equals(Roomstate other) =>
+        EmoteOnly == other.EmoteOnly && FollowersOnly == other.FollowersOnly && R9K == other.R9K &&
+        Channel == other.Channel && Channel == other.Channel && SlowMode == other.SlowMode
+        && SubsOnly == other.SubsOnly && ChangedStates == other.ChangedStates;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is Roomstate other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is Roomstate other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(ChannelId, EmoteOnly, FollowersOnly, R9K, SlowMode, SubsOnly, ChangedStates);
-    }
+    [Pure]
+    public override int GetHashCode() => HashCode.Combine(ChannelId, EmoteOnly, FollowersOnly, R9K, SlowMode, SubsOnly, ChangedStates);
 
-    public static bool operator ==(Roomstate left, Roomstate right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Roomstate left, Roomstate right) => left.Equals(right);
 
-    public static bool operator !=(Roomstate left, Roomstate right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Roomstate left, Roomstate right) => !(left == right);
 }

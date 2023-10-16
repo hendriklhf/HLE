@@ -172,21 +172,19 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj)
-    {
-        return obj switch
+    public override readonly bool Equals(object? obj) =>
+        obj switch
         {
             RentedArray<T> rentedArray => Equals(rentedArray.Array),
             T[] array => Equals(array),
             _ => false
         };
-    }
 
     [Pure]
     public readonly bool Equals(RentedArray<T> other) => ReferenceEquals(Array, other.Array);
 
     [Pure]
-    public readonly bool Equals(T[]? array) => ReferenceEquals(Array, array);
+    public readonly bool Equals(T[]? other) => ReferenceEquals(Array, other);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
@@ -215,13 +213,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public static bool operator ==(RentedArray<T> left, RentedArray<T> right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(RentedArray<T> left, RentedArray<T> right) => left.Equals(right);
 
-    public static bool operator !=(RentedArray<T> left, RentedArray<T> right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(RentedArray<T> left, RentedArray<T> right) => !(left == right);
 }

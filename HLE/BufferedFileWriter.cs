@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,15 +17,25 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 {
     public string FilePath { get; }
 
-    public BufferedFileWriter(ReadOnlySpan<char> filePath)
-    {
-        FilePath = StringPool.Shared.GetOrAdd(filePath);
-    }
+    public BufferedFileWriter(ReadOnlySpan<char> filePath) => FilePath = StringPool.Shared.GetOrAdd(filePath);
 
-    public BufferedFileWriter(string filePath)
-    {
-        FilePath = filePath;
-    }
+    public BufferedFileWriter(string filePath) => FilePath = filePath;
+
+    public void WriteBytes(ReadOnlySpan<byte> fileBytes) => WriteBytes(fileBytes, false);
+
+    public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes) => await WriteBytesAsync(fileBytes, false);
+
+    public void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding) => WriteChars(fileContent, fileEncoding, false);
+
+    public async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding) => await WriteCharsAsync(fileContent, fileEncoding, false);
+
+    public void AppendBytes(ReadOnlySpan<byte> fileBytes) => WriteBytes(fileBytes, true);
+
+    public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> fileBytes) => await WriteBytesAsync(fileBytes, true);
+
+    public void AppendChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding) => WriteChars(fileContent, fileEncoding, true);
+
+    public async ValueTask AppendCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding) => await WriteCharsAsync(fileContent, fileEncoding, true);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteBytes(ReadOnlySpan<byte> fileBytes, [ConstantExpected] bool append)
@@ -88,68 +99,16 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
         await WriteBytesAsync(byteBuffer.AsMemory(..bytesWritten), append);
     }
 
-    public void WriteBytes(ReadOnlySpan<byte> fileBytes)
-    {
-        WriteBytes(fileBytes, false);
-    }
+    [Pure]
+    public bool Equals(BufferedFileWriter other) => FilePath == other.FilePath;
 
-    public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes)
-    {
-        await WriteBytesAsync(fileBytes, false);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is BufferedFileWriter other && Equals(other);
 
-    public void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding)
-    {
-        WriteChars(fileContent, fileEncoding, false);
-    }
+    [Pure]
+    public override int GetHashCode() => FilePath.GetHashCode();
 
-    public async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding)
-    {
-        await WriteCharsAsync(fileContent, fileEncoding, false);
-    }
+    public static bool operator ==(BufferedFileWriter left, BufferedFileWriter right) => left.Equals(right);
 
-    public void AppendBytes(ReadOnlySpan<byte> fileBytes)
-    {
-        WriteBytes(fileBytes, true);
-    }
-
-    public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> fileBytes)
-    {
-        await WriteBytesAsync(fileBytes, true);
-    }
-
-    public void AppendChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding)
-    {
-        WriteChars(fileContent, fileEncoding, true);
-    }
-
-    public async ValueTask AppendCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding)
-    {
-        await WriteCharsAsync(fileContent, fileEncoding, true);
-    }
-
-    public bool Equals(BufferedFileWriter other)
-    {
-        return FilePath == other.FilePath;
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is BufferedFileWriter other && Equals(other);
-    }
-
-    public override int GetHashCode()
-    {
-        return FilePath.GetHashCode();
-    }
-
-    public static bool operator ==(BufferedFileWriter left, BufferedFileWriter right)
-    {
-        return left.Equals(right);
-    }
-
-    public static bool operator !=(BufferedFileWriter left, BufferedFileWriter right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator !=(BufferedFileWriter left, BufferedFileWriter right) => !left.Equals(right);
 }

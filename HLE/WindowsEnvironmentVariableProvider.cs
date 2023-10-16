@@ -53,12 +53,8 @@ public sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariablePro
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(WindowsEnvironmentVariableProvider? left, WindowsEnvironmentVariableProvider? right)
-    {
-        return Equals(left, right);
-    }
+        => Equals(left, right);
 
     public static bool operator !=(WindowsEnvironmentVariableProvider? left, WindowsEnvironmentVariableProvider? right)
-    {
-        return !(left == right);
-    }
+        => !(left == right);
 }

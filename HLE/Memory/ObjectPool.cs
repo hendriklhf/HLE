@@ -55,15 +55,9 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
         _rentableItems.Push(obj);
     }
 
-    public void Clear()
-    {
-        _rentableItems.Clear();
-    }
+    public void Clear() => _rentableItems.Clear();
 
-    public void Dispose()
-    {
-        _rentableItems.Dispose();
-    }
+    public void Dispose() => _rentableItems.Dispose();
 
     public bool Equals(ObjectPool<T>? other) => ReferenceEquals(this, other);
 
@@ -73,13 +67,7 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(ObjectPool<T>? left, ObjectPool<T>? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ObjectPool<T>? left, ObjectPool<T>? right) => Equals(left, right);
 
-    public static bool operator !=(ObjectPool<T>? left, ObjectPool<T>? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ObjectPool<T>? left, ObjectPool<T>? right) => !(left == right);
 }

@@ -150,10 +150,7 @@ public static class StringHelper
         return new(buffer[..resultLength]);
     }
 
-    public static int TrimAll(this string str, Span<char> result)
-    {
-        return TrimAll((ReadOnlySpan<char>)str, result);
-    }
+    public static int TrimAll(this string str, Span<char> result) => TrimAll(str.AsSpan(), result);
 
     public static int TrimAll(this ReadOnlySpan<char> span, Span<char> result)
     {

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -51,9 +50,8 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         readonly get => (_lengthAndDisposed & 0x80000000) == 0x80000000;
         set
         {
-            byte valueAsByte = Unsafe.As<bool, byte>(ref value);
-            Debug.Assert(valueAsByte is 0 or 1);
-            _lengthAndDisposed = (_lengthAndDisposed & 0x7FFFFFFF) | ((uint)valueAsByte << 31);
+            uint valueAsUInt = (uint)(value ? 1 : 0);
+            _lengthAndDisposed = (_lengthAndDisposed & 0x7FFFFFFF) | (valueAsUInt << 31);
         }
     }
 
@@ -193,32 +191,17 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     }
 
     [Pure]
-    public readonly bool Equals(NativeMemory<T> other)
-    {
-        return Length == other.Length && Pointer == other.Pointer;
-    }
+    public readonly bool Equals(NativeMemory<T> other) => Length == other.Length && Pointer == other.Pointer;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is NativeMemory<T> other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is NativeMemory<T> other && Equals(other);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine((nuint)Pointer, Length);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine((nuint)Pointer, Length);
 
-    public static bool operator ==(NativeMemory<T> left, NativeMemory<T> right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(NativeMemory<T> left, NativeMemory<T> right) => left.Equals(right);
 
-    public static bool operator !=(NativeMemory<T> left, NativeMemory<T> right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(NativeMemory<T> left, NativeMemory<T> right) => !(left == right);
 }

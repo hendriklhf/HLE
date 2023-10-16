@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics.Contracts;
 
 namespace HLE.Twitch.Models;
 
@@ -61,7 +62,7 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in Roomstate args)
     {
-        ReadOnlySpan<ChangedRoomStates> allChangedRoomStatesValues = EnumValues.GetValues<ChangedRoomStates>();
+        ReadOnlySpan<ChangedRoomStates> allChangedRoomStatesValues = EnumValues<ChangedRoomStates>.GetValues();
         for (int i = 0; i < allChangedRoomStatesValues.Length; i++)
         {
             ChangedRoomStates roomState = allChangedRoomStatesValues[i];
@@ -94,28 +95,16 @@ public sealed class Channel : IEquatable<Channel>
         }
     }
 
-    public bool Equals(Channel? other)
-    {
-        return ReferenceEquals(this, other) || Id == other?.Id;
-    }
+    [Pure]
+    public bool Equals(Channel? other) => ReferenceEquals(this, other) || Id == other?.Id;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is Channel other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is Channel other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return Id.GetHashCode();
-    }
+    [Pure]
+    public override int GetHashCode() => Id.GetHashCode();
 
-    public static bool operator ==(Channel? left, Channel? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(Channel? left, Channel? right) => Equals(left, right);
 
-    public static bool operator !=(Channel? left, Channel? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Channel? left, Channel? right) => !(left == right);
 }

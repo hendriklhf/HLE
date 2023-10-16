@@ -51,16 +51,10 @@ public class NumberHelperTest
     }
 
     [TestMethod]
-    public void ParsePositiveNumberTest()
-    {
-        Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"));
-    }
+    public void ParsePositiveNumberTest() => Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"));
 
     [TestMethod]
-    public void ParsePositiveNumberFromBytesTest()
-    {
-        Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
-    }
+    public void ParsePositiveNumberFromBytesTest() => Assert.AreEqual(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
 
     [TestMethod]
     public void BringNumberIntoRangeTest()

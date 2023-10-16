@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -28,7 +27,6 @@ public static partial class SingleCharStringPool
         }
 
         ReadOnlySpan<string> cachedSingleCharStrings = GetCachedSingleCharStrings();
-        Debug.Assert(cachedSingleCharStrings.Length == AmountOfCachedSingleCharStrings);
         ref string reference = ref MemoryMarshal.GetReference(cachedSingleCharStrings);
         str = Unsafe.Add(ref reference, c);
         return true;

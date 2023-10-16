@@ -60,33 +60,19 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<char> AsSpan() => _token;
 
-    public bool Equals(OAuthToken other)
-    {
-        return _token == other._token;
-    }
+    [Pure]
+    public bool Equals(OAuthToken other) => _token == other._token;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is OAuthToken other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is OAuthToken other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return string.GetHashCode(_token);
-    }
+    [Pure]
+    public override int GetHashCode() => string.GetHashCode(_token);
 
-    public override string ToString()
-    {
-        return _token;
-    }
+    [Pure]
+    public override string ToString() => _token;
 
-    public static bool operator ==(OAuthToken left, OAuthToken right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(OAuthToken left, OAuthToken right) => left.Equals(right);
 
-    public static bool operator !=(OAuthToken left, OAuthToken right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(OAuthToken left, OAuthToken right) => !(left == right);
 }

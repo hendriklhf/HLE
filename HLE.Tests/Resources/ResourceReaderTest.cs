@@ -1,6 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
 using HLE.Resources;
@@ -15,14 +14,14 @@ public class ResourceReaderTest
     public void ReadResourceTest()
     {
         ResourceReader reader = new(Assembly.GetExecutingAssembly());
-        List<string?> resources = new();
+        List<string> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            byte[] resource = reader.Read($"Resources.Resource{i}") ?? throw new InvalidOperationException();
-            resources.Add(Encoding.UTF8.GetString(resource));
+            bool success = reader.TryRead($"Resources.Resource{i}", out ImmutableArray<byte> resource);
+            Assert.IsTrue(success);
+            resources.Add(Encoding.UTF8.GetString(resource.AsSpan()));
         }
 
-        Assert.IsTrue(resources.Count(static r => r is not null) == 3);
         Assert.AreEqual("abc\r\n", resources[0]);
         Assert.AreEqual("xd\r\n", resources[1]);
         Assert.AreEqual(":)\r\n", resources[2]);
@@ -32,14 +31,14 @@ public class ResourceReaderTest
     public void ReadResourceOnInit()
     {
         ResourceReader reader = new(Assembly.GetExecutingAssembly(), true);
-        List<string?> resources = new();
+        List<string> resources = new();
         for (int i = 1; i <= 3; i++)
         {
-            byte[] resource = reader.Read($"Resources.Resource{i}") ?? throw new InvalidOperationException();
-            resources.Add(Encoding.UTF8.GetString(resource));
+            bool success = reader.TryRead($"Resources.Resource{i}", out ImmutableArray<byte> resource);
+            Assert.IsTrue(success);
+            resources.Add(Encoding.UTF8.GetString(resource.AsSpan()));
         }
 
-        Assert.IsTrue(resources.Count(static r => r is not null) == 3);
         Assert.AreEqual("abc\r\n", resources[0]);
         Assert.AreEqual("xd\r\n", resources[1]);
         Assert.AreEqual(":)\r\n", resources[2]);

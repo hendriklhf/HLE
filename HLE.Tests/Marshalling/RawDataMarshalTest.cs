@@ -18,9 +18,7 @@ public class RawDataMarshalTest
 
     [TestMethod]
     public void GetMethodTablePointerTest()
-    {
-        Assert.AreEqual((nuint)typeof(string).TypeHandle.Value, RawDataMarshal.GetMethodTablePointer(string.Empty));
-    }
+        => Assert.AreEqual((nuint)typeof(string).TypeHandle.Value, RawDataMarshal.GetMethodTablePointer(string.Empty));
 
     [TestMethod]
     public void ReadObjectTest()

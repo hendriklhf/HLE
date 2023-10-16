@@ -16,7 +16,7 @@ namespace HLE.SourceGenerators;
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
     private byte[]? _emojiJsonBytes;
-    private readonly Dictionary<string, string> _illegalVariableNames = new()
+    private readonly Dictionary<string, string> _illegalEmojiNameReplacements = new()
     {
         { "100", "Hundred" },
         { "+1", "ThumbUp" },
@@ -27,7 +27,9 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         { "3rd_place_medal", "ThirdPlaceMedal" },
         { "8ball", "EightBall" },
         { "Non-potable_water", "NonPotableWater" },
-        { "1234", "OneTwoThreeFour" }
+        { "1234", "OneTwoThreeFour" },
+        { "icecream", "SoftIceCream" },
+        { "ice_cream", "IceCream" }
     };
 
     private static readonly TimeSpan _cacheTime = TimeSpan.FromDays(1);
@@ -161,7 +163,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     private void CheckForIllegalName(Span<char> name, ref int nameLength)
     {
         ReadOnlySpan<char> readOnlyName = name.Slice(0, nameLength);
-        foreach (var illegalVariableName in _illegalVariableNames)
+        foreach (var illegalVariableName in _illegalEmojiNameReplacements)
         {
             if (!readOnlyName.SequenceEqual(illegalVariableName.Key.AsSpan()))
             {

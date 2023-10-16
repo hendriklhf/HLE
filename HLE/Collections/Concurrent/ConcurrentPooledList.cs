@@ -37,17 +37,9 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     internal readonly PooledList<T> _list;
     private SemaphoreSlim? _listLock = new(1);
 
-    public ConcurrentPooledList()
-    {
-#pragma warning disable IDE0028
-        _list = new();
-#pragma warning restore IDE0028
-    }
+    public ConcurrentPooledList() => _list = new();
 
-    public ConcurrentPooledList(int capacity)
-    {
-        _list = new(capacity);
-    }
+    public ConcurrentPooledList(int capacity) => _list = new(capacity);
 
     public void Dispose()
     {
@@ -106,20 +98,11 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
         }
     }
 
-    public void AddRange(List<T> items)
-    {
-        AddRange(CollectionsMarshal.AsSpan(items));
-    }
+    public void AddRange(List<T> items) => AddRange(CollectionsMarshal.AsSpan(items));
 
-    public void AddRange(params T[] items)
-    {
-        AddRange((ReadOnlySpan<T>)items);
-    }
+    public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(Span<T> items)
-    {
-        AddRange((ReadOnlySpan<T>)items);
-    }
+    public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
     public void AddRange(ReadOnlySpan<T> items)
     {
@@ -167,10 +150,7 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     }
 
     [Pure]
-    public bool Contains(T item)
-    {
-        return _list.Contains(item);
-    }
+    public bool Contains(T item) => _list.Contains(item);
 
     public bool Remove(T item)
     {
@@ -276,4 +256,8 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
 
     [Pure]
     public override int GetHashCode() => _list.GetHashCode();
+
+    public static bool operator ==(ConcurrentPooledList<T>? left, ConcurrentPooledList<T>? right) => Equals(left, right);
+
+    public static bool operator !=(ConcurrentPooledList<T>? left, ConcurrentPooledList<T>? right) => !(left == right);
 }

@@ -71,13 +71,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(MembershipMessageParser? left, MembershipMessageParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(MembershipMessageParser? left, MembershipMessageParser? right) => Equals(left, right);
 
-    public static bool operator !=(MembershipMessageParser? left, MembershipMessageParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(MembershipMessageParser? left, MembershipMessageParser? right) => !(left == right);
 }

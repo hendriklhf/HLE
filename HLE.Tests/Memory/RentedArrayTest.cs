@@ -404,15 +404,13 @@ public class RentedArrayTest
     }
 
     [TestMethod]
-    public void ICollectionT_Add_Test()
-    {
+    public void ICollectionT_Add_Test() =>
         Assert.ThrowsException<NotSupportedException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
             ICollection<int> collection = array;
             collection.Add(1);
         });
-    }
 
     [TestMethod]
     public void Clear_Test()
@@ -441,15 +439,13 @@ public class RentedArrayTest
     }
 
     [TestMethod]
-    public void ICollectionT_Remove_Test()
-    {
+    public void ICollectionT_Remove_Test() =>
         Assert.ThrowsException<NotSupportedException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.CreateRentedArray(16);
             ICollection<int> collection = array;
             collection.Remove(1);
         });
-    }
 
     [TestMethod]
     public void Equals_Object_Test()

@@ -13,10 +13,7 @@ public readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
     private readonly ReadOnlySpan<char> _chars = chars;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int Hash()
-    {
-        return Hash(_chars);
-    }
+    public int Hash() => Hash(_chars);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Hash(ReadOnlySpan<char> chars)

@@ -48,10 +48,7 @@ public ref struct ValueQueue<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowQueueIsFull()
-    {
-        throw new InvalidOperationException("Queue is full.");
-    }
+    private static void ThrowQueueIsFull() => throw new InvalidOperationException("Queue is full.");
 
     public T Dequeue()
     {
@@ -66,10 +63,7 @@ public ref struct ValueQueue<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowQueueIsEmpty()
-    {
-        throw new InvalidOperationException("Queue is empty.");
-    }
+    private static void ThrowQueueIsEmpty() => throw new InvalidOperationException("Queue is empty.");
 
     [Pure]
     public readonly T Peek()
@@ -130,8 +124,5 @@ public ref struct ValueQueue<T>
     }
 
     [Pure]
-    public readonly T[] ToArray()
-    {
-        return _queue[_dequeueIndex.._enqueueIndex].ToArray();
-    }
+    public readonly T[] ToArray() => _queue[_dequeueIndex.._enqueueIndex].ToArray();
 }

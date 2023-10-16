@@ -5,8 +5,5 @@ namespace HLE.Marshalling;
 
 public static class ValueQueueMarshal<T>
 {
-    public static Span<T> GetBuffer(ValueQueue<T> queue)
-    {
-        return queue._queue;
-    }
+    public static Span<T> GetBuffer(ValueQueue<T> queue) => queue._queue;
 }

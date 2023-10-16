@@ -134,9 +134,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     }
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
-    {
-        return _values.TryGetValue(key, out value);
-    }
+        => _values.TryGetValue(key, out value);
 
     public bool TryGetBySecondaryKey(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
@@ -173,22 +171,13 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     }
 
     [Pure]
-    public bool ContainsPrimaryKey(TPrimaryKey key)
-    {
-        return _values.ContainsKey(key);
-    }
+    public bool ContainsPrimaryKey(TPrimaryKey key) => _values.ContainsKey(key);
 
     [Pure]
-    public bool ContainsSecondaryKey(TSecondaryKey key)
-    {
-        return _secondaryKeyTranslations.ContainsKey(key);
-    }
+    public bool ContainsSecondaryKey(TSecondaryKey key) => _secondaryKeyTranslations.ContainsKey(key);
 
     [Pure]
-    public bool ContainsValue(TValue value)
-    {
-        return _values.ContainsValue(value);
-    }
+    public bool ContainsValue(TValue value) => _values.ContainsValue(value);
 
     public void EnsureCapacity(int capacity)
     {

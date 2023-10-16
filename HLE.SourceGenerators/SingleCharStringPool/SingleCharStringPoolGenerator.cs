@@ -10,9 +10,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
     private const string _indentation = "    ";
 
     public void Initialize(GeneratorInitializationContext context)
-    {
-        context.RegisterForSyntaxNotifications(static () => new SingleCharStringPoolReceiver());
-    }
+        => context.RegisterForSyntaxNotifications(static () => new SingleCharStringPoolReceiver());
 
     public void Execute(GeneratorExecutionContext context)
     {

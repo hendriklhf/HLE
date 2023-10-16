@@ -17,28 +17,13 @@ public readonly struct Badge(string name, string level) : IEquatable<Badge>
     /// </summary>
     public string Level { get; } = level;
 
-    public bool Equals(Badge other)
-    {
-        return Name == other.Name && Level == other.Level;
-    }
+    public bool Equals(Badge other) => Name == other.Name && Level == other.Level;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is Badge other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is Badge other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Name, Level);
-    }
+    public override int GetHashCode() => HashCode.Combine(Name, Level);
 
-    public static bool operator ==(Badge left, Badge right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Badge left, Badge right) => left.Equals(right);
 
-    public static bool operator !=(Badge left, Badge right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Badge left, Badge right) => !(left == right);
 }

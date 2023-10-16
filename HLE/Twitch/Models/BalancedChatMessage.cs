@@ -26,28 +26,13 @@ public sealed class BalancedChatMessage : ChatMessage, IEquatable<BalancedChatMe
         _tags = tags;
     }
 
-    public bool Equals(BalancedChatMessage? other)
-    {
-        return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
-    }
+    public bool Equals(BalancedChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is BalancedChatMessage other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is BalancedChatMessage other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, TmiSentTs);
-    }
+    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 
-    public static bool operator ==(BalancedChatMessage? left, BalancedChatMessage? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(BalancedChatMessage? left, BalancedChatMessage? right) => Equals(left, right);
 
-    public static bool operator !=(BalancedChatMessage? left, BalancedChatMessage? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(BalancedChatMessage? left, BalancedChatMessage? right) => !(left == right);
 }

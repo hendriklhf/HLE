@@ -129,13 +129,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(RoomstateParser? left, RoomstateParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(RoomstateParser? left, RoomstateParser? right) => Equals(left, right);
 
-    public static bool operator !=(RoomstateParser? left, RoomstateParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(RoomstateParser? left, RoomstateParser? right) => !(left == right);
 }

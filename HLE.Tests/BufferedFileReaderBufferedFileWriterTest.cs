@@ -14,16 +14,10 @@ public class BufferedFileReaderBufferedFileWriterTest
     private static readonly string _tempFileDirectory = $"{Path.GetTempPath()}HLE.Tests.BufferedFileOperationsTest\\";
 
     [TestInitialize]
-    public void Initialize()
-    {
-        Directory.CreateDirectory(_tempFileDirectory);
-    }
+    public void Initialize() => Directory.CreateDirectory(_tempFileDirectory);
 
     [TestCleanup]
-    public void Cleanup()
-    {
-        Directory.Delete(_tempFileDirectory, true);
-    }
+    public void Cleanup() => Directory.Delete(_tempFileDirectory, true);
 
     private static string CreateFile(string fileContent, Encoding fileEncoding)
     {

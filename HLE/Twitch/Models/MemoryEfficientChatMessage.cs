@@ -165,28 +165,16 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
         return builder.ToString();
     }
 
-    public bool Equals(MemoryEfficientChatMessage? other)
-    {
-        return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
-    }
+    [Pure]
+    public bool Equals(MemoryEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is MemoryEfficientChatMessage other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is MemoryEfficientChatMessage other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, TmiSentTs);
-    }
+    [Pure]
+    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 
-    public static bool operator ==(MemoryEfficientChatMessage? left, MemoryEfficientChatMessage? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(MemoryEfficientChatMessage? left, MemoryEfficientChatMessage? right) => Equals(left, right);
 
-    public static bool operator !=(MemoryEfficientChatMessage? left, MemoryEfficientChatMessage? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(MemoryEfficientChatMessage? left, MemoryEfficientChatMessage? right) => !(left == right);
 }

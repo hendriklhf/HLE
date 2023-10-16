@@ -25,28 +25,13 @@ public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEffic
         _tags = tags;
     }
 
-    public bool Equals(TimeEfficientChatMessage? other)
-    {
-        return ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
-    }
+    public bool Equals(TimeEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is TimeEfficientChatMessage other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is TimeEfficientChatMessage other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, TmiSentTs);
-    }
+    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 
-    public static bool operator ==(TimeEfficientChatMessage? left, TimeEfficientChatMessage? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(TimeEfficientChatMessage? left, TimeEfficientChatMessage? right) => Equals(left, right);
 
-    public static bool operator !=(TimeEfficientChatMessage? left, TimeEfficientChatMessage? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(TimeEfficientChatMessage? left, TimeEfficientChatMessage? right) => !(left == right);
 }

@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -358,7 +359,7 @@ public static partial class CollectionHelper
             return 0;
         }
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (!RuntimeMarshal<T>.IsBitwiseEquatable())
         {
             return IndicesOfNonOptimizedFallback(span, item, destination);
         }

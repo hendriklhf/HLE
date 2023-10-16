@@ -6,8 +6,5 @@ namespace HLE.Marshalling;
 public static class RentedArrayMarshal<T>
 {
     [Pure]
-    public static T[] GetArray(RentedArray<T> rentedArray)
-    {
-        return rentedArray.Array;
-    }
+    public static T[] GetArray(RentedArray<T> rentedArray) => rentedArray.Array;
 }

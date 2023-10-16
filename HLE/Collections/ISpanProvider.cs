@@ -9,5 +9,7 @@ public interface ISpanProvider<T> : IReadOnlySpanProvider<T>
     /// </summary>
     Span<T> GetSpan();
 
+#pragma warning disable CA1033
     ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => GetSpan();
+#pragma warning restore CA1033
 }

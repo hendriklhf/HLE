@@ -137,13 +137,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(MemoryEfficientChatMessageParser? left, MemoryEfficientChatMessageParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(MemoryEfficientChatMessageParser? left, MemoryEfficientChatMessageParser? right) => Equals(left, right);
 
-    public static bool operator !=(MemoryEfficientChatMessageParser? left, MemoryEfficientChatMessageParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(MemoryEfficientChatMessageParser? left, MemoryEfficientChatMessageParser? right) => !(left == right);
 }

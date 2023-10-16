@@ -66,16 +66,11 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
         _buffer = buffer;
     }
 
-    public void Dispose()
-    {
-        _buffer.Dispose();
-    }
+    public void Dispose() => _buffer.Dispose();
 
     [Pure]
     public readonly string AsString()
-    {
-        return Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)));
-    }
+        => Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)));
 
     [Pure]
     public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref CharsReference, Length);
@@ -95,27 +90,15 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString() => new(AsSpan());
 
-    public readonly bool Equals(PooledString other)
-    {
-        return AsString() == other.AsString();
-    }
+    public readonly bool Equals(PooledString other) => AsString() == other.AsString();
 
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is PooledString other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is PooledString other && Equals(other);
 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => AsString().GetHashCode();
 
-    public static bool operator ==(PooledString left, PooledString right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(PooledString left, PooledString right) => left.Equals(right);
 
-    public static bool operator !=(PooledString left, PooledString right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(PooledString left, PooledString right) => !(left == right);
 }

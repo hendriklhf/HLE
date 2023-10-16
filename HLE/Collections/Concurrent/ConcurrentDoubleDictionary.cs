@@ -43,22 +43,16 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     internal readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> _dictionary;
     private SemaphoreSlim? _dictionaryLock = new(1);
 
-    public ConcurrentDoubleDictionary()
-    {
-#pragma warning disable IDE0028
-        _dictionary = new();
-#pragma warning restore IDE0028
-    }
+    public ConcurrentDoubleDictionary() => _dictionary = new();
 
-    public ConcurrentDoubleDictionary(int capacity, IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
-    {
-        _dictionary = new(capacity, primaryKeyComparer, secondaryKeyComparer);
-    }
+    public ConcurrentDoubleDictionary(int capacity,
+        IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+        => _dictionary = new(capacity, primaryKeyComparer, secondaryKeyComparer);
 
-    public ConcurrentDoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
-    {
-        _dictionary = new(primaryKeyComparer, secondaryKeyComparer);
-    }
+    public ConcurrentDoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+        => _dictionary = new(primaryKeyComparer, secondaryKeyComparer);
 
     public void Dispose()
     {
@@ -97,14 +91,10 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     }
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
-    {
-        return _dictionary.TryGetByPrimaryKey(key, out value);
-    }
+        => _dictionary.TryGetByPrimaryKey(key, out value);
 
     public bool TryGetBySecondaryKey(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
-    {
-        return _dictionary.TryGetBySecondaryKey(key, out value);
-    }
+        => _dictionary.TryGetBySecondaryKey(key, out value);
 
     public bool Remove(TPrimaryKey primaryKey, TSecondaryKey secondaryKey)
     {
@@ -158,4 +148,10 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     [Pure]
     public override int GetHashCode() => _dictionary.GetHashCode();
+
+    public static bool operator ==(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left, ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+        => Equals(left, right);
+
+    public static bool operator !=(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left, ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+        => !(left == right);
 }

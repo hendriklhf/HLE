@@ -35,10 +35,7 @@ public ref struct ValueStack<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowStackIsFull()
-    {
-        throw new InvalidOperationException("Stack is full.");
-    }
+    private static void ThrowStackIsFull() => throw new InvalidOperationException("Stack is full.");
 
     public T Pop()
     {
@@ -60,10 +57,7 @@ public ref struct ValueStack<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowStackIsEmpty()
-    {
-        throw new InvalidOperationException("Stack is empty.");
-    }
+    private static void ThrowStackIsEmpty() => throw new InvalidOperationException("Stack is empty.");
 
     [Pure]
     public readonly T Peek()
@@ -122,8 +116,5 @@ public ref struct ValueStack<T>
     }
 
     [Pure]
-    public readonly T[] ToArray()
-    {
-        return _stack[..Count].ToArray();
-    }
+    public readonly T[] ToArray() => _stack[..Count].ToArray();
 }

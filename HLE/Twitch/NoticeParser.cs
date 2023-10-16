@@ -82,13 +82,7 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(NoticeParser? left, NoticeParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(NoticeParser? left, NoticeParser? right) => Equals(left, right);
 
-    public static bool operator !=(NoticeParser? left, NoticeParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(NoticeParser? left, NoticeParser? right) => !(left == right);
 }

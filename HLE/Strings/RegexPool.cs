@@ -136,15 +136,9 @@ public sealed class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>, IDisp
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(RegexPool? left, RegexPool? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(RegexPool? left, RegexPool? right) => Equals(left, right);
 
-    public static bool operator !=(RegexPool? left, RegexPool? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(RegexPool? left, RegexPool? right) => !(left == right);
 
     public IEnumerator<Regex> GetEnumerator()
     {

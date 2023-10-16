@@ -28,20 +28,11 @@ public static class StringMarshal
     /// <returns>A <see cref="Span{Char}"/> representation of the passed-in <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<char> AsMutableSpan(string? str)
-    {
-        return str.AsSpan().AsMutableSpan();
-    }
+    public static Span<char> AsMutableSpan(string? str) => str.AsSpan().AsMutableSpan();
 
-    public static void Replace(string? str, char oldChar, char newChar)
-    {
-        Replace(str.AsSpan(), oldChar, newChar);
-    }
+    public static void Replace(string? str, char oldChar, char newChar) => Replace(str.AsSpan(), oldChar, newChar);
 
-    public static void Replace(ReadOnlySpan<char> span, char oldChar, char newChar)
-    {
-        Replace(span.AsMutableSpan(), oldChar, newChar);
-    }
+    public static void Replace(ReadOnlySpan<char> span, char oldChar, char newChar) => Replace(span.AsMutableSpan(), oldChar, newChar);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Replace(Span<char> span, char oldChar, char newChar)
@@ -54,15 +45,9 @@ public static class StringMarshal
         span.Replace(oldChar, newChar);
     }
 
-    public static void ToLower(string? str)
-    {
-        ToLower((ReadOnlySpan<char>)str);
-    }
+    public static void ToLower(string? str) => ToLower((ReadOnlySpan<char>)str);
 
-    public static void ToLower(ReadOnlySpan<char> span)
-    {
-        ToLower(span.AsMutableSpan());
-    }
+    public static void ToLower(ReadOnlySpan<char> span) => ToLower(span.AsMutableSpan());
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,15 +71,9 @@ public static class StringMarshal
         MemoryExtensions.ToLower(copyBuffer, span, CultureInfo.InvariantCulture);
     }
 
-    public static void ToUpper(string? str)
-    {
-        ToUpper((ReadOnlySpan<char>)str);
-    }
+    public static void ToUpper(string? str) => ToUpper((ReadOnlySpan<char>)str);
 
-    public static void ToUpper(ReadOnlySpan<char> span)
-    {
-        ToUpper(span.AsMutableSpan());
-    }
+    public static void ToUpper(ReadOnlySpan<char> span) => ToUpper(span.AsMutableSpan());
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -116,10 +95,7 @@ public static class StringMarshal
     /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string AsString(Span<char> span)
-    {
-        return AsString((ReadOnlySpan<char>)span);
-    }
+    public static string AsString(Span<char> span) => AsString((ReadOnlySpan<char>)span);
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{T}"/> back to a <see cref="string"/>.

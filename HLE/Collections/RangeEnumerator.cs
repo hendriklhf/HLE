@@ -22,15 +22,10 @@ public ref struct RangeEnumerator
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool MoveNext()
-    {
-        return ++Current <= _end;
-    }
+    public bool MoveNext() => ++Current <= _end;
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowRangeEndStartsFromEnd()
-    {
-        throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
-    }
+        => throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
 }

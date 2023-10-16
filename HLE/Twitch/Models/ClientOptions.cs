@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using HLE.Marshalling;
 
 namespace HLE.Twitch.Models;
@@ -30,28 +31,16 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
     {
     }
 
-    public bool Equals(ClientOptions other)
-    {
-        return StructMarshal.EqualsBitwise(this, other);
-    }
+    [Pure]
+    public bool Equals(ClientOptions other) => StructMarshal<ClientOptions>.EqualsBitwise(this, other);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is ClientOptions other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is ClientOptions other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(UseSSL, IsVerifiedBot, ParsingMode);
-    }
+    [Pure]
+    public override int GetHashCode() => HashCode.Combine(UseSSL, IsVerifiedBot, ParsingMode);
 
-    public static bool operator ==(ClientOptions left, ClientOptions right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(ClientOptions left, ClientOptions right) => left.Equals(right);
 
-    public static bool operator !=(ClientOptions left, ClientOptions right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ClientOptions left, ClientOptions right) => !(left == right);
 }

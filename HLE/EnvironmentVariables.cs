@@ -40,10 +40,7 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
     {
     }
 
-    public EnvironmentVariables(FrozenDictionary<string, string> environmentVariables)
-    {
-        _environmentVariables = environmentVariables;
-    }
+    public EnvironmentVariables(FrozenDictionary<string, string> environmentVariables) => _environmentVariables = environmentVariables;
 
     bool IReadOnlyDictionary<string, string>.ContainsKey(string key) => _environmentVariables.ContainsKey(key);
 
@@ -65,13 +62,7 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
     [Pure]
     public override int GetHashCode() => _environmentVariables.GetHashCode();
 
-    public static bool operator ==(EnvironmentVariables left, EnvironmentVariables right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(EnvironmentVariables left, EnvironmentVariables right) => left.Equals(right);
 
-    public static bool operator !=(EnvironmentVariables left, EnvironmentVariables right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(EnvironmentVariables left, EnvironmentVariables right) => !(left == right);
 }

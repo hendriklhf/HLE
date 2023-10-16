@@ -121,7 +121,9 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private void StartListeningThread()
     {
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         Thread listeningThread = new(() => StartListeningAsync())
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         {
             IsBackground = true,
             Priority = ThreadPriority.AboveNormal
@@ -391,13 +393,14 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         {
             if (i > 0 && i % maximumJoinsInPeriod == 0)
             {
-                TimeSpan waitTime = period - (DateTimeOffset.UtcNow - start);
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                TimeSpan waitTime = period - (now - start);
                 if (waitTime.TotalMilliseconds > 0)
                 {
                     await Task.Delay(waitTime, _cancellationTokenSource.Token);
                 }
 
-                start = DateTimeOffset.UtcNow;
+                start = now + waitTime;
             }
 
             messageBuilder.Append(_joinPrefix, channels.Span[i]);

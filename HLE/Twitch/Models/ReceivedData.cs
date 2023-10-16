@@ -27,21 +27,12 @@ public struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICountable, 
         data.CopyTo(_data.AsSpan());
     }
 
-    public void Dispose()
-    {
-        _data.Dispose();
-    }
+    public void Dispose() => _data.Dispose();
 
-    public readonly bool Equals(ReceivedData other)
-    {
-        return _data.Equals(other._data);
-    }
+    public readonly bool Equals(ReceivedData other) => _data.Equals(other._data);
 
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is ReceivedData other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is ReceivedData other && Equals(other);
 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => HashCode.Combine(_data, Length);
@@ -49,13 +40,7 @@ public struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICountable, 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString() => new(Span);
 
-    public static bool operator ==(ReceivedData left, ReceivedData right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(ReceivedData left, ReceivedData right) => left.Equals(right);
 
-    public static bool operator !=(ReceivedData left, ReceivedData right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ReceivedData left, ReceivedData right) => !(left == right);
 }

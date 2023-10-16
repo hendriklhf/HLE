@@ -53,13 +53,9 @@ public sealed class PooledBufferWriter<T>(int capacity)
     {
     }
 
-    public void Dispose()
-    {
-        _buffer.Dispose();
-    }
+    public void Dispose() => _buffer.Dispose();
 
     /// <inheritdoc/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Advance(int count) => Count += count;
 
     /// <inheritdoc/>
@@ -87,6 +83,19 @@ public sealed class PooledBufferWriter<T>(int capacity)
         return ref MemoryMarshal.GetReference(buffer);
     }
 
+    public void Write(List<T> data) => Write(CollectionsMarshal.AsSpan(data));
+
+    public void Write(T[] data) => Write((ReadOnlySpan<T>)data);
+
+    public void Write(Span<T> data) => Write((ReadOnlySpan<T>)data);
+
+    public void Write(ReadOnlySpan<T> data)
+    {
+        Span<T> buffer = GetSpan(data.Length);
+        data.CopyToUnsafe(buffer);
+        Advance(data.Length);
+    }
+
     public void Clear()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -103,7 +112,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     public T[] ToArray()
     {
         T[] result = GC.AllocateUninitializedArray<T>(Count);
-        WrittenSpan.CopyToUnsafe(result);
+        CopyWorker<T>.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref _buffer.Reference, (nuint)Count);
         return result;
     }
 
@@ -216,19 +225,13 @@ public sealed class PooledBufferWriter<T>(int capacity)
     }
 
     [Pure]
-    public bool Equals(PooledBufferWriter<T>? other)
-    {
-        return ReferenceEquals(this, other);
-    }
+    public bool Equals(PooledBufferWriter<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     [Pure]
     public override string ToString()
@@ -242,7 +245,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
         Type thisType = typeof(PooledBufferWriter<T>);
         Type genericType = typeof(T);
-        return $"{thisType.Name}.{nameof(PooledBufferWriter<T>)}<{genericType.Name}.{genericType.Name}>[{Count}]";
+        return $"{thisType.Namespace}.{nameof(PooledBufferWriter<T>)}<{genericType.Namespace}.{genericType.Name}>[{Count}]";
     }
 
     public ArrayEnumerator<T> GetEnumerator() => new(_buffer.Array, 0, Count);

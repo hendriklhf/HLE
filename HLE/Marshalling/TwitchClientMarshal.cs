@@ -7,20 +7,11 @@ namespace HLE.Marshalling;
 public static class TwitchClientMarshal
 {
     [Pure]
-    public static IrcHandler GetIrcHandler(TwitchClient client)
-    {
-        return client._ircHandler;
-    }
+    public static IrcHandler GetIrcHandler(TwitchClient client) => client._ircHandler;
 
     [Pure]
-    public static WebSocketIrcClient GetWebSocketIrcClient(TwitchClient client)
-    {
-        return client._client;
-    }
+    public static WebSocketIrcClient GetWebSocketIrcClient(TwitchClient client) => client._client;
 
     [Pure]
-    public static ReadOnlySpan<string> GetConnectedChannels(TwitchClient client)
-    {
-        return client._ircChannels.AsSpan();
-    }
+    public static ReadOnlySpan<string> GetConnectedChannels(TwitchClient client) => client._ircChannels.AsSpan();
 }

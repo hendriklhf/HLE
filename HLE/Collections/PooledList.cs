@@ -55,10 +55,7 @@ public sealed class PooledList<T>(int capacity)
     {
     }
 
-    public void Dispose()
-    {
-        _buffer.Dispose();
-    }
+    public void Dispose() => _buffer.Dispose();
 
     [Pure]
     public Span<T> AsSpan() => _buffer.AsSpan(..Count);
@@ -119,10 +116,7 @@ public sealed class PooledList<T>(int capacity)
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumListCapacityReached()
-    {
-        throw new InvalidOperationException("The maximum list capacity has been reached.");
-    }
+    private static void ThrowMaximumListCapacityReached() => throw new InvalidOperationException("The maximum list capacity has been reached.");
 
     public void Add(T item)
     {
@@ -271,13 +265,7 @@ public sealed class PooledList<T>(int capacity)
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(PooledList<T>? left, PooledList<T>? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(PooledList<T>? left, PooledList<T>? right) => Equals(left, right);
 
-    public static bool operator !=(PooledList<T>? left, PooledList<T>? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(PooledList<T>? left, PooledList<T>? right) => !(left == right);
 }

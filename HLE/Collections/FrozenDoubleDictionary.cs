@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.InteropServices;
 
 namespace HLE.Collections;
 
@@ -32,15 +33,13 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
     internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
-    {
-        return _values.TryGetValue(key, out value);
-    }
+        => _values.TryGetValue(key, out value);
 
     public bool TryGetBySecondaryKey(TSecondaryKey key, [MaybeNullWhen(false)] out TValue value)
     {
         if (_secondaryKeyTranslations.TryGetValue(key, out TPrimaryKey? primaryKey))
         {
-            return _values.TryGetValue(primaryKey, out value);
+            return TryGetByPrimaryKey(primaryKey, out value);
         }
 
         value = default;
@@ -48,26 +47,21 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
     }
 
     [Pure]
-    public bool ContainsPrimaryKey(TPrimaryKey key)
-    {
-        return _values.ContainsKey(key);
-    }
+    public bool ContainsPrimaryKey(TPrimaryKey key) => _values.ContainsKey(key);
 
     [Pure]
-    public bool ContainsSecondaryKey(TSecondaryKey key)
-    {
-        return _secondaryKeyTranslations.ContainsKey(key);
-    }
+    public bool ContainsSecondaryKey(TSecondaryKey key) => _secondaryKeyTranslations.ContainsKey(key);
 
     ReadOnlySpan<TValue> IReadOnlySpanProvider<TValue>.GetReadOnlySpan() => Values.AsSpan();
 
-    public IEnumerator<TValue> GetEnumerator()
+    public ArrayEnumerator<TValue> GetEnumerator()
     {
-        foreach (TValue item in Values)
-        {
-            yield return item;
-        }
+        TValue[]? array = ImmutableCollectionsMarshal.AsArray(Values);
+        Debug.Assert(array is not null);
+        return new(array, 0, Count);
     }
+
+    IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -78,8 +72,11 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
     public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(_secondaryKeyTranslations, _values);
-    }
+    public override int GetHashCode() => HashCode.Combine(_secondaryKeyTranslations, _values);
+
+    public static bool operator ==(FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left, FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+        => Equals(left, right);
+
+    public static bool operator !=(FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left, FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+        => !(left == right);
 }

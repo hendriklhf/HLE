@@ -55,10 +55,7 @@ public sealed partial class PooledStringBuilder(int capacity)
     {
     }
 
-    public void Dispose()
-    {
-        _buffer.Dispose();
-    }
+    public void Dispose() => _buffer.Dispose();
 
     Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
 
@@ -260,46 +257,22 @@ public sealed partial class PooledStringBuilder(int capacity)
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(PooledStringBuilder builder, StringComparison comparisonType)
-    {
-        return Equals(builder.WrittenSpan, comparisonType);
-    }
+    public bool Equals(PooledStringBuilder builder, StringComparison comparisonType) => Equals(builder.WrittenSpan, comparisonType);
 
     [Pure]
-    public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
-    {
-        return ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
-    }
+    public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
-    public bool Equals(PooledStringBuilder? other)
-    {
-        return Length == other?.Length && _buffer.Equals(other._buffer);
-    }
+    public bool Equals(PooledStringBuilder? other) => Length == other?.Length && _buffer.Equals(other._buffer);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is PooledStringBuilder other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is PooledStringBuilder other && Equals(other);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     [Pure]
-    public int GetHashCode(StringComparison comparisonType)
-    {
-        return string.GetHashCode(WrittenSpan, comparisonType);
-    }
+    public int GetHashCode(StringComparison comparisonType) => string.GetHashCode(WrittenSpan, comparisonType);
 
-    public static bool operator ==(PooledStringBuilder? left, PooledStringBuilder? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(PooledStringBuilder? left, PooledStringBuilder? right) => Equals(left, right);
 
-    public static bool operator !=(PooledStringBuilder? left, PooledStringBuilder? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(PooledStringBuilder? left, PooledStringBuilder? right) => !(left == right);
 }

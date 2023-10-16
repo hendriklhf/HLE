@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 
@@ -5,6 +6,7 @@ namespace HLE.Marshalling;
 
 public static partial class Interop
 {
+    [SuppressMessage("Security", "CA5392:Use DefaultDllImportSearchPaths attribute for P/Invokes")]
     public static partial class Unix
     {
         [Pure]

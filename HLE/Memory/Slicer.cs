@@ -41,10 +41,7 @@ internal readonly ref struct Slicer<T>
     public Span<T> CreateSpan(Range range)
     {
         int start = range.Start.GetOffset(_length);
-        int end = range.End.GetOffset(_length);
-        ArgumentOutOfRangeException.ThrowIfLessThan(end, start);
-
-        int length = end - start;
+        int length = range.End.GetOffset(_length) - start;
         return CreateSpan(start, length);
     }
 
@@ -79,8 +76,9 @@ internal readonly ref struct Slicer<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref T GetStartReferenceAndValidate(int start, int length)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)start, (uint)_length);
-        ArgumentOutOfRangeException.ThrowIfNegative(_length - (uint)start - (uint)length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)start, (uint)_length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)length, (uint)_length);
+        ArgumentOutOfRangeException.ThrowIfNegative((uint)_length - (uint)start - (uint)length);
         return ref Unsafe.Add(ref _buffer, start);
     }
 }

@@ -127,13 +127,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(TimeEfficientChatMessageParser? left, TimeEfficientChatMessageParser? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(TimeEfficientChatMessageParser? left, TimeEfficientChatMessageParser? right) => Equals(left, right);
 
-    public static bool operator !=(TimeEfficientChatMessageParser? left, TimeEfficientChatMessageParser? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(TimeEfficientChatMessageParser? left, TimeEfficientChatMessageParser? right) => !(left == right);
 }

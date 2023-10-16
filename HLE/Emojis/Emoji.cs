@@ -1,5 +1,7 @@
 namespace HLE.Emojis;
 
+#pragma warning disable CA1708
+
 /// <summary>
 /// A class that contains (almost) all existing emojis.
 /// </summary>

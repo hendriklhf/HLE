@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 
 namespace HLE.Twitch.Models;
 
@@ -13,28 +14,16 @@ public readonly struct Notice(NoticeType type, string message, string channel)
 
     public string Channel { get; } = channel;
 
-    public bool Equals(Notice other)
-    {
-        return Type == other.Type && Channel == other.Channel && Message == other.Message;
-    }
+    [Pure]
+    public bool Equals(Notice other) => Type == other.Type && Channel == other.Channel && Message == other.Message;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is Notice other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is Notice other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Type, Message);
-    }
+    [Pure]
+    public override int GetHashCode() => HashCode.Combine(Type, Message);
 
-    public static bool operator ==(Notice left, Notice right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(Notice left, Notice right) => left.Equals(right);
 
-    public static bool operator !=(Notice left, Notice right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(Notice left, Notice right) => !(left == right);
 }

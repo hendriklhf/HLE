@@ -28,23 +28,14 @@ public ref struct ValueList<T> where T : IEquatable<T>
     {
     }
 
-    public ValueList(Span<T> buffer)
-    {
-        _buffer = buffer;
-    }
+    public ValueList(Span<T> buffer) => _buffer = buffer;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Span<T> AsSpan()
-    {
-        return _buffer[..Count];
-    }
+    public readonly Span<T> AsSpan() => _buffer[..Count];
 
     [Pure]
-    public readonly T[] ToArray()
-    {
-        return AsSpan().ToArray();
-    }
+    public readonly T[] ToArray() => AsSpan().ToArray();
 
     [Pure]
     public readonly List<T> ToList()
@@ -199,13 +190,10 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNotEnoughSpace()
-    {
-        throw new InvalidOperationException("Maximum buffer capacity reached.");
-    }
+    private static void ThrowNotEnoughSpace() => throw new InvalidOperationException("Maximum buffer capacity reached.");
 
     [Pure]
-    public readonly Enumerator GetEnumerator() => new(_buffer[..Count]);
+    public readonly MemoryEnumerator<T> GetEnumerator() => new(ref MemoryMarshal.GetReference(_buffer), Count);
 
     [Pure]
     public readonly bool Equals(ValueList<T> other)
@@ -217,36 +205,13 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj)
-    {
-        return false;
-    }
+    public override readonly bool Equals(object? obj) => false;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly int GetHashCode()
-    {
-        return 0;
-    }
+    public override readonly int GetHashCode() => _buffer.Length;
 
-    public static bool operator ==(ValueList<T> left, ValueList<T> right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(ValueList<T> left, ValueList<T> right) => left.Equals(right);
 
-    public static bool operator !=(ValueList<T> left, ValueList<T> right)
-    {
-        return !(left == right);
-    }
-
-    public ref struct Enumerator(ReadOnlySpan<T> buffer)
-    {
-        public ref readonly T Current => ref _buffer[_index++];
-
-        private readonly ReadOnlySpan<T> _buffer = buffer;
-        private int _index;
-
-        [Pure]
-        public readonly bool MoveNext() => _index < _buffer.Length;
-    }
+    public static bool operator !=(ValueList<T> left, ValueList<T> right) => !(left == right);
 }

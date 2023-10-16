@@ -64,9 +64,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public StringArray(ReadOnlySpan<string> strings) : this(strings.Length)
-    {
-        FillArray(strings);
-    }
+        => FillArray(strings);
 
     [CollectionAccess(CollectionAccessType.UpdatedContent)]
     public StringArray(IEnumerable<string> strings)
@@ -143,7 +141,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     }
 
     [Pure]
-    public int IndexOf_v1(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    public int IndexOfv1(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
         ReadOnlySpan<string> strings = _strings;
         ReadOnlySpan<int> starts = _stringStarts;
@@ -179,7 +177,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     }
 
     [Pure]
-    public int IndexOf_v2(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    public int IndexOfv2(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
         ReadOnlySpan<string> strings = _strings;
         ReadOnlySpan<int> starts = _stringStarts;
@@ -410,9 +408,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumBufferCapacityReached()
-    {
-        throw new InvalidOperationException("The maximum buffer capacity has been reached.");
-    }
+        => throw new InvalidOperationException("The maximum buffer capacity has been reached.");
 
     public bool Equals(StringArray? other) => ReferenceEquals(this, other);
 
@@ -420,13 +416,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(StringArray? left, StringArray? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(StringArray? left, StringArray? right) => Equals(left, right);
 
-    public static bool operator !=(StringArray? left, StringArray? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(StringArray? left, StringArray? right) => !(left == right);
 }

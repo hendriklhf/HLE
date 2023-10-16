@@ -476,13 +476,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(TwitchClient? left, TwitchClient? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(TwitchClient? left, TwitchClient? right) => Equals(left, right);
 
-    public static bool operator !=(TwitchClient? left, TwitchClient? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(TwitchClient? left, TwitchClient? right) => !(left == right);
 }

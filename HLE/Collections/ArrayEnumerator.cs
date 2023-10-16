@@ -1,12 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Collections;
 
 public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>>
 {
-    public T Current => _array[_current++];
+    public T Current => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_array), _current++);
 
     object? IEnumerator.Current => Current;
 
@@ -17,9 +20,7 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
 
     public ArrayEnumerator(T[] array, int start, int length)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)start, (uint)array.Length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)length, (uint)array.Length);
-        ArgumentOutOfRangeException.ThrowIfNegative(array.Length - start - length);
+        ArgumentOutOfRangeException.ThrowIfNegative((uint)array.Length - (uint)start - (uint)length);
 
         _array = array;
         _start = start;
@@ -31,32 +32,20 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
 
     public void Reset() => _current = _start;
 
-    public readonly bool Equals(ArrayEnumerator<T> other)
-    {
-        return _array == other._array && _current == other._current && _end == other._end;
-    }
+    [Pure]
+    public readonly bool Equals(ArrayEnumerator<T> other) => _array == other._array && _current == other._current && _end == other._end;
 
+    [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is ArrayEnumerator<T> other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is ArrayEnumerator<T> other && Equals(other);
 
+    [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(_array, _start, _end);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine(_array, _start, _end);
 
-    public static bool operator ==(ArrayEnumerator<T> left, ArrayEnumerator<T> right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(ArrayEnumerator<T> left, ArrayEnumerator<T> right) => left.Equals(right);
 
-    public static bool operator !=(ArrayEnumerator<T> left, ArrayEnumerator<T> right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ArrayEnumerator<T> left, ArrayEnumerator<T> right) => !(left == right);
 
     readonly void IDisposable.Dispose()
     {

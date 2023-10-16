@@ -20,33 +20,18 @@ public readonly struct LeftChannelMessage(string username, string channel)
     public string Channel { get; } = channel;
 
     [Pure]
-    public static LeftChannelMessage Create(string username, string channel)
-    {
-        return new(username, channel);
-    }
+    public static LeftChannelMessage Create(string username, string channel) => new(username, channel);
 
-    public bool Equals(LeftChannelMessage other)
-    {
-        return Username == other.Username && Channel == other.Channel;
-    }
+    [Pure]
+    public bool Equals(LeftChannelMessage other) => Username == other.Username && Channel == other.Channel;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is LeftChannelMessage other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is LeftChannelMessage other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Username, Channel);
-    }
+    [Pure]
+    public override int GetHashCode() => HashCode.Combine(Username, Channel);
 
-    public static bool operator ==(LeftChannelMessage left, LeftChannelMessage right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(LeftChannelMessage left, LeftChannelMessage right) => left.Equals(right);
 
-    public static bool operator !=(LeftChannelMessage left, LeftChannelMessage right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(LeftChannelMessage left, LeftChannelMessage right) => !(left == right);
 }

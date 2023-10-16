@@ -26,10 +26,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     public static StringNumberFormat AlphaNumeric { get; } = Create(StringConstants.AlphaNumerics);
 
-    private StringNumberFormat(string chars)
-    {
-        _chars = chars;
-    }
+    private StringNumberFormat(string chars) => _chars = chars;
 
     [SkipLocalsInit]
     public static StringNumberFormat Create(char minimumCharValue, char maximumCharValue)
@@ -72,28 +69,13 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         }
     }
 
-    public bool Equals(StringNumberFormat other)
-    {
-        return Chars.SequenceEqual(other._chars);
-    }
+    public bool Equals(StringNumberFormat other) => Chars.SequenceEqual(other._chars);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is StringNumberFormat other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is StringNumberFormat other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(StringNumberFormat left, StringNumberFormat right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(StringNumberFormat left, StringNumberFormat right) => left.Equals(right);
 
-    public static bool operator !=(StringNumberFormat left, StringNumberFormat right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(StringNumberFormat left, StringNumberFormat right) => !(left == right);
 }

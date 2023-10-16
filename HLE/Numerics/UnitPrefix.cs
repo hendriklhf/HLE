@@ -163,60 +163,32 @@ public readonly struct UnitPrefix(string name, string symbol, double value)
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double Convert(double value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
-    {
-        return value * (fromPrefix / toPrefix);
-    }
+        => value * (fromPrefix / toPrefix);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Convert(float value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
-    {
-        return (float)Convert((double)value, fromPrefix, toPrefix);
-    }
+        => (float)Convert((double)value, fromPrefix, toPrefix);
 
     [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
-    public static implicit operator double(UnitPrefix? prefix)
-    {
-        return prefix?.Value ?? 0;
-    }
+    public static implicit operator double(UnitPrefix? prefix) => prefix?.Value ?? 0;
 
     [Pure]
-    public override string ToString()
-    {
-        return Name;
-    }
+    public override string ToString() => Name;
 
     [Pure]
-    public bool Equals(double value)
-    {
-        return Math.Abs(Value - value) == 0;
-    }
+    public bool Equals(double value) => Math.Abs(Value - value) == 0;
 
     [Pure]
-    public bool Equals(UnitPrefix other)
-    {
-        return Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) == 0;
-    }
+    public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) == 0;
 
     [Pure]
-    public override bool Equals(object? obj)
-    {
-        return obj is UnitPrefix other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is UnitPrefix other && Equals(other);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Name, Symbol, Value);
-    }
+    public override int GetHashCode() => HashCode.Combine(Name, Symbol, Value);
 
-    public static bool operator ==(UnitPrefix left, UnitPrefix right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(UnitPrefix left, UnitPrefix right) => Equals(left, right);
 
-    public static bool operator !=(UnitPrefix left, UnitPrefix right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(UnitPrefix left, UnitPrefix right) => !(left == right);
 }

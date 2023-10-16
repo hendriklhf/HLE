@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -17,15 +18,9 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 {
     public string FilePath { get; }
 
-    public BufferedFileReader(ReadOnlySpan<char> filePath)
-    {
-        FilePath = StringPool.Shared.GetOrAdd(filePath);
-    }
+    public BufferedFileReader(ReadOnlySpan<char> filePath) => FilePath = StringPool.Shared.GetOrAdd(filePath);
 
-    public BufferedFileReader(string filePath)
-    {
-        FilePath = filePath;
-    }
+    public BufferedFileReader(string filePath) => FilePath = filePath;
 
     public void ReadBytes<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
     {
@@ -76,28 +71,16 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
         writer.Advance(charsWritten);
     }
 
-    public bool Equals(BufferedFileReader other)
-    {
-        return FilePath == other.FilePath;
-    }
+    [Pure]
+    public bool Equals(BufferedFileReader other) => FilePath == other.FilePath;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is BufferedFileReader other && Equals(other);
-    }
+    [Pure]
+    public override bool Equals(object? obj) => obj is BufferedFileReader other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return FilePath.GetHashCode();
-    }
+    [Pure]
+    public override int GetHashCode() => FilePath.GetHashCode();
 
-    public static bool operator ==(BufferedFileReader left, BufferedFileReader right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(BufferedFileReader left, BufferedFileReader right) => left.Equals(right);
 
-    public static bool operator !=(BufferedFileReader left, BufferedFileReader right)
-    {
-        return !left.Equals(right);
-    }
+    public static bool operator !=(BufferedFileReader left, BufferedFileReader right) => !left.Equals(right);
 }

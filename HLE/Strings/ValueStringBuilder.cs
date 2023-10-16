@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Strings;
@@ -35,10 +36,7 @@ public ref partial struct ValueStringBuilder
     {
     }
 
-    public ValueStringBuilder(Span<char> buffer)
-    {
-        _buffer = buffer;
-    }
+    public ValueStringBuilder(Span<char> buffer) => _buffer = buffer;
 
     public void Advance(int length) => Length += length;
 
@@ -147,7 +145,7 @@ public ref partial struct ValueStringBuilder
 
     public void Clear() => Length = 0;
 
-    public readonly Enumerator GetEnumerator() => new(WrittenSpan);
+    public readonly MemoryEnumerator<char> GetEnumerator() => new(ref MemoryMarshal.GetReference(_buffer), Length);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
@@ -162,59 +160,30 @@ public ref partial struct ValueStringBuilder
     {
         ref char bufferReference = ref MemoryMarshal.GetReference(_buffer);
         ref char otherBufferReference = ref MemoryMarshal.GetReference(other._buffer);
-        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference);
+        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference) && Length == other.Length;
     }
 
     [Pure]
     public readonly bool Equals(ValueStringBuilder other, StringComparison comparisonType)
-    {
-        return Equals(other.WrittenSpan, comparisonType);
-    }
+        => Equals(other.WrittenSpan, comparisonType);
 
     [Pure]
     public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
-    {
-        return ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
-    }
+        => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly int GetHashCode()
-    {
-        return GetHashCode(StringComparison.Ordinal);
-    }
+    public override readonly int GetHashCode() => GetHashCode(StringComparison.Ordinal);
 
     [Pure]
-    public readonly int GetHashCode(StringComparison comparisonType)
-    {
-        return string.GetHashCode(WrittenSpan, comparisonType);
-    }
+    public readonly int GetHashCode(StringComparison comparisonType) => string.GetHashCode(WrittenSpan, comparisonType);
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowNotEnoughSpaceException()
         => throw new InvalidOperationException("There is not enough space left in the buffer to write to.");
 
-    public static bool operator ==(ValueStringBuilder left, ValueStringBuilder right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(ValueStringBuilder left, ValueStringBuilder right) => left.Equals(right);
 
-    public static bool operator !=(ValueStringBuilder left, ValueStringBuilder right)
-    {
-        return !(left == right);
-    }
-
-    public ref struct Enumerator(ReadOnlySpan<char> chars)
-    {
-        public char Current => _chars[_index++];
-
-        private readonly ReadOnlySpan<char> _chars = chars;
-        private int _index;
-
-        public readonly bool MoveNext()
-        {
-            return _index < _chars.Length;
-        }
-    }
+    public static bool operator !=(ValueStringBuilder left, ValueStringBuilder right) => !(left == right);
 }

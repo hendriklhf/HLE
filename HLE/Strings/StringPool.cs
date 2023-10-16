@@ -79,15 +79,13 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     }
 
     [Pure]
-    public string GetOrAdd(ReadOnlySpan<char> span)
-    {
-        return span.Length switch
+    public string GetOrAdd(ReadOnlySpan<char> span) =>
+        span.Length switch
         {
             0 => string.Empty,
             1 => SingleCharStringPool.GetOrAdd(span[0]),
             _ => GetBucket(span).GetOrAdd(span)
         };
-    }
 
     [Pure]
     [SkipLocalsInit]
@@ -168,16 +166,10 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     }
 
     [Pure]
-    public bool Contains(string str)
-    {
-        return Contains((ReadOnlySpan<char>)str);
-    }
+    public bool Contains(string str) => Contains((ReadOnlySpan<char>)str);
 
     [Pure]
-    public bool Contains(ReadOnlySpan<char> span)
-    {
-        return span.Length == 0 || GetBucket(span).Contains(span);
-    }
+    public bool Contains(ReadOnlySpan<char> span) => span.Length == 0 || GetBucket(span).Contains(span);
 
     [Pure]
     [SkipLocalsInit]
@@ -232,15 +224,9 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(StringPool? left, StringPool? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(StringPool? left, StringPool? right) => Equals(left, right);
 
-    public static bool operator !=(StringPool? left, StringPool? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(StringPool? left, StringPool? right) => !(left == right);
 
     [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
     internal struct Bucket(int bucketCapacity = _defaultBucketCapacity)
@@ -315,10 +301,7 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly bool Contains(ReadOnlySpan<char> span)
-        {
-            return TryGet(span, out _);
-        }
+        public readonly bool Contains(ReadOnlySpan<char> span) => TryGet(span, out _);
 
         [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

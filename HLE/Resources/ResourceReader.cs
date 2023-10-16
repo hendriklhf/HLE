@@ -1,9 +1,12 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
@@ -17,29 +20,42 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     public int Count => _resources.Count;
 
     private readonly string _assemblyName;
-    private readonly Dictionary<string, byte[]?> _resources = new();
+    private readonly ConcurrentDictionary<string, byte[]?> _resources = new();
 
     public ResourceReader(Assembly assembly, bool readAllResourcesOnInitialization = false)
     {
         Assembly = assembly;
         string? assemblyName = assembly.GetName().Name;
         ArgumentException.ThrowIfNullOrEmpty(assemblyName);
-
         _assemblyName = assemblyName;
+
         if (readAllResourcesOnInitialization)
         {
             ReadAllResources();
         }
     }
 
-    [Pure]
-    [SkipLocalsInit]
-    public byte[]? Read(ReadOnlySpan<char> resourceName)
+    /// <summary>
+    /// Tries to read a resource.
+    /// </summary>
+    /// <param name="resourceName">The name of the resource.</param>
+    /// <param name="resource">The resource bytes.</param>
+    /// <returns>True, if the resource exists, false otherwise.</returns>
+    public bool TryRead(ReadOnlySpan<char> resourceName, out ImmutableArray<byte> resource)
     {
         string resourcePath = BuildResourcePath(resourceName);
-        return ReadResourceFromPath(resourcePath);
+        byte[]? resourceArray = ReadResource(resourcePath);
+        if (resourceArray is null)
+        {
+            resource = ImmutableArray<byte>.Empty;
+            return false;
+        }
+
+        resource = ImmutableCollectionsMarshal.AsImmutableArray(resourceArray);
+        return true;
     }
 
+    [SkipLocalsInit]
     private string BuildResourcePath(ReadOnlySpan<char> resourceName)
     {
         ValueStringBuilder pathBuilder = new(stackalloc char[1 + _assemblyName.Length + resourceName.Length]);
@@ -51,14 +67,14 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
 
     private void ReadAllResources()
     {
-        Span<string> resourcePaths = Assembly.GetManifestResourceNames();
+        ReadOnlySpan<string> resourcePaths = Assembly.GetManifestResourceNames();
         for (int i = 0; i < resourcePaths.Length; i++)
         {
-            _ = ReadResourceFromPath(resourcePaths[i]);
+            ReadResource(resourcePaths[i]);
         }
     }
 
-    private byte[]? ReadResourceFromPath(string resourcePath)
+    private byte[]? ReadResource(string resourcePath)
     {
         if (_resources.TryGetValue(resourcePath, out byte[]? resource))
         {
@@ -74,25 +90,29 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
 
         if (stream.Length > int.MaxValue)
         {
-            throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
+            ThrowStreamLengthExceedsInt32();
         }
 
-        // TODO: do something
         int streamLength = (int)stream.Length;
         using PooledBufferWriter<byte> bufferWriter = new(streamLength);
-        int sizeHint = streamLength < 1000 ? streamLength : 1000;
-        int bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
+        int bytesRead = stream.Read(bufferWriter.GetSpan(streamLength));
         bufferWriter.Advance(bytesRead);
-        while (bytesRead < streamLength && bytesRead > 0)
+        while (bytesRead > 0)
         {
-            bytesRead = stream.Read(bufferWriter.GetSpan(sizeHint));
+            bytesRead = stream.Read(bufferWriter.GetSpan(streamLength));
             bufferWriter.Advance(bytesRead);
         }
 
-        resource = bufferWriter.WrittenSpan.ToArray();
+        resource = GC.AllocateUninitializedArray<byte>(bufferWriter.Count, true);
+        bufferWriter.CopyTo(resource);
         _resources.AddOrSet(resourcePath, resource);
         return resource;
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowStreamLengthExceedsInt32()
+        => throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
 
     [Pure]
     public bool Equals(ResourceReader? other) => ReferenceEquals(this, other);
@@ -101,18 +121,9 @@ public sealed class ResourceReader : IEquatable<ResourceReader>, ICountable
     public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode()
-    {
-        return RuntimeHelpers.GetHashCode(this);
-    }
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(ResourceReader? left, ResourceReader? right)
-    {
-        return Equals(left, right);
-    }
+    public static bool operator ==(ResourceReader? left, ResourceReader? right) => Equals(left, right);
 
-    public static bool operator !=(ResourceReader? left, ResourceReader? right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(ResourceReader? left, ResourceReader? right) => !(left == right);
 }

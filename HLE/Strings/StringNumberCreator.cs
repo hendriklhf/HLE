@@ -89,32 +89,15 @@ public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatab
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowWrongNumberFormat()
-    {
-        throw new FormatException($"The provided number is in an invalid format. It does not match the provided {typeof(StringNumberFormat)}");
-    }
+        => throw new FormatException($"The provided number is in an invalid format. It does not match the provided {typeof(StringNumberFormat)}");
 
-    public bool Equals(StringNumberCreator other)
-    {
-        return Format.Equals(other.Format);
-    }
+    public bool Equals(StringNumberCreator other) => Format.Equals(other.Format);
 
-    public override bool Equals(object? obj)
-    {
-        return obj is StringNumberCreator other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is StringNumberCreator other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return string.GetHashCode(Format._chars);
-    }
+    public override int GetHashCode() => string.GetHashCode(Format._chars);
 
-    public static bool operator ==(StringNumberCreator left, StringNumberCreator right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(StringNumberCreator left, StringNumberCreator right) => left.Equals(right);
 
-    public static bool operator !=(StringNumberCreator left, StringNumberCreator right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(StringNumberCreator left, StringNumberCreator right) => !(left == right);
 }
