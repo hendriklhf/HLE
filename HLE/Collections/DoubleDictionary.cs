@@ -12,7 +12,7 @@ namespace HLE.Collections;
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
-    : IEnumerable<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+    : IReadOnlyCollection<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
@@ -59,10 +59,8 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
 
     public DoubleDictionary()
     {
-#pragma warning disable IDE0028
         _values = new();
         _secondaryKeyTranslations = new();
-#pragma warning restore IDE0028
     }
 
     public DoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer)

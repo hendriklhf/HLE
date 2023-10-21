@@ -1,8 +1,10 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
@@ -12,8 +14,9 @@ namespace HLE.Memory;
 /// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
-public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
+public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 {
+    // ReSharper disable once ArrangeModifiersOrder
     public static ArrayPool<T> Shared { get; } = new();
 
     internal static bool IsCommonlyPooledType => GetIsCommonlyPooledType();
@@ -21,7 +24,7 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     /// <summary>
     /// Stores the maximum amount of arrays per length that the ArrayPool can hold.
     /// </summary>
-    internal static ReadOnlySpan<int> ObjectPoolCapacities => new[]
+    internal static ReadOnlySpan<int> BucketCapacities => new[]
     {
         // 16,32,64,128,256,512
         128, 128, 128, 64, 64, 64,
@@ -35,7 +38,7 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
         4, 4
     };
 
-    private readonly ObjectPool<T[]>[] _pools;
+    private readonly Bucket[] _buckets;
 
     internal const int MinimumArrayLength = 0x10; // has to be pow of 2
     internal const int MaximumArrayLength = 0x400000; // has to be pow of 2
@@ -44,19 +47,15 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
     public ArrayPool()
     {
         int poolCount = BitOperations.TrailingZeroCount(MaximumArrayLength) - BitOperations.TrailingZeroCount(MinimumArrayLength) + 1;
-        _pools = new ObjectPool<T[]>[poolCount];
+        _buckets = new Bucket[poolCount];
         int arrayLength = MinimumArrayLength;
-        for (int i = 0; i < _pools.Length; i++)
+        for (int i = 0; i < _buckets.Length; i++)
         {
-            ObjectPool<T[]>.ArrayFactory<T> factory = new(arrayLength, true);
-            _pools[i] = new(factory)
-            {
-                Capacity = ObjectPoolCapacities[i]
-            };
+            _buckets[i] = new(arrayLength, BucketCapacities[i]);
             arrayLength <<= 1;
         }
 
-        Debug.Assert(ObjectPoolCapacities.Length == _pools.Length);
+        Debug.Assert(BucketCapacities.Length == _buckets.Length);
         Debug.Assert(arrayLength >> 1 == MaximumArrayLength);
     }
 
@@ -78,33 +77,33 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
                 break;
         }
 
-        int poolIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
-        ref ObjectPool<T[]> pool = ref _pools[poolIndex];
-        ObjectPool<T[]> initialPool = pool;
-        int poolsLength = _pools.Length;
+        int bucketIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
+        ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        ref Bucket initialBucket = ref bucket;
+        int bucketsLength = _buckets.Length;
         int tryCount = 0;
         const int maximumTryCount = 3;
-        while (poolIndex < poolsLength && tryCount < maximumTryCount)
+        while (bucketIndex < bucketsLength && tryCount < maximumTryCount)
         {
-            if (pool.TryRent(out T[]? array))
+            if (bucket.TryRent(out T[]? array))
             {
                 return array;
             }
 
-            pool = ref Unsafe.Add(ref pool, 1);
-            poolIndex++;
+            bucket = ref Unsafe.Add(ref bucket, 1);
+            bucketIndex++;
             tryCount++;
         }
 
-        return initialPool.Rent();
+        return initialBucket.Rent();
     }
 
     [Pure]
     public RentedArray<T> CreateRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[] array)
+    public void Return(T[]? array)
     {
-        if (!TryGetPoolIndex(array, out int poolIndex))
+        if (!TryGetBucketIndex(array, out int bucketIndex))
         {
             return;
         }
@@ -114,16 +113,16 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
             Array.Clear(array);
         }
 
-        ObjectPool<T[]> pool = _pools[poolIndex];
-        pool.Return(array);
+        ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        bucket.Return(array);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetPoolIndex(T[] array, out int poolIndex)
+    private static bool TryGetBucketIndex([NotNullWhen(true)] T[]? array, out int bucketIndex)
     {
         if (array is not { Length: >= MinimumArrayLength and <= MaximumArrayLength })
         {
-            poolIndex = -1;
+            bucketIndex = -1;
             return false;
         }
 
@@ -133,15 +132,18 @@ public sealed class ArrayPool<T> : IEquatable<ArrayPool<T>>
             length = (int)(BitOperations.RoundUpToPowerOf2((uint)length) >> 1);
         }
 
-        poolIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
+        bucketIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
         return true;
     }
 
     public void Clear()
     {
-        foreach (ObjectPool<T[]> pool in _pools)
+        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(_buckets);
+        int lengths = _buckets.Length;
+        for (int i = 0; i < lengths; i++)
         {
-            pool.Clear();
+            ref Bucket bucket = ref Unsafe.Add(ref bucketReference, i);
+            bucket.Clear();
         }
     }
 

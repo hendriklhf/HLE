@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,6 +9,7 @@ using HLE.Collections;
 
 namespace HLE.Memory;
 
+[DebuggerDisplay("{ToString()}")]
 public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
@@ -84,11 +86,11 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         Length = length;
         IsDisposed = false;
 
-        uint byteCount = (uint)(sizeof(T) * length);
-        _pointer = (T*)NativeMemory.AlignedAlloc(byteCount, (nuint)sizeof(nuint));
+        long byteCount = sizeof(T) * (long)length;
+        _pointer = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (nuint)sizeof(nuint));
         if (zeroed)
         {
-            Unsafe.InitBlock(_pointer, 0, byteCount);
+            Unsafe.InitBlock(_pointer, 0, (uint)byteCount);
         }
     }
 

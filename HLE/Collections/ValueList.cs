@@ -31,7 +31,6 @@ public ref struct ValueList<T> where T : IEquatable<T>
     public ValueList(Span<T> buffer) => _buffer = buffer;
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Span<T> AsSpan() => _buffer[..Count];
 
     [Pure]

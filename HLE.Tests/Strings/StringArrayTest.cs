@@ -8,6 +8,45 @@ namespace HLE.Tests.Strings;
 public class StringArrayTest
 {
     [TestMethod]
+    public void Indexer_Int_Test()
+    {
+        StringArray array = new(4)
+        {
+            [0] = "hello",
+            [1] = "abc",
+            [2] = "xd",
+            [3] = "555"
+        };
+
+        Assert.IsTrue(array is ["hello", "abc", "xd", "555"]);
+
+        array[1] = "////";
+        array[2] = string.Empty;
+
+        Assert.IsTrue(array is ["hello", "////", "", "555"]);
+    }
+
+    [TestMethod]
+    public void Indexer_Int_Throws_Test()
+    {
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        {
+            _ = new StringArray(5)
+            {
+                [-1] = ""
+            };
+        });
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        {
+            _ = new StringArray(5)
+            {
+                [5] = ""
+            };
+        });
+    }
+
+    [TestMethod]
     public void MoveStringTest_LeftToRight()
     {
         StringArray array = new(5)

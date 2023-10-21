@@ -295,24 +295,24 @@ public static class RandomExtensions
             return result;
         }
 
-        if (!MemoryHelper.UseStackAlloc<int>(length))
+        if (!MemoryHelper.UseStackAlloc<uint>(length))
         {
-            using RentedArray<int> randomIndicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(length);
+            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.CreateRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));
             for (int i = 0; i < length; i++)
             {
-                int randomIndex = (int)((uint)randomIndicesBuffer[i] % choices.Length);
+                int randomIndex = (int)(randomIndicesBuffer[i] % choices.Length);
                 resultSpan[i] = choices[randomIndex];
             }
 
             return result;
         }
 
-        Span<int> randomIndices = stackalloc int[length];
+        Span<uint> randomIndices = stackalloc uint[length];
         random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
-            int randomIndex = (int)((uint)randomIndices[i] % choices.Length);
+            int randomIndex = (int)(randomIndices[i] % choices.Length);
             resultSpan[i] = choices[randomIndex];
         }
 
@@ -613,24 +613,24 @@ public static class RandomExtensions
             return result;
         }
 
-        if (!MemoryHelper.UseStackAlloc<int>(length))
+        if (!MemoryHelper.UseStackAlloc<uint>(length))
         {
-            using RentedArray<int> randomIndicesBuffer = ArrayPool<int>.Shared.CreateRentedArray(length);
+            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.CreateRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));
             for (int i = 0; i < length; i++)
             {
-                int randomIndex = (int)((uint)randomIndicesBuffer[i] % choices.Length);
+                int randomIndex = (int)(randomIndicesBuffer[i] % choices.Length);
                 resultSpan[i] = choices[randomIndex];
             }
 
             return result;
         }
 
-        Span<int> randomIndices = stackalloc int[length];
+        Span<uint> randomIndices = stackalloc uint[length];
         random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
-            int randomIndex = (int)((uint)randomIndices[i] % choices.Length);
+            int randomIndex = (int)(randomIndices[i] % choices.Length);
             resultSpan[i] = choices[randomIndex];
         }
 

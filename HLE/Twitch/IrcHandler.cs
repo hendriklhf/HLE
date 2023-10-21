@@ -246,5 +246,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    // TODO: equality operators
+    public static bool operator ==(IrcHandler? left, IrcHandler? right) => Equals(left, right);
+
+    public static bool operator !=(IrcHandler? left, IrcHandler? right) => !(left == right);
 }

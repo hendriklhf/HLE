@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
 using HLE.Marshalling;
@@ -64,10 +65,15 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         {
             if (chars.Count(c) != 1)
             {
-                throw new InvalidOperationException($"The provided chars contain char '{c}' multiple times.");
+                ThrowCharIsContainedMultipleTimes(c);
             }
         }
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowCharIsContainedMultipleTimes(char c)
+        => throw new InvalidOperationException($"The provided chars contain char '{c}' multiple times.");
 
     public bool Equals(StringNumberFormat other) => Chars.SequenceEqual(other._chars);
 

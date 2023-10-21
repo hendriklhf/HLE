@@ -23,10 +23,10 @@ public class EnumValuesTest
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
 
-        ReadOnlySpan<TestEnum> values = EnumValues.GetValues<TestEnum>();
+        ReadOnlySpan<TestEnum> values = EnumValues<TestEnum>.GetValues();
         Assert.IsTrue(values.SequenceEqual(actualValues));
 
-        values = EnumValues.GetValues<TestEnum>();
+        values = EnumValues<TestEnum>.GetValues();
         Assert.IsTrue(values.SequenceEqual(actualValues));
     }
 
@@ -35,17 +35,17 @@ public class EnumValuesTest
     {
         int[] actualValues = (int[])Enum.GetValuesAsUnderlyingType<TestEnum>();
 
-        ReadOnlySpan<int> values = EnumValues.GetValuesAsUnderlyingType<TestEnum, int>();
+        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAsUnderlyingType<int>();
         Assert.IsTrue(values.SequenceEqual(actualValues));
 
-        values = EnumValues.GetValuesAsUnderlyingType<TestEnum, int>();
+        values = EnumValues<TestEnum>.GetValuesAsUnderlyingType<int>();
         Assert.IsTrue(values.SequenceEqual(actualValues));
     }
 
     [TestMethod]
     public void ValuesAreSortedTest()
     {
-        ReadOnlySpan<TestEnum> values = EnumValues.GetValues<TestEnum>();
+        ReadOnlySpan<TestEnum> values = EnumValues<TestEnum>.GetValues();
         Span<TestEnum> sortedValues = stackalloc TestEnum[values.Length];
         values.CopyTo(sortedValues);
         sortedValues.Sort();
@@ -56,7 +56,7 @@ public class EnumValuesTest
     [TestMethod]
     public void ValuesAsUnderlyingTypeAreSortedTest()
     {
-        ReadOnlySpan<int> values = EnumValues.GetValuesAsUnderlyingType<TestEnum, int>();
+        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAsUnderlyingType<int>();
         Span<int> sortedValues = stackalloc int[values.Length];
         values.CopyTo(sortedValues);
         sortedValues.Sort();
@@ -68,7 +68,7 @@ public class EnumValuesTest
     public void GetValueCountTest()
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
-        int valueCount = EnumValues.GetValueCount<TestEnum>();
+        int valueCount = EnumValues<TestEnum>.GetValueCount();
         Assert.AreEqual(actualValues.Length, valueCount);
     }
 
@@ -76,7 +76,7 @@ public class EnumValuesTest
     public void GetMaxValueTest()
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
-        TestEnum maxValue = EnumValues.GetMaxValue<TestEnum>();
+        TestEnum maxValue = EnumValues<TestEnum>.GetMaxValue();
         Assert.AreEqual(12345, (int)maxValue);
         Assert.AreEqual(actualValues[^1], maxValue);
     }

@@ -11,22 +11,33 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
+public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
     where T : IEquatable<T>
 {
     public T this[int index]
     {
         get => _list[index];
-        set => _list[index] = value;
+        set
+        {
+            ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+            _listLock.Wait();
+            try
+            {
+                _list[index] = value;
+            }
+            finally
+            {
+                _listLock.Release();
+            }
+        }
     }
 
     public T this[Index index]
     {
-        get => _list[index];
-        set => _list[index] = value;
+        get => this[index.GetOffset(Count)];
+        set => this[index.GetOffset(Count)] = value;
     }
-
-    public Span<T> this[Range range] => _list[range];
 
     public int Count => _list.Count;
 
@@ -49,24 +60,10 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     }
 
     [Pure]
-    public Span<T> AsSpan() => _list.AsSpan();
-
-    [Pure]
-    public Span<T> AsSpan(int start) => _list[start..];
-
-    [Pure]
-    public Span<T> AsSpan(int start, int length) => _list.AsSpan(start, length);
-
-    [Pure]
-    public Span<T> AsSpan(Range range) => _list.AsSpan(range);
-
-    [Pure]
     public T[] ToArray() => _list.ToArray();
 
     [Pure]
     public List<T> ToList() => _list.ToList();
-
-    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
     public void Add(T item)
     {
@@ -208,40 +205,101 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
+        ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+        _listLock.Wait();
+        try
+        {
+            CopyWorker<T> copyWorker = new(_list.AsSpan());
+            copyWorker.CopyTo(destination, offset);
+        }
+        finally
+        {
+            _listLock.Release();
+        }
     }
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
+        ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+        _listLock.Wait();
+        try
+        {
+            CopyWorker<T> copyWorker = new(_list.AsSpan());
+            copyWorker.CopyTo(destination, offset);
+        }
+        finally
+        {
+            _listLock.Release();
+        }
     }
 
     public void CopyTo(Memory<T> destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
+        ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+        _listLock.Wait();
+        try
+        {
+            CopyWorker<T> copyWorker = new(_list.AsSpan());
+            copyWorker.CopyTo(destination);
+        }
+        finally
+        {
+            _listLock.Release();
+        }
     }
 
     public void CopyTo(Span<T> destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
+        ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+        _listLock.Wait();
+        try
+        {
+            CopyWorker<T> copyWorker = new(_list.AsSpan());
+            copyWorker.CopyTo(destination);
+        }
+        finally
+        {
+            _listLock.Release();
+        }
     }
 
     public void CopyTo(ref T destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(ref destination);
+        ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+        _listLock.Wait();
+        try
+        {
+            CopyWorker<T> copyWorker = new(_list.AsSpan());
+            copyWorker.CopyTo(ref destination);
+        }
+        finally
+        {
+            _listLock.Release();
+        }
     }
 
     public unsafe void CopyTo(T* destination)
     {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
+        ObjectDisposedException.ThrowIf(_listLock is null, typeof(ConcurrentPooledList<T>));
+
+        _listLock.Wait();
+        try
+        {
+            CopyWorker<T> copyWorker = new(_list.AsSpan());
+            copyWorker.CopyTo(destination);
+        }
+        finally
+        {
+            _listLock.Release();
+        }
     }
 
+    // TODO: enumerator has to lock the semaphore
     public ArrayEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();

@@ -473,8 +473,8 @@ public class ValueStringBuilderTest
         builder1.Append("HELLO");
         builder2.Append("hello");
 
-        Assert.IsTrue(builder1.Equals(builder1));
-        Assert.IsFalse(builder1.Equals(builder2));
+        Assert.IsTrue(builder1.Equals(builder1, StringComparison.Ordinal));
+        Assert.IsFalse(builder1.Equals(builder2, StringComparison.Ordinal));
 
         Assert.IsFalse(builder1 == builder2);
     }

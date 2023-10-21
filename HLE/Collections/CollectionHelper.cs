@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
@@ -604,20 +605,24 @@ public static partial class CollectionHelper
             return true;
         }
 
-        if (collection is ICountable countable)
-        {
-            elementCount = countable.Count;
-            return true;
-        }
-
         if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
         {
             elementCount = span.Length;
             return true;
         }
 
-        elementCount = 0;
-        return false;
+        switch (collection)
+        {
+            case ICountable countable:
+                elementCount = countable.Count;
+                return true;
+            case IReadOnlyCollection<T> readOnlyCollection:
+                elementCount = readOnlyCollection.Count;
+                return true;
+            default:
+                elementCount = 0;
+                return false;
+        }
     }
 
     /// <summary>
@@ -662,11 +667,14 @@ public static partial class CollectionHelper
 
         switch (collection)
         {
-            case IList<T> iList:
-                element = iList[index];
+            case IList<T> list:
+                element = list[index];
                 return true;
-            case IIndexAccessible<T> indexAccessibleCollection:
-                element = indexAccessibleCollection[index];
+            case IReadOnlyList<T> readOnlyList:
+                element = readOnlyList[index];
+                return true;
+            case IIndexAccessible<T> indexAccessible:
+                element = indexAccessible[index];
                 return true;
             default:
                 element = default;
@@ -674,11 +682,11 @@ public static partial class CollectionHelper
         }
     }
 
-    /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
+    /// <inheritdoc cref="MoveItem{T}(Span{T},int,int)"/>
     public static void MoveItem<T>(this List<T> list, int sourceIndex, int destinationIndex)
         => MoveItem(CollectionsMarshal.AsSpan(list), sourceIndex, destinationIndex);
 
-    /// <inheritdoc cref="MoveItem{T}(System.Span{T},int,int)"/>
+    /// <inheritdoc cref="MoveItem{T}(Span{T},int,int)"/>
     public static void MoveItem<T>(this T[] array, int sourceIndex, int destinationIndex)
         => MoveItem(array.AsSpan(), sourceIndex, destinationIndex);
 
@@ -780,9 +788,83 @@ public static partial class CollectionHelper
         return true;
     }
 
-    /// <inheritdoc cref="Sum(System.ReadOnlySpan{int})"/>
+    /// <summary>
+    /// Computes the sum of all elements without checking for arithmetic overflow.
+    /// </summary>
+    /// <param name="collection">The elements that will be summed up.</param>
+    /// <returns>The sum of all elements.</returns>
+    public static T SumUnchecked<T>(this IEnumerable<T> collection) where T : INumber<T>
+    {
+        if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
+        {
+            return span.SumUnchecked();
+        }
+
+        T sum = T.Zero;
+        if (collection.TryGetNonEnumeratedCount(out int elementCount))
+        {
+            switch (collection)
+            {
+                case IIndexAccessible<T> indexAccessible:
+                {
+                    for (int i = 0; i < elementCount; i++)
+                    {
+                        sum += indexAccessible[i];
+                    }
+
+                    return sum;
+                }
+                case IReadOnlyList<T> readOnlyList:
+                {
+                    for (int i = 0; i < elementCount; i++)
+                    {
+                        sum += readOnlyList[i];
+                    }
+
+                    return sum;
+                }
+                case IList<T> list:
+                {
+                    for (int i = 0; i < elementCount; i++)
+                    {
+                        sum += list[i];
+                    }
+
+                    return sum;
+                }
+            }
+        }
+
+        foreach (T item in collection)
+        {
+            sum += item;
+        }
+
+        return sum;
+    }
+
+    /// <summary>
+    /// Computes the sum of all elements without checking for arithmetic overflow.
+    /// </summary>
+    /// <param name="list">The elements that will be summed up.</param>
+    /// <returns>The sum of all elements.</returns>
     [Pure]
-    public static int Sum(this Span<int> span) => Sum((ReadOnlySpan<int>)span);
+    public static T SumUnchecked<T>(this List<T> list) where T : INumber<T>
+        => SumUnchecked(CollectionsMarshal.AsSpan(list));
+
+    /// <summary>
+    /// Computes the sum of all elements without checking for arithmetic overflow.
+    /// </summary>
+    /// <param name="array">The elements that will be summed up.</param>
+    /// <returns>The sum of all elements.</returns>
+    [Pure]
+    public static T SumUnchecked<T>(this T[] array) where T : INumber<T>
+        => SumUnchecked(array.AsSpan());
+
+    /// <inheritdoc cref="SumUnchecked{T}(System.ReadOnlySpan{T})"/>
+    [Pure]
+    public static T SumUnchecked<T>(this Span<T> span) where T : INumber<T>
+        => SumUnchecked((ReadOnlySpan<T>)span);
 
     /// <summary>
     /// Computes the sum of all elements without checking for arithmetic overflow.
@@ -790,28 +872,27 @@ public static partial class CollectionHelper
     /// <param name="span">The elements that will be summed up.</param>
     /// <returns>The sum of all elements.</returns>
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static int Sum(this ReadOnlySpan<int> span)
+    public static T SumUnchecked<T>(this ReadOnlySpan<T> span) where T : INumber<T>
     {
         switch (span.Length)
         {
             case 0:
-                return 0;
+                return T.Zero;
             case 1:
                 return span[0];
             case 2:
                 return span[0] + span[1];
         }
 
-        int sum = 0;
-        int vector512Count = Vector512<int>.Count;
+        T sum = T.Zero;
+        int vector512Count = Vector512<T>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
-            Vector512<int> vectorSum = Vector512<int>.Zero;
+            Vector512<T> vectorSum = Vector512<T>.Zero;
             while (span.Length >= vector512Count)
             {
-                ref int valuesReference = ref MemoryMarshal.GetReference(span);
-                Vector512<int> vector = Vector512.LoadUnsafe(ref valuesReference);
+                ref T valuesReference = ref MemoryMarshal.GetReference(span);
+                Vector512<T> vector = Vector512.LoadUnsafe(ref valuesReference);
                 vectorSum += vector;
                 span = span.SliceUnsafe(vector512Count);
             }
@@ -825,13 +906,13 @@ public static partial class CollectionHelper
             return sum;
         }
 
-        int vector256Count = Vector256<int>.Count;
+        int vector256Count = Vector256<T>.Count;
         if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
         {
-            Vector256<int> vectorSum = Vector256<int>.Zero;
+            Vector256<T> vectorSum = Vector256<T>.Zero;
             while (span.Length >= vector256Count)
             {
-                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                ref T valuesReference = ref MemoryMarshal.GetReference(span);
                 vectorSum += Vector256.LoadUnsafe(ref valuesReference);
                 span = span.SliceUnsafe(vector256Count);
             }
@@ -845,13 +926,13 @@ public static partial class CollectionHelper
             return sum;
         }
 
-        int vector128Count = Vector128<int>.Count;
+        int vector128Count = Vector128<T>.Count;
         if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
         {
-            Vector128<int> vectorSum = Vector128<int>.Zero;
+            Vector128<T> vectorSum = Vector128<T>.Zero;
             while (span.Length >= vector128Count)
             {
-                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                ref T valuesReference = ref MemoryMarshal.GetReference(span);
                 vectorSum += Vector128.LoadUnsafe(ref valuesReference);
                 span = span.SliceUnsafe(vector128Count);
             }
@@ -865,13 +946,13 @@ public static partial class CollectionHelper
             return sum;
         }
 
-        int vector64Count = Vector64<int>.Count;
+        int vector64Count = Vector64<T>.Count;
         if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
         {
-            Vector64<int> vectorSum = Vector64<int>.Zero;
+            Vector64<T> vectorSum = Vector64<T>.Zero;
             while (span.Length >= vector64Count)
             {
-                ref int valuesReference = ref MemoryMarshal.GetReference(span);
+                ref T valuesReference = ref MemoryMarshal.GetReference(span);
                 vectorSum += Vector64.LoadUnsafe(ref valuesReference);
                 span = span.SliceUnsafe(vector64Count);
             }

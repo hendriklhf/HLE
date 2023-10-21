@@ -15,7 +15,8 @@ public class ConcurrentPoolBufferListTest
         Assert.AreEqual('h', list[0]);
         Assert.AreEqual('o', list[4]);
         Assert.AreEqual('X', list[^2]);
-        Assert.IsTrue(list[..3].SequenceEqual("hel".AsSpan()));
+        list[0] = 'H';
+        Assert.AreEqual('H', list[0]);
     }
 
     [TestMethod]
@@ -58,7 +59,7 @@ public class ConcurrentPoolBufferListTest
         using ConcurrentPooledList<char> list = new();
         list.AddRange("hello".AsSpan());
         list.Remove('l');
-        Assert.AreEqual("helo", new(list.AsSpan()));
+        Assert.IsTrue(list._list is ['h', 'e', 'l', 'o']);
     }
 
     [TestMethod]
@@ -67,7 +68,7 @@ public class ConcurrentPoolBufferListTest
         using ConcurrentPooledList<char> list = new();
         list.AddRange("hello".AsSpan());
         list.RemoveAt(2);
-        Assert.AreEqual("helo", new(list.AsSpan()));
+        Assert.AreEqual("helo", new(list._list.AsSpan()));
     }
 
     [TestMethod]
@@ -76,7 +77,7 @@ public class ConcurrentPoolBufferListTest
         using ConcurrentPooledList<char> list = new();
         list.AddRange("helo".AsSpan());
         list.Insert(2, 'l');
-        Assert.AreEqual("hello", new(list.AsSpan()));
+        Assert.AreEqual("hello", new(list._list.AsSpan()));
     }
 
     [TestMethod]

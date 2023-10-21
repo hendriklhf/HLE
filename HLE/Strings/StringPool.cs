@@ -4,21 +4,18 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
-using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, IDisposable
+public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<string>
 {
     public int Capacity => _buckets.Length;
 
     public int BucketCapacity => _buckets[0]._strings.Length;
 
-    internal readonly Bucket[] _buckets;
+    private readonly Bucket[] _buckets;
 
     public static StringPool Shared { get; } = new();
 
@@ -36,16 +33,6 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
         for (int i = 0; i < poolCapacity; i++)
         {
             _buckets[i] = new(bucketCapacity);
-        }
-    }
-
-    public void Dispose()
-    {
-        Span<Bucket> buckets = _buckets;
-        for (int i = 0; i < buckets.Length; i++)
-        {
-            ref Bucket bucket = ref buckets[i];
-            bucket.Dispose();
         }
     }
 
@@ -227,134 +214,4 @@ public sealed class StringPool : IEquatable<StringPool>, IEnumerable<string>, ID
     public static bool operator ==(StringPool? left, StringPool? right) => Equals(left, right);
 
     public static bool operator !=(StringPool? left, StringPool? right) => !(left == right);
-
-    [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it does implement IDisposable?!")]
-    internal struct Bucket(int bucketCapacity = _defaultBucketCapacity)
-        : IEnumerable<string>, IDisposable
-    {
-        internal readonly StringArray _strings = new(bucketCapacity);
-        private SemaphoreSlim? _stringsLock = new(1);
-
-        public void Dispose()
-        {
-            _stringsLock?.Dispose();
-            _stringsLock = null;
-        }
-
-        public readonly void Clear()
-        {
-            ObjectDisposedException.ThrowIf(_stringsLock is null, typeof(StringPool));
-
-            _stringsLock.Wait();
-            try
-            {
-                _strings.Clear();
-            }
-            finally
-            {
-                _stringsLock.Release();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly string GetOrAdd(ReadOnlySpan<char> span)
-        {
-            if (TryGet(span, out string? value))
-            {
-                return value;
-            }
-
-            value = new(span);
-            Add(value);
-            return value;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void Add(string value)
-        {
-            ObjectDisposedException.ThrowIf(_stringsLock is null, typeof(StringPool));
-
-            _stringsLock.Wait();
-            try
-            {
-                _strings[^1] = value;
-                _strings.MoveString(_strings.Length - 1, 0);
-            }
-            finally
-            {
-                _stringsLock.Release();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
-        {
-            int index = IndexOf(_strings, span);
-            if (index < 0)
-            {
-                value = null;
-                return false;
-            }
-
-            value = _strings[index];
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly bool Contains(ReadOnlySpan<char> span) => TryGet(span, out _);
-
-        [SkipLocalsInit]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int IndexOf(StringArray stringArray, ReadOnlySpan<char> span)
-        {
-            int arrayLength = stringArray.Length;
-            ReadOnlySpan<char> stringChars = stringArray._stringChars;
-            ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._strings);
-            ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._stringLengths);
-            ref int startReference = ref MemoryMarshal.GetArrayDataReference(stringArray._stringStarts);
-            for (int i = 0; i < arrayLength; i++)
-            {
-                int length = Unsafe.Add(ref lengthsReference, i);
-                if (length == 0)
-                {
-                    return -1;
-                }
-
-                if (length != span.Length)
-                {
-                    continue;
-                }
-
-                ref char spanReference = ref MemoryMarshal.GetReference(span);
-                ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
-                if (Unsafe.AreSame(ref spanReference, ref stringReference))
-                {
-                    return i;
-                }
-
-                int start = Unsafe.Add(ref startReference, i);
-                ReadOnlySpan<char> bufferString = stringChars.SliceUnsafe(start, length);
-                if (span.SequenceEqual(bufferString))
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        public readonly IEnumerator<string> GetEnumerator()
-        {
-            foreach (string? str in _strings)
-            {
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                if (str is not null)
-                {
-                    yield return str;
-                }
-            }
-        }
-
-        readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
 }

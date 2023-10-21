@@ -226,7 +226,7 @@ public static class StringHelper
         {
             destination[indicesLength++] = spanStartIndex;
             spanStartIndex += s.Length;
-            idx = span[spanStartIndex..].IndexOf(s, StringComparison.Ordinal);
+            idx = span[spanStartIndex..].IndexOf(s);
             spanStartIndex += idx;
         }
 

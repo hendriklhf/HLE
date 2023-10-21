@@ -15,7 +15,8 @@ namespace HLE.Memory;
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
-[DebuggerDisplay("Length = {Array.Length}")]
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("Length = {Length}")]
 public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
 {
     public readonly ref T this[int index]
@@ -79,7 +80,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     public void Dispose()
     {
-        _pool.Return(_array!); // Return handles null
+        _pool.Return(_array);
         _array = null;
     }
 

@@ -21,26 +21,34 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
 
     public BufferedFileWriter(string filePath) => FilePath = filePath;
 
-    public void WriteBytes(ReadOnlySpan<byte> fileBytes) => WriteBytes(fileBytes, false);
+    public void WriteBytes(ReadOnlySpan<byte> fileBytes)
+        => WriteBytes(fileBytes, false);
 
-    public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes) => await WriteBytesAsync(fileBytes, false);
+    public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes)
+        => await WriteBytesAsync(fileBytes, false);
 
-    public void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding) => WriteChars(fileContent, fileEncoding, false);
+    public void WriteChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding)
+        => WriteChars(fileContent, fileEncoding, false);
 
-    public async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding) => await WriteCharsAsync(fileContent, fileEncoding, false);
+    public async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding)
+        => await WriteCharsAsync(fileContent, fileEncoding, false);
 
-    public void AppendBytes(ReadOnlySpan<byte> fileBytes) => WriteBytes(fileBytes, true);
+    public void AppendBytes(ReadOnlySpan<byte> fileBytes)
+        => WriteBytes(fileBytes, true);
 
-    public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> fileBytes) => await WriteBytesAsync(fileBytes, true);
+    public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> fileBytes)
+        => await WriteBytesAsync(fileBytes, true);
 
-    public void AppendChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding) => WriteChars(fileContent, fileEncoding, true);
+    public void AppendChars(ReadOnlySpan<char> fileContent, Encoding fileEncoding)
+        => WriteChars(fileContent, fileEncoding, true);
 
-    public async ValueTask AppendCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding) => await WriteCharsAsync(fileContent, fileEncoding, true);
+    public async ValueTask AppendCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding)
+        => await WriteCharsAsync(fileContent, fileEncoding, true);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteBytes(ReadOnlySpan<byte> fileBytes, [ConstantExpected] bool append)
     {
-        using FileStream fileStream = File.OpenWrite(FilePath);
+        using FileStream fileStream = File.Create(FilePath);
         if (!append)
         {
             fileStream.SetLength(fileBytes.Length);
@@ -57,7 +65,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes, [ConstantExpected] bool append)
     {
-        await using FileStream fileStream = File.OpenWrite(FilePath);
+        await using FileStream fileStream = File.Create(FilePath);
         if (!append)
         {
             fileStream.SetLength(fileBytes.Length);

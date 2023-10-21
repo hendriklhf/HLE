@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -104,118 +105,72 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     [Pure]
     public int IndexOf(string str, StringComparison comparison, int startIndex = 0) => IndexOf(str.AsSpan(), comparison, startIndex);
 
-    // TODO: the indexof methods should be merged and need some special decision making
-
     [Pure]
+    [SkipLocalsInit]
     public int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
-        int arrayLength = Length;
-        ReadOnlySpan<char> charBuffer = _stringChars;
-        ref char charsReference = ref MemoryMarshal.GetReference(chars);
         ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-        ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(_stringLengths);
-        ref int startReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
-        for (int i = startIndex; i < arrayLength; i++)
-        {
-            int length = Unsafe.Add(ref lengthsReference, i);
-            if (length != chars.Length)
-            {
-                continue;
-            }
-
-            ref char stringReference = ref MemoryMarshal.GetReference(Unsafe.Add(ref stringsReference, i).AsSpan());
-            if (Unsafe.AreSame(ref charsReference, ref stringReference))
-            {
-                return i;
-            }
-
-            int start = Unsafe.Add(ref startReference, i);
-            ReadOnlySpan<char> bufferSlice = charBuffer.SliceUnsafe(start, length);
-            if (chars.Equals(bufferSlice, comparison))
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    [Pure]
-    public int IndexOfv1(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
-    {
-        ReadOnlySpan<string> strings = _strings;
-        ReadOnlySpan<int> starts = _stringStarts;
-        ReadOnlySpan<char> charBuffer = _stringChars;
-
-        ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        Span<int> stringLengths = _stringLengths;
-        Span<int> lengths = stringLengths[startIndex..];
-
-        int indexOfSameLength = lengths.IndexOf(chars.Length);
-        while (indexOfSameLength >= 0)
-        {
-            int actualIndex = indexOfSameLength + startIndex;
-            ReadOnlySpan<char> str = strings[actualIndex].AsSpan();
-            ref char stringReference = ref MemoryMarshal.GetReference(str);
-            if (Unsafe.AreSame(ref charsReference, ref stringReference))
-            {
-                return actualIndex;
-            }
-
-            int strStart = starts[actualIndex];
-            if (chars.Equals(charBuffer[strStart..(strStart + chars.Length)], comparison))
-            {
-                return actualIndex;
-            }
-
-            startIndex += indexOfSameLength + 1;
-            lengths = stringLengths[startIndex..];
-            indexOfSameLength = lengths.IndexOf(chars.Length);
-        }
-
-        return -1;
-    }
-
-    [Pure]
-    public int IndexOfv2(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
-    {
-        ReadOnlySpan<string> strings = _strings;
-        ReadOnlySpan<int> starts = _stringStarts;
+        ref int startsReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
         ReadOnlySpan<char> charBuffer = _stringChars;
         Span<int> stringLengths = _stringLengths;
 
+        int charsLength = chars.Length;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
         Span<int> lengths = stringLengths[startIndex..];
 
-        Span<int> indices = stackalloc int[lengths.Length];
-        int indicesLength = lengths.IndicesOf(chars.Length, indices);
-        indices = indices[..indicesLength];
-
-        for (int i = 0; i < indices.Length; i++)
+        Span<int> indices = default;
+        int[]? rentedIndices = null;
+        if (!MemoryHelper.UseStackAlloc<int>(lengths.Length))
         {
-            int actualIndex = indices[i] + startIndex;
-            ReadOnlySpan<char> str = strings[actualIndex].AsSpan();
-            ref char stringReference = ref MemoryMarshal.GetReference(str);
-            if (Unsafe.AreSame(ref charsReference, ref stringReference))
-            {
-                return actualIndex;
-            }
-
-            int strStart = starts[actualIndex];
-            if (chars.Equals(charBuffer[strStart..(strStart + chars.Length)], comparison))
-            {
-                return actualIndex;
-            }
+            rentedIndices = ArrayPool<int>.Shared.Rent(lengths.Length);
+            indices = rentedIndices.AsSpan(..indices.Length);
+        }
+        else
+        {
+            indices = SpanMarshal.ReturnStackAlloced(stackalloc int[lengths.Length]);
         }
 
-        return -1;
+        try
+        {
+            int indicesLength = lengths.IndicesOf(charsLength, indices);
+            indices = indices.SliceUnsafe(..indicesLength);
+
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int actualIndex = indices[i] + startIndex;
+                ReadOnlySpan<char> str = Unsafe.Add(ref stringsReference, actualIndex);
+                ref char stringReference = ref MemoryMarshal.GetReference(str);
+                if (Unsafe.AreSame(ref charsReference, ref stringReference))
+                {
+                    return actualIndex;
+                }
+
+                int strStart = Unsafe.Add(ref startsReference, actualIndex);
+                if (chars.Equals(charBuffer.SliceUnsafe(strStart..(strStart + charsLength)), comparison))
+                {
+                    return actualIndex;
+                }
+            }
+
+            return -1;
+        }
+        finally
+        {
+            ArrayPool<int>.Shared.Return(rentedIndices);
+        }
     }
 
     [Pure]
     public bool Contains(string str) => Contains(str.AsSpan());
 
     [Pure]
+    public bool Contains(string str, StringComparison comparison) => IndexOf(str.AsSpan(), comparison) >= 0;
+
+    [Pure]
     public bool Contains(ReadOnlySpan<char> chars) => IndexOf(chars) >= 0;
+
+    [Pure]
+    public bool Contains(ReadOnlySpan<char> chars, StringComparison comparison) => IndexOf(chars, comparison) >= 0;
 
     void ICollection<string>.Add(string str) => throw new NotSupportedException();
 
@@ -347,7 +302,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         }
 
         int currentStringLength = _stringLengths[index];
-        int lengthOfLeftStrings = _stringLengths.AsSpan(..index).Sum();
+        int lengthOfLeftStrings = _stringLengths.AsSpan(..index).SumUnchecked();
         _strings[index] = str;
         _stringLengths[index] = stringLength;
         _stringStarts[index] = lengthOfLeftStrings;

@@ -17,7 +17,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
         IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
         IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null
     )
-    : IEnumerable<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
+    : IReadOnlyCollection<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey>
     where TSecondaryKey : IEquatable<TSecondaryKey>
 {

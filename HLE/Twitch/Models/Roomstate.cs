@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 
 namespace HLE.Twitch.Models;
 
@@ -53,7 +52,6 @@ public readonly struct Roomstate(ChangedRoomStates changedRoomStates) : IEquatab
     public ChangedRoomStates ChangedStates { get; } = changedRoomStates;
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(Roomstate other) =>
         EmoteOnly == other.EmoteOnly && FollowersOnly == other.FollowersOnly && R9K == other.R9K &&
         Channel == other.Channel && Channel == other.Channel && SlowMode == other.SlowMode

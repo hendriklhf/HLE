@@ -14,7 +14,7 @@ namespace HLE.Collections.Concurrent;
 /// A concurrent stack that doesn't allocate on pushing items onto the stack, in comparision to <see cref="System.Collections.Concurrent.ConcurrentStack{T}"/>.
 /// </summary>
 /// <typeparam name="T">The type of stored items.</typeparam>
-public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDisposable, IReadOnlyCollection<T>, ICopyable<T>, IReadOnlySpanProvider<T>, ICountable, IIndexAccessible<T>
+public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOnlyCollection<T>, ICopyable<T>, IReadOnlySpanProvider<T>, ICountable, IIndexAccessible<T>
 {
     T IIndexAccessible<T>.this[int index] => AsSpan()[index];
 
@@ -23,7 +23,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
     public int Capacity => _buffer.Length;
 
     internal T[] _buffer;
-    private SemaphoreSlim? _bufferLock = new(1);
+    private readonly object _syncRoot = new();
 
     private const int _defaultCapacity = 8;
     private const int _maximumCapacity = 1 << 30;
@@ -42,19 +42,11 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
     {
     }
 
-    public void Dispose()
-    {
-        _bufferLock?.Dispose();
-        _bufferLock = null;
-    }
-
     public ReadOnlySpan<T> AsSpan() => _buffer.AsSpan(..Count);
 
     public void Push(T item)
     {
-        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
-
-        _bufferLock.Wait();
+        Monitor.Enter(_syncRoot);
         try
         {
             if (Count == _buffer.Length)
@@ -66,15 +58,13 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         }
         finally
         {
-            _bufferLock.Release();
+            Monitor.Exit(_syncRoot);
         }
     }
 
     public T Pop()
     {
-        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
-
-        _bufferLock.Wait();
+        Monitor.Enter(_syncRoot);
         try
         {
             if (Count == 0)
@@ -94,7 +84,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         }
         finally
         {
-            _bufferLock.Release();
+            Monitor.Exit(_syncRoot);
         }
     }
 
@@ -104,9 +94,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
 
     public bool TryPop([MaybeNullWhen(false)] out T item)
     {
-        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
-
-        _bufferLock.Wait();
+        Monitor.Enter(_syncRoot);
         try
         {
             if (Count == 0)
@@ -127,15 +115,13 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         }
         finally
         {
-            _bufferLock.Release();
+            Monitor.Exit(_syncRoot);
         }
     }
 
     public void Clear()
     {
-        ObjectDisposedException.ThrowIf(_bufferLock is null, typeof(ConcurrentStack<T>));
-
-        _bufferLock.Wait();
+        Monitor.Enter(_syncRoot);
         try
         {
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -147,7 +133,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IDispos
         }
         finally
         {
-            _bufferLock.Release();
+            Monitor.Exit(_syncRoot);
         }
     }
 

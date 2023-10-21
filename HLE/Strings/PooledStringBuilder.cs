@@ -148,6 +148,12 @@ public sealed partial class PooledStringBuilder(int capacity)
     public void Append(UInt128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
         => Append<UInt128>(value, format);
 
+    public void Append(nint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
+        => Append<nint>(value, format);
+
+    public void Append(nuint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
+        => Append<nuint>(value, format);
+
     public void Append(float value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
         => Append<float>(value, format);
 

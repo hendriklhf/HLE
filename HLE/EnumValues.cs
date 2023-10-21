@@ -3,27 +3,17 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Memory;
 
 namespace HLE;
 
+[SuppressMessage("Design", "CA1024:Use properties where appropriate")]
 public static class EnumValues<TEnum> where TEnum : struct, Enum
 {
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
-    private static byte[]? _bytes;
+    private static readonly TEnum[] _values = Enum.GetValues<TEnum>();
 
     [Pure]
-    public static unsafe ReadOnlySpan<TEnum> GetValues()
-    {
-        byte[]? bytes = _bytes;
-        if (bytes is null)
-        {
-            return GetAndCacheValues();
-        }
-
-        ref byte bytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
-        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<byte, TEnum>(ref bytesReference), bytes.Length / sizeof(TEnum));
-    }
+    public static ReadOnlySpan<TEnum> GetValues() => _values;
 
     [Pure]
     public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAsUnderlyingType<TUnderlyingType>()
@@ -47,23 +37,6 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TEnum GetMaxValue() => GetValues()[^1];
-
-    private static unsafe ReadOnlySpan<TEnum> GetAndCacheValues()
-    {
-        ReadOnlySpan<TEnum> values = Enum.GetValues<TEnum>();
-        ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
-        ref byte valueBytesReference = ref Unsafe.As<TEnum, byte>(ref valuesReference);
-
-        int byteCount = values.Length * sizeof(TEnum);
-        byte[] bytes = GC.AllocateUninitializedArray<byte>(byteCount, true);
-
-        ref byte cacheBytesReference = ref MemoryMarshal.GetArrayDataReference(bytes);
-        CopyWorker<byte> copyWorker = new(ref valueBytesReference, byteCount);
-        copyWorker.CopyTo(ref cacheBytesReference);
-
-        _bytes = bytes;
-        return values;
-    }
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

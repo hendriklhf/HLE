@@ -1,20 +1,21 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Strings;
 
-public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatable<StringNumberCreator>
+public readonly struct StringNumberFormatter(StringNumberFormat format) : IEquatable<StringNumberFormatter>
 {
-    public StringNumberFormat Format { get; } = format;
+    public StringNumberFormat NumberFormat { get; } = format;
 
     [SkipLocalsInit]
-    public string Create(int number)
+    public string Format(int number)
     {
         Span<char> result = stackalloc char[64];
-        ref char charsReference = ref MemoryMarshal.GetReference(Format.Chars);
-        int charsLength = Format._chars.Length;
+        ref char charsReference = ref MemoryMarshal.GetReference(NumberFormat.Chars);
+        int charsLength = NumberFormat._chars.Length;
 
         int writeIndex = result.Length - 1;
         while (number >= charsLength)
@@ -29,9 +30,9 @@ public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatab
         return new(result[^writtenChars..]);
     }
 
-    public bool TryCreate(int number, Span<char> result, out int writtenChars)
+    public bool TryFormat(int number, Span<char> result, out int writtenChars)
     {
-        ReadOnlySpan<char> chars = Format.Chars;
+        ReadOnlySpan<char> chars = NumberFormat.Chars;
         int charsLength = chars.Length;
 
         int writeIndex = result.Length - 1;
@@ -60,13 +61,15 @@ public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatab
         return true;
     }
 
-    public int Revert(string stringNumber) => Revert(stringNumber.AsSpan());
+    [Pure]
+    public int Parse(string stringNumber) => Parse(stringNumber.AsSpan());
 
-    public int Revert(ReadOnlySpan<char> stringNumber)
+    [Pure]
+    public int Parse(ReadOnlySpan<char> stringNumber)
     {
         int result = 0;
         int exponent = 0;
-        ReadOnlySpan<char> chars = Format.Chars;
+        ReadOnlySpan<char> chars = NumberFormat.Chars;
         ref char numberReference = ref MemoryMarshal.GetReference(stringNumber);
         for (int i = stringNumber.Length - 1; i >= 0; i--)
         {
@@ -91,13 +94,13 @@ public readonly struct StringNumberCreator(StringNumberFormat format) : IEquatab
     private static void ThrowWrongNumberFormat()
         => throw new FormatException($"The provided number is in an invalid format. It does not match the provided {typeof(StringNumberFormat)}");
 
-    public bool Equals(StringNumberCreator other) => Format.Equals(other.Format);
+    public bool Equals(StringNumberFormatter other) => NumberFormat.Equals(other.NumberFormat);
 
-    public override bool Equals(object? obj) => obj is StringNumberCreator other && Equals(other);
+    public override bool Equals(object? obj) => obj is StringNumberFormatter other && Equals(other);
 
-    public override int GetHashCode() => string.GetHashCode(Format._chars);
+    public override int GetHashCode() => string.GetHashCode(NumberFormat._chars);
 
-    public static bool operator ==(StringNumberCreator left, StringNumberCreator right) => left.Equals(right);
+    public static bool operator ==(StringNumberFormatter left, StringNumberFormatter right) => left.Equals(right);
 
-    public static bool operator !=(StringNumberCreator left, StringNumberCreator right) => !(left == right);
+    public static bool operator !=(StringNumberFormatter left, StringNumberFormatter right) => !(left == right);
 }

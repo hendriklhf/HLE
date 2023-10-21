@@ -13,9 +13,15 @@ public sealed class SingleCharStringPoolReceiver : ISyntaxReceiver
             {
                 Parent: VariableDeclaratorSyntax
                 {
-                    Identifier.Text: "AmountOfCachedSingleCharStrings"
+                    Identifier.Text: "AmountOfCachedSingleCharStrings",
+                    Parent.Parent.Parent: ClassDeclarationSyntax
+                    {
+                        Identifier.Text: "SingleCharStringPool",
+                        Parent: FileScopedNamespaceDeclarationSyntax namespaceDeclaration
+                    }
                 }
-            } equalsValue)
+            } equalsValue ||
+            namespaceDeclaration.Name.ToString() != "HLE.Strings")
         {
             return;
         }

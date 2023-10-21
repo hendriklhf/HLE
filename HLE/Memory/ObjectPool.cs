@@ -8,12 +8,11 @@ using HLE.Collections.Concurrent;
 namespace HLE.Memory;
 
 /// <summary>
-/// A pool of objects from which you can rent objects and return objects to in order to reuse them.<br/>
+/// A thread-safe pool of objects from which you can rent objects and return objects to in order to reuse them.<br/>
 /// Objects rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.
 /// </summary>
 /// <typeparam name="T">The type of pooled objects.</typeparam>
-public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
-    : IEquatable<ObjectPool<T>>, IDisposable, ICountable
+public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory) : IEquatable<ObjectPool<T>>, ICountable
 {
     /// <summary>
     /// Gets the amount of items in the pool.
@@ -57,8 +56,7 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory)
 
     public void Clear() => _rentableItems.Clear();
 
-    public void Dispose() => _rentableItems.Dispose();
-
+    [Pure]
     public bool Equals(ObjectPool<T>? other) => ReferenceEquals(this, other);
 
     [Pure]

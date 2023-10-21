@@ -96,6 +96,12 @@ public ref partial struct ValueStringBuilder
     public void Append(ulong value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
         => Append<ulong>(value, format);
 
+    public void Append(nint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
+        => Append<nint>(value, format);
+
+    public void Append(nuint value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
+        => Append<nuint>(value, format);
+
     public void Append(Int128 value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
         => Append<Int128>(value, format);
 
