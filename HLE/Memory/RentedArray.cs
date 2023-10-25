@@ -30,21 +30,15 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     readonly T IIndexAccessible<T>.this[int index] => this[index];
 
-    public readonly ref T this[Index index]
-    {
-        get
-        {
-            int actualIndex = index.GetOffset(Array.Length);
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)actualIndex, (uint)Array.Length);
-            return ref Unsafe.Add(ref Reference, actualIndex);
-        }
-    }
+    public readonly ref T this[Index index] => ref this[index.GetOffset(Length)];
 
     public readonly Span<T> this[Range range] => AsSpan(range);
 
     public readonly ref T Reference => ref MemoryMarshal.GetArrayDataReference(Array);
 
     public readonly int Length => Array.Length;
+
+    public readonly bool IsDisposed => _array is not null;
 
     readonly int ICountable.Count => Length;
 
@@ -113,14 +107,24 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     [Pure]
     public readonly T[] ToArray()
     {
+        if (Length == 0)
+        {
+            return System.Array.Empty<T>();
+        }
+
         T[] result = GC.AllocateUninitializedArray<T>(Length);
-        Array.CopyToUnsafe(result);
+        CopyWorker<T>.Copy(Array, result);
         return result;
     }
 
     [Pure]
     public readonly List<T> ToList()
     {
+        if (Length == 0)
+        {
+            return new();
+        }
+
         List<T> result = new(Length);
         CopyWorker<T> copyWorker = new(Array);
         copyWorker.CopyTo(result);
@@ -199,8 +203,8 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
         if (typeof(T) == typeof(char))
         {
             T[] array = Array;
-            ReadOnlySpan<char> charSpan = Unsafe.As<T[], char[]>(ref array);
-            return new(charSpan);
+            ReadOnlySpan<char> chars = Unsafe.As<T[], char[]>(ref array);
+            return new(chars);
         }
 
         Type thisType = typeof(RentedArray<T>);

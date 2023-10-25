@@ -11,7 +11,7 @@ namespace HLE.Tests.Memory;
 public partial class CopyWorkerTest
 {
     [TestMethod]
-    public void MemmoveTest()
+    public unsafe void MemmoveTest()
     {
         const int sourceLength = 50;
 
@@ -20,7 +20,7 @@ public partial class CopyWorkerTest
         Span<int> destination = stackalloc int[sourceLength];
         Debug.Assert(source.Length == destination.Length);
 
-        CopyWorker<int>.Memmove(ref MemoryMarshal.GetReference(source), ref MemoryMarshal.GetReference(destination), (nuint)source.Length);
+        CopyWorker<int>.s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (nuint)source.Length);
         Assert.IsTrue(destination.SequenceEqual(source));
     }
 }

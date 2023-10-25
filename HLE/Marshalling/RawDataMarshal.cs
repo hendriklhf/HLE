@@ -6,16 +6,16 @@ namespace HLE.Marshalling;
 
 public static unsafe class RawDataMarshal
 {
-    private static readonly delegate*<object, nint> _getRawDataSize = (delegate*<object, nint>)typeof(RuntimeHelpers).GetMethod("GetRawObjectDataSize", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+    private static readonly delegate*<object, nint> s_getRawDataSize = (delegate*<object, nint>)typeof(RuntimeHelpers).GetMethod("GetRawObjectDataSize", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint GetRawDataSize<T>(T obj) where T : class
-        => (nuint)_getRawDataSize(obj);
+        => (nuint)s_getRawDataSize(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref nuint GetMethodTablePointer<T>(T obj) where T : class
+    public static ref nuint GetMethodTableReference<T>(T obj) where T : class
     {
         nuint* pointer = (nuint*)*(nuint*)&obj;
         return ref Unsafe.AsRef<nuint>(pointer);

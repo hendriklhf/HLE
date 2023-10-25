@@ -33,7 +33,7 @@ public static class StringHelper
 
     public const string RegexMetaChars = "\t\n\f\r #$()*+.?[\\^{|";
 
-    private static readonly SearchValues<char> _regexMetaCharsSearchValues = SearchValues.Create(RegexMetaChars);
+    private static readonly SearchValues<char> s_regexMetaCharsSearchValues = SearchValues.Create(RegexMetaChars);
 
     [Pure]
     public static ReadOnlyMemory<char>[] Chunk(this string str, int charCount)
@@ -87,7 +87,7 @@ public static class StringHelper
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[rangesLength];
         ref ReadOnlyMemory<char> resultReference = ref MemoryMarshal.GetArrayDataReference(result);
-        using RentedArray<char> charBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(charCount);
+        using RentedArray<char> charBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(charCount);
         int resultLength = 0;
         int bufferLength = 0;
         for (int i = 0; i < rangesLength; i++)
@@ -140,7 +140,7 @@ public static class StringHelper
         int resultLength;
         if (!MemoryHelper.UseStackAlloc<char>(str.Length))
         {
-            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(str.Length);
+            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
             return new(rentedBuffer[..resultLength]);
         }
@@ -202,7 +202,7 @@ public static class StringHelper
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.CreateRentedArray(span.Length);
+            using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
             return indicesBuffer[..length].ToArray();
         }
@@ -249,7 +249,7 @@ public static class StringHelper
             return string.Empty;
         }
 
-        int indexOfMetaChar = input.IndexOfAny(_regexMetaCharsSearchValues);
+        int indexOfMetaChar = input.IndexOfAny(s_regexMetaCharsSearchValues);
         if (indexOfMetaChar < 0)
         {
             return inputIsString ? StringMarshal.AsString(input) : new(input);
@@ -259,7 +259,7 @@ public static class StringHelper
         int maximumResultLength = input.Length << 1;
         if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
         {
-            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.CreateRentedArray(maximumResultLength);
+            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
             return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }
@@ -271,7 +271,7 @@ public static class StringHelper
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination)
     {
-        int indexOfMetaChar = input.IndexOfAny(_regexMetaCharsSearchValues);
+        int indexOfMetaChar = input.IndexOfAny(s_regexMetaCharsSearchValues);
         if (indexOfMetaChar >= 0)
         {
             return RegexEscape(input, destination, indexOfMetaChar);
@@ -290,7 +290,7 @@ public static class StringHelper
         }
 
         ValueStringBuilder builder = new(destination);
-        SearchValues<char> regexMetaCharsSearchValues = _regexMetaCharsSearchValues;
+        SearchValues<char> regexMetaCharsSearchValues = s_regexMetaCharsSearchValues;
         while (true)
         {
             char metaChar = input[indexOfMetaChar];

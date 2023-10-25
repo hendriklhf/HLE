@@ -11,13 +11,13 @@ using HLE.Collections;
 
 namespace HLE.Memory;
 
-public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledStream>, ICopyable<byte>
+internal sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledStream>, ICopyable<byte>
 {
-    public override bool CanRead => (ulong)Position < (ulong)Length;
+    public override bool CanRead => !_buffer.IsDisposed;
 
-    public override bool CanSeek => true;
+    public override bool CanSeek => !_buffer.IsDisposed;
 
-    public override bool CanWrite => Length != int.MaxValue;
+    public override bool CanWrite => !_buffer.IsDisposed;
 
     public override long Length => _buffer.Length;
 
@@ -31,7 +31,7 @@ public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledS
         }
     }
 
-    private RentedArray<byte> _buffer = ArrayPool<byte>.Shared.CreateRentedArray(minimumLength);
+    private RentedArray<byte> _buffer = ArrayPool<byte>.Shared.RentAsRentedArray(minimumLength);
     private long _position;
 
     public PooledStream() : this(0)
@@ -52,13 +52,8 @@ public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledS
 
     public override int Read(Span<byte> buffer)
     {
-        if (!CanRead)
-        {
-            return 0;
-        }
-
-        int readableSize = int.Min((int)Position, buffer.Length);
-        _buffer.AsSpan((int)Position, readableSize).CopyToUnsafe(buffer);
+        int readableSize = int.Min((int)Length - (int)Position, buffer.Length);
+        CopyWorker<byte>.Copy(_buffer.AsSpan((int)Position, readableSize), buffer);
         Position += readableSize;
         return readableSize;
     }
@@ -78,13 +73,13 @@ public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledS
     }
 
     [Pure]
-    public override int ReadByte() => CanRead ? _buffer[(int)Position++] : -1;
+    public override int ReadByte() => Position == Length ? -1 : _buffer[(int)Position++];
 
     public override void Write(ReadOnlySpan<byte> buffer)
     {
         GrowIfNeeded(buffer.Length);
 
-        buffer.CopyToUnsafe(_buffer.AsSpan((int)Position..));
+        CopyWorker<byte>.Copy(buffer, _buffer.AsSpan((int)Position..));
         Position += buffer.Length;
     }
 
@@ -101,7 +96,7 @@ public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledS
 
     public override void WriteByte(byte value)
     {
-        if (!CanWrite)
+        if (Position == Length)
         {
             ThrowExceedsMaximumStreamCapacity(1);
         }
@@ -138,14 +133,14 @@ public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledS
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((ulong)value, (ulong)int.MaxValue);
 
         using RentedArray<byte> oldBuffer = _buffer;
-        _buffer = ArrayPool<byte>.Shared.CreateRentedArray((int)value);
+        _buffer = ArrayPool<byte>.Shared.RentAsRentedArray((int)value);
         if (oldBuffer.Length > _buffer.Length)
         {
-            oldBuffer.AsSpan(.._buffer.Length).CopyToUnsafe(_buffer.AsSpan());
+            CopyWorker<byte>.Copy(oldBuffer.AsSpan(.._buffer.Length), _buffer.AsSpan());
             return;
         }
 
-        oldBuffer.AsSpan().CopyToUnsafe(_buffer.AsSpan());
+        CopyWorker<byte>.Copy(oldBuffer.AsSpan(), _buffer.AsSpan());
     }
 
     public override void Flush()
@@ -171,8 +166,8 @@ public sealed class PooledStream(int minimumLength) : Stream, IEquatable<PooledS
         }
 
         using RentedArray<byte> oldBuffer = _buffer;
-        _buffer = ArrayPool<byte>.Shared.CreateRentedArray(newSize);
-        oldBuffer.AsSpan().CopyToUnsafe(_buffer.AsSpan());
+        _buffer = ArrayPool<byte>.Shared.RentAsRentedArray(newSize);
+        CopyWorker<byte>.Copy(oldBuffer.AsSpan(), _buffer.AsSpan());
     }
 
     [DoesNotReturn]

@@ -12,7 +12,7 @@ public class SpanMarshalTest
     public void AsMutableSpanTest()
     {
         ReadOnlySpan<char> str = "hello";
-        Span<char> span = str.AsMutableSpan();
+        Span<char> span = SpanMarshal.AsMutableSpan(str);
         Assert.IsTrue(span.SequenceEqual(str));
     }
 
@@ -20,7 +20,7 @@ public class SpanMarshalTest
     public void AsMutableMemory()
     {
         ReadOnlyMemory<char> str = "hello".AsMemory();
-        Memory<char> memory = str.AsMutableMemory();
+        Memory<char> memory = SpanMarshal.AsMutableMemory(str);
         Assert.IsTrue(memory.Span is "hello");
     }
 

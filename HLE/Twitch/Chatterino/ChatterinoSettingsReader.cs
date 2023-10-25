@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -18,28 +16,14 @@ namespace HLE.Twitch.Chatterino;
 [SupportedOSPlatform("windows")]
 public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsReader>
 {
-    private readonly string _windowLayoutPath;
-    private string[]? _channels;
-
-    public ChatterinoSettingsReader()
-    {
-        using PooledStringBuilder pathBuilder = new(128);
-        pathBuilder.Append(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"\Chatterino2\Settings\window-layout.json");
-        _windowLayoutPath = StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
-    }
+    private static readonly string s_windowLayoutPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Chatterino2\Settings\window-layout.json";
 
     /// <summary>
     /// Gets all distinct channels of all your tabs from the Chatterino settings.
     /// </summary>
-    /// <remarks>The result will be cached, thus only the first call will allocate.</remarks>
     /// <returns>A string array of all channels.</returns>
-    public ImmutableArray<string> GetChannels()
+    public static string[] GetChannels()
     {
-        if (_channels is not null)
-        {
-            return ImmutableCollectionsMarshal.AsImmutableArray(_channels);
-        }
-
         using PooledBufferWriter<byte> windowLayoutFileContentWriter = new(20_000);
         ReadWindowLayoutFile(windowLayoutFileContentWriter);
 
@@ -86,13 +70,12 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
             }
         }
 
-        _channels = channels.ToArray();
-        return ImmutableCollectionsMarshal.AsImmutableArray(_channels);
+        return channels.ToArray();
     }
 
-    private void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
+    private static void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
     {
-        BufferedFileReader fileReader = new(_windowLayoutPath);
+        BufferedFileReader fileReader = new(s_windowLayoutPath);
         fileReader.ReadBytes(windowLayoutFileContentWriter);
     }
 

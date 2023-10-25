@@ -17,7 +17,7 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
         int whitespaceCount;
         if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.CreateRentedArray(ircMessage.Length);
+            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
             return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
         }

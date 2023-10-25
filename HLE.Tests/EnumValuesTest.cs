@@ -35,10 +35,10 @@ public class EnumValuesTest
     {
         int[] actualValues = (int[])Enum.GetValuesAsUnderlyingType<TestEnum>();
 
-        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAsUnderlyingType<int>();
+        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAs<int>();
         Assert.IsTrue(values.SequenceEqual(actualValues));
 
-        values = EnumValues<TestEnum>.GetValuesAsUnderlyingType<int>();
+        values = EnumValues<TestEnum>.GetValuesAs<int>();
         Assert.IsTrue(values.SequenceEqual(actualValues));
     }
 
@@ -56,7 +56,7 @@ public class EnumValuesTest
     [TestMethod]
     public void ValuesAsUnderlyingTypeAreSortedTest()
     {
-        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAsUnderlyingType<int>();
+        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAs<int>();
         Span<int> sortedValues = stackalloc int[values.Length];
         values.CopyTo(sortedValues);
         sortedValues.Sort();

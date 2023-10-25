@@ -10,7 +10,7 @@ namespace HLE.Strings;
 
 public static partial class SingleCharStringPool
 {
-    private static readonly ConcurrentDictionary<char, string> _customSingleCharStringCache = new();
+    private static readonly ConcurrentDictionary<char, string> s_customSingleCharStringCache = new();
 
     /// <summary>
     /// Amount of single char strings cached beginning from char '\0'.
@@ -23,7 +23,7 @@ public static partial class SingleCharStringPool
     {
         if (c >= AmountOfCachedSingleCharStrings)
         {
-            return _customSingleCharStringCache.TryGetValue(c, out str);
+            return s_customSingleCharStringCache.TryGetValue(c, out str);
         }
 
         ReadOnlySpan<string> cachedSingleCharStrings = GetCachedSingleCharStrings();
@@ -42,7 +42,7 @@ public static partial class SingleCharStringPool
         }
 
         str = c.ToString();
-        _customSingleCharStringCache.AddOrSet(c, str);
+        s_customSingleCharStringCache.AddOrSet(c, str);
         return str;
     }
 
@@ -60,10 +60,10 @@ public static partial class SingleCharStringPool
             return;
         }
 
-        _customSingleCharStringCache.AddOrSet(c, str);
+        s_customSingleCharStringCache.AddOrSet(c, str);
     }
 
-    public static bool Contains(char c) => c < AmountOfCachedSingleCharStrings || _customSingleCharStringCache.ContainsKey(c);
+    public static bool Contains(char c) => c < AmountOfCachedSingleCharStrings || s_customSingleCharStringCache.ContainsKey(c);
 
     internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings();
 }

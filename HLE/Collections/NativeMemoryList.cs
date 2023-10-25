@@ -10,8 +10,7 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-public sealed class NativeMemoryList<T>(int capacity)
-    : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
+public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index]
@@ -43,12 +42,11 @@ public sealed class NativeMemoryList<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal NativeMemory<T> _buffer = new((int)BitOperations.RoundUpToPowerOf2((uint)capacity), false);
+    internal NativeMemory<T> _buffer = capacity == 0 ? NativeMemory<T>.Empty : new((int)BitOperations.RoundUpToPowerOf2((uint)capacity), false);
 
-    private const int _defaultCapacity = 8;
     private const int _maximumCapacity = 1 << 30;
 
-    public NativeMemoryList() : this(_defaultCapacity)
+    public NativeMemoryList() : this(0)
     {
     }
 
@@ -69,15 +67,25 @@ public sealed class NativeMemoryList<T>(int capacity)
     [Pure]
     public T[] ToArray()
     {
+        if (Count == 0)
+        {
+            return Array.Empty<T>();
+        }
+
         Span<T> items = AsSpan();
         T[] result = GC.AllocateUninitializedArray<T>(Count);
-        items.CopyToUnsafe(result);
+        CopyWorker<T>.Copy(items, result);
         return result;
     }
 
     [Pure]
     public unsafe List<T> ToList()
     {
+        if (Count == 0)
+        {
+            return new();
+        }
+
         List<T> result = new(Count);
         CopyWorker<T> copyWorker = new(_buffer.Pointer, Count);
         copyWorker.CopyTo(result);

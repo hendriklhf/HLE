@@ -9,7 +9,7 @@ public static unsafe class SpanMarshal
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsMutableSpan<T>(this ReadOnlySpan<T> span)
+    public static Span<T> AsMutableSpan<T>(ReadOnlySpan<T> span)
     {
         ref T reference = ref MemoryMarshal.GetReference(span);
         return MemoryMarshal.CreateSpan(ref reference, span.Length);
@@ -17,14 +17,14 @@ public static unsafe class SpanMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Memory<T> AsMutableMemory<T>(this ReadOnlyMemory<T> memory)
+    public static Memory<T> AsMutableMemory<T>(ReadOnlyMemory<T> memory)
         => Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
 
     /// <inheritdoc cref="AsMemoryUnsafe{T}(System.ReadOnlySpan{T})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMemoryUnsafe<T>(Span<T> span)
-        => AsMemoryUnsafe((ReadOnlySpan<T>)span).AsMutableMemory();
+        => AsMutableMemory(AsMemoryUnsafe((ReadOnlySpan<T>)span));
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{T}"/> to a <see cref="ReadOnlyMemory{T}"/>. Does not allocate any memory. <br/>

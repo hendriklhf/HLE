@@ -297,7 +297,7 @@ public static class RandomExtensions
 
         if (!MemoryHelper.UseStackAlloc<uint>(length))
         {
-            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.CreateRentedArray(length);
+            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));
             for (int i = 0; i < length; i++)
             {
@@ -615,7 +615,7 @@ public static class RandomExtensions
 
         if (!MemoryHelper.UseStackAlloc<uint>(length))
         {
-            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.CreateRentedArray(length);
+            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));
             for (int i = 0; i < length; i++)
             {

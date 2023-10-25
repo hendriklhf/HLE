@@ -7,7 +7,7 @@ using HLE.Twitch.Models;
 namespace HLE.Twitch;
 
 /// <summary>
-/// A class that handles incoming IRC messages.
+/// A class that handles incoming IRC messages and invokes events for the associated message type.
 /// </summary>
 public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
 {

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -11,7 +13,7 @@ namespace HLE.Strings;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{AsString()}\"")]
-public unsafe struct NativeString : IDisposable, IEquatable<NativeString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
+public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEquatable<NativeString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
 {
     public readonly ref char this[int index]
     {
@@ -34,6 +36,8 @@ public unsafe struct NativeString : IDisposable, IEquatable<NativeString>, ICoun
 
     readonly int ICountable.Count => Length;
 
+    readonly int IReadOnlyCollection<char>.Count => Length;
+
     private NativeMemory<byte> _buffer = NativeMemory<byte>.Empty;
 
     public static NativeString Empty => new();
@@ -44,6 +48,15 @@ public unsafe struct NativeString : IDisposable, IEquatable<NativeString>, ICoun
 
     public NativeString(int length)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+        if (length == 0)
+        {
+            _buffer = NativeMemory<byte>.Empty;
+            Length = 0;
+            return;
+        }
+
         int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
         NativeMemory<byte> buffer = new(neededBufferSize);
         StringRawDataWriter writer = new(ref buffer.Reference);
@@ -55,6 +68,13 @@ public unsafe struct NativeString : IDisposable, IEquatable<NativeString>, ICoun
 
     public NativeString(ReadOnlySpan<char> chars)
     {
+        if (chars.Length == 0)
+        {
+            _buffer = NativeMemory<byte>.Empty;
+            Length = 0;
+            return;
+        }
+
         int length = chars.Length;
         int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
         NativeMemory<byte> buffer = new(neededBufferSize, false);
@@ -91,16 +111,29 @@ public unsafe struct NativeString : IDisposable, IEquatable<NativeString>, ICoun
     [Pure]
     public static string Alloc(ReadOnlySpan<char> chars) => new NativeString(chars).AsString();
 
-    public static void Free(string str)
+    public static void Free(string? str)
     {
-        ref nuint ptr = ref RawDataMarshal.GetMethodTablePointer(str);
-        ptr = ref Unsafe.Subtract(ref ptr, 1);
-        NativeMemory.Free(Unsafe.AsPointer(ref ptr));
+        if (str is not { Length: > 0 })
+        {
+            return;
+        }
+
+        ref nuint methodTableReference = ref RawDataMarshal.GetMethodTableReference(str);
+        methodTableReference = ref Unsafe.Subtract(ref methodTableReference, 1);
+        void* ptr = Unsafe.AsPointer(ref methodTableReference);
+        Debug.Assert((nuint)ptr % (nuint)sizeof(nuint) == 0); // is aligned
+        NativeMemory.AlignedFree(ptr);
     }
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString() => new(AsSpan());
+
+    public readonly CharEnumerator GetEnumerator() => AsString().GetEnumerator();
+
+    readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
+
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public readonly bool Equals(NativeString other) => AsString() == other.AsString();
 

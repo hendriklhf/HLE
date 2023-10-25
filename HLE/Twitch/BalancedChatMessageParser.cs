@@ -27,6 +27,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
         while (equalsSignIndex > 0)
         {
             int semicolonIndex = tags.IndexOf(';');
+            // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^1
             ReadOnlySpan<char> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
             tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : ReadOnlySpan<char>.Empty;
 

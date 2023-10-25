@@ -10,13 +10,13 @@ namespace HLE;
 public static class EnumValues<TEnum> where TEnum : struct, Enum
 {
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
-    private static readonly TEnum[] _values = Enum.GetValues<TEnum>();
+    private static readonly TEnum[] s_values = Enum.GetValues<TEnum>();
 
     [Pure]
-    public static ReadOnlySpan<TEnum> GetValues() => _values;
+    public static ReadOnlySpan<TEnum> GetValues() => s_values;
 
     [Pure]
-    public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAsUnderlyingType<TUnderlyingType>()
+    public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAs<TUnderlyingType>()
         where TUnderlyingType : unmanaged
     {
         if (sizeof(TEnum) != sizeof(TUnderlyingType))
@@ -41,5 +41,5 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
-        => throw new InvalidOperationException($"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be the underlying type.");
+        => throw new InvalidOperationException($"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type.");
 }

@@ -60,8 +60,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private readonly OAuthToken _oAuthToken;
     private readonly Uri _connectionUri;
 
-    private static readonly Uri _sslConnectionUri = new("wss://irc-ws.chat.twitch.tv:443");
-    private static readonly Uri _nonSslConnectionUri = new("ws://irc-ws.chat.twitch.tv:80");
+    private static readonly Uri s_sslConnectionUri = new("wss://irc-ws.chat.twitch.tv:443");
+    private static readonly Uri s_nonSslConnectionUri = new("ws://irc-ws.chat.twitch.tv:80");
 
     // ReSharper disable once InconsistentNaming
     private const string _newLine = "\r\n";
@@ -86,18 +86,12 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         _oAuthToken = oAuthToken;
         UseSSL = options.UseSSL;
         _isVerifiedBot = options.IsVerifiedBot;
-        _connectionUri = UseSSL ? _sslConnectionUri : _nonSslConnectionUri;
-    }
-
-    ~WebSocketIrcClient()
-    {
-        _webSocket.Dispose();
-        _cancellationTokenSource.Dispose();
+        _connectionUri = UseSSL ? s_sslConnectionUri : s_nonSslConnectionUri;
     }
 
     private async ValueTask SendAsync(ReadOnlyMemory<char> message)
     {
-        using RentedArray<byte> bytes = ArrayPool<byte>.Shared.CreateRentedArray(message.Length << 1);
+        using RentedArray<byte> bytes = ArrayPool<byte>.Shared.RentAsRentedArray(message.Length << 1);
         int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.AsSpan());
         await SendAsync(bytes.AsMemory(..byteCount));
     }
@@ -432,7 +426,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <inheritdoc cref="IDisposable.Dispose"/>
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
         _webSocket.Dispose();
         _cancellationTokenSource.Dispose();
     }
@@ -446,5 +439,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    // TODO: equality operators
+    public static bool operator ==(WebSocketIrcClient? left, WebSocketIrcClient? right) => Equals(left, right);
+
+    public static bool operator !=(WebSocketIrcClient? left, WebSocketIrcClient? right) => !(left == right);
 }

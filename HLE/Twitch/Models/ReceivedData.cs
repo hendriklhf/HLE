@@ -23,7 +23,7 @@ public struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICountable, 
     public ReceivedData(ReadOnlySpan<char> data)
     {
         Length = data.Length;
-        _data = ArrayPool<char>.Shared.CreateRentedArray(data.Length);
+        _data = ArrayPool<char>.Shared.RentAsRentedArray(data.Length);
         data.CopyTo(_data.AsSpan());
     }
 

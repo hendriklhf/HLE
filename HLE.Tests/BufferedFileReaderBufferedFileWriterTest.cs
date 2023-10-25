@@ -11,17 +11,17 @@ namespace HLE.Tests;
 [TestClass]
 public class BufferedFileReaderBufferedFileWriterTest
 {
-    private static readonly string _tempFileDirectory = $"{Path.GetTempPath()}HLE.Tests.BufferedFileOperationsTest\\";
+    private static readonly string s_tempFileDirectory = $"{Path.GetTempPath()}HLE.Tests.BufferedFileOperationsTest\\";
 
     [TestInitialize]
-    public void Initialize() => Directory.CreateDirectory(_tempFileDirectory);
+    public void Initialize() => Directory.CreateDirectory(s_tempFileDirectory);
 
     [TestCleanup]
-    public void Cleanup() => Directory.Delete(_tempFileDirectory, true);
+    public void Cleanup() => Directory.Delete(s_tempFileDirectory, true);
 
     private static string CreateFile(string fileContent, Encoding fileEncoding)
     {
-        string filePath = $"{_tempFileDirectory}{Guid.NewGuid():N}";
+        string filePath = $"{s_tempFileDirectory}{Guid.NewGuid():N}";
         byte[] fileContentBytes = fileEncoding.GetBytes(fileContent);
         File.WriteAllBytes(filePath, fileContentBytes);
         return filePath;
@@ -42,7 +42,7 @@ public class BufferedFileReaderBufferedFileWriterTest
     }
 
     [TestMethod]
-    public async Task ReadBytesAsyncTest()
+    public async Task ReadBytesAsync_Test_Async()
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
         using PooledBufferWriter<byte> writer = new(10);
@@ -70,7 +70,7 @@ public class BufferedFileReaderBufferedFileWriterTest
     }
 
     [TestMethod]
-    public async Task ReadCharsAsyncTest()
+    public async Task ReadCharsAsync_Test_Async()
     {
         string filePath = CreateFile("hello", Encoding.Unicode);
         using PooledBufferWriter<char> writer = new(10);
@@ -98,7 +98,7 @@ public class BufferedFileReaderBufferedFileWriterTest
     }
 
     [TestMethod]
-    public async Task WriteBytesAsyncTest()
+    public async Task WriteBytesAsync_Test_Async()
     {
         string filePath = CreateFile("idahwiudhasiudhakwdukawuidha", Encoding.UTF8);
         await new BufferedFileWriter(filePath).WriteBytesAsync("hello"u8.ToArray());
@@ -126,7 +126,7 @@ public class BufferedFileReaderBufferedFileWriterTest
     }
 
     [TestMethod]
-    public async Task WriteCharsAsyncTest()
+    public async Task WriteCharsAsync_Test_Async()
     {
         string filePath = CreateFile("idahwiudhasiudhakwdukawuidha", Encoding.UTF8);
         await new BufferedFileWriter(filePath).WriteCharsAsync("hello".AsMemory(), Encoding.UTF8);
@@ -154,7 +154,7 @@ public class BufferedFileReaderBufferedFileWriterTest
     }
 
     [TestMethod]
-    public async Task AppendBytesAsyncTest()
+    public async Task AppendBytesAsync_Test_Async()
     {
         string filePath = CreateFile("hello", Encoding.UTF8);
         await new BufferedFileWriter(filePath).AppendBytesAsync("hello"u8.ToArray());
@@ -182,7 +182,7 @@ public class BufferedFileReaderBufferedFileWriterTest
     }
 
     [TestMethod]
-    public async Task AppendCharsAsyncTest()
+    public async Task AppendCharsAsync_Test_Async()
     {
         string filePath = CreateFile("hello", Encoding.UTF8);
         await new BufferedFileWriter(filePath).AppendCharsAsync("hello".AsMemory(), Encoding.UTF8);

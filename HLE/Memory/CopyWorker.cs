@@ -1,25 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-internal readonly unsafe ref struct CopyWorker<T>
+public readonly unsafe ref partial struct CopyWorker<T>
 {
     private readonly ref T _source;
     private readonly nuint _length;
-
-    /// <summary>
-    /// <c>Memmove(ref T destination, ref T source, nuint elementCount)</c>
-    /// </summary>
-    private static readonly delegate*<ref T, ref T, nuint, void> _memmove = GetMemmoveFunctionPointer<T>();
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Memmove(ref T destination, ref T source, nuint elementCount) => _memmove(ref destination, ref source, elementCount);
 
     public CopyWorker(List<T> source) : this(ref MemoryMarshal.GetReference(CollectionsMarshal.AsSpan(source)), source.Count)
     {
@@ -135,15 +125,9 @@ internal readonly unsafe ref struct CopyWorker<T>
         CopyTo(ref MemoryMarshal.GetReference(destination));
     }
 
-    public void CopyTo(ref T destination) => _memmove(ref destination, ref _source, _length);
+    public void CopyTo(ref T destination) => s_memmove(ref destination, ref _source, _length);
 
     public void CopyTo(T* destination) => CopyTo(ref Unsafe.AsRef<T>(destination));
-
-    private static delegate*<ref TValue, ref TValue, nuint, void> GetMemmoveFunctionPointer<TValue>() =>
-        (delegate*<ref TValue, ref TValue, nuint, void>)
-        typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault(static m => m is { Name: "Memmove", IsGenericMethod: true })!
-            .MakeGenericMethod(typeof(TValue)).MethodHandle
-            .GetFunctionPointer();
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

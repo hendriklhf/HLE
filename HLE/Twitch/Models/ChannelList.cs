@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
@@ -15,24 +16,6 @@ namespace HLE.Twitch.Models;
 [DebuggerDisplay("Count = {_channels.Count}")]
 public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<ChannelList>, ICountable, IDisposable
 {
-    /// <summary>
-    /// Retrieves a channel by the user id of the channel owner. Returns null if the client is not connected to the channel.
-    /// </summary>
-    /// <param name="channelId">The user id of the channel owner.</param>
-    public Channel? this[long channelId] => Get(channelId);
-
-    /// <inheritdoc cref="this[ReadOnlySpan{char}]"/>
-    public Channel? this[string channelName] => Get(channelName);
-
-    /// <inheritdoc cref="this[ReadOnlySpan{char}]"/>
-    public Channel? this[ReadOnlyMemory<char> channelName] => Get(channelName.Span);
-
-    /// <summary>
-    /// Retrieves a channel by the username of the channel owner. Returns null if the client is not connected to the channel.
-    /// </summary>
-    /// <param name="channelName">The channel name, with or without '#'.</param>
-    public Channel? this[ReadOnlySpan<char> channelName] => Get(channelName);
-
     /// <summary>
     /// Gets the amount of channels in the list.
     /// </summary>
@@ -49,6 +32,46 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     /// Uses channel id as primary key and hashed channel name with OrdinalIgnoreCase comparison as secondary key.
     /// </summary>
     private ConcurrentDoubleDictionary<long, int, Channel>? _channels = new();
+
+    /// <summary>
+    /// Retrieves a channel by the user id of the channel owner.
+    /// </summary>
+    /// <param name="channelId">The user id of the channel owner.</param>
+    /// <param name="channel">The channel.</param>;
+    public bool TryGet(long channelId, [MaybeNullWhen(false)] out Channel channel)
+    {
+        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
+        return _channels.TryGetByPrimaryKey(channelId, out channel);
+    }
+
+    /// <summary>
+    /// Retrieves a channel by the username of the channel owner.
+    /// </summary>
+    /// <param name="channelName">The channel name, with or without '#'.</param>
+    /// <param name="channel">The channel.</param>
+    public bool TryGet(ReadOnlySpan<char> channelName, [MaybeNullWhen(false)] out Channel channel)
+    {
+        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
+
+        if (channelName.Length == 0)
+        {
+            channel = null;
+            return false;
+        }
+
+        if (channelName[0] == '#')
+        {
+            channelName = channelName[1..];
+            if (channelName.Length == 0)
+            {
+                channel = null;
+                return false;
+            }
+        }
+
+        int channelNameHash = string.GetHashCode(channelName, StringComparison.OrdinalIgnoreCase);
+        return _channels.TryGetBySecondaryKey(channelNameHash, out channel);
+    }
 
     public void Dispose()
     {

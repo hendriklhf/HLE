@@ -120,16 +120,16 @@ public class CollectionHelperTest
         IEnumerable<char> str = "hello";
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
-        bool succeeded = array.TryGetReadOnlySpan(out var arraySpan);
+        bool succeeded = array.TryGetReadOnlySpan<int>(out ReadOnlySpan<int> arraySpan);
         Assert.IsTrue(succeeded && arraySpan is [0, 1, 2, 3, 4]);
 
-        succeeded = list.TryGetReadOnlySpan(out var listSpan);
+        succeeded = list.TryGetReadOnlySpan<int>(out ReadOnlySpan<int> listSpan);
         Assert.IsTrue(succeeded && listSpan is [0, 1, 2, 3, 4]);
 
-        succeeded = str.TryGetReadOnlySpan(out var stringSpan);
+        succeeded = str.TryGetReadOnlySpan<char>(out ReadOnlySpan<char> stringSpan);
         Assert.IsTrue(succeeded && stringSpan is "hello");
 
-        succeeded = enumerable.TryGetReadOnlySpan(out var enumerableSpan);
+        succeeded = enumerable.TryGetReadOnlySpan<int>(out ReadOnlySpan<int> enumerableSpan);
         Assert.IsFalse(succeeded && enumerableSpan.Length == 0);
     }
 
@@ -141,16 +141,16 @@ public class CollectionHelperTest
         IEnumerable<char> str = "hello";
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
-        bool succeeded = array.TryGetReadOnlyMemory(out var arrayMemory);
+        bool succeeded = array.TryGetReadOnlyMemory<int>(out ReadOnlyMemory<int> arrayMemory);
         Assert.IsTrue(succeeded && arrayMemory.Span is [0, 1, 2, 3, 4]);
 
-        succeeded = list.TryGetReadOnlyMemory(out var listMemory);
+        succeeded = list.TryGetReadOnlyMemory<int>(out ReadOnlyMemory<int> listMemory);
         Assert.IsTrue(succeeded && listMemory.Span is [0, 1, 2, 3, 4]);
 
-        succeeded = str.TryGetReadOnlyMemory(out var stringMemory);
+        succeeded = str.TryGetReadOnlyMemory<char>(out ReadOnlyMemory<char> stringMemory);
         Assert.IsTrue(succeeded && stringMemory.Span is "hello");
 
-        succeeded = enumerable.TryGetReadOnlyMemory(out var enumerableMemory);
+        succeeded = enumerable.TryGetReadOnlyMemory<int>(out ReadOnlyMemory<int> enumerableMemory);
         Assert.IsFalse(succeeded && enumerableMemory.Length > 0);
     }
 

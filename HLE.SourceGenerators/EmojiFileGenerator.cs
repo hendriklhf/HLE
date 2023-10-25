@@ -32,7 +32,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         { "ice_cream", "IceCream" }
     };
 
-    private static readonly TimeSpan _cacheTime = TimeSpan.FromDays(1);
+    private static readonly TimeSpan s_cacheTime = TimeSpan.FromDays(1);
 
     private const string _httpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
     private const int _indentationSize = 4;
@@ -88,7 +88,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         {
             string fileName = Path.GetFileName(f);
             DateTimeOffset creationTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(fileName));
-            DateTimeOffset invalidationTime = creationTime + _cacheTime;
+            DateTimeOffset invalidationTime = creationTime + s_cacheTime;
             return DateTimeOffset.UtcNow < invalidationTime;
         });
 
@@ -163,7 +163,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     private void CheckForIllegalName(Span<char> name, ref int nameLength)
     {
         ReadOnlySpan<char> readOnlyName = name.Slice(0, nameLength);
-        foreach (var illegalVariableName in _illegalEmojiNameReplacements)
+        foreach (KeyValuePair<string, string> illegalVariableName in _illegalEmojiNameReplacements)
         {
             if (!readOnlyName.SequenceEqual(illegalVariableName.Key.AsSpan()))
             {

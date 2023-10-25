@@ -25,7 +25,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
         int whitespaceCount;
         if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.CreateRentedArray(ircMessage.Length);
+            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
             Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount], out roomstate);
         }
@@ -38,7 +38,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     [Pure]
     public void Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, out Roomstate roomstate)
     {
-        ChangedRoomStates changedStatesFlags = 0;
+        ChangedRoomStates changedStates = 0;
         bool emoteOnly = false;
         int followersOnly = -1;
         bool r9K = false;
@@ -52,6 +52,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
         {
             int semicolonIndex = tags.IndexOf(';');
             ReadOnlySpan<char> key = tags[..equalsSignIndex];
+            // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^1
             ReadOnlySpan<char> value = tags[(equalsSignIndex + 1)..Unsafe.As<int, Index>(ref semicolonIndex)];
             tags = semicolonIndex < 0 ? ReadOnlySpan<char>.Empty : tags[(semicolonIndex + 1)..];
             equalsSignIndex = tags.IndexOf('=');
@@ -60,33 +61,33 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
             {
                 case _emoteOnlyTag:
                     emoteOnly = GetEmoteOnly(value);
-                    changedStatesFlags |= ChangedRoomStates.EmoteOnly;
+                    changedStates |= ChangedRoomStates.EmoteOnly;
                     break;
                 case _followersOnlyTag:
                     followersOnly = GetFollowersOnly(value);
-                    changedStatesFlags |= ChangedRoomStates.FollowersOnly;
+                    changedStates |= ChangedRoomStates.FollowersOnly;
                     break;
                 case _r9KTag:
                     r9K = GetR9K(value);
-                    changedStatesFlags |= ChangedRoomStates.R9K;
+                    changedStates |= ChangedRoomStates.R9K;
                     break;
                 case _roomIdTag:
                     channelId = GetChannelId(value);
                     break;
                 case _slowModeTag:
                     slowMode = GetSlowMode(value);
-                    changedStatesFlags |= ChangedRoomStates.SlowMode;
+                    changedStates |= ChangedRoomStates.SlowMode;
                     break;
                 case _subsOnlyTag:
                     subsOnly = GetSubsOnly(value);
-                    changedStatesFlags |= ChangedRoomStates.SubsOnly;
+                    changedStates |= ChangedRoomStates.SubsOnly;
                     break;
             }
         }
 
         ReadOnlySpan<char> channel = GetChannel(ircMessage, indicesOfWhitespaces);
 
-        roomstate = new(changedStatesFlags)
+        roomstate = new(changedStates)
         {
             Channel = StringPool.Shared.GetOrAdd(channel),
             ChannelId = channelId,

@@ -40,7 +40,7 @@ public static partial class CollectionHelper
             int calculatedResultLength = chars.Length << 1;
             if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
             {
-                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(calculatedResultLength);
+                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(calculatedResultLength);
                 charsWritten = StringHelper.Join(separator, chars, rentedBuffer.AsSpan());
                 return new(rentedBuffer[..charsWritten]);
             }
@@ -73,7 +73,7 @@ public static partial class CollectionHelper
             int calculatedResultLength = chars.Length + separator.Length * chars.Length;
             if (!MemoryHelper.UseStackAlloc<char>(calculatedResultLength))
             {
-                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(calculatedResultLength);
+                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(calculatedResultLength);
                 charsWritten = StringHelper.Join(separator, chars, rentedBuffer.AsSpan());
                 return new(rentedBuffer[..charsWritten]);
             }
@@ -99,7 +99,7 @@ public static partial class CollectionHelper
             IEnumerable<char> charCollection = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection);
             if (charCollection.TryGetNonEnumeratedCount(out int elementCount))
             {
-                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.CreateRentedArray(elementCount);
+                using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(elementCount);
                 if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer.Array))
                 {
                     return new(rentedBuffer.AsSpan());
@@ -186,8 +186,8 @@ public static partial class CollectionHelper
     public static T[] Replace<T>(this T[] array, Func<T, bool> predicate, T replacement)
     {
         T[] copy = GC.AllocateUninitializedArray<T>(array.Length);
-        array.AsSpan().CopyToUnsafe(copy);
-        Replace((Span<T>)copy, predicate, replacement);
+        CopyWorker<T>.Copy(array, copy);
+        Replace(copy.AsSpan(), predicate, replacement);
         return copy;
     }
 
@@ -230,8 +230,8 @@ public static partial class CollectionHelper
     public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> predicate, T replacement)
     {
         T[] copy = GC.AllocateUninitializedArray<T>(array.Length);
-        array.AsSpan().CopyToUnsafe(copy);
-        Replace((Span<T>)copy, predicate, replacement);
+        CopyWorker<T>.Copy(array, copy);
+        Replace(copy.AsSpan(), predicate, replacement);
         return copy;
     }
 
@@ -264,7 +264,7 @@ public static partial class CollectionHelper
         int vector512Count = Vector512<int>.Count;
         if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
         {
-            var ascendingValueAdditions = Vector512.Create(
+            Vector512<int> ascendingValueAdditions = Vector512.Create(
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
                 10, 11, 12, 13, 14, 15
             );

@@ -16,7 +16,6 @@ namespace HLE.Memory;
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
 public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 {
-    // ReSharper disable once ArrangeModifiersOrder
     public static ArrayPool<T> Shared { get; } = new();
 
     internal static bool IsCommonlyPooledType => GetIsCommonlyPooledType();
@@ -99,7 +98,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [Pure]
-    public RentedArray<T> CreateRentedArray(int minimumLength) => new(Rent(minimumLength), this);
+    public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
     public void Return(T[]? array)
     {

@@ -185,6 +185,11 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
 
     public TValue[] ToArray()
     {
+        if (Count == 0)
+        {
+            return Array.Empty<TValue>();
+        }
+
         TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
         _values.Values.TryEnumerateInto(result, out int writtenElementCount);
         Debug.Assert(writtenElementCount == Count);

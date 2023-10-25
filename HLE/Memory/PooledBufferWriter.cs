@@ -44,12 +44,11 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal RentedArray<T> _buffer = ArrayPool<T>.Shared.CreateRentedArray(capacity);
+    internal RentedArray<T> _buffer = capacity == 0 ? RentedArray<T>.Empty : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
-    private const int _defaultCapacity = ArrayPool<T>.MinimumArrayLength;
     private const int _maximumCapacity = 1 << 30;
 
-    public PooledBufferWriter() : this(_defaultCapacity)
+    public PooledBufferWriter() : this(0)
     {
     }
 
@@ -92,7 +91,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     public void Write(ReadOnlySpan<T> data)
     {
         Span<T> buffer = GetSpan(data.Length);
-        data.CopyToUnsafe(buffer);
+        CopyWorker<T>.Copy(data, buffer);
         Advance(data.Length);
     }
 
@@ -111,14 +110,24 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [Pure]
     public T[] ToArray()
     {
+        if (Count == 0)
+        {
+            return Array.Empty<T>();
+        }
+
         T[] result = GC.AllocateUninitializedArray<T>(Count);
-        CopyWorker<T>.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref _buffer.Reference, (nuint)Count);
+        CopyWorker<T>.Copy(WrittenSpan, result);
         return result;
     }
 
     [Pure]
     public List<T> ToList()
     {
+        if (Count == 0)
+        {
+            return new();
+        }
+
         List<T> result = new(Count);
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(result);
@@ -155,7 +164,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
         }
 
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.CreateRentedArray(newBufferSize);
+        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
         CopyWorker<T> copyWorker = new(ref oldBuffer.Reference, Count);
         copyWorker.CopyTo(ref _buffer.Reference);
     }

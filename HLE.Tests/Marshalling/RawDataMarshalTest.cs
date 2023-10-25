@@ -18,12 +18,12 @@ public class RawDataMarshalTest
 
     [TestMethod]
     public void GetMethodTablePointerTest()
-        => Assert.AreEqual((nuint)typeof(string).TypeHandle.Value, RawDataMarshal.GetMethodTablePointer(string.Empty));
+        => Assert.AreEqual((nuint)typeof(string).TypeHandle.Value, RawDataMarshal.GetMethodTableReference(string.Empty));
 
     [TestMethod]
     public void ReadObjectTest()
     {
-        ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTablePointer("hello");
+        ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTableReference("hello");
         string hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
         Assert.AreEqual("hello", hello);
         Assert.IsTrue(ReferenceEquals("hello", hello));

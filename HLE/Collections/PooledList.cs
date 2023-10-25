@@ -46,12 +46,11 @@ public sealed class PooledList<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal RentedArray<T> _buffer = ArrayPool<T>.Shared.CreateRentedArray(capacity);
+    internal RentedArray<T> _buffer = capacity == 0 ? RentedArray<T>.Empty : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
-    private const int _defaultCapacity = ArrayPool<T>.MinimumArrayLength;
     private const int _maximumCapacity = 1 << 30;
 
-    public PooledList() : this(_defaultCapacity)
+    public PooledList() : this(0)
     {
     }
 
@@ -72,15 +71,24 @@ public sealed class PooledList<T>(int capacity)
     [Pure]
     public T[] ToArray()
     {
+        if (Count == 0)
+        {
+            return Array.Empty<T>();
+        }
+
         T[] result = GC.AllocateUninitializedArray<T>(Count);
-        ref T destination = ref MemoryMarshal.GetArrayDataReference(result);
-        CopyWorker<T>.Memmove(ref destination, ref _buffer.Reference, (nuint)Count);
+        CopyWorker<T>.Copy(_buffer.AsSpan(..Count), result);
         return result;
     }
 
     [Pure]
     public List<T> ToList()
     {
+        if (Count == 0)
+        {
+            return new();
+        }
+
         List<T> result = new(Count);
         CopyWorker<T> copyWorker = new(ref _buffer.Reference, Count);
         copyWorker.CopyTo(result);
@@ -110,8 +118,8 @@ public sealed class PooledList<T>(int capacity)
         }
 
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.CreateRentedArray(newSize);
-        oldBuffer.AsSpan(..Count).CopyTo(_buffer.AsSpan());
+        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
+        CopyWorker<T>.Copy(oldBuffer.AsSpan(..Count), _buffer.AsSpan());
     }
 
     [DoesNotReturn]
@@ -137,13 +145,11 @@ public sealed class PooledList<T>(int capacity)
             }
 
             ref T destination = ref _buffer.Reference;
-            int i = 0;
             foreach (T item in items)
             {
-                Unsafe.Add(ref destination, i++) = item;
+                Unsafe.Add(ref destination, Count++) = item;
             }
 
-            Count += itemsCount;
             return;
         }
 
@@ -162,7 +168,7 @@ public sealed class PooledList<T>(int capacity)
     public void AddRange(ReadOnlySpan<T> items)
     {
         GrowIfNeeded(items.Length);
-        ref T destination = ref _buffer.Reference;
+        ref T destination = ref Unsafe.Add(ref _buffer.Reference, Count);
         CopyWorker<T> copyWorker = new(items);
         copyWorker.CopyTo(ref destination);
         Count += items.Length;

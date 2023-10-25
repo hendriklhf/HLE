@@ -46,12 +46,11 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     bool ICollection<char>.IsReadOnly => false;
 
-    internal RentedArray<char> _buffer = ArrayPool<char>.Shared.CreateRentedArray(capacity);
+    internal RentedArray<char> _buffer = capacity == 0 ? RentedArray<char>.Empty : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
 
-    internal const int DefaultBufferSize = ArrayPool<char>.MinimumArrayLength;
     private const int _maximumBufferSize = 1 << 30;
 
-    public PooledStringBuilder() : this(DefaultBufferSize)
+    public PooledStringBuilder() : this(0)
     {
     }
 
@@ -73,8 +72,8 @@ public sealed partial class PooledStringBuilder(int capacity)
         }
 
         using RentedArray<char> oldBuffer = _buffer;
-        _buffer = ArrayPool<char>.Shared.CreateRentedArray(newSize);
-        oldBuffer[..Length].CopyToUnsafe(_buffer.AsSpan());
+        _buffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
+        CopyWorker<char>.Copy(oldBuffer[..Length], _buffer.AsSpan());
     }
 
     [DoesNotReturn]
@@ -104,7 +103,7 @@ public sealed partial class PooledStringBuilder(int capacity)
 
         ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);
         ref char source = ref MemoryMarshal.GetReference(span);
-        CopyWorker<char>.Memmove(ref destination, ref source, (nuint)span.Length);
+        CopyWorker<char>.Copy(ref source, ref destination, (nuint)span.Length);
         Length += span.Length;
     }
 

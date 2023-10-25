@@ -38,7 +38,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         }
     }
 
-    internal readonly T* Pointer
+    public readonly T* Pointer
     {
         get
         {
@@ -67,7 +67,10 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     readonly bool ICollection<T>.IsReadOnly => false;
 
-    private readonly T* _pointer;
+    internal readonly T* _pointer;
+    // | 0 | 000 0000 0000 0000 0000 0000 0000 |
+    // most significant bit is the disposed state
+    // the other bits are the length
     private uint _lengthAndDisposed;
 
     public static NativeMemory<T> Empty => new();
@@ -75,8 +78,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     public NativeMemory()
     {
         _pointer = null;
-        Length = 0;
-        IsDisposed = false;
+        _lengthAndDisposed = 0;
     }
 
     public NativeMemory(int length, bool zeroed = true)
@@ -158,6 +160,11 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     [Pure]
     public readonly T[] ToArray()
     {
+        if (Length == 0)
+        {
+            return Array.Empty<T>();
+        }
+
         T[] result = GC.AllocateUninitializedArray<T>(Length);
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(result);
@@ -184,7 +191,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     {
         if (typeof(T) == typeof(char))
         {
-            return new((char*)Pointer, 0, Length);
+            return Length == 0 ? string.Empty : new((char*)Pointer, 0, Length);
         }
 
         Type thisType = typeof(NativeMemory<T>);

@@ -6,7 +6,7 @@ namespace HLE.Memory;
 
 public static unsafe class MemoryHelper
 {
-    private static readonly int _maximumStackallocSize = Environment.Is64BitProcess ? 8192 : 2048;
+    private static readonly int s_maximumStackallocSize = Environment.Is64BitProcess ? 8192 : 2048;
 
     /// <summary>
     /// Determines whether to use a stack or a heap allocation by passing a generic type and the element count.
@@ -20,6 +20,6 @@ public static unsafe class MemoryHelper
     public static bool UseStackAlloc<T>(int elementCount)
     {
         int totalByteSize = sizeof(T) * elementCount;
-        return totalByteSize <= _maximumStackallocSize;
+        return totalByteSize <= s_maximumStackallocSize;
     }
 }

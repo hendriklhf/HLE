@@ -39,6 +39,11 @@ public ref struct ValueList<T> where T : IEquatable<T>
     [Pure]
     public readonly List<T> ToList()
     {
+        if (Count == 0)
+        {
+            return new();
+        }
+
         List<T> result = new(Count);
         CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(result);
@@ -57,7 +62,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
         {
             ThrowIfNotEnoughSpace(span.Length);
             Span<T> destination = _buffer[Count..];
-            span.CopyToUnsafe(destination);
+            CopyWorker<T>.Copy(span, destination);
             Count += span.Length;
             return;
         }
@@ -90,7 +95,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
     {
         ThrowIfNotEnoughSpace(items.Length);
         Span<T> destination = _buffer[Count..];
-        items.CopyToUnsafe(destination);
+        CopyWorker<T>.Copy(items, destination);
         Count += items.Length;
     }
 

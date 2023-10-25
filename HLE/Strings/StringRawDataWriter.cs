@@ -12,9 +12,9 @@ internal readonly unsafe ref struct StringRawDataWriter
 
     public StringRawDataWriter(Span<byte> buffer) => _buffer = ref MemoryMarshal.GetReference(buffer);
 
-    public StringRawDataWriter(ref byte buffer) => _buffer = ref buffer;
-
     public StringRawDataWriter(byte* buffer) => _buffer = ref Unsafe.AsRef<byte>(buffer);
+
+    public StringRawDataWriter(ref byte buffer) => _buffer = ref buffer;
 
     public void Write(int length) => WriteMethodTableAndLength(length);
 

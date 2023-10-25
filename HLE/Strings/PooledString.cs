@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -11,7 +13,7 @@ namespace HLE.Strings;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{AsString()}\"")]
-public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
+public unsafe struct PooledString : IReadOnlyCollection<char>, IDisposable, IEquatable<PooledString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
 {
     public readonly ref char this[int index]
     {
@@ -34,6 +36,8 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
 
     readonly int ICountable.Count => Length;
 
+    readonly int IReadOnlyCollection<char>.Count => Length;
+
     private RentedArray<byte> _buffer = RentedArray<byte>.Empty;
 
     public static PooledString Empty => new();
@@ -45,7 +49,7 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     public PooledString(int length)
     {
         int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
-        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(neededBufferSize);
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(neededBufferSize);
         buffer.AsSpan(..neededBufferSize).Clear();
         StringRawDataWriter writer = new(ref buffer.Reference);
         writer.Write(length);
@@ -58,7 +62,7 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     {
         int length = chars.Length;
         int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
-        RentedArray<byte> buffer = ArrayPool<byte>.Shared.CreateRentedArray(neededBufferSize);
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(neededBufferSize);
         StringRawDataWriter writer = new(ref buffer.Reference);
         writer.Write(chars);
 
@@ -90,8 +94,16 @@ public unsafe struct PooledString : IDisposable, IEquatable<PooledString>, ICoun
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString() => new(AsSpan());
 
+    public readonly CharEnumerator GetEnumerator() => AsString().GetEnumerator();
+
+    readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
+
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    [Pure]
     public readonly bool Equals(PooledString other) => AsString() == other.AsString();
 
+    [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly bool Equals(object? obj) => obj is PooledString other && Equals(other);
 

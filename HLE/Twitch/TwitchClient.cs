@@ -130,13 +130,13 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
         _client.OnDisconnected += (_, e) => OnDisconnected?.Invoke(this, e);
         _client.OnDataReceived += IrcClient_OnDataReceived;
-        _client.OnConnectionException += async (_, _) => await ReconnectAfterConnectionException();
+        _client.OnConnectionException += async (_, _) => await ReconnectAfterConnectionExceptionAsync();
 
         _ircHandler.OnJoinReceived += (_, e) => OnJoinedChannel?.Invoke(this, e);
         _ircHandler.OnPartReceived += (_, e) => OnLeftChannel?.Invoke(this, e);
         _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
-        _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceived(e);
+        _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceivedAsync(e);
         _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
         _ircHandler.OnNoticeReceived += (_, e) => OnNoticeReceived?.Invoke(this, e);
     }
@@ -167,7 +167,8 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
             throw new AnonymousClientException();
         }
 
-        string prefixedChannel = Channels[channel.Span]?._prefixedName ?? throw new NotConnectedToTheChannelException(new string(channel.Span));
+        Channels.TryGet(channel.Span, out Channel? channelObject);
+        string prefixedChannel = channelObject?._prefixedName ?? throw new NotConnectedToTheChannelException(new string(channel.Span));
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -191,7 +192,8 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
             throw new AnonymousClientException();
         }
 
-        string prefixedChannel = Channels[channelId]?._prefixedName ?? throw new NotConnectedToTheChannelException(channelId);
+        Channels.TryGet(channelId, out Channel? channelObject);
+        string prefixedChannel = channelObject?._prefixedName ?? throw new NotConnectedToTheChannelException(channelId);
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -382,7 +384,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
         OnRoomstateReceived?.Invoke(this, roomstate);
     }
 
-    private async ValueTask IrcHandler_OnPingReceived(ReceivedData data)
+    private async ValueTask IrcHandler_OnPingReceivedAsync(ReceivedData data)
     {
         try
         {
@@ -396,7 +398,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
         }
     }
 
-    private async Task ReconnectAfterConnectionException()
+    private async Task ReconnectAfterConnectionExceptionAsync()
     {
         await _reconnectionLock.WaitAsync();
 

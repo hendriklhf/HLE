@@ -48,35 +48,37 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void WriteBytes(ReadOnlySpan<byte> fileBytes, [ConstantExpected] bool append)
     {
-        using FileStream fileStream = File.Create(FilePath);
         if (!append)
         {
+            using FileStream fileStream = File.Create(FilePath);
             fileStream.SetLength(fileBytes.Length);
             fileStream.Position = 0;
+            fileStream.Write(fileBytes);
         }
         else
         {
+            using FileStream fileStream = File.Open(FilePath, FileMode.Append);
             fileStream.Position = fileStream.Length;
+            fileStream.Write(fileBytes);
         }
-
-        fileStream.Write(fileBytes);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> fileBytes, [ConstantExpected] bool append)
     {
-        await using FileStream fileStream = File.Create(FilePath);
         if (!append)
         {
+            await using FileStream fileStream = File.Create(FilePath);
             fileStream.SetLength(fileBytes.Length);
             fileStream.Position = 0;
+            await fileStream.WriteAsync(fileBytes);
         }
         else
         {
+            await using FileStream fileStream = File.Open(FilePath, FileMode.Append);
             fileStream.Position = fileStream.Length;
+            await fileStream.WriteAsync(fileBytes);
         }
-
-        await fileStream.WriteAsync(fileBytes);
     }
 
     [SkipLocalsInit]
@@ -87,7 +89,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
         if (!MemoryHelper.UseStackAlloc<byte>(byteCount))
         {
-            using RentedArray<byte> byteArrayBuffer = ArrayPool<byte>.Shared.CreateRentedArray(byteCount);
+            using RentedArray<byte> byteArrayBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(byteCount);
             bytesWritten = fileEncoding.GetBytes(fileContent, byteArrayBuffer.AsSpan());
             WriteBytes(byteArrayBuffer[..bytesWritten]);
             return;
@@ -102,7 +104,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     private async ValueTask WriteCharsAsync(ReadOnlyMemory<char> fileContent, Encoding fileEncoding, [ConstantExpected] bool append)
     {
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
-        using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.CreateRentedArray(byteCount);
+        using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(byteCount);
         int bytesWritten = fileEncoding.GetBytes(fileContent.Span, byteBuffer.AsSpan());
         await WriteBytesAsync(byteBuffer.AsMemory(..bytesWritten), append);
     }

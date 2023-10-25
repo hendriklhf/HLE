@@ -64,7 +64,6 @@ public class PoolBufferStringBuilderTest
     public void CapacityTest()
     {
         using PooledStringBuilder builder = new();
-        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder.Capacity);
 
         builder.Append(Random.Shared.NextString(1000));
         Assert.AreEqual(1000, builder.Length);
@@ -77,7 +76,6 @@ public class PoolBufferStringBuilderTest
         using PooledStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder._buffer.AsSpan().Length);
         Assert.IsTrue(builder._buffer.AsSpan().StartsWith("hello"));
     }
 
@@ -87,7 +85,6 @@ public class PoolBufferStringBuilderTest
         using PooledStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder._buffer.AsMemory().Length);
         Assert.IsTrue(builder._buffer.AsSpan().StartsWith("hello"));
     }
 
@@ -140,7 +137,7 @@ public class PoolBufferStringBuilderTest
     public void Constructor_NoParameter_Test()
     {
         using PooledStringBuilder builder = new();
-        Assert.AreEqual(PooledStringBuilder.DefaultBufferSize, builder.Capacity);
+        Assert.AreEqual(0, builder.Capacity);
         Assert.AreEqual(0, builder.Length);
     }
 
@@ -155,7 +152,7 @@ public class PoolBufferStringBuilderTest
     [TestMethod]
     public void AdvanceTest()
     {
-        using PooledStringBuilder builder = new();
+        using PooledStringBuilder builder = new(16);
         "hello".CopyTo(builder.FreeBufferSpan);
         builder.Advance("hello".Length);
         "hello".CopyTo(builder.FreeBufferSpan);
