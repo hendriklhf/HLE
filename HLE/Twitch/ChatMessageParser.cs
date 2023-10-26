@@ -100,7 +100,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         while (value.Length > 0)
         {
             int indexOfComma = value.IndexOf(',');
-            // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^1
+            // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
             value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');

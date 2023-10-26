@@ -155,7 +155,7 @@ public ref partial struct ValueStringBuilder
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly string ToString() => new(WrittenSpan);
+    public override readonly string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

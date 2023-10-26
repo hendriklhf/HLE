@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
@@ -16,7 +17,8 @@ public readonly unsafe ref partial struct CopyWorker<T>
 
     private static delegate*<ref T, ref T, nuint, void> GetMemmoveFunctionPointer() =>
         (delegate*<ref T, ref T, nuint, void>)
-        typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault(static m => m is { Name: "Memmove", IsGenericMethod: true })!
+        typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
+            .FirstOrDefault(static m => m is { Name: "Memmove", IsGenericMethod: true })!
             .MakeGenericMethod(typeof(T)).MethodHandle
             .GetFunctionPointer();
 
@@ -35,6 +37,10 @@ public readonly unsafe ref partial struct CopyWorker<T>
     /// <param name="source">The source of the elements.</param>
     public static void Copy(ReadOnlySpan<T> source, Span<T> destination)
         => s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (nuint)source.Length);
+
+    /// <inheritdoc cref="Copy(ref T,ref T,nuint)"/>
+    public static void Copy(T* source, T* destination, nuint elementCount)
+        => s_memmove(ref Unsafe.AsRef<T>(source), ref Unsafe.AsRef<T>(destination), elementCount);
 
     /// <summary>
     /// Copies the given amount of elements from the source into the destination.

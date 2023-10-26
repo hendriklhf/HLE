@@ -52,7 +52,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
         {
             int semicolonIndex = tags.IndexOf(';');
             ReadOnlySpan<char> key = tags[..equalsSignIndex];
-            // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^1
+            // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> value = tags[(equalsSignIndex + 1)..Unsafe.As<int, Index>(ref semicolonIndex)];
             tags = semicolonIndex < 0 ? ReadOnlySpan<char>.Empty : tags[(semicolonIndex + 1)..];
             equalsSignIndex = tags.IndexOf('=');

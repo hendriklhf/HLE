@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -105,11 +106,7 @@ internal sealed class PooledStream(int minimumLength) : Stream, IEquatable<Poole
         _buffer[(int)Position++] = value;
     }
 
-    public override void CopyTo(Stream destination, int bufferSize)
-    {
-        destination.Write(_buffer.AsSpan());
-        Position += _buffer.Length;
-    }
+    public override void CopyTo(Stream destination, int bufferSize) => throw new NotImplementedException();
 
     public override async Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         => await destination.WriteAsync(_buffer.AsMemory(), cancellationToken);
@@ -126,7 +123,43 @@ internal sealed class PooledStream(int minimumLength) : Stream, IEquatable<Poole
 
     public unsafe void CopyTo(byte* destination) => throw new NotImplementedException();
 
-    public override long Seek(long offset, SeekOrigin origin) => throw new NotImplementedException();
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        switch (origin)
+        {
+            case SeekOrigin.Begin:
+                ValidateFromBeginOffset(offset);
+                Position = offset;
+                break;
+            case SeekOrigin.Current:
+                ValidateFromCurrentOffset(offset);
+                Position += offset;
+                break;
+            case SeekOrigin.End:
+                ValidateFromEndOffset(offset);
+                Position = Length - 1 - offset;
+                break;
+            default:
+                ThrowInvalidSeekOrigin(origin);
+                break;
+        }
+
+        return Position;
+    }
+
+    private void ValidateFromBeginOffset(long offset)
+        => ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((ulong)offset, (ulong)Length);
+
+    private void ValidateFromCurrentOffset(long offset)
+        => ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((ulong)(Position + offset), (ulong)Length);
+
+    private void ValidateFromEndOffset(long offset)
+        => ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((ulong)(Length - 1 - offset), (ulong)Length);
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowInvalidSeekOrigin(SeekOrigin origin)
+        => throw new InvalidEnumArgumentException(nameof(origin), (int)origin, typeof(SeekOrigin));
 
     public override void SetLength(long value)
     {

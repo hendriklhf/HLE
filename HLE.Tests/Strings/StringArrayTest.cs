@@ -51,6 +51,8 @@ public class StringArrayTest
     [TestMethod]
     public void Indexer_Index_Test()
     {
+        StringArray array = new(["hello", "abc", "xd"]);
+        Assert.AreEqual("xd", array[^1]);
     }
 
     [TestMethod]
@@ -247,7 +249,23 @@ public class StringArrayTest
         }
     }
 
+    [TestMethod]
+    public void AsSpanTest()
+    {
+        StringArray stringArray = new(16);
+        Assert.AreEqual(16, stringArray.AsSpan().Length);
+        Span<string> array = new string[16];
 
+        for (int i = 0; i < 1024; i++)
+        {
+            string str = Random.Shared.NextString(Random.Shared.Next(0, 32));
+            int index = Random.Shared.Next(16);
+            array[index] = str;
+            stringArray[index] = str;
+
+            Assert.IsTrue(array.SequenceEqual(stringArray.AsSpan()));
+        }
+    }
 
     [TestMethod]
     public void MoveStringTest_LeftToRight()

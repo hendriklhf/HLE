@@ -30,7 +30,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         while (equalsSignIndex > 0)
         {
             int semicolonIndex = tags.IndexOf(';');
-            // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^1
+            // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
             tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : ReadOnlySpan<char>.Empty;
 
@@ -118,7 +118,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         while (value.Length > 0)
         {
             int indexOfComma = value.IndexOf(',');
-            // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^1
+            // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
             value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');

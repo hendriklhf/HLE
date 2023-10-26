@@ -7,17 +7,13 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
+using HLE.Memory;
 
 namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
-        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
-        IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null
-    )
-    : IReadOnlyCollection<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
+public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICopyable<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey>
     where TSecondaryKey : IEquatable<TSecondaryKey>
 {
@@ -29,8 +25,25 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
 
     public ImmutableArray<TValue> Values => _values.Values;
 
-    internal readonly FrozenDictionary<TPrimaryKey, TValue> _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer);
-    internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
+    internal readonly FrozenDictionary<TPrimaryKey, TValue> _values;
+    internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
+
+    private static readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> s_emptyDoubleDictionary = new();
+
+    public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Empty { get; } = new(s_emptyDoubleDictionary);
+
+    private FrozenDoubleDictionary(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
+        IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null)
+    {
+        _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer);
+        _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
+    }
+
+    public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Create(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
+        IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null)
+        => dictionary.Count == 0 ? Empty : new(dictionary, primaryKeyEqualityComparer, secondaryKeyEqualityComparer);
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)
         => _values.TryGetValue(key, out value);
@@ -53,6 +66,67 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>(
     public bool ContainsSecondaryKey(TSecondaryKey key) => _secondaryKeyTranslations.ContainsKey(key);
 
     ReadOnlySpan<TValue> IReadOnlySpanProvider<TValue>.GetReadOnlySpan() => Values.AsSpan();
+
+    public TValue[] ToArray()
+    {
+        if (Count == 0)
+        {
+            return Array.Empty<TValue>();
+        }
+
+        TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
+        CopyWorker<TValue>.Copy(Values.AsSpan(), result);
+        return result;
+    }
+
+    public List<TValue> ToList()
+    {
+        if (Count == 0)
+        {
+            return new();
+        }
+
+        List<TValue> result = new(Count);
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(result);
+        return result;
+    }
+
+    public void CopyTo(List<TValue> destination, int offset = 0)
+    {
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(destination, offset);
+    }
+
+    public void CopyTo(TValue[] destination, int offset = 0)
+    {
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(destination, offset);
+    }
+
+    public void CopyTo(Memory<TValue> destination)
+    {
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(destination);
+    }
+
+    public void CopyTo(Span<TValue> destination)
+    {
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(destination);
+    }
+
+    public void CopyTo(ref TValue destination)
+    {
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(ref destination);
+    }
+
+    public unsafe void CopyTo(TValue* destination)
+    {
+        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
+        copyWorker.CopyTo(destination);
+    }
 
     public ArrayEnumerator<TValue> GetEnumerator()
     {

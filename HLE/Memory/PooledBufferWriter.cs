@@ -247,9 +247,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     {
         if (typeof(char) == typeof(T))
         {
-            ref char charsReference = ref Unsafe.As<T, char>(ref _buffer.Reference);
-            ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref charsReference, Count);
-            return new(chars);
+            return Unsafe.As<RentedArray<T>, RentedArray<char>>(ref _buffer).ToString();
         }
 
         Type thisType = typeof(PooledBufferWriter<T>);

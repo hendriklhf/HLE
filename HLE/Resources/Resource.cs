@@ -119,13 +119,13 @@ public readonly unsafe struct Resource(byte* pointer, int length) : IEquatable<R
 
     ReadOnlySpan<byte> IReadOnlySpanProvider<byte>.GetReadOnlySpan() => AsSpan();
 
-    public void Add(byte item) => throw new NotSupportedException();
+    void ICollection<byte>.Add(byte item) => throw new NotSupportedException();
 
-    public void Clear() => throw new NotSupportedException();
+    void ICollection<byte>.Clear() => throw new NotSupportedException();
 
-    public bool Contains(byte item) => throw new NotSupportedException();
+    bool ICollection<byte>.Contains(byte item) => AsSpan().Contains(item);
 
-    public bool Remove(byte item) => throw new NotSupportedException();
+    bool ICollection<byte>.Remove(byte item) => throw new NotSupportedException();
 
     public NativeMemoryEnumerator<byte> GetEnumerator() => new(_pointer, Length);
 

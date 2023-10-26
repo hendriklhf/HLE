@@ -72,9 +72,8 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
             return Array.Empty<T>();
         }
 
-        Span<T> items = AsSpan();
         T[] result = GC.AllocateUninitializedArray<T>(Count);
-        CopyWorker<T>.Copy(items, result);
+        CopyWorker<T>.Copy(AsSpan(), result);
         return result;
     }
 

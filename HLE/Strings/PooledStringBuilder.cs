@@ -211,7 +211,7 @@ public sealed partial class PooledStringBuilder(int capacity)
     public void Clear() => Length = 0;
 
     [Pure]
-    public override string ToString() => new(WrittenSpan);
+    public override string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
 
     public void CopyTo(List<char> destination, int offset = 0)
     {

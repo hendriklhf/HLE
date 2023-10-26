@@ -166,8 +166,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(Length);
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(result);
+        CopyWorker<T>.Copy(AsSpan(), result);
         return result;
     }
 

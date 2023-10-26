@@ -38,7 +38,7 @@ public struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICountable, 
     public override readonly int GetHashCode() => HashCode.Combine(_data, Length);
 
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly string ToString() => new(Span);
+    public override readonly string ToString() => Length == 0 ? string.Empty : new(Span);
 
     public static bool operator ==(ReceivedData left, ReceivedData right) => left.Equals(right);
 

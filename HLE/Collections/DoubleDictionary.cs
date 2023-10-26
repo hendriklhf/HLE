@@ -57,6 +57,8 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     internal readonly Dictionary<TPrimaryKey, TValue> _values;
     internal readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
 
+    private static readonly IEnumerator<TValue> s_emptyEnumerator = default(ArrayEnumerator<TValue>);
+
     public DoubleDictionary()
     {
         _values = new();
@@ -200,7 +202,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowKeyNotFoundException(string message) => throw new KeyNotFoundException(message);
 
-    public IEnumerator<TValue> GetEnumerator() => Values.GetEnumerator();
+    public IEnumerator<TValue> GetEnumerator() => Count == 0 ? s_emptyEnumerator : Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

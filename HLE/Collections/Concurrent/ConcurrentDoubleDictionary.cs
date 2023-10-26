@@ -135,7 +135,7 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     [Pure]
     public TValue[] ToArray() => _dictionary.ToArray();
 
-    public IEnumerator<TValue> GetEnumerator() => Values.GetEnumerator();
+    public IEnumerator<TValue> GetEnumerator() => _dictionary.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

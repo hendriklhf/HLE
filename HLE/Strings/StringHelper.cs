@@ -137,6 +137,11 @@ public static class StringHelper
     [SkipLocalsInit]
     public static string TrimAll(this string str)
     {
+        if (str.Length == 0)
+        {
+            return string.Empty;
+        }
+
         int resultLength;
         if (!MemoryHelper.UseStackAlloc<char>(str.Length))
         {
@@ -154,6 +159,11 @@ public static class StringHelper
 
     public static int TrimAll(this ReadOnlySpan<char> span, Span<char> result)
     {
+        if (span.Length == 0)
+        {
+            return 0;
+        }
+
         int indexOfAnyNonWhitespace = span.IndexOfAnyExcept(' ');
         if (indexOfAnyNonWhitespace < 0)
         {

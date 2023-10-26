@@ -106,10 +106,10 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
     readonly Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
 
     [Pure]
-    public static string Alloc(int length) => new NativeString(length).AsString();
+    public static string Alloc(int length) => length == 0 ? string.Empty : new NativeString(length).AsString();
 
     [Pure]
-    public static string Alloc(ReadOnlySpan<char> chars) => new NativeString(chars).AsString();
+    public static string Alloc(ReadOnlySpan<char> chars) => chars.Length == 0 ? string.Empty : new NativeString(chars).AsString();
 
     public static void Free(string? str)
     {

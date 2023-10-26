@@ -162,7 +162,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     public IEnumerator<Channel> GetEnumerator()
     {
         ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        return _channels.Values.GetEnumerator();
+        return _channels.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

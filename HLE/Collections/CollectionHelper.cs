@@ -99,6 +99,11 @@ public static partial class CollectionHelper
             IEnumerable<char> charCollection = Unsafe.As<IEnumerable<T>, IEnumerable<char>>(ref collection);
             if (charCollection.TryGetNonEnumeratedCount(out int elementCount))
             {
+                if (elementCount == 0)
+                {
+                    return string.Empty;
+                }
+
                 using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(elementCount);
                 if (charCollection.TryNonEnumeratedCopyTo(rentedBuffer.Array))
                 {
@@ -639,6 +644,11 @@ public static partial class CollectionHelper
     {
         if (collection.TryGetReadOnlySpan<T>(out ReadOnlySpan<T> span))
         {
+            if (span.Length == 0)
+            {
+                return true;
+            }
+
             span.CopyTo(destination.AsSpan(offset));
             return true;
         }
@@ -646,6 +656,11 @@ public static partial class CollectionHelper
         switch (collection)
         {
             case ICollection<T> iCollection:
+                if (iCollection.Count == 0)
+                {
+                    return true;
+                }
+
                 iCollection.CopyTo(destination, offset);
                 return true;
             case ICopyable<T> copyable:

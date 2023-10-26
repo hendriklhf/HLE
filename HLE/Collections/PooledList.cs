@@ -167,6 +167,11 @@ public sealed class PooledList<T>(int capacity)
 
     public void AddRange(ReadOnlySpan<T> items)
     {
+        if (items.Length == 0)
+        {
+            return;
+        }
+
         GrowIfNeeded(items.Length);
         ref T destination = ref Unsafe.Add(ref _buffer.Reference, Count);
         CopyWorker<T> copyWorker = new(items);
