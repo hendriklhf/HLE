@@ -338,6 +338,11 @@ public static partial class CollectionHelper
     [SkipLocalsInit]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item) where T : IEquatable<T>
     {
+        if (span.Length == 0)
+        {
+            return [];
+        }
+
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
@@ -386,7 +391,7 @@ public static partial class CollectionHelper
             {
                 Vector512<T> itemsVector = Vector512.LoadUnsafe(ref Unsafe.Add(ref items, startIndex));
                 ulong equals = Vector512.Equals(itemsVector, searchVector).ExtractMostSignificantBits();
-                while (equals > 0)
+                while (equals != 0)
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     destination[indicesLength++] = startIndex + index;
@@ -418,7 +423,7 @@ public static partial class CollectionHelper
             {
                 Vector256<T> itemsVector = Vector256.LoadUnsafe(ref Unsafe.Add(ref items, startIndex));
                 uint equals = Vector256.Equals(itemsVector, searchVector).ExtractMostSignificantBits();
-                while (equals > 0)
+                while (equals != 0)
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     destination[indicesLength++] = startIndex + index;
@@ -450,7 +455,7 @@ public static partial class CollectionHelper
             {
                 Vector128<T> itemsVector = Vector128.LoadUnsafe(ref Unsafe.Add(ref items, startIndex));
                 uint equals = Vector128.Equals(itemsVector, searchVector).ExtractMostSignificantBits();
-                while (equals > 0)
+                while (equals != 0)
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     destination[indicesLength++] = startIndex + index;
@@ -482,7 +487,7 @@ public static partial class CollectionHelper
             {
                 Vector64<T> itemsVector = Vector64.LoadUnsafe(ref Unsafe.Add(ref items, startIndex));
                 uint equals = Vector64.Equals(itemsVector, searchVector).ExtractMostSignificantBits();
-                while (equals > 0)
+                while (equals != 0)
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     destination[indicesLength++] = startIndex + index;

@@ -12,11 +12,19 @@ public static unsafe class StructMarshal<T> where T : struct
     public static Span<byte> GetBytes(ref T item)
         => MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
 
+    /// <inheritdoc cref="EqualsBitwise{TOther}(ref T,ref TOther)"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBitwise<TOther>(T left, TOther right) where TOther : struct
         => EqualsBitwise(ref left, ref right);
 
+    /// <summary>
+    /// Compares two structs bitwise, even if they might not be bitwise equatable, because they contain managed types.
+    /// </summary>
+    /// <param name="left">A struct.</param>
+    /// <param name="right">Another struct.</param>
+    /// <typeparam name="TOther">The type of the other struct.</typeparam>
+    /// <returns>True, if they have the same bitwise memory layout, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBitwise<TOther>(ref T left, ref TOther right) where TOther : struct

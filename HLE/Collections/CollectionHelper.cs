@@ -508,7 +508,7 @@ public static partial class CollectionHelper
             return true;
         }
 
-        span = ReadOnlySpan<T>.Empty;
+        span = [];
         return false;
     }
 
@@ -537,7 +537,7 @@ public static partial class CollectionHelper
                 span = spanProvider.GetSpan();
                 return true;
             default:
-                span = Span<T>.Empty;
+                span = [];
                 return false;
         }
     }
@@ -876,7 +876,7 @@ public static partial class CollectionHelper
     public static T SumUnchecked<T>(this T[] array) where T : INumber<T>
         => SumUnchecked(array.AsSpan());
 
-    /// <inheritdoc cref="SumUnchecked{T}(System.ReadOnlySpan{T})"/>
+    /// <inheritdoc cref="SumUnchecked{T}(ReadOnlySpan{T})"/>
     [Pure]
     public static T SumUnchecked<T>(this Span<T> span) where T : INumber<T>
         => SumUnchecked((ReadOnlySpan<T>)span);

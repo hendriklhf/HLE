@@ -30,7 +30,7 @@ public ref partial struct ValueStringBuilder
 
     public static ValueStringBuilder Empty => new();
 
-    internal readonly Span<char> _buffer = Span<char>.Empty;
+    internal readonly Span<char> _buffer = [];
 
     public ValueStringBuilder()
     {
@@ -59,7 +59,7 @@ public ref partial struct ValueStringBuilder
         ref char destination = ref Unsafe.Add(ref MemoryMarshal.GetReference(_buffer), Length);
         ref char source = ref MemoryMarshal.GetReference(span);
         CopyWorker<char>.Copy(ref source, ref destination, (nuint)span.Length);
-        Advance(span.Length);
+        Length += span.Length;
     }
 
     public void Append(char c)
@@ -148,6 +148,8 @@ public ref partial struct ValueStringBuilder
         Advance(charsWritten);
         return success;
     }
+
+    public readonly void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
     public void Clear() => Length = 0;
 

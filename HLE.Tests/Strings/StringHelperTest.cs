@@ -1,82 +1,81 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Strings;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Strings;
 
-[TestClass]
-public partial class StringHelperTest
+public sealed partial class StringHelperTest
 {
-    [TestMethod]
+    [Fact]
     public void FastAllocateStringTest()
     {
         string str = StringMarshal.FastAllocateString(5, out Span<char> chars);
-        Assert.AreEqual(5, str.Length);
+        Assert.Equal(5, str.Length);
         "hello".CopyTo(chars);
-        Assert.AreEqual("hello", str);
-        Assert.IsFalse(ReferenceEquals(str, "hello"));
+        Assert.Equal("hello", str);
+        Assert.False(ReferenceEquals(str, "hello"));
     }
 
-    [TestMethod]
+    [Fact]
     public void Chunk_string_int_Test()
     {
         string str = Random.Shared.NextString(1000);
         ReadOnlyMemory<char>[] chunks = str.Chunk(50);
-        Assert.IsTrue(chunks.All(static c => c.Length == 50));
+        Assert.True(chunks.All(static c => c.Length == 50));
 
         str = Random.Shared.NextString(1025);
         chunks = str.Chunk(50);
         ReadOnlyMemory<char>[] allExceptLastChunk = chunks[..^1];
-        Assert.AreEqual(20, allExceptLastChunk.Length);
-        Assert.IsTrue(allExceptLastChunk.All(static c => c.Length == 50));
-        Assert.IsTrue(chunks[^1].Length == 25);
+        Assert.Equal(20, allExceptLastChunk.Length);
+        Assert.True(allExceptLastChunk.All(static c => c.Length == 50));
+        Assert.True(chunks[^1].Length == 25);
 
         chunks = string.Empty.Chunk(10);
-        Assert.AreEqual(0, chunks.Length);
+        Assert.Empty(chunks);
 
         chunks = "hello".Chunk(10);
-        Assert.IsTrue(chunks is [{ Span: "hello" }]);
+        Assert.True(chunks is [{ Span: "hello" }]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Chunk_string_int_char_Test()
     {
         string str = $"{new('*', 10)} {new('*', 20)} {new('*', 2)} {new('*', 2)} {new('*', 10)}";
         ReadOnlyMemory<char>[] chunks = str.Chunk(10, ' ');
         int[] chunkLengths = chunks.Select(static c => c.Length).ToArray();
-        Assert.IsTrue(chunkLengths is [10, 20, 5, 10]);
+        Assert.True(chunkLengths is [10, 20, 5, 10]);
 
         chunks = string.Empty.Chunk(10, ' ');
-        Assert.AreEqual(0, chunks.Length);
+        Assert.Empty(chunks);
 
         chunks = "hello".Chunk(10, ' ');
-        Assert.IsTrue(chunks is [{ Span: "hello" }]);
+        Assert.True(chunks is [{ Span: "hello" }]);
     }
 
-    [TestMethod]
+    [Fact]
     public void TrimAllTest()
     {
         string str = "     aaa        aaa aaa                   aaa     ";
-        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+        Assert.Equal(TrimAllWithRegex(str), str.TrimAll());
 
         str = "      a";
-        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+        Assert.Equal(TrimAllWithRegex(str), str.TrimAll());
 
         str = "a       ";
-        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+        Assert.Equal(TrimAllWithRegex(str), str.TrimAll());
 
         str = "hello";
-        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+        Assert.Equal(TrimAllWithRegex(str), str.TrimAll());
 
         str = "         ";
-        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+        Assert.Equal(TrimAllWithRegex(str), str.TrimAll());
 
         str = string.Empty;
-        Assert.AreEqual(TrimAllWithRegex(str), str.TrimAll());
+        Assert.Equal(TrimAllWithRegex(str), str.TrimAll());
     }
 
     private static string TrimAllWithRegex(string str) => GetMultipleSpacesRegex().Replace(str.Trim(), " ");
@@ -84,11 +83,11 @@ public partial class StringHelperTest
     [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled)]
     private static partial Regex GetMultipleSpacesRegex();
 
-    [TestMethod]
+    [Fact]
     public void IndicesOf_string_char_Test()
     {
         string str = Random.Shared.NextString(10_000, "abc ");
-        using PooledList<int> correctIndices = new();
+        using PooledList<int> correctIndices = [];
         for (int i = 0; i < str.Length; i++)
         {
             if (str[i] == ' ')
@@ -98,17 +97,17 @@ public partial class StringHelperTest
         }
 
         int[] indices = str.IndicesOf(' ');
-        Assert.IsTrue(correctIndices.AsSpan().SequenceEqual(indices));
+        Assert.True(correctIndices.AsSpan().SequenceEqual(indices));
 
         indices = string.Empty.IndicesOf(' ');
-        Assert.IsTrue(indices is [] && ReferenceEquals(indices, Array.Empty<int>()));
+        Assert.True(indices is [] && ReferenceEquals(indices, Array.Empty<int>()));
     }
 
-    [TestMethod]
+    [Fact]
     public void IndicesOf_string_ReadOnlySpanChar_Test()
     {
         string str = Random.Shared.NextString(1000, "abc ");
-        using PooledList<int> correctIndices = new();
+        using PooledList<int> correctIndices = [];
         for (int i = 0; i < str.Length; i++)
         {
             if (i < str.Length - 1 && str[i] == ' ' && str[i + 1] == ' ')
@@ -118,25 +117,25 @@ public partial class StringHelperTest
         }
 
         int[] indices = str.IndicesOf("  ");
-        Assert.IsTrue(correctIndices.AsSpan().SequenceEqual(indices));
+        Assert.True(correctIndices.AsSpan().SequenceEqual(indices));
 
         indices = string.Empty.IndicesOf("  ");
-        Assert.IsTrue(indices is [] && ReferenceEquals(indices, Array.Empty<int>()));
+        Assert.True(indices is [] && ReferenceEquals(indices, Array.Empty<int>()));
     }
 
-    [TestMethod]
+    [Fact]
     public void RegexEscapeTest()
     {
         for (int i = 0; i < 100; i++)
         {
             string str = Random.Shared.NextString(1000, $"{StringHelper.RegexMetaChars}awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
-            Assert.AreEqual(Regex.Escape(str), StringHelper.RegexEscape(str));
+            Assert.Equal(Regex.Escape(str), StringHelper.RegexEscape(str));
         }
 
         for (int i = 0; i < 100; i++)
         {
             string str = Random.Shared.NextString(1000, "awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
-            Assert.AreEqual(Regex.Escape(str), StringHelper.RegexEscape(str));
+            Assert.Equal(Regex.Escape(str), StringHelper.RegexEscape(str));
         }
     }
 }

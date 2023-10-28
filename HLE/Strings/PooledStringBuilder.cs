@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -46,12 +46,18 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     bool ICollection<char>.IsReadOnly => false;
 
-    internal RentedArray<char> _buffer = capacity == 0 ? RentedArray<char>.Empty : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
+    internal RentedArray<char> _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
 
     private const int _maximumBufferSize = 1 << 30;
 
     public PooledStringBuilder() : this(0)
     {
+    }
+
+    public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
+    {
+        CopyWorker<char>.Copy(str, _buffer.AsSpan());
+        Length = str.Length;
     }
 
     public void Dispose() => _buffer.Dispose();
@@ -60,20 +66,18 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     private void GrowBuffer(int sizeHint)
     {
-        if (_buffer.Length == _maximumBufferSize)
+        if (_buffer.Length == int.MaxValue)
         {
             ThrowMaximumBufferSizeReached();
         }
 
-        int newSize = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + sizeHint));
-        if (newSize < _buffer.Length)
-        {
-            ThrowMaximumBufferSizeReached();
-        }
-
+        int newSize = _buffer.Length == _maximumBufferSize ? int.MaxValue : (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + sizeHint));
         using RentedArray<char> oldBuffer = _buffer;
         _buffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
-        CopyWorker<char>.Copy(oldBuffer[..Length], _buffer.AsSpan());
+        if (Length != 0)
+        {
+            CopyWorker<char>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (nuint)Length);
+        }
     }
 
     [DoesNotReturn]
@@ -98,8 +102,6 @@ public sealed partial class PooledStringBuilder(int capacity)
         {
             GrowBuffer(span.Length);
         }
-
-        Debug.Assert(FreeBufferSize >= span.Length);
 
         ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);
         ref char source = ref MemoryMarshal.GetReference(span);
@@ -205,6 +207,8 @@ public sealed partial class PooledStringBuilder(int capacity)
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
         => throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
+
+    public void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
     void ICollection<char>.Clear() => Clear();
 

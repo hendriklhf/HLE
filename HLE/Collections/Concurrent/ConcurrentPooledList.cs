@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +11,8 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>
+public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable,
+    IIndexAccessible<T>, IReadOnlyList<T>, ICollectionProvider<T>
     where T : IEquatable<T>
 {
     public T this[int index]
@@ -48,7 +49,7 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     internal readonly PooledList<T> _list;
     private SemaphoreSlim? _listLock = new(1);
 
-    public ConcurrentPooledList() => _list = new();
+    public ConcurrentPooledList() => _list = [];
 
     public ConcurrentPooledList(int capacity) => _list = new(capacity);
 

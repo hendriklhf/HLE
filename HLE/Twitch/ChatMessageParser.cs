@@ -66,7 +66,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static ReadOnlySpan<char> GetUsername(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, int displayNameLength)
     {
-        Debug.Assert(displayNameLength > 0);
+        Debug.Assert(displayNameLength != 0);
         ReadOnlySpan<char> username = ircMessage[(indicesOfWhitespaces[0] + 2)..][..displayNameLength];
         return username;
     }
@@ -91,18 +91,18 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     {
         if (value.Length == 0)
         {
-            return Array.Empty<Badge>();
+            return [];
         }
 
         // TODO: IndicesOf
         Badge[] badges = new Badge[value.Count(',') + 1];
         int badgeCount = 0;
-        while (value.Length > 0)
+        while (value.Length != 0)
         {
             int indexOfComma = value.IndexOf(',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
-            value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
+            value = indexOfComma < 0 ? [] : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
             string name = StringPool.Shared.GetOrAdd(info[..slashIndex]);
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..]);
@@ -122,7 +122,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         bool isBackSlash = value[^2] == '\\';
         int asByte = Unsafe.As<bool, byte>(ref isBackSlash) << 1;
         ReadOnlySpan<char> displayName = value[..^asByte];
-        Debug.Assert(displayName.Length > 0);
+        Debug.Assert(displayName.Length != 0);
         return displayName;
     }
 

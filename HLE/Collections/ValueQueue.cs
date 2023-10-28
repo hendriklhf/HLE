@@ -11,7 +11,7 @@ public ref struct ValueQueue<T>
 
     public readonly int Capacity => _queue.Length;
 
-    internal readonly Span<T> _queue = Span<T>.Empty;
+    internal readonly Span<T> _queue = [];
     private readonly int _lastIndex;
     private int _enqueueIndex;
     private int _dequeueIndex;
@@ -89,7 +89,7 @@ public ref struct ValueQueue<T>
 
     public bool TryDequeue([MaybeNullWhen(false)] out T item)
     {
-        if (Count <= 0)
+        if (Count == 0)
         {
             item = default;
             return false;
@@ -101,7 +101,7 @@ public ref struct ValueQueue<T>
 
     public readonly bool TryPeek([MaybeNullWhen(false)] out T item)
     {
-        if (Count <= 0)
+        if (Count == 0)
         {
             item = default;
             return false;

@@ -61,9 +61,13 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [Pure]
     public T[] Rent(int minimumLength)
     {
-        if (minimumLength <= 0)
+        switch (minimumLength)
         {
-            return Array.Empty<T>();
+            case 0:
+                return [];
+            case < 0:
+                ThrowMinimumLengthIsNegative(minimumLength);
+                break;
         }
 
         int length = (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
@@ -97,23 +101,39 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         return initialBucket.Rent();
     }
 
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMinimumLengthIsNegative(int minimumLength)
+        => throw new ArgumentOutOfRangeException(nameof(minimumLength), minimumLength, "The minimum length is negative.");
+
     [Pure]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[]? array)
+    public void Return(T[]? array, ArrayReturnOptions options = ArrayReturnOptions.ClearOnlyIfManagedType)
     {
         if (!TryGetBucketIndex(array, out int bucketIndex))
         {
             return;
         }
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (options != 0)
         {
-            Array.Clear(array);
+            PerformReturnActions(array, options);
         }
 
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
         bucket.Return(array);
+    }
+
+    private static void PerformReturnActions(T[] array, ArrayReturnOptions options)
+    {
+        Debug.Assert(options != 0);
+
+        if (options.HasFlag(ArrayReturnOptions.Clear) ||
+            (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && options.HasFlag(ArrayReturnOptions.ClearOnlyIfManagedType)))
+        {
+            Array.Clear(array);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

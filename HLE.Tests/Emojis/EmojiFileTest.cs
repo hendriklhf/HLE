@@ -1,21 +1,20 @@
 ﻿using System.Reflection;
 using HLE.Emojis;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Emojis;
 
-[TestClass]
-public class EmojiFileTest
+public sealed class EmojiFileTest
 {
-    [TestMethod]
-    public void ValueTest()
+    [Fact]
+    public void HasFieldsAndAllFieldHaveAValidValue()
     {
         FieldInfo[] fields = typeof(Emoji).GetFields(BindingFlags.Public | BindingFlags.Static);
-        Assert.IsTrue(fields.Length > 0);
-        foreach (FieldInfo f in fields)
+        Assert.NotEmpty(fields);
+        foreach (FieldInfo field in fields)
         {
-            object? value = f.GetValue(null);
-            Assert.IsTrue(value is string { Length: > 0 });
+            object? value = field.GetValue(null);
+            Assert.True(value is string { Length: > 0 });
         }
     }
 }

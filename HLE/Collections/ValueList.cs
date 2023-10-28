@@ -20,7 +20,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     public readonly int Capacity => _buffer.Length;
 
-    private readonly Span<T> _buffer = Span<T>.Empty;
+    private readonly Span<T> _buffer = [];
 
     public static ValueList<T> Empty => new();
 
@@ -34,14 +34,24 @@ public ref struct ValueList<T> where T : IEquatable<T>
     public readonly Span<T> AsSpan() => _buffer[..Count];
 
     [Pure]
-    public readonly T[] ToArray() => AsSpan().ToArray();
+    public readonly T[] ToArray()
+    {
+        if (Count == 0)
+        {
+            return [];
+        }
+
+        T[] result = GC.AllocateUninitializedArray<T>(Count);
+        CopyWorker<T>.Copy(_buffer[..Count], result);
+        return result;
+    }
 
     [Pure]
     public readonly List<T> ToList()
     {
         if (Count == 0)
         {
-            return new();
+            return [];
         }
 
         List<T> result = new(Count);

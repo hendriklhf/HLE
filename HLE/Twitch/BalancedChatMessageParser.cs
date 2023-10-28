@@ -11,10 +11,10 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
     [Pure]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        Badge[] badgeInfos = Array.Empty<Badge>();
-        Badge[] badges = Array.Empty<Badge>();
+        Badge[] badgeInfos = [];
+        Badge[] badges = [];
         Color color = Color.Empty;
-        ReadOnlySpan<char> displayName = ReadOnlySpan<char>.Empty;
+        ReadOnlySpan<char> displayName = [];
         ChatMessageTags chatMessageTags = 0;
         Guid id = Guid.Empty;
         long channelId = 0;
@@ -29,7 +29,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
             int semicolonIndex = tags.IndexOf(';');
             // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
-            tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : ReadOnlySpan<char>.Empty;
+            tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : [];
 
             ReadOnlySpan<char> key = tag[..equalsSignIndex];
             ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];

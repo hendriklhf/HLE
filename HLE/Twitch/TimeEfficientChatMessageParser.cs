@@ -10,12 +10,12 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
     [Pure]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        Badge[] badgeInfos = Array.Empty<Badge>();
+        Badge[] badgeInfos = [];
         int badgeInfoCount = 0;
-        Badge[] badges = Array.Empty<Badge>();
+        Badge[] badges = [];
         int badgeCount = 0;
         Color color = Color.Empty;
-        ReadOnlySpan<char> displayName = ReadOnlySpan<char>.Empty;
+        ReadOnlySpan<char> displayName = [];
         ChatMessageTags chatMessageTags = 0;
         Guid id = Guid.Empty;
         long channelId = 0;
@@ -30,7 +30,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
             int semicolonIndex = tags.IndexOf(';');
             // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
-            tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : ReadOnlySpan<char>.Empty;
+            tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : [];
 
             ReadOnlySpan<char> key = tag[..equalsSignIndex];
             ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
@@ -101,16 +101,16 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         badgeCount = 0;
         if (value.Length == 0)
         {
-            return Array.Empty<Badge>();
+            return [];
         }
 
         Badge[] badges = new Badge[5];
-        while (value.Length > 0)
+        while (value.Length != 0)
         {
             int indexOfComma = value.IndexOf(',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
             ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
-            value = indexOfComma < 0 ? ReadOnlySpan<char>.Empty : value[(indexOfComma + 1)..];
+            value = indexOfComma < 0 ? [] : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf('/');
             string name = new(info[..slashIndex]);
             string level = new(info[(slashIndex + 1)..]);

@@ -1,23 +1,22 @@
 using System;
 using HLE.Collections;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Collections;
 
-[TestClass]
-public class ValueStackTest
+public sealed class ValueStackTest
 {
-    [TestMethod]
+    [Fact]
     public void PushTest()
     {
         ValueStack<int> stack = new(stackalloc int[5]);
         stack.Push(1);
         stack.Push(2);
         stack.Push(3);
-        Assert.AreEqual(3, stack.Count);
+        Assert.Equal(3, stack.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void PopTest()
     {
         ValueStack<int> stack = new(stackalloc int[5]);
@@ -25,22 +24,22 @@ public class ValueStackTest
         stack.Push(2);
         stack.Push(3);
 
-        Assert.AreEqual(3, stack.Pop());
-        Assert.AreEqual(2, stack.Pop());
-        Assert.AreEqual(1, stack.Pop());
-        Assert.AreEqual(0, stack.Count);
+        Assert.Equal(3, stack.Pop());
+        Assert.Equal(2, stack.Pop());
+        Assert.Equal(1, stack.Pop());
+        Assert.Equal(0, stack.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void PeekTest()
     {
         ValueStack<int> stack = new(stackalloc int[5]);
         stack.Push(5);
-        Assert.AreEqual(5, stack.Peek());
-        Assert.AreEqual(1, stack.Count);
+        Assert.Equal(5, stack.Peek());
+        Assert.Equal(1, stack.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void ClearTest()
     {
         ValueStack<int> stack = new(stackalloc int[5]);
@@ -48,10 +47,10 @@ public class ValueStackTest
         stack.Push(2);
         stack.Push(3);
         stack.Clear();
-        Assert.AreEqual(0, stack.Count);
+        Assert.Equal(0, stack.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void PushAndPopTest()
     {
         ValueStack<int> stack = new(stackalloc int[50]);
@@ -70,7 +69,7 @@ public class ValueStackTest
         }
 
         stack.Push(12345);
-        Assert.AreEqual(12345, stack.Pop());
-        Assert.AreEqual(0, stack.Count);
+        Assert.Equal(12345, stack.Pop());
+        Assert.Equal(0, stack.Count);
     }
 }

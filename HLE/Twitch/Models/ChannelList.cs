@@ -14,7 +14,7 @@ namespace HLE.Twitch.Models;
 /// A class that represents a list of channels the client is connected to.
 /// </summary>
 [DebuggerDisplay("Count = {_channels.Count}")]
-public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<ChannelList>, ICountable, IDisposable
+public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<ChannelList>, ICountable, IDisposable, ICollectionProvider<Channel>
 {
     /// <summary>
     /// Gets the amount of channels in the list.
@@ -148,6 +148,13 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     {
         ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
         return _channels.ToArray();
+    }
+
+    [Pure]
+    public List<Channel> ToList()
+    {
+        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
+        return _channels.ToList();
     }
 
     [Pure]

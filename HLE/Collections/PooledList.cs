@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,7 +14,8 @@ namespace HLE.Collections;
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 public sealed class PooledList<T>(int capacity)
-    : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
+    : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>,
+        ICollectionProvider<T>
     where T : IEquatable<T>
 {
     public ref T this[int index]
@@ -46,7 +47,7 @@ public sealed class PooledList<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal RentedArray<T> _buffer = capacity == 0 ? RentedArray<T>.Empty : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
+    internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
     private const int _maximumCapacity = 1 << 30;
 
@@ -73,7 +74,7 @@ public sealed class PooledList<T>(int capacity)
     {
         if (Count == 0)
         {
-            return Array.Empty<T>();
+            return [];
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(Count);
@@ -86,7 +87,7 @@ public sealed class PooledList<T>(int capacity)
     {
         if (Count == 0)
         {
-            return new();
+            return [];
         }
 
         List<T> result = new(Count);
@@ -119,7 +120,10 @@ public sealed class PooledList<T>(int capacity)
 
         using RentedArray<T> oldBuffer = _buffer;
         _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
-        CopyWorker<T>.Copy(oldBuffer.AsSpan(..Count), _buffer.AsSpan());
+        if (Count != 0)
+        {
+            CopyWorker<T>.Copy(oldBuffer.AsSpan(..Count), _buffer.AsSpan());
+        }
     }
 
     [DoesNotReturn]

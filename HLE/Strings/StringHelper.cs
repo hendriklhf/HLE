@@ -40,16 +40,13 @@ public static class StringHelper
     {
         if (str.Length == 0)
         {
-            return Array.Empty<ReadOnlyMemory<char>>();
+            return [];
         }
 
         ReadOnlyMemory<char> strAsMemory = str.AsMemory();
         if (strAsMemory.Length <= charCount)
         {
-            return new[]
-            {
-                str.AsMemory()
-            };
+            return [str.AsMemory()];
         }
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[strAsMemory.Length / charCount + 1];
@@ -69,16 +66,13 @@ public static class StringHelper
     {
         if (str.Length == 0)
         {
-            return Array.Empty<ReadOnlyMemory<char>>();
+            return [];
         }
 
         ReadOnlyMemory<char> span = str.AsMemory();
         if (span.Length <= charCount)
         {
-            return new[]
-            {
-                str.AsMemory()
-            };
+            return [str.AsMemory()];
         }
 
         // TODO: remove allocation in case stackalloc can not be used
@@ -95,7 +89,7 @@ public static class StringHelper
             ReadOnlyMemory<char> part = span[ranges[i]];
             if (part.Length >= charCount) // part doesn't fit into buffer, even if buffer is empty
             {
-                if (bufferLength > 0) // buffer isn't empty, write buffer into result
+                if (bufferLength != 0) // buffer isn't empty, write buffer into result
                 {
                     Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory(..bufferLength);
                     bufferLength = 0;
@@ -107,12 +101,12 @@ public static class StringHelper
             {
                 switch (bufferLength)
                 {
-                    case > 0 when bufferLength + part.Length + 1 > charCount: // buffer is not empty and part doesn't fit in buffer
+                    case not 0 when bufferLength + part.Length + 1 > charCount: // buffer is not empty and part doesn't fit in buffer
                         Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory(..bufferLength);
                         part.CopyTo(charBuffer.AsMemory());
                         bufferLength = part.Length;
                         break;
-                    case > 0 when bufferLength + part.Length + 1 <= charCount: // buffer is not empty and part fits into buffer
+                    case not 0 when bufferLength + part.Length + 1 <= charCount: // buffer is not empty and part fits into buffer
                         charBuffer[bufferLength++] = separator;
                         part.CopyTo(charBuffer.AsMemory(bufferLength..));
                         bufferLength += part.Length;
@@ -125,7 +119,7 @@ public static class StringHelper
             }
         }
 
-        if (bufferLength > 0) // if buffer isn't empty in the end, write buffer to result
+        if (bufferLength != 0) // if buffer isn't empty in the end, write buffer to result
         {
             Unsafe.Add(ref resultReference, resultLength++) = charBuffer.AsMemory(..bufferLength);
         }
@@ -456,16 +450,16 @@ public static class StringHelper
 
     /// <summary>
     /// Returns the UTF-16 bytes of a string by reinterpreting the chars the string consists of.<br/>
-    /// Basically returns the same as <i>Encoding.Unicode.GetBytes(str)</i> without allocating.
+    /// Basically returns the same as <c>Encoding.Unicode.GetBytes(str)</c> without allocating.
     /// </summary>
     /// <param name="str">The string of which the bytes will be read from.</param>
     /// <returns>A span of UTF-16 bytes of the string.</returns>
     [Pure]
     public static ReadOnlySpan<byte> AsByteSpan(this string? str)
     {
-        if (str is not { Length: > 0 })
+        if (str is not { Length: not 0 })
         {
-            return ReadOnlySpan<byte>.Empty;
+            return [];
         }
 
         ref char charsReference = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);

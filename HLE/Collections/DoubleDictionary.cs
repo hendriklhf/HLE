@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +12,7 @@ namespace HLE.Collections;
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
-    : IReadOnlyCollection<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>
+    : IReadOnlyCollection<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
@@ -61,8 +61,8 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
 
     public DoubleDictionary()
     {
-        _values = new();
-        _secondaryKeyTranslations = new();
+        _values = [];
+        _secondaryKeyTranslations = [];
     }
 
     public DoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer, IEqualityComparer<TSecondaryKey>? secondaryKeyComparer)
@@ -189,11 +189,27 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     {
         if (Count == 0)
         {
-            return Array.Empty<TValue>();
+            return [];
         }
 
         TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
         _values.Values.TryEnumerateInto(result, out int writtenElementCount);
+        Debug.Assert(writtenElementCount == Count);
+        return result;
+    }
+
+    [Pure]
+    public List<TValue> ToList()
+    {
+        if (Count == 0)
+        {
+            return [];
+        }
+
+        List<TValue> result = new(Count);
+        CollectionsMarshal.SetCount(result, Count);
+        Span<TValue> buffer = CollectionsMarshal.AsSpan(result);
+        _values.Values.TryEnumerateInto(buffer, out int writtenElementCount);
         Debug.Assert(writtenElementCount == Count);
         return result;
     }

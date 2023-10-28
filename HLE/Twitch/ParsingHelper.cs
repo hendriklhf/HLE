@@ -23,7 +23,7 @@ internal static class ParsingHelper
             {
                 Vector512<ushort> charsVector = Unsafe.As<ushort, Vector512<ushort>>(ref Unsafe.Add(ref MemoryMarshal.GetReference(ircMessageAsShort), startIndex));
                 uint equals = (uint)Vector512.Equals(charsVector, whitespaceVector).ExtractMostSignificantBits();
-                while (equals > 0)
+                while (equals != 0)
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     Unsafe.Add(ref indicesBufferReference, indicesLength++) = startIndex + index;
@@ -66,7 +66,7 @@ internal static class ParsingHelper
             {
                 Vector256<ushort> charsVector = Unsafe.As<ushort, Vector256<ushort>>(ref Unsafe.Add(ref MemoryMarshal.GetReference(ircMessageAsShort), startIndex));
                 ushort equals = (ushort)Vector256.Equals(charsVector, whitespaceVector).ExtractMostSignificantBits();
-                while (equals > 0)
+                while (equals != 0)
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     Unsafe.Add(ref indicesBufferReference, indicesLength++) = startIndex + index;

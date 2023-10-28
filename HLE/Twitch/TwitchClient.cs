@@ -89,7 +89,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     internal readonly WebSocketIrcClient _client;
     internal readonly IrcHandler _ircHandler;
-    internal readonly PooledList<string> _ircChannels = new();
+    internal readonly PooledList<string> _ircChannels = [];
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
     private const string _anonymousUsername = "justinfan123";

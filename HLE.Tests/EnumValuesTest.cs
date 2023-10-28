@@ -1,5 +1,5 @@
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests;
 
@@ -15,34 +15,37 @@ public enum TestEnum
     H = 8
 }
 
-[TestClass]
-public class EnumValuesTest
+public sealed class EnumValuesTest
 {
-    [TestMethod]
+    [Fact]
     public void GetValuesTest()
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
 
         ReadOnlySpan<TestEnum> values = EnumValues<TestEnum>.GetValues();
-        Assert.IsTrue(values.SequenceEqual(actualValues));
+        Assert.True(values.SequenceEqual(actualValues));
 
         values = EnumValues<TestEnum>.GetValues();
-        Assert.IsTrue(values.SequenceEqual(actualValues));
+        Assert.True(values.SequenceEqual(actualValues));
     }
 
-    [TestMethod]
+    [Fact]
     public void GetValuesAsUnderlyingType()
     {
         int[] actualValues = (int[])Enum.GetValuesAsUnderlyingType<TestEnum>();
 
         ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAs<int>();
-        Assert.IsTrue(values.SequenceEqual(actualValues));
+        Assert.True(values.SequenceEqual(actualValues));
 
         values = EnumValues<TestEnum>.GetValuesAs<int>();
-        Assert.IsTrue(values.SequenceEqual(actualValues));
+        Assert.True(values.SequenceEqual(actualValues));
     }
 
-    [TestMethod]
+    [Fact]
+    public void GetValuesAsInvalidUnderlyingType()
+        => Assert.Throws<InvalidOperationException>(static () => _ = EnumValues<TestEnum>.GetValuesAs<long>());
+
+    [Fact]
     public void ValuesAreSortedTest()
     {
         ReadOnlySpan<TestEnum> values = EnumValues<TestEnum>.GetValues();
@@ -50,10 +53,10 @@ public class EnumValuesTest
         values.CopyTo(sortedValues);
         sortedValues.Sort();
 
-        Assert.IsTrue(values.SequenceEqual(sortedValues));
+        Assert.True(values.SequenceEqual(sortedValues));
     }
 
-    [TestMethod]
+    [Fact]
     public void ValuesAsUnderlyingTypeAreSortedTest()
     {
         ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAs<int>();
@@ -61,23 +64,23 @@ public class EnumValuesTest
         values.CopyTo(sortedValues);
         sortedValues.Sort();
 
-        Assert.IsTrue(values.SequenceEqual(sortedValues));
+        Assert.True(values.SequenceEqual(sortedValues));
     }
 
-    [TestMethod]
+    [Fact]
     public void GetValueCountTest()
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
         int valueCount = EnumValues<TestEnum>.GetValueCount();
-        Assert.AreEqual(actualValues.Length, valueCount);
+        Assert.Equal(actualValues.Length, valueCount);
     }
 
-    [TestMethod]
+    [Fact]
     public void GetMaxValueTest()
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
         TestEnum maxValue = EnumValues<TestEnum>.GetMaxValue();
-        Assert.AreEqual(12345, (int)maxValue);
-        Assert.AreEqual(actualValues[^1], maxValue);
+        Assert.Equal(12345, (int)maxValue);
+        Assert.Equal(actualValues[^1], maxValue);
     }
 }

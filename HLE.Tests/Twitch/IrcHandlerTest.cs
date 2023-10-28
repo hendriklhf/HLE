@@ -1,20 +1,12 @@
-﻿using System;
+using System;
 using HLE.Twitch;
 using HLE.Twitch.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Twitch;
 
-[TestClass]
-public class IrcHandlerTest
+public sealed class IrcHandlerTest
 {
-    private readonly IrcHandler[] _handlers =
-    {
-        new(ParsingMode.TimeEfficient),
-        new(ParsingMode.Balanced),
-        new(ParsingMode.MemoryEfficient)
-    };
-
     private const string _privMsg =
         "@badge-info=;badges=moderator/1,twitchconEU2022/1;color=#C29900;display-name=Strbhlfe;emotes=;first-msg=0;flags=;id=03c90865-31ff-493f-a711-dcd6d788624b;mod=1;rm-received-ts=1654020884037;room-id=616177816;subscriber=0;tmi-sent-ts=1654020883875;turbo=0;user-id=87633910;user-type=mod :strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PRIVMSG #lbnshlfe :xd xd xd";
     private const string _privMsgAction =
@@ -26,149 +18,155 @@ public class IrcHandlerTest
     private const string _noticeWithTag = "@msg-id=already_emote_only_off :tmi.twitch.tv NOTICE #lbnshlfe :This room is not in emote-only mode.";
     private const string _noticeWithoutTag = ":tmi.twitch.tv NOTICE * :Login authentication failed";
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void PrivMsgTest(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void PrivMsgTest(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
         handler.OnChatMessageReceived += static (_, chatMessage) =>
         {
-            Assert.AreEqual(0, chatMessage.BadgeInfos.Length);
-            Assert.AreEqual(2, chatMessage.Badges.Length);
-            Assert.AreEqual("1", chatMessage.Badges[0].Level);
-            Assert.AreEqual("1", chatMessage.Badges[1].Level);
-            Assert.AreEqual(0xC2, chatMessage.Color.Red);
-            Assert.AreEqual(0x99, chatMessage.Color.Green);
-            Assert.AreEqual(0x00, chatMessage.Color.Blue);
-            Assert.AreEqual("Strbhlfe", chatMessage.DisplayName);
-            Assert.AreEqual(false, chatMessage.IsFirstMessage);
-            Assert.AreEqual(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), chatMessage.Id);
-            Assert.AreEqual(true, chatMessage.IsModerator);
-            Assert.AreEqual(616177816, chatMessage.ChannelId);
-            Assert.AreEqual(false, chatMessage.IsSubscriber);
-            Assert.AreEqual(1654020883875, chatMessage.TmiSentTs);
-            Assert.AreEqual(false, chatMessage.IsTurboUser);
-            Assert.AreEqual(87633910, chatMessage.UserId);
-            Assert.AreEqual("strbhlfe", chatMessage.Username);
-            Assert.AreEqual("lbnshlfe", chatMessage.Channel);
-            Assert.AreEqual("xd xd xd", chatMessage.Message);
+            Assert.Equal(0, chatMessage.BadgeInfos.Length);
+            Assert.Equal(2, chatMessage.Badges.Length);
+            Assert.Equal("1", chatMessage.Badges[0].Level);
+            Assert.Equal("1", chatMessage.Badges[1].Level);
+            Assert.Equal(0xC2, chatMessage.Color.Red);
+            Assert.Equal(0x99, chatMessage.Color.Green);
+            Assert.Equal(0x00, chatMessage.Color.Blue);
+            Assert.Equal("Strbhlfe", chatMessage.DisplayName);
+            Assert.False(chatMessage.IsFirstMessage);
+            Assert.Equal(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), chatMessage.Id);
+            Assert.True(chatMessage.IsModerator);
+            Assert.Equal(616177816, chatMessage.ChannelId);
+            Assert.False(chatMessage.IsSubscriber);
+            Assert.Equal(1654020883875, chatMessage.TmiSentTs);
+            Assert.False(chatMessage.IsTurboUser);
+            Assert.Equal(87633910, chatMessage.UserId);
+            Assert.Equal("strbhlfe", chatMessage.Username);
+            Assert.Equal("lbnshlfe", chatMessage.Channel);
+            Assert.Equal("xd xd xd", chatMessage.Message);
             if (chatMessage is IDisposable disposable)
             {
                 disposable.Dispose();
             }
         };
 
-        Assert.IsTrue(handler.Handle(_privMsg));
-        Assert.IsTrue(handler.Handle(_privMsgAction));
+        Assert.True(handler.Handle(_privMsg));
+        Assert.True(handler.Handle(_privMsgAction));
     }
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void Roomstate_AllOff_Test(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void Roomstate_AllOff_Test(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnRoomstateReceived += static (_, roomstateArgs) =>
         {
-            Assert.AreEqual(false, roomstateArgs.EmoteOnly);
-            Assert.AreEqual(-1, roomstateArgs.FollowersOnly);
-            Assert.AreEqual(false, roomstateArgs.R9K);
-            Assert.AreEqual(87633910, roomstateArgs.ChannelId);
-            Assert.AreEqual(0, roomstateArgs.SlowMode);
-            Assert.AreEqual(false, roomstateArgs.SubsOnly);
-            Assert.AreEqual("strbhlfe", roomstateArgs.Channel);
+            Assert.False(roomstateArgs.EmoteOnly);
+            Assert.Equal(-1, roomstateArgs.FollowersOnly);
+            Assert.False(roomstateArgs.R9K);
+            Assert.Equal(87633910, roomstateArgs.ChannelId);
+            Assert.Equal(0, roomstateArgs.SlowMode);
+            Assert.False(roomstateArgs.SubsOnly);
+            Assert.Equal("strbhlfe", roomstateArgs.Channel);
         };
 
-        Assert.IsTrue(handler.Handle(_roomstateAllOff));
+        Assert.True(handler.Handle(_roomstateAllOff));
     }
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void Roomstate_AllOn_Test(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void Roomstate_AllOn_Test(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnRoomstateReceived += static (_, roomstateArgs) =>
         {
-            Assert.AreEqual(true, roomstateArgs.EmoteOnly);
-            Assert.AreEqual(15, roomstateArgs.FollowersOnly);
-            Assert.AreEqual(true, roomstateArgs.R9K);
-            Assert.AreEqual(87633910, roomstateArgs.ChannelId);
-            Assert.AreEqual(10, roomstateArgs.SlowMode);
-            Assert.AreEqual(true, roomstateArgs.SubsOnly);
-            Assert.AreEqual("strbhlfe", roomstateArgs.Channel);
+            Assert.True(roomstateArgs.EmoteOnly);
+            Assert.Equal(15, roomstateArgs.FollowersOnly);
+            Assert.True(roomstateArgs.R9K);
+            Assert.Equal(87633910, roomstateArgs.ChannelId);
+            Assert.Equal(10, roomstateArgs.SlowMode);
+            Assert.True(roomstateArgs.SubsOnly);
+            Assert.Equal("strbhlfe", roomstateArgs.Channel);
         };
 
-        Assert.IsTrue(handler.Handle(_roomstateAllOn));
+        Assert.True(handler.Handle(_roomstateAllOn));
     }
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void JoinTest(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void JoinTest(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnJoinReceived += static (_, joinedChannelArgs) =>
         {
-            Assert.AreEqual("strbhlfe", joinedChannelArgs.Username);
-            Assert.AreEqual("lbnshlfe", joinedChannelArgs.Channel);
+            Assert.Equal("strbhlfe", joinedChannelArgs.Username);
+            Assert.Equal("lbnshlfe", joinedChannelArgs.Channel);
         };
 
-        Assert.IsTrue(handler.Handle(_join));
+        Assert.True(handler.Handle(_join));
     }
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void PartTest(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void PartTest(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnPartReceived += static (_, leftChannelArgs) =>
         {
-            Assert.AreEqual("strbhlfe", leftChannelArgs.Username);
-            Assert.AreEqual("lbnshlfe", leftChannelArgs.Channel);
+            Assert.Equal("strbhlfe", leftChannelArgs.Username);
+            Assert.Equal("lbnshlfe", leftChannelArgs.Channel);
         };
 
-        Assert.IsTrue(handler.Handle(_part));
+        Assert.True(handler.Handle(_part));
     }
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void Notice_WithTag_Test(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void Notice_WithTag_Test(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnNoticeReceived += static (_, notice) =>
         {
-            Assert.AreEqual(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
-            Assert.AreEqual("lbnshlfe", notice.Channel);
-            Assert.AreEqual("This room is not in emote-only mode.", notice.Message);
+            Assert.Equal(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
+            Assert.Equal("lbnshlfe", notice.Channel);
+            Assert.Equal("This room is not in emote-only mode.", notice.Message);
         };
 
-        Assert.IsTrue(handler.Handle(_noticeWithTag));
+        Assert.True(handler.Handle(_noticeWithTag));
     }
 
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(1)]
-    [DataRow(2)]
-    public void Notice_WithoutTag_Test(int handlerIndex)
+    [Theory]
+    [InlineData(ParsingMode.TimeEfficient)]
+    [InlineData(ParsingMode.MemoryEfficient)]
+    [InlineData(ParsingMode.Balanced)]
+    public void Notice_WithoutTag_Test(ParsingMode parsingMode)
     {
-        IrcHandler handler = _handlers[handlerIndex];
+        IrcHandler handler = new(parsingMode);
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnNoticeReceived += static (_, notice) =>
         {
-            Assert.AreEqual(NoticeType.Unknown, notice.Type);
-            Assert.AreEqual("*", notice.Channel);
-            Assert.AreEqual("Login authentication failed", notice.Message);
+            Assert.Equal(NoticeType.Unknown, notice.Type);
+            Assert.Equal("*", notice.Channel);
+            Assert.Equal("Login authentication failed", notice.Message);
         };
 
-        Assert.IsTrue(handler.Handle(_noticeWithoutTag));
+        Assert.True(handler.Handle(_noticeWithoutTag));
     }
 }

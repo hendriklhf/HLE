@@ -385,7 +385,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         DateTimeOffset start = DateTimeOffset.UtcNow;
         for (int i = 0; i < channels.Length && !_cancellationTokenSource.IsCancellationRequested; i++)
         {
-            if (i > 0 && i % maximumJoinsInPeriod == 0)
+            if (i != 0 && i % maximumJoinsInPeriod == 0)
             {
                 DateTimeOffset now = DateTimeOffset.UtcNow;
                 TimeSpan waitTime = period - (now - start);

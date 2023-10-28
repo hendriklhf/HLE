@@ -1,16 +1,15 @@
 using HLE.Strings;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Strings;
 
-[TestClass]
-public class SingleCharStringPoolTest
+public sealed class SingleCharStringPoolTest
 {
-    [TestMethod]
-    public void AmountOfCachedSingleCharStrings_NoRename_Test() =>
-        Assert.AreEqual("AmountOfCachedSingleCharStrings", nameof(SingleCharStringPool.AmountOfCachedSingleCharStrings));
+    [Fact]
+    public void AmountOfCachedSingleCharStrings_NoRename_Test()
+        => Assert.Equal("AmountOfCachedSingleCharStrings", nameof(SingleCharStringPool.AmountOfCachedSingleCharStrings));
 
-    [TestMethod]
+    [Fact]
     public void AmountOfCachedStringsTest()
-        => Assert.AreEqual(SingleCharStringPool.AmountOfCachedSingleCharStrings, SingleCharStringPool.GetCachedSingleCharStrings().Length);
+        => Assert.Equal(SingleCharStringPool.AmountOfCachedSingleCharStrings, SingleCharStringPool.GetCachedSingleCharStrings().Length);
 }

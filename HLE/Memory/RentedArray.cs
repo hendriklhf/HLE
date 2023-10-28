@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,7 +17,8 @@ namespace HLE.Memory;
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Length = {Length}")]
-public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
+public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICountable, IEquatable<RentedArray<T>>, IEquatable<T[]>,
+    IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>, ICollectionProvider<T>
 {
     public readonly ref T this[int index]
     {
@@ -59,7 +60,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     public static RentedArray<T> Empty => new();
 
-    internal T[]? _array = System.Array.Empty<T>();
+    internal T[]? _array = [];
     internal readonly ArrayPool<T> _pool = ArrayPool<T>.Shared;
 
     public RentedArray()
@@ -109,7 +110,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     {
         if (Length == 0)
         {
-            return System.Array.Empty<T>();
+            return [];
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(Length);
@@ -122,7 +123,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     {
         if (Length == 0)
         {
-            return new();
+            return [];
         }
 
         List<T> result = new(Length);

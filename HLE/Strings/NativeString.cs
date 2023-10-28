@@ -38,7 +38,7 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
 
     readonly int IReadOnlyCollection<char>.Count => Length;
 
-    private NativeMemory<byte> _buffer = NativeMemory<byte>.Empty;
+    private NativeMemory<byte> _buffer = [];
 
     public static NativeString Empty => new();
 
@@ -52,7 +52,7 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
 
         if (length == 0)
         {
-            _buffer = NativeMemory<byte>.Empty;
+            _buffer = [];
             Length = 0;
             return;
         }
@@ -70,7 +70,7 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
     {
         if (chars.Length == 0)
         {
-            _buffer = NativeMemory<byte>.Empty;
+            _buffer = [];
             Length = 0;
             return;
         }
@@ -113,7 +113,7 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
 
     public static void Free(string? str)
     {
-        if (str is not { Length: > 0 })
+        if (str is not { Length: not 0 })
         {
             return;
         }

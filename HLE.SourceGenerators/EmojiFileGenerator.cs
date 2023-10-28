@@ -60,7 +60,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        if (_emojiJsonBytes is not { Length: > 0 })
+        if (_emojiJsonBytes is not { Length: not 0 })
         {
             throw new InvalidOperationException("The HTTP request of the emojis failed.");
         }

@@ -11,7 +11,8 @@ using HLE.Memory;
 namespace HLE.Resources;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly unsafe struct Resource(byte* pointer, int length) : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICountable, ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>
+public readonly unsafe struct Resource(byte* pointer, int length) : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICountable,
+    ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>, ICollectionProvider<byte>
 {
     byte IReadOnlyList<byte>.this[int index]
     {
@@ -57,7 +58,7 @@ public readonly unsafe struct Resource(byte* pointer, int length) : IEquatable<R
     {
         if (Length == 0)
         {
-            return Array.Empty<byte>();
+            return [];
         }
 
         byte[] result = GC.AllocateUninitializedArray<byte>(Length);
@@ -72,7 +73,7 @@ public readonly unsafe struct Resource(byte* pointer, int length) : IEquatable<R
     {
         if (Length == 0)
         {
-            return new();
+            return [];
         }
 
         List<byte> result = new(Length);

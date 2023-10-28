@@ -17,7 +17,8 @@ namespace HLE.Strings;
 /// <summary>
 /// An array that is specialized in storing strings by optimizing data locality, which makes search operations faster, but comes at the cost of higher memory usage and initialization time.
 /// </summary>
-public sealed class StringArray : ICollection<string>, IReadOnlyCollection<string>, ICopyable<string>, ICountable, IIndexAccessible<string>, IEquatable<StringArray>, IReadOnlySpanProvider<string>
+public sealed class StringArray : ICollection<string>, IReadOnlyCollection<string>, ICopyable<string>, ICountable, IIndexAccessible<string>,
+    IEquatable<StringArray>, IReadOnlySpanProvider<string>, ICollectionProvider<string>
 {
     public string this[int index]
     {
@@ -98,7 +99,31 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public ReadOnlySpan<string> AsSpan() => _strings;
 
     [Pure]
-    public string[] ToArray() => AsSpan().ToArray();
+    public string[] ToArray()
+    {
+        if (Length == 0)
+        {
+            return [];
+        }
+
+        string[] result = new string[Length];
+        CopyWorker<string>.Copy(_strings, result);
+        return result;
+    }
+
+    [Pure]
+    public List<string> ToList()
+    {
+        if (Length == 0)
+        {
+            return [];
+        }
+
+        List<string> result = new(Length);
+        CopyWorker<string> copyWorker = new(_strings);
+        copyWorker.CopyTo(result);
+        return result;
+    }
 
     ReadOnlySpan<string> IReadOnlySpanProvider<string>.GetReadOnlySpan() => AsSpan();
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +10,8 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICountable, IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IDisposable
+public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICountable,
+    IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IDisposable, ICollectionProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _dictionary[key];
@@ -43,7 +44,7 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     internal readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> _dictionary;
     private SemaphoreSlim? _dictionaryLock = new(1);
 
-    public ConcurrentDoubleDictionary() => _dictionary = new();
+    public ConcurrentDoubleDictionary() => _dictionary = [];
 
     public ConcurrentDoubleDictionary(int capacity,
         IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
@@ -134,6 +135,9 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     [Pure]
     public TValue[] ToArray() => _dictionary.ToArray();
+
+    [Pure]
+    public List<TValue> ToList() => _dictionary.ToList();
 
     public IEnumerator<TValue> GetEnumerator() => _dictionary.GetEnumerator();
 

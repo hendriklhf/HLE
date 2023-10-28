@@ -38,7 +38,7 @@ public unsafe struct PooledString : IReadOnlyCollection<char>, IDisposable, IEqu
 
     readonly int IReadOnlyCollection<char>.Count => Length;
 
-    private RentedArray<byte> _buffer = RentedArray<byte>.Empty;
+    private RentedArray<byte> _buffer = [];
 
     public static PooledString Empty => new();
 

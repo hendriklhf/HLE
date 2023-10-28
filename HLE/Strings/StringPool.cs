@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -17,7 +17,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
     private readonly Bucket[] _buckets;
 
-    public static StringPool Shared { get; } = new();
+    public static StringPool Shared { get; } = [];
 
     private const int _defaultPoolCapacity = 4096;
     private const int _defaultBucketCapacity = 32;

@@ -1,78 +1,55 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HLE.Collections;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Collections;
 
-[TestClass]
-public class CollectionHelperTest
+public sealed class CollectionHelperTest
 {
-    [TestMethod]
+    [Fact]
     public void RandomTest()
     {
         string[] array = Enumerable.Range(0, 1000).Select(static _ => Random.Shared.NextString(25)).ToArray();
         for (int i = 0; i < 1000; i++)
         {
-            Assert.IsTrue(array.Contains(Random.Shared.GetItem(array)));
+            Assert.Contains(Random.Shared.GetItem(array), array);
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void JoinToStringTest()
     {
-        string[] arr =
-        {
-            "a",
-            "b",
-            "c"
-        };
-        Assert.AreEqual("a b c", arr.JoinToString(' '));
+        string[] arr = ["a", "b", "c"];
+        Assert.Equal("a b c", arr.JoinToString(' '));
     }
 
-    [TestMethod]
+    [Fact]
     public void ConcatToStringTest()
     {
-        string[] arr =
-        {
-            "a",
-            "b",
-            "c"
-        };
+        string[] arr = ["a", "b", "c"];
 
-        Assert.AreEqual("abc", arr.ConcatToString());
+        Assert.Equal("abc", arr.ConcatToString());
     }
 
-    [TestMethod]
+    [Fact]
     public void ReplaceTest()
     {
-        int[] arr =
-        {
-            1,
-            2,
-            3,
-            2,
-            5,
-            2,
-            2,
-            2,
-            3,
-            3
-        };
+        int[] arr = [1, 2, 3, 2, 5, 2, 2, 2, 3, 3];
         arr = arr.Replace(static i => i == 2, 4);
-        Assert.AreEqual(5, arr.Count(static i => i == 4));
+        Assert.Equal(5, arr.Count(static i => i == 4));
     }
 
-    [TestMethod]
+    [Fact]
     public void IndicesOfTest()
     {
         const string str = "test string";
         int[] indices = str.IndicesOf(static c => c is 's');
-        Assert.IsTrue(indices is [2, 5]);
+        Assert.True(indices is [2, 5]);
     }
 
-    [TestMethod]
+    [Fact]
     public void RangeEnumeratorTest()
     {
         List<int> items = new(101);
@@ -82,9 +59,9 @@ public class CollectionHelperTest
             items.Add(i);
         }
 
-        Assert.AreEqual(101, items.Count);
-        Assert.AreEqual(0, items[0]);
-        Assert.AreEqual(100, items[^1]);
+        Assert.Equal(101, items.Count);
+        Assert.Equal(0, items[0]);
+        Assert.Equal(100, items[^1]);
 
         items.Clear();
         r = 50..100;
@@ -93,18 +70,18 @@ public class CollectionHelperTest
             items.Add(i);
         }
 
-        Assert.AreEqual(51, items.Count);
-        Assert.AreEqual(50, items[0]);
-        Assert.AreEqual(100, items[^1]);
+        Assert.Equal(51, items.Count);
+        Assert.Equal(50, items[0]);
+        Assert.Equal(100, items[^1]);
 
-        Assert.ThrowsException<InvalidOperationException>(static () =>
+        Assert.Throws<InvalidOperationException>(static () =>
         {
             foreach (int _ in ..^100)
             {
             }
         });
 
-        Assert.ThrowsException<InvalidOperationException>(static () =>
+        Assert.Throws<InvalidOperationException>(static () =>
         {
             foreach (int _ in 50..)
             {
@@ -112,7 +89,7 @@ public class CollectionHelperTest
         });
     }
 
-    [TestMethod]
+    [Fact]
     public void TryGetReadOnlySpanTest()
     {
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
@@ -121,19 +98,19 @@ public class CollectionHelperTest
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
         bool succeeded = array.TryGetReadOnlySpan<int>(out ReadOnlySpan<int> arraySpan);
-        Assert.IsTrue(succeeded && arraySpan is [0, 1, 2, 3, 4]);
+        Assert.True(succeeded && arraySpan is [0, 1, 2, 3, 4]);
 
         succeeded = list.TryGetReadOnlySpan<int>(out ReadOnlySpan<int> listSpan);
-        Assert.IsTrue(succeeded && listSpan is [0, 1, 2, 3, 4]);
+        Assert.True(succeeded && listSpan is [0, 1, 2, 3, 4]);
 
         succeeded = str.TryGetReadOnlySpan<char>(out ReadOnlySpan<char> stringSpan);
-        Assert.IsTrue(succeeded && stringSpan is "hello");
+        Assert.True(succeeded && stringSpan is "hello");
 
         succeeded = enumerable.TryGetReadOnlySpan<int>(out ReadOnlySpan<int> enumerableSpan);
-        Assert.IsFalse(succeeded && enumerableSpan.Length == 0);
+        Assert.False(succeeded && enumerableSpan.Length == 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void TryGetReadOnlyMemoryTest()
     {
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
@@ -142,25 +119,25 @@ public class CollectionHelperTest
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
         bool succeeded = array.TryGetReadOnlyMemory<int>(out ReadOnlyMemory<int> arrayMemory);
-        Assert.IsTrue(succeeded && arrayMemory.Span is [0, 1, 2, 3, 4]);
+        Assert.True(succeeded && arrayMemory.Span is [0, 1, 2, 3, 4]);
 
         succeeded = list.TryGetReadOnlyMemory<int>(out ReadOnlyMemory<int> listMemory);
-        Assert.IsTrue(succeeded && listMemory.Span is [0, 1, 2, 3, 4]);
+        Assert.True(succeeded && listMemory.Span is [0, 1, 2, 3, 4]);
 
         succeeded = str.TryGetReadOnlyMemory<char>(out ReadOnlyMemory<char> stringMemory);
-        Assert.IsTrue(succeeded && stringMemory.Span is "hello");
+        Assert.True(succeeded && stringMemory.Span is "hello");
 
         succeeded = enumerable.TryGetReadOnlyMemory<int>(out ReadOnlyMemory<int> enumerableMemory);
-        Assert.IsFalse(succeeded && enumerableMemory.Length > 0);
+        Assert.False(succeeded && enumerableMemory.Length > 0);
     }
 
-    [TestMethod]
+    [Fact]
     public void MoveTest()
     {
         Span<char> chars = "hello".ToCharArray();
         chars.MoveItem(1, 3);
-        Assert.IsTrue(chars is ['h', 'l', 'l', 'e', 'o']);
+        Assert.True(chars is ['h', 'l', 'l', 'e', 'o']);
         chars.MoveItem(3, 1);
-        Assert.IsTrue(chars is ['h', 'e', 'l', 'l', 'o']);
+        Assert.True(chars is ['h', 'e', 'l', 'l', 'o']);
     }
 }

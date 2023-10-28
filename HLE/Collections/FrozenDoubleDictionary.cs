@@ -13,7 +13,8 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICopyable<TValue>, ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>
+public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : ICollection<TValue>, IReadOnlyCollection<TValue>, ICopyable<TValue>,
+    ICountable, IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>, ICollectionProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey>
     where TSecondaryKey : IEquatable<TSecondaryKey>
 {
@@ -23,14 +24,14 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public int Count => _values.Count;
 
+    bool ICollection<TValue>.IsReadOnly => true;
+
     public ImmutableArray<TValue> Values => _values.Values;
 
     internal readonly FrozenDictionary<TPrimaryKey, TValue> _values;
     internal readonly FrozenDictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
 
-    private static readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> s_emptyDoubleDictionary = new();
-
-    public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Empty { get; } = new(s_emptyDoubleDictionary);
+    public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Empty { get; } = new([]);
 
     private FrozenDoubleDictionary(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
         IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
@@ -65,13 +66,16 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     [Pure]
     public bool ContainsSecondaryKey(TSecondaryKey key) => _secondaryKeyTranslations.ContainsKey(key);
 
+    [Pure]
+    public bool Contains(TValue item) => _values.Values.Contains(item);
+
     ReadOnlySpan<TValue> IReadOnlySpanProvider<TValue>.GetReadOnlySpan() => Values.AsSpan();
 
     public TValue[] ToArray()
     {
         if (Count == 0)
         {
-            return Array.Empty<TValue>();
+            return [];
         }
 
         TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
@@ -83,7 +87,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     {
         if (Count == 0)
         {
-            return new();
+            return [];
         }
 
         List<TValue> result = new(Count);
@@ -127,6 +131,12 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         CopyWorker<TValue> copyWorker = new(Values.AsSpan());
         copyWorker.CopyTo(destination);
     }
+
+    void ICollection<TValue>.Add(TValue item) => throw new NotSupportedException();
+
+    void ICollection<TValue>.Clear() => throw new NotSupportedException();
+
+    public bool Remove(TValue item) => throw new NotSupportedException();
 
     public ArrayEnumerator<TValue> GetEnumerator()
     {

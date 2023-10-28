@@ -1,17 +1,19 @@
 using System;
 using System.Linq;
 using HLE.Strings;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace HLE.Tests.Strings;
 
-[TestClass]
-public sealed class SimpleStringHasherTest
+public sealed class SimpleStringHasherTest(ITestOutputHelper testOutputHelper)
 {
-    [TestMethod]
-    [DataRow((char)0, (char)256)]
-    [DataRow((char)0, (char)1024)]
-    [DataRow(char.MinValue, char.MaxValue)]
+    private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
+
+    [Theory]
+    [InlineData((char)0, (char)256)]
+    [InlineData((char)0, (char)1024)]
+    [InlineData(char.MinValue, char.MaxValue)]
     public void HashDistributionTest(char min, char max)
     {
         const int bucketCount = 256;
@@ -27,18 +29,18 @@ public sealed class SimpleStringHasherTest
         }
 
         const int average = loopIterations / bucketCount;
-        Console.WriteLine($"Average: {average}");
+        _testOutputHelper.WriteLine($"Average: {average}");
         int minCount = counts.Min();
-        Console.WriteLine($"Minimum: {minCount}");
+        _testOutputHelper.WriteLine($"Minimum: {minCount}");
         int maxCount = counts.Max();
-        Console.WriteLine($"Maximum: {maxCount}");
+        _testOutputHelper.WriteLine($"Maximum: {maxCount}");
 
         int lessThanAverageCount = counts.Count(static c => c < average);
         int greaterThanAverageCount = counts.Count(static c => c >= average);
-        Console.WriteLine($"Less than average: {lessThanAverageCount}");
-        Console.WriteLine($"Greater than average: {greaterThanAverageCount}");
+        _testOutputHelper.WriteLine($"Less than average: {lessThanAverageCount}");
+        _testOutputHelper.WriteLine($"Greater than average: {greaterThanAverageCount}");
 
-        Assert.IsTrue(counts.All(static c => c > average * 0.125));
-        Assert.IsTrue(Math.Abs(greaterThanAverageCount - lessThanAverageCount) < average * 0.075);
+        Assert.True(counts.All(static c => c > average * 0.125));
+        Assert.True(Math.Abs(greaterThanAverageCount - lessThanAverageCount) < average * 0.075);
     }
 }

@@ -10,7 +10,8 @@ using HLE.Collections;
 namespace HLE.Memory;
 
 [DebuggerDisplay("{ToString()}")]
-public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
+public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, ICountable, IIndexAccessible<T>,
+    IReadOnlyCollection<T>, ISpanProvider<T>, ICollectionProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public readonly ref T this[int index]
@@ -162,11 +163,25 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     {
         if (Length == 0)
         {
-            return Array.Empty<T>();
+            return [];
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(Length);
         CopyWorker<T>.Copy(AsSpan(), result);
+        return result;
+    }
+
+    [Pure]
+    public readonly List<T> ToList()
+    {
+        if (Length == 0)
+        {
+            return [];
+        }
+
+        List<T> result = new(Length);
+        CopyWorker<T> copyWorker = new(Pointer, Length);
+        copyWorker.CopyTo(result);
         return result;
     }
 

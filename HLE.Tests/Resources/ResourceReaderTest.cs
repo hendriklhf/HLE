@@ -2,27 +2,26 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using HLE.Resources;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Resources;
 
-[TestClass]
-public class ResourceReaderTest
+public sealed class ResourceReaderTest
 {
-    [TestMethod]
+    [Fact]
     public void ReadResourceTest()
     {
         ResourceReader reader = new(Assembly.GetExecutingAssembly());
-        List<string> resources = new();
+        List<string> resources = [];
         for (int i = 1; i <= 3; i++)
         {
             bool success = reader.TryRead($"Resources.Resource{i}", out Resource resource);
-            Assert.IsTrue(success);
+            Assert.True(success);
             resources.Add(Encoding.UTF8.GetString(resource.AsSpan()));
         }
 
-        Assert.AreEqual("abc\r\n", resources[0]);
-        Assert.AreEqual("xd\r\n", resources[1]);
-        Assert.AreEqual(":)\r\n", resources[2]);
+        Assert.Equal("abc\r\n", resources[0]);
+        Assert.Equal("xd\r\n", resources[1]);
+        Assert.Equal(":)\r\n", resources[2]);
     }
 }

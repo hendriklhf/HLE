@@ -29,7 +29,7 @@ public sealed partial class ArrayPool<T>
 
                 ref T[] arrayReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --_count);
                 T[] array = arrayReference;
-                arrayReference = null!;
+                arrayReference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
                 return array;
             }
             finally
@@ -52,7 +52,7 @@ public sealed partial class ArrayPool<T>
 
                 ref T[] arrayReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --_count);
                 array = arrayReference;
-                arrayReference = null!;
+                arrayReference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
                 return true;
             }
             finally

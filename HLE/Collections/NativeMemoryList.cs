@@ -10,7 +10,8 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>
+public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, ICountable, IEquatable<NativeMemoryList<T>>, IDisposable,
+    IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>, ICollectionProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index]
@@ -42,7 +43,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal NativeMemory<T> _buffer = capacity == 0 ? NativeMemory<T>.Empty : new((int)BitOperations.RoundUpToPowerOf2((uint)capacity), false);
+    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new((int)BitOperations.RoundUpToPowerOf2((uint)capacity), false);
 
     private const int _maximumCapacity = 1 << 30;
 
@@ -69,7 +70,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
     {
         if (Count == 0)
         {
-            return Array.Empty<T>();
+            return [];
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(Count);
@@ -82,7 +83,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
     {
         if (Count == 0)
         {
-            return new();
+            return [];
         }
 
         List<T> result = new(Count);

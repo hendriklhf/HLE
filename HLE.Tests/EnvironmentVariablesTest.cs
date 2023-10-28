@@ -1,31 +1,25 @@
 using System;
 using System.Collections;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests;
 
-[TestClass]
-public class EnvironmentVariablesTest
+public sealed class EnvironmentVariablesTest
 {
-    [TestMethod]
+    [Fact]
     public void CreateTest()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
         EnvironmentVariables environmentVariables = EnvironmentVariableProvider.Create().GetEnvironmentVariables();
         IDictionary actualEnvironmentVariables = Environment.GetEnvironmentVariables();
-        Assert.AreEqual(actualEnvironmentVariables.Count, environmentVariables.Count);
+        Assert.Equal(actualEnvironmentVariables.Count, environmentVariables.Count);
 
         foreach (object? obj in actualEnvironmentVariables)
         {
             DictionaryEntry entry = (DictionaryEntry)obj;
             string? value = environmentVariables[(string)entry.Key];
-            Assert.IsNotNull(value);
-            Assert.IsNotNull(entry.Value);
-            Assert.AreEqual(entry.Value, value);
+            Assert.NotNull(value);
+            Assert.NotNull(entry.Value);
+            Assert.Equal(entry.Value, value);
         }
     }
 }

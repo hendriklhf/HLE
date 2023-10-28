@@ -1,23 +1,22 @@
 using System;
 using HLE.Collections;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Collections;
 
-[TestClass]
-public class ValueQueueTest
+public sealed class ValueQueueTest
 {
-    [TestMethod]
+    [Fact]
     public void EnqueueTest()
     {
         ValueQueue<int> queue = new(stackalloc int[5]);
         queue.Enqueue(1);
         queue.Enqueue(2);
         queue.Enqueue(3);
-        Assert.AreEqual(3, queue.Count);
+        Assert.Equal(3, queue.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void DequeueTest()
     {
         ValueQueue<int> queue = new(stackalloc int[5]);
@@ -27,25 +26,25 @@ public class ValueQueueTest
         queue.Enqueue(4);
         queue.Enqueue(5);
 
-        Assert.AreEqual(1, queue.Dequeue());
-        Assert.AreEqual(2, queue.Dequeue());
-        Assert.AreEqual(3, queue.Dequeue());
-        Assert.AreEqual(4, queue.Dequeue());
-        Assert.AreEqual(5, queue.Dequeue());
-        Assert.AreEqual(0, queue.Count);
+        Assert.Equal(1, queue.Dequeue());
+        Assert.Equal(2, queue.Dequeue());
+        Assert.Equal(3, queue.Dequeue());
+        Assert.Equal(4, queue.Dequeue());
+        Assert.Equal(5, queue.Dequeue());
+        Assert.Equal(0, queue.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void PeekTest()
     {
         ValueQueue<int> queue = new(stackalloc int[1]);
         queue.Enqueue(1);
 
-        Assert.AreEqual(1, queue.Peek());
-        Assert.AreEqual(1, queue.Count);
+        Assert.Equal(1, queue.Peek());
+        Assert.Equal(1, queue.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void ClearTest()
     {
         ValueQueue<int> queue = new(stackalloc int[5]);
@@ -55,10 +54,10 @@ public class ValueQueueTest
         queue.Enqueue(4);
         queue.Enqueue(5);
         queue.Clear();
-        Assert.AreEqual(0, queue.Count);
+        Assert.Equal(0, queue.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void EnqueueAndDequeueTest()
     {
         ValueQueue<int> queue = new(stackalloc int[50]);
@@ -77,7 +76,7 @@ public class ValueQueueTest
         }
 
         queue.Enqueue(12345);
-        Assert.AreEqual(12345, queue.Dequeue());
-        Assert.AreEqual(0, queue.Count);
+        Assert.Equal(12345, queue.Dequeue());
+        Assert.Equal(0, queue.Count);
     }
 }

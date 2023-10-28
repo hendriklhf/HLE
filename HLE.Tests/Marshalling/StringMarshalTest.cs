@@ -2,40 +2,39 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Marshalling;
 
-[TestClass]
-public class StringMarshalTest
+public sealed class StringMarshalTest
 {
-    [TestMethod]
+    [Fact]
     public void FastAllocateStringTest()
     {
         string str = StringMarshal.FastAllocateString(5, out Span<char> chars);
         "hello".CopyTo(chars);
-        Assert.AreEqual("hello", str);
-        Assert.AreEqual("hello".Length, str.Length);
-        Assert.IsFalse(ReferenceEquals("hello", str));
+        Assert.Equal("hello", str);
+        Assert.Equal("hello".Length, str.Length);
+        Assert.False(ReferenceEquals("hello", str));
     }
 
-    [TestMethod]
+    [Fact]
     public void AsMutableSpanTest()
     {
         const string str = "hello";
         Span<char> chars = StringMarshal.AsMutableSpan(str);
-        Assert.IsTrue(chars is "hello");
+        Assert.True(chars is "hello");
     }
 
-    [TestMethod]
+    [Fact]
     public void AsStringTest()
     {
         ReadOnlySpan<char> span = "hello";
         string str = StringMarshal.AsString(span);
-        Assert.IsTrue(span.SequenceEqual(str));
+        Assert.True(span.SequenceEqual(str));
 
         ref char spanRef = ref MemoryMarshal.GetReference(span);
         ref char strRef = ref MemoryMarshal.GetReference(str.AsSpan());
-        Assert.IsTrue(Unsafe.AreSame(ref spanRef, ref strRef));
+        Assert.True(Unsafe.AreSame(ref spanRef, ref strRef));
     }
 }

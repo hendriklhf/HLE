@@ -19,7 +19,8 @@ namespace HLE.Memory;
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
 public sealed class PooledBufferWriter<T>(int capacity)
-    : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>, IReadOnlyCollection<T>, ISpanProvider<T>
+    : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, ICountable, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>,
+        IReadOnlyCollection<T>, ISpanProvider<T>, ICollectionProvider<T>
 {
     T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
 
@@ -44,12 +45,18 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal RentedArray<T> _buffer = capacity == 0 ? RentedArray<T>.Empty : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
+    internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
-    private const int _maximumCapacity = 1 << 30;
+    private const int _maximumPow2Capacity = 1 << 30;
 
     public PooledBufferWriter() : this(0)
     {
+    }
+
+    public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
+    {
+        CopyWorker<T>.Copy(data, _buffer.AsSpan());
+        Advance(data.Length);
     }
 
     public void Dispose() => _buffer.Dispose();
@@ -112,7 +119,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     {
         if (Count == 0)
         {
-            return Array.Empty<T>();
+            return [];
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(Count);
@@ -125,7 +132,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     {
         if (Count == 0)
         {
-            return new();
+            return [];
         }
 
         List<T> result = new(Count);
@@ -151,22 +158,20 @@ public sealed class PooledBufferWriter<T>(int capacity)
             return;
         }
 
-        if (Capacity == _maximumCapacity)
+        if (Capacity == int.MaxValue)
         {
             ThrowMaximumBufferCapacityReached();
         }
 
         int neededSpace = sizeHint - freeSpace;
-        int newBufferSize = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + neededSpace));
-        if (newBufferSize < Capacity)
-        {
-            ThrowMaximumBufferCapacityReached();
-        }
+        int newBufferSize = _buffer.Length == _maximumPow2Capacity ? int.MaxValue : (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + neededSpace));
 
         using RentedArray<T> oldBuffer = _buffer;
         _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
-        CopyWorker<T> copyWorker = new(ref oldBuffer.Reference, Count);
-        copyWorker.CopyTo(ref _buffer.Reference);
+        if (Count != 0)
+        {
+            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (nuint)Count);
+        }
     }
 
     [DoesNotReturn]

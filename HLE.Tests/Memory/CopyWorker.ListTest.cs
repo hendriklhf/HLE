@@ -4,40 +4,40 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Memory;
 
-public partial class CopyWorkerTest
+public sealed partial class CopyWorkerTest
 {
-    [TestMethod]
+    [Fact]
     public void CopyListToListWithoutOffsetTest()
     {
         const int sourceLength = 50;
 
         List<int> source = Enumerable.Range(0, sourceLength).ToList();
-        List<int> destination = new();
+        List<int> destination = [];
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination);
-        Assert.AreEqual(sourceLength, destination.Count);
-        Assert.IsTrue(CollectionsMarshal.AsSpan(source).SequenceEqual(CollectionsMarshal.AsSpan(destination)));
+        Assert.Equal(sourceLength, destination.Count);
+        Assert.True(CollectionsMarshal.AsSpan(source).SequenceEqual(CollectionsMarshal.AsSpan(destination)));
     }
 
-    [TestMethod]
+    [Fact]
     public void CopyListToListWithOffsetTest()
     {
         const int sourceLength = 50;
         const int offset = 50;
 
         List<int> source = Enumerable.Range(0, sourceLength).ToList();
-        List<int> destination = new();
+        List<int> destination = [];
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination, offset);
-        Assert.AreEqual(sourceLength + offset, destination.Count);
-        Assert.IsTrue(CollectionsMarshal.AsSpan(source).SequenceEqual(CollectionsMarshal.AsSpan(destination)[offset..]));
+        Assert.Equal(sourceLength + offset, destination.Count);
+        Assert.True(CollectionsMarshal.AsSpan(source).SequenceEqual(CollectionsMarshal.AsSpan(destination)[offset..]));
     }
 
-    [TestMethod]
+    [Fact]
     public void CopyListToArrayWithoutOffsetTest()
     {
         const int sourceLength = 50;
@@ -46,10 +46,10 @@ public partial class CopyWorkerTest
         int[] destination = new int[sourceLength];
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination);
-        Assert.IsTrue(CollectionsMarshal.AsSpan(source).SequenceEqual(destination));
+        Assert.True(CollectionsMarshal.AsSpan(source).SequenceEqual(destination));
     }
 
-    [TestMethod]
+    [Fact]
     public void CopyListToArrayWithOffsetTest()
     {
         const int sourceLength = 50;
@@ -59,10 +59,10 @@ public partial class CopyWorkerTest
         int[] destination = new int[offset + sourceLength];
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination, offset);
-        Assert.IsTrue(CollectionsMarshal.AsSpan(source).SequenceEqual(destination.AsSpan(offset)));
+        Assert.True(CollectionsMarshal.AsSpan(source).SequenceEqual(destination.AsSpan(offset)));
     }
 
-    [TestMethod]
+    [Fact]
     public void CopyListToMemoryTest()
     {
         const int sourceLength = 50;
@@ -71,10 +71,10 @@ public partial class CopyWorkerTest
         Memory<int> destination = new int[sourceLength];
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination);
-        Assert.IsTrue(destination.Span.SequenceEqual(CollectionsMarshal.AsSpan(source)));
+        Assert.True(destination.Span.SequenceEqual(CollectionsMarshal.AsSpan(source)));
     }
 
-    [TestMethod]
+    [Fact]
     public void CopyListToSpanTest()
     {
         const int sourceLength = 50;
@@ -83,10 +83,10 @@ public partial class CopyWorkerTest
         Span<int> destination = stackalloc int[50];
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination);
-        Assert.IsTrue(destination.SequenceEqual(CollectionsMarshal.AsSpan(source)));
+        Assert.True(destination.SequenceEqual(CollectionsMarshal.AsSpan(source)));
     }
 
-    [TestMethod]
+    [Fact]
     public void CopyListToReferenceTest()
     {
         const int sourceLength = 50;
@@ -96,10 +96,10 @@ public partial class CopyWorkerTest
         ref int destination = ref MemoryMarshal.GetReference(destinationSpan);
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(ref destination);
-        Assert.IsTrue(MemoryMarshal.CreateSpan(ref destination, sourceLength).SequenceEqual(CollectionsMarshal.AsSpan(source)));
+        Assert.True(MemoryMarshal.CreateSpan(ref destination, sourceLength).SequenceEqual(CollectionsMarshal.AsSpan(source)));
     }
 
-    [TestMethod]
+    [Fact]
     public unsafe void CopyListToPointerTest()
     {
         const int sourceLength = 50;
@@ -109,6 +109,6 @@ public partial class CopyWorkerTest
         int* destination = (int*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(destinationSpan));
         CopyWorker<int> copyWorker = new(source);
         copyWorker.CopyTo(destination);
-        Assert.IsTrue(new Span<int>(destination, sourceLength).SequenceEqual(CollectionsMarshal.AsSpan(source)));
+        Assert.True(new Span<int>(destination, sourceLength).SequenceEqual(CollectionsMarshal.AsSpan(source)));
     }
 }

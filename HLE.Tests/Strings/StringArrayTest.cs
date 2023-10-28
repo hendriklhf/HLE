@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using HLE.Collections;
 using HLE.Strings;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace HLE.Tests.Strings;
 
-[TestClass]
-public class StringArrayTest
+public sealed class StringArrayTest
 {
-    [TestMethod]
+    [Fact]
     public void Indexer_Int_Test()
     {
         StringArray array = new(4)
@@ -20,18 +19,18 @@ public class StringArrayTest
             [3] = "555"
         };
 
-        Assert.IsTrue(array is ["hello", "abc", "xd", "555"]);
+        Assert.True(array is ["hello", "abc", "xd", "555"]);
 
         array[1] = "////";
         array[2] = string.Empty;
 
-        Assert.IsTrue(array is ["hello", "////", "", "555"]);
+        Assert.True(array is ["hello", "////", "", "555"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Indexer_Int_Throws_Test()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             _ = new StringArray(5)
             {
@@ -39,7 +38,7 @@ public class StringArrayTest
             };
         });
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             _ = new StringArray(5)
             {
@@ -48,16 +47,16 @@ public class StringArrayTest
         });
     }
 
-    [TestMethod]
+    [Fact]
     public void Indexer_Index_Test()
     {
         StringArray array = new(["hello", "abc", "xd"]);
-        Assert.AreEqual("xd", array[^1]);
+        Assert.Equal("xd", array[^1]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Indexer_Index_Throws_Test() =>
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             _ = new StringArray(5)
             {
@@ -65,134 +64,134 @@ public class StringArrayTest
             };
         });
 
-    [TestMethod]
+    [Fact]
     public void Indexer_Range_Test()
     {
         StringArray array = new(["hello", "abc", "xd"]);
         ReadOnlySpan<string> span = array[..2];
-        Assert.IsTrue(span is ["hello", "abc"]);
+        Assert.True(span is ["hello", "abc"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Indexer_Range_Throws_Test()
     {
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             StringArray array = new(["hello", "abc", "xd"]);
             _ = array[..4];
         });
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             StringArray array = new(["hello", "abc", "xd"]);
             _ = array[4..];
         });
     }
 
-    [TestMethod]
+    [Fact]
     public void Length_Test()
     {
         StringArray array = new(5);
-        Assert.AreEqual(5, array.Length);
+        Assert.Equal(5, array.Length);
 
         array = new(256);
-        Assert.AreEqual(256, array.Length);
+        Assert.Equal(256, array.Length);
 
         array = new(ushort.MaxValue);
-        Assert.AreEqual(ushort.MaxValue, array.Length);
+        Assert.Equal(ushort.MaxValue, array.Length);
     }
 
-    [TestMethod]
+    [Fact]
     public void ICountable_Count_Test()
     {
         ICountable countable = new StringArray(16);
-        Assert.AreEqual(16, countable.Count);
+        Assert.Equal(16, countable.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void ICollection_Count_Test()
     {
         // ReSharper disable once CollectionNeverUpdated.Local
         ICollection<string> countable = new StringArray(16);
-        Assert.AreEqual(16, countable.Count);
+        Assert.Equal(16, countable.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void IReadOnlyCollection_Count_Test()
     {
         IReadOnlyCollection<string> countable = new StringArray(16);
-        Assert.AreEqual(16, countable.Count);
+        Assert.Equal(16, countable.Count);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialization_List_Test()
     {
         List<string> list = ["hello", "abc", "xd"];
         StringArray array = new(list);
-        Assert.IsTrue(array is ["hello", "abc", "xd"]);
+        Assert.True(array is ["hello", "abc", "xd"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialization_Array_Test()
     {
         string[] array = ["hello", "abc", "xd"];
         StringArray stringArray = new(array);
-        Assert.IsTrue(stringArray is ["hello", "abc", "xd"]);
+        Assert.True(stringArray is ["hello", "abc", "xd"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialization_Span_Test()
     {
         Span<string> span = ["hello", "abc", "xd"];
         StringArray array = new(span);
-        Assert.IsTrue(array is ["hello", "abc", "xd"]);
+        Assert.True(array is ["hello", "abc", "xd"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialization_ReadOnlySpan_Test()
     {
         ReadOnlySpan<string> span = ["hello", "abc", "xd"];
         StringArray array = new(span);
-        Assert.IsTrue(array is ["hello", "abc", "xd"]);
+        Assert.True(array is ["hello", "abc", "xd"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void Initialization_IEnumerable_Test()
     {
         IEnumerable<string> enumerable = ["hello", "abc", "xd"];
         StringArray array = new(enumerable);
-        Assert.IsTrue(array is ["hello", "abc", "xd"]);
+        Assert.True(array is ["hello", "abc", "xd"]);
     }
 
-    [TestMethod]
+    [Fact]
     public void GetStringLengthTest()
     {
         StringArray array = new(["hello", "abc", "xd"]);
-        Assert.AreEqual("hello".Length, array.GetStringLength(0));
-        Assert.AreEqual("abc".Length, array.GetStringLength(1));
-        Assert.AreEqual("xd".Length, array.GetStringLength(2));
+        Assert.Equal("hello".Length, array.GetStringLength(0));
+        Assert.Equal("abc".Length, array.GetStringLength(1));
+        Assert.Equal("xd".Length, array.GetStringLength(2));
 
         array[1] = "////";
-        Assert.AreEqual("////".Length, array.GetStringLength(1));
+        Assert.Equal("////".Length, array.GetStringLength(1));
     }
 
-    [TestMethod]
+    [Fact]
     public void GetStringLength_Throws_Test()
     {
-        Assert.ThrowsException<IndexOutOfRangeException>(() =>
+        Assert.Throws<IndexOutOfRangeException>(() =>
         {
             StringArray array = new(["hello", "abc", "xd"]);
             _ = array.GetStringLength(-1);
         });
 
-        Assert.ThrowsException<IndexOutOfRangeException>(() =>
+        Assert.Throws<IndexOutOfRangeException>(() =>
         {
             StringArray array = new(["hello", "abc", "xd"]);
             _ = array.GetStringLength(3);
         });
     }
 
-    [TestMethod]
+    [Fact]
     public void GetStringLength_Loop_Test()
     {
         StringArray stringArray = new(16);
@@ -207,24 +206,24 @@ public class StringArrayTest
 
             for (int j = 0; j < 16; j++)
             {
-                Assert.AreEqual(array[j]?.Length ?? 0, stringArray.GetStringLength(j));
+                Assert.Equal(array[j]?.Length ?? 0, stringArray.GetStringLength(j));
             }
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void GetCharsTest()
     {
         StringArray array = new(["hello", "abc", "xd"]);
-        Assert.IsTrue(array.GetChars(0) is "hello");
-        Assert.IsTrue(array.GetChars(1) is "abc");
-        Assert.IsTrue(array.GetChars(2) is "xd");
+        Assert.True(array.GetChars(0) is "hello");
+        Assert.True(array.GetChars(1) is "abc");
+        Assert.True(array.GetChars(2) is "xd");
 
         array[1] = "////";
-        Assert.IsTrue(array.GetChars(1) is "////");
+        Assert.True(array.GetChars(1) is "////");
     }
 
-    [TestMethod]
+    [Fact]
     public void GetChars_Loop_Test()
     {
         StringArray stringArray = new(16);
@@ -243,17 +242,17 @@ public class StringArrayTest
                 ReadOnlySpan<char> actualChars = stringArray.GetChars(j);
                 string? expectedChars = array[j];
                 Console.WriteLine($"({j}) {actualChars} == {expectedChars}");
-                Assert.IsTrue(actualChars.SequenceEqual(expectedChars));
+                Assert.True(actualChars.SequenceEqual(expectedChars));
             }
 
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void AsSpanTest()
     {
         StringArray stringArray = new(16);
-        Assert.AreEqual(16, stringArray.AsSpan().Length);
+        Assert.Equal(16, stringArray.AsSpan().Length);
         Span<string> array = new string[16];
 
         for (int i = 0; i < 1024; i++)
@@ -263,11 +262,11 @@ public class StringArrayTest
             array[index] = str;
             stringArray[index] = str;
 
-            Assert.IsTrue(array.SequenceEqual(stringArray.AsSpan()));
+            Assert.True(array.SequenceEqual(stringArray.AsSpan()));
         }
     }
 
-    [TestMethod]
+    [Fact]
     public void MoveStringTest_LeftToRight()
     {
         StringArray array = new(5)
@@ -280,19 +279,19 @@ public class StringArrayTest
         };
         array.MoveString(1, 3);
 
-        Assert.IsTrue(array._strings is ["aaa", "cccc", "d", "bb", "eeeee"]);
-        Assert.IsTrue(array._stringLengths is [3, 4, 1, 2, 5]);
-        Assert.IsTrue(array._stringStarts is [0, 3, 7, 8, 10]);
-        Assert.IsTrue(array._stringChars.AsSpan().StartsWith("aaaccccdbbeeeee\0"));
+        Assert.True(array._strings is ["aaa", "cccc", "d", "bb", "eeeee"]);
+        Assert.True(array._stringLengths is [3, 4, 1, 2, 5]);
+        Assert.True(array._stringStarts is [0, 3, 7, 8, 10]);
+        Assert.True(array._stringChars.AsSpan().StartsWith("aaaccccdbbeeeee\0"));
 
-        Assert.IsTrue(array.GetChars(0) is "aaa");
-        Assert.IsTrue(array.GetChars(1) is "cccc");
-        Assert.IsTrue(array.GetChars(2) is "d");
-        Assert.IsTrue(array.GetChars(3) is "bb");
-        Assert.IsTrue(array.GetChars(4) is "eeeee");
+        Assert.True(array.GetChars(0) is "aaa");
+        Assert.True(array.GetChars(1) is "cccc");
+        Assert.True(array.GetChars(2) is "d");
+        Assert.True(array.GetChars(3) is "bb");
+        Assert.True(array.GetChars(4) is "eeeee");
     }
 
-    [TestMethod]
+    [Fact]
     public void MoveStringTest_RightToLeft()
     {
         StringArray array = new(5)
@@ -305,15 +304,15 @@ public class StringArrayTest
         };
         array.MoveString(3, 1);
 
-        Assert.IsTrue(array._strings is ["aaa", "d", "bb", "cccc", "eeeee"]);
-        Assert.IsTrue(array._stringLengths is [3, 1, 2, 4, 5]);
-        Assert.IsTrue(array._stringStarts is [0, 3, 4, 6, 10]);
-        Assert.IsTrue(array._stringChars.AsSpan().StartsWith("aaadbbcccceeeee\0"));
+        Assert.True(array._strings is ["aaa", "d", "bb", "cccc", "eeeee"]);
+        Assert.True(array._stringLengths is [3, 1, 2, 4, 5]);
+        Assert.True(array._stringStarts is [0, 3, 4, 6, 10]);
+        Assert.True(array._stringChars.AsSpan().StartsWith("aaadbbcccceeeee\0"));
 
-        Assert.IsTrue(array.GetChars(0) is "aaa");
-        Assert.IsTrue(array.GetChars(1) is "d");
-        Assert.IsTrue(array.GetChars(2) is "bb");
-        Assert.IsTrue(array.GetChars(3) is "cccc");
-        Assert.IsTrue(array.GetChars(4) is "eeeee");
+        Assert.True(array.GetChars(0) is "aaa");
+        Assert.True(array.GetChars(1) is "d");
+        Assert.True(array.GetChars(2) is "bb");
+        Assert.True(array.GetChars(3) is "cccc");
+        Assert.True(array.GetChars(4) is "eeeee");
     }
 }

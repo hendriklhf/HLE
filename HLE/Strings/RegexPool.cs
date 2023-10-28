@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -12,7 +12,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
 {
     private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
 
-    public static RegexPool Shared { get; set; } = new();
+    public static RegexPool Shared { get; set; } = [];
 
     private const int _defaultPoolCapacity = 4096;
     private const int _defaultBucketCapacity = 32;
