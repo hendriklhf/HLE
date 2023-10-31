@@ -9,11 +9,7 @@ namespace HLE.SourceGenerators;
 public sealed class AppendMethodsGenerator : ISourceGenerator
 {
     private readonly List<string[]> _arguments = [];
-    private readonly string[] _argumentTypes =
-    [
-        "scoped ReadOnlySpan<char>",
-        "char"
-    ];
+    private readonly string[] _argumentTypes = ["scoped ReadOnlySpan<char>", "char"];
 
     private const int _maxAmountOfArguments = 8;
     private const string _indentation = "    ";

@@ -11,6 +11,7 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
 {
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
     private static readonly TEnum[] s_values = Enum.GetValues<TEnum>();
+    private static readonly TEnum s_maximumValue = s_values[^1];
 
     [Pure]
     public static ReadOnlySpan<TEnum> GetValues() => s_values;
@@ -36,7 +37,7 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TEnum GetMaxValue() => GetValues()[^1];
+    public static TEnum GetMaximumValue() => s_maximumValue;
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

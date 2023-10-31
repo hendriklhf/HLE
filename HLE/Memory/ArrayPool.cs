@@ -26,15 +26,15 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     internal static ReadOnlySpan<int> BucketCapacities => new[]
     {
         // 16,32,64,128,256,512
-        128, 128, 128, 64, 64, 64,
+        256, 256, 256, 256, 256, 256,
         // 1024,2048,4096,8192
-        32, 32, 32, 32,
+        128, 128, 128, 128,
         // 16384,32768,65536,
-        16, 16, 16,
+        64, 64, 64,
         // 131072,262144,524288,1048576
-        8, 8, 8, 8,
+        16, 16, 16, 16,
         // 2097152,4194304
-        4, 4
+        8, 8
     };
 
     private readonly Bucket[] _buckets;
@@ -50,11 +50,11 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         int arrayLength = MinimumArrayLength;
         for (int i = 0; i < _buckets.Length; i++)
         {
-            _buckets[i] = new(arrayLength, BucketCapacities[i]);
+            _buckets[i] = new(arrayLength, int.Max(BucketCapacities[i], Environment.ProcessorCount));
             arrayLength <<= 1;
         }
 
-        Debug.Assert(BucketCapacities.Length == _buckets.Length);
+        Debug.Assert(BucketCapacities.Length == poolCount);
         Debug.Assert(arrayLength >> 1 == MaximumArrayLength);
     }
 
@@ -109,16 +109,16 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [Pure]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[]? array, ArrayReturnOptions options = ArrayReturnOptions.ClearOnlyIfManagedType)
+    public void Return(T[]? array, ArrayReturnOptions returnOptions = ArrayReturnOptions.ClearOnlyIfManagedType)
     {
         if (!TryGetBucketIndex(array, out int bucketIndex))
         {
             return;
         }
 
-        if (options != 0)
+        if (returnOptions != 0)
         {
-            PerformReturnActions(array, options);
+            PerformReturnActions(array, returnOptions);
         }
 
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);

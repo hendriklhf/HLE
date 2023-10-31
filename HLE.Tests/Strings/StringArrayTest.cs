@@ -1,30 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Strings;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace HLE.Tests.Strings;
 
-public sealed class StringArrayTest
+public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
 {
+    private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
+
     [Fact]
     public void Indexer_Int_Test()
     {
-        StringArray array = new(4)
+        const int arrayLength = 64;
+        const int iterations = 4096;
+
+        StringArray stringArray = new(arrayLength);
+        Span<string?> array = new string[arrayLength];
+
+        for (int i = 0; i < iterations; i++)
         {
-            [0] = "hello",
-            [1] = "abc",
-            [2] = "xd",
-            [3] = "555"
-        };
+            string str = Random.Shared.NextString(Random.Shared.Next(0, 32), StringConstants.AlphaNumerics);
+            int index = Random.Shared.Next(arrayLength);
+            array[index] = str;
+            stringArray[index] = str;
 
-        Assert.True(array is ["hello", "abc", "xd", "555"]);
-
-        array[1] = "////";
-        array[2] = string.Empty;
-
-        Assert.True(array is ["hello", "////", "", "555"]);
+            _testOutputHelper.WriteLine($"----- Actual vs Expected ----- Write at: {index}");
+            for (int j = 0; j < arrayLength; j++)
+            {
+                string actualString = stringArray[j];
+                string? expectedString = array[j];
+                _testOutputHelper.WriteLine($"({j}) {actualString} == {expectedString}");
+                Assert.Equal(expectedString, actualString);
+            }
+        }
     }
 
     [Fact]
@@ -51,6 +64,8 @@ public sealed class StringArrayTest
     public void Indexer_Index_Test()
     {
         StringArray array = new(["hello", "abc", "xd"]);
+        Assert.Equal("hello", array[^3]);
+        Assert.Equal("abc", array[^2]);
         Assert.Equal("xd", array[^1]);
     }
 
@@ -89,7 +104,7 @@ public sealed class StringArrayTest
     }
 
     [Fact]
-    public void Length_Test()
+    public void LengthTest()
     {
         StringArray array = new(5);
         Assert.Equal(5, array.Length);
@@ -126,53 +141,83 @@ public sealed class StringArrayTest
     [Fact]
     public void Initialization_List_Test()
     {
-        List<string> list = ["hello", "abc", "xd"];
-        StringArray array = new(list);
-        Assert.True(array is ["hello", "abc", "xd"]);
+        List<string> strings = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToList();
+        StringArray stringArray = new(strings);
+        Assert.Equal(strings.Count, stringArray.Length);
+
+        for (int i = 0; i < strings.Count; i++)
+        {
+            Assert.Same(strings[i], stringArray[i]);
+            Assert.Equal(strings[i].Length, stringArray.GetStringLength(i));
+            Assert.True(strings[i].AsSpan().SequenceEqual(stringArray.GetChars(i)));
+        }
     }
 
     [Fact]
     public void Initialization_Array_Test()
     {
-        string[] array = ["hello", "abc", "xd"];
-        StringArray stringArray = new(array);
-        Assert.True(stringArray is ["hello", "abc", "xd"]);
+        string[] strings = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(strings);
+        Assert.Equal(strings.Length, stringArray.Length);
+
+        for (int i = 0; i < strings.Length; i++)
+        {
+            Assert.Same(strings[i], stringArray[i]);
+            Assert.Equal(strings[i].Length, stringArray.GetStringLength(i));
+            Assert.True(strings[i].AsSpan().SequenceEqual(stringArray.GetChars(i)));
+        }
     }
 
     [Fact]
     public void Initialization_Span_Test()
     {
-        Span<string> span = ["hello", "abc", "xd"];
-        StringArray array = new(span);
-        Assert.True(array is ["hello", "abc", "xd"]);
+        Span<string> strings = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(strings);
+        Assert.Equal(strings.Length, stringArray.Length);
+
+        for (int i = 0; i < strings.Length; i++)
+        {
+            Assert.Same(strings[i], stringArray[i]);
+            Assert.Equal(strings[i].Length, stringArray.GetStringLength(i));
+            Assert.True(strings[i].AsSpan().SequenceEqual(stringArray.GetChars(i)));
+        }
     }
 
     [Fact]
     public void Initialization_ReadOnlySpan_Test()
     {
-        ReadOnlySpan<string> span = ["hello", "abc", "xd"];
-        StringArray array = new(span);
-        Assert.True(array is ["hello", "abc", "xd"]);
+        ReadOnlySpan<string> strings = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(strings);
+        Assert.Equal(strings.Length, stringArray.Length);
+
+        for (int i = 0; i < strings.Length; i++)
+        {
+            Assert.Same(strings[i], stringArray[i]);
+            Assert.Equal(strings[i].Length, stringArray.GetStringLength(i));
+            Assert.True(strings[i].AsSpan().SequenceEqual(stringArray.GetChars(i)));
+        }
     }
 
     [Fact]
     public void Initialization_IEnumerable_Test()
     {
-        IEnumerable<string> enumerable = ["hello", "abc", "xd"];
-        StringArray array = new(enumerable);
-        Assert.True(array is ["hello", "abc", "xd"]);
-    }
+        string[] strings =
+            Enumerable.Range(0, 1024)
+                .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
 
-    [Fact]
-    public void GetStringLengthTest()
-    {
-        StringArray array = new(["hello", "abc", "xd"]);
-        Assert.Equal("hello".Length, array.GetStringLength(0));
-        Assert.Equal("abc".Length, array.GetStringLength(1));
-        Assert.Equal("xd".Length, array.GetStringLength(2));
+        StringArray stringArray = new(strings.AsEnumerable());
+        Assert.Equal(strings.Length, stringArray.Length);
 
-        array[1] = "////";
-        Assert.Equal("////".Length, array.GetStringLength(1));
+        for (int i = 0; i < strings.Length; i++)
+        {
+            Assert.Same(strings[i], stringArray[i]);
+            Assert.Equal(strings[i].Length, stringArray.GetStringLength(i));
+            Assert.True(strings[i].AsSpan().SequenceEqual(stringArray.GetChars(i)));
+        }
     }
 
     [Fact]
@@ -192,19 +237,22 @@ public sealed class StringArrayTest
     }
 
     [Fact]
-    public void GetStringLength_Loop_Test()
+    public void GetStringLengthTest()
     {
-        StringArray stringArray = new(16);
-        Span<string?> array = new string[16];
+        const int arrayLength = 64;
+        const int iterations = 4096;
 
-        for (int i = 0; i < 1024; i++)
+        StringArray stringArray = new(arrayLength);
+        Span<string?> array = new string[arrayLength];
+
+        for (int i = 0; i < iterations; i++)
         {
-            string str = Random.Shared.NextString(Random.Shared.Next(0, 32));
-            int index = Random.Shared.Next(16);
+            string str = Random.Shared.NextString(Random.Shared.Next(0, 32), StringConstants.AlphaNumerics);
+            int index = Random.Shared.Next(arrayLength);
             array[index] = str;
             stringArray[index] = str;
 
-            for (int j = 0; j < 16; j++)
+            for (int j = 0; j < arrayLength; j++)
             {
                 Assert.Equal(array[j]?.Length ?? 0, stringArray.GetStringLength(j));
             }
@@ -214,55 +262,117 @@ public sealed class StringArrayTest
     [Fact]
     public void GetCharsTest()
     {
-        StringArray array = new(["hello", "abc", "xd"]);
-        Assert.True(array.GetChars(0) is "hello");
-        Assert.True(array.GetChars(1) is "abc");
-        Assert.True(array.GetChars(2) is "xd");
+        const int arrayLength = 64;
+        const int iterations = 4096;
 
-        array[1] = "////";
-        Assert.True(array.GetChars(1) is "////");
-    }
+        StringArray stringArray = new(arrayLength);
+        Span<string?> array = new string[arrayLength];
 
-    [Fact]
-    public void GetChars_Loop_Test()
-    {
-        StringArray stringArray = new(16);
-        Span<string?> array = new string[16];
-
-        for (int i = 0; i < 1024; i++)
+        for (int i = 0; i < iterations; i++)
         {
             string str = Random.Shared.NextString(Random.Shared.Next(0, 32), StringConstants.AlphaNumerics);
-            int index = Random.Shared.Next(16);
+            int index = Random.Shared.Next(arrayLength);
             array[index] = str;
             stringArray[index] = str;
 
-            Console.WriteLine($"----- Actual vs Expected ----- Write at: {index}");
-            for (int j = 0; j < 16; j++)
+            _testOutputHelper.WriteLine($"----- Actual vs Expected ----- Write at: {index}");
+            for (int j = 0; j < arrayLength; j++)
             {
                 ReadOnlySpan<char> actualChars = stringArray.GetChars(j);
                 string? expectedChars = array[j];
-                Console.WriteLine($"({j}) {actualChars} == {expectedChars}");
+                _testOutputHelper.WriteLine($"({j}) {actualChars} == {expectedChars}");
                 Assert.True(actualChars.SequenceEqual(expectedChars));
             }
-
         }
     }
 
     [Fact]
     public void AsSpanTest()
     {
-        StringArray stringArray = new(16);
-        Assert.Equal(16, stringArray.AsSpan().Length);
-        Span<string> array = new string[16];
+        const int iterations = 4096;
+        const int arrayLength = 1024;
 
-        for (int i = 0; i < 1024; i++)
+        Span<string> array = Enumerable.Range(0, arrayLength)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(array);
+
+        Assert.Equal(arrayLength, stringArray.AsSpan().Length);
+        Assert.True(stringArray.AsSpan().SequenceEqual(array));
+
+        for (int i = 0; i < iterations; i++)
         {
-            string str = Random.Shared.NextString(Random.Shared.Next(0, 32));
-            int index = Random.Shared.Next(16);
+            string str = Random.Shared.NextString(Random.Shared.Next(0, 32), StringConstants.AlphaNumerics);
+            int index = Random.Shared.Next(arrayLength);
             array[index] = str;
             stringArray[index] = str;
 
-            Assert.True(array.SequenceEqual(stringArray.AsSpan()));
+            Assert.True(stringArray.AsSpan().SequenceEqual(array));
+        }
+    }
+
+    [Fact]
+    public void ToArrayTest()
+    {
+        Span<string> span = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(span);
+        string[] array = stringArray.ToArray();
+        Assert.True(stringArray.ToArray().AsSpan().SequenceEqual(array));
+    }
+
+    [Fact]
+    public void ToListTest()
+    {
+        Span<string> span = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(span);
+        List<string> list = stringArray.ToList();
+        Assert.True(stringArray.ToArray().AsSpan().SequenceEqual(CollectionsMarshal.AsSpan(list)));
+    }
+
+    [Fact]
+    public void IReadOnlySpanProvider_GetReadOnlySpan_Test()
+    {
+        StringArray stringArray = new(["hello", "abc", "xd"]);
+        IReadOnlySpanProvider<string> readOnlySpanProvider = stringArray;
+        Assert.True(stringArray.AsSpan().SequenceEqual(readOnlySpanProvider.GetReadOnlySpan()));
+    }
+
+    [Fact]
+    public void ClearTest()
+    {
+        StringArray stringArray = new(Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)));
+        stringArray.Clear();
+        for (int i = 0; i < stringArray.Length; i++)
+        {
+            Assert.Null(stringArray[i]);
+            Assert.Equal(0, stringArray.GetStringLength(i));
+            Assert.Equal(0, stringArray.GetChars(i).Length);
+        }
+    }
+
+    [Fact]
+    public void IndexOfTest()
+    {
+        const int iterations = 1024;
+        const int arrayLength = 512;
+
+        Span<string> array = Enumerable.Range(0, arrayLength)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        StringArray stringArray = new(array);
+
+        for (int i = 0; i < iterations; i++)
+        {
+            string str = Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics);
+            int index = Random.Shared.Next(arrayLength);
+            array[index] = str;
+            stringArray[index] = str;
+
+            for (int j = 0; j < arrayLength; j++)
+            {
+                Assert.Equal(array.IndexOf(array[j]), stringArray.IndexOf(array[j]));
+            }
         }
     }
 
@@ -280,9 +390,9 @@ public sealed class StringArrayTest
         array.MoveString(1, 3);
 
         Assert.True(array._strings is ["aaa", "cccc", "d", "bb", "eeeee"]);
-        Assert.True(array._stringLengths is [3, 4, 1, 2, 5]);
-        Assert.True(array._stringStarts is [0, 3, 7, 8, 10]);
-        Assert.True(array._stringChars.AsSpan().StartsWith("aaaccccdbbeeeee\0"));
+        Assert.True(array._lengths is [3, 4, 1, 2, 5]);
+        Assert.True(array._starts is [0, 3, 7, 8, 10]);
+        Assert.True(array._chars.AsSpan().StartsWith("aaaccccdbbeeeee\0"));
 
         Assert.True(array.GetChars(0) is "aaa");
         Assert.True(array.GetChars(1) is "cccc");
@@ -305,9 +415,9 @@ public sealed class StringArrayTest
         array.MoveString(3, 1);
 
         Assert.True(array._strings is ["aaa", "d", "bb", "cccc", "eeeee"]);
-        Assert.True(array._stringLengths is [3, 1, 2, 4, 5]);
-        Assert.True(array._stringStarts is [0, 3, 4, 6, 10]);
-        Assert.True(array._stringChars.AsSpan().StartsWith("aaadbbcccceeeee\0"));
+        Assert.True(array._lengths is [3, 1, 2, 4, 5]);
+        Assert.True(array._starts is [0, 3, 4, 6, 10]);
+        Assert.True(array._chars.AsSpan().StartsWith("aaadbbcccceeeee\0"));
 
         Assert.True(array.GetChars(0) is "aaa");
         Assert.True(array.GetChars(1) is "d");

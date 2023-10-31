@@ -35,8 +35,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     private static readonly TimeSpan s_cacheTime = TimeSpan.FromDays(1);
 
     private const string _httpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
-    private const int _indentationSize = 4;
-    private const char _indentationChar = ' ';
+    private const string _indentation = "    ";
     private const string _cacheDirectory = "HLE.SourceGenerators.EmojiFileGenerator\\";
 
     public void Initialize(GeneratorInitializationContext context)
@@ -117,9 +116,6 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     private void AppendEmojis(StringBuilder sourceBuilder)
     {
-        char[] indentation = new char[_indentationSize];
-        indentation.AsSpan().Fill(_indentationChar);
-
         ReadOnlySpan<byte> emojiProperty = "emoji"u8;
         ReadOnlySpan<byte> aliasesProperty = "aliases"u8;
 
@@ -151,7 +147,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
                     nameBuffer[0] = char.ToUpper(nameBuffer[0]);
                     CheckForIllegalName(nameBuffer, ref nameLength);
 
-                    sourceBuilder.Append(indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
+                    sourceBuilder.Append(_indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
                     sourceBuilder.Append("= \"").Append(emojiBuffer.AsSpan().Slice(0, emojiLength).ToArray()).AppendLine("\";");
                     break;
                 default:

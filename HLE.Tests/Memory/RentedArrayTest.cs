@@ -171,7 +171,7 @@ public sealed class RentedArrayTest
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
         Assert.Equal(array._array, array.Array);
-        Assert.True(ReferenceEquals(array._array, array.Array));
+        Assert.Same(array._array, array.Array);
     }
 
     [Fact]
@@ -181,16 +181,15 @@ public sealed class RentedArrayTest
         Assert.Equal(0, array.Length);
         Assert.Equal([], array._array);
         Assert.Equal([], array.Array);
-        Assert.True(ReferenceEquals(Array.Empty<int>(), array._array));
-        Assert.True(ReferenceEquals(Array.Empty<int>(), array.Array));
+        Assert.Same(Array.Empty<int>(), array._array);
+        Assert.Same(Array.Empty<int>(), array.Array);
     }
 
     [Fact]
     public void Pool_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        Assert.Equal(ArrayPool<int>.Shared, array._pool);
-        Assert.True(ReferenceEquals(ArrayPool<int>.Shared, array._pool));
+        Assert.Same(ArrayPool<int>.Shared, array._pool);
     }
 
     [Fact]

@@ -15,7 +15,7 @@ public sealed class StringMarshalTest
         "hello".CopyTo(chars);
         Assert.Equal("hello", str);
         Assert.Equal("hello".Length, str.Length);
-        Assert.False(ReferenceEquals("hello", str));
+        Assert.NotSame("hello", str);
     }
 
     [Fact]

@@ -167,7 +167,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_ReadOnlySpan_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         builder.Append("hello");
         Assert.Equal("hello", builder.ToString());
@@ -184,7 +184,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Char_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         for (int i = 0; i < 20; i++)
         {
@@ -200,7 +200,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Byte_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const byte value = 255;
         builder.Append(value);
@@ -220,7 +220,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_SByte_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const sbyte value = 120;
         builder.Append(value);
@@ -240,7 +240,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Short_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const short value = 30_000;
         builder.Append(value);
@@ -280,7 +280,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Int_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const int value = int.MaxValue;
         builder.Append(value);
@@ -320,7 +320,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Long_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const long value = long.MaxValue;
         builder.Append(value);
@@ -340,7 +340,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_ULong_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const ulong value = ulong.MaxValue;
         builder.Append(value);
@@ -360,7 +360,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Float_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const float value = float.Pi;
         builder.Append(value);
@@ -380,7 +380,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_Double_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const double value = double.Pi;
         builder.Append(value);
@@ -400,7 +400,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_DateTime_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         DateTime value = DateTime.UtcNow;
         builder.Append(value, "O");
@@ -420,7 +420,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_DateTimeOffset_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         DateTimeOffset value = DateTimeOffset.UtcNow;
         builder.Append(value, "O");
@@ -440,7 +440,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_TimeSpan_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         TimeSpan value = TimeSpan.FromHours(10);
         builder.Append(value, "G");

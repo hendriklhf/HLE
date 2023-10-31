@@ -177,24 +177,10 @@ public static partial class CollectionHelper
         }
     }
 
-    [Pure]
-    public static List<T> Replace<T>(this List<T> list, Func<T, bool> predicate, T replacement)
-    {
-        List<T> result = new(list.Count);
-        CopyWorker<T> copyWorker = new(list);
-        copyWorker.CopyTo(result);
-        Replace(CollectionsMarshal.AsSpan(result), predicate, replacement);
-        return result;
-    }
+    public static void Replace<T>(this List<T> list, Func<T, bool> predicate, T replacement)
+        => Replace(CollectionsMarshal.AsSpan(list), predicate, replacement);
 
-    [Pure]
-    public static T[] Replace<T>(this T[] array, Func<T, bool> predicate, T replacement)
-    {
-        T[] copy = GC.AllocateUninitializedArray<T>(array.Length);
-        CopyWorker<T>.Copy(array, copy);
-        Replace(copy.AsSpan(), predicate, replacement);
-        return copy;
-    }
+    public static void Replace<T>(this T[] array, Func<T, bool> predicate, T replacement) => Replace(array.AsSpan(), predicate, replacement);
 
     public static void Replace<T>(this Span<T> span, Func<T, bool> predicate, T replacement)
     {
@@ -215,30 +201,11 @@ public static partial class CollectionHelper
         }
     }
 
-    [Pure]
-    public static unsafe T[] Replace<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate, T replacement)
-    {
-        T[] array = collection.ToArray();
-        Replace(array.AsSpan(), predicate, replacement);
-        return array;
-    }
+    public static unsafe void Replace<T>(this List<T> list, delegate*<T, bool> predicate, T replacement)
+        => Replace(CollectionsMarshal.AsSpan(list), predicate, replacement);
 
-    [Pure]
-    public static unsafe List<T> Replace<T>(this List<T> list, delegate*<T, bool> predicate, T replacement)
-    {
-        List<T> copy = new(list);
-        Replace(CollectionsMarshal.AsSpan(copy), predicate, replacement);
-        return copy;
-    }
-
-    [Pure]
-    public static unsafe T[] Replace<T>(this T[] array, delegate*<T, bool> predicate, T replacement)
-    {
-        T[] copy = GC.AllocateUninitializedArray<T>(array.Length);
-        CopyWorker<T>.Copy(array, copy);
-        Replace(copy.AsSpan(), predicate, replacement);
-        return copy;
-    }
+    public static unsafe void Replace<T>(this T[] array, delegate*<T, bool> predicate, T replacement)
+        => Replace(array.AsSpan(), predicate, replacement);
 
     public static unsafe void Replace<T>(this Span<T> span, delegate*<T, bool> predicate, T replacement)
     {
@@ -261,217 +228,6 @@ public static partial class CollectionHelper
 
     [Pure]
     public static RangeEnumerator GetEnumerator(this Range range) => new(range);
-
-    public static void FillAscending(this int[] array, int start = 0) => FillAscending(array.AsSpan(), start);
-
-    public static void FillAscending(this Span<int> span, int start = 0)
-    {
-        int vector512Count = Vector512<int>.Count;
-        if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
-        {
-            Vector512<int> ascendingValueAdditions = Vector512.Create(
-                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 11, 12, 13, 14, 15
-            );
-            while (span.Length >= vector512Count)
-            {
-                Vector512<int> startValues = Vector512.Create(start);
-                Vector512<int> values = Vector512.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector512Count;
-                span = span.SliceUnsafe(vector512Count);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = start + i;
-            }
-
-            return;
-        }
-
-        int vector256Count = Vector256<int>.Count;
-        if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
-        {
-            Vector256<int> ascendingValueAdditions = Vector256.Create(0, 1, 2, 3, 4, 5, 6, 7);
-            while (span.Length >= vector256Count)
-            {
-                Vector256<int> startValues = Vector256.Create(start);
-                Vector256<int> values = Vector256.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector256Count;
-                span = span.SliceUnsafe(vector256Count);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = start + i;
-            }
-
-            return;
-        }
-
-        int vector128Count = Vector128<int>.Count;
-        if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
-        {
-            Vector128<int> ascendingValueAdditions = Vector128.Create(0, 1, 2, 3);
-            while (span.Length >= vector128Count)
-            {
-                Vector128<int> startValues = Vector128.Create(start);
-                Vector128<int> values = Vector128.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector128Count;
-                span = span[vector128Count..];
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = start + i;
-            }
-
-            return;
-        }
-
-        int vector64Count = Vector64<int>.Count;
-        if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
-        {
-            Vector64<int> ascendingValueAdditions = Vector64.Create(0, 1);
-            while (span.Length >= vector64Count)
-            {
-                Vector64<int> startValues = Vector64.Create(start);
-                Vector64<int> values = Vector64.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector64Count;
-                span = span.SliceUnsafe(vector64Count);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = start + i;
-            }
-
-            return;
-        }
-
-        int spanLength = span.Length;
-        ref int firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            Unsafe.Add(ref firstItem, i) = start + i;
-        }
-    }
-
-    public static void FillAscending(this char[] array, char start = '\0') => FillAscending(array.AsSpan(), start);
-
-    public static void FillAscending(this Span<char> span, char start = '\0') => FillAscending(MemoryMarshal.Cast<char, ushort>(span), start);
-
-    public static void FillAscending(this ushort[] array, ushort start = 0) => FillAscending(array.AsSpan(), start);
-
-    public static void FillAscending(this Span<ushort> span, ushort start = 0)
-    {
-        ushort vector512Count = (ushort)Vector512<ushort>.Count;
-        if (Vector512.IsHardwareAccelerated && span.Length >= vector512Count)
-        {
-            Vector512<ushort> ascendingValueAdditions = Vector512.Create(
-                (ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-                20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-                30, 31
-            );
-
-            while (span.Length >= vector512Count)
-            {
-                Vector512<ushort> startValues = Vector512.Create(start);
-                Vector512<ushort> values = Vector512.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector512Count;
-                span = span.SliceUnsafe(vector512Count);
-            }
-
-            for (ushort i = 0; i < span.Length; i++)
-            {
-                span[i] = (ushort)(start + i);
-            }
-
-            return;
-        }
-
-        ushort vector256Count = (ushort)Vector256<ushort>.Count;
-        if (Vector256.IsHardwareAccelerated && span.Length >= vector256Count)
-        {
-            Vector256<ushort> ascendingValueAdditions = Vector256.Create(
-                (ushort)0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 11, 12, 13, 14, 15
-            );
-
-            while (span.Length >= vector256Count)
-            {
-                Vector256<ushort> startValues = Vector256.Create(start);
-                Vector256<ushort> values = Vector256.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector256Count;
-                span = span.SliceUnsafe(vector256Count);
-            }
-
-            for (ushort i = 0; i < span.Length; i++)
-            {
-                span[i] = (ushort)(start + i);
-            }
-
-            return;
-        }
-
-        ushort vector128Count = (ushort)Vector128<ushort>.Count;
-        if (Vector128.IsHardwareAccelerated && span.Length >= vector128Count)
-        {
-            Vector128<ushort> ascendingValueAdditions = Vector128.Create((ushort)0, 1, 2, 3, 4, 5, 6, 7);
-
-            while (span.Length >= vector128Count)
-            {
-                Vector128<ushort> startValues = Vector128.Create(start);
-                Vector128<ushort> values = Vector128.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector128Count;
-                span = span[vector128Count..];
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = (ushort)(start + i);
-            }
-
-            return;
-        }
-
-        ushort vector64Count = (ushort)Vector64<ushort>.Count;
-        if (Vector64.IsHardwareAccelerated && span.Length >= vector64Count)
-        {
-            Vector64<ushort> ascendingValueAdditions = Vector64.Create((ushort)0, 1, 2, 3);
-
-            while (span.Length >= vector64Count)
-            {
-                Vector64<ushort> startValues = Vector64.Create(start);
-                Vector64<ushort> values = Vector64.Add(startValues, ascendingValueAdditions);
-                values.StoreUnsafe(ref MemoryMarshal.GetReference(span));
-                start += vector64Count;
-                span = span.SliceUnsafe(vector64Count);
-            }
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = (ushort)(start + i);
-            }
-
-            return;
-        }
-
-        int spanLength = span.Length;
-        ref ushort firstItem = ref MemoryMarshal.GetReference(span);
-        for (int i = 0; i < spanLength; i++)
-        {
-            Unsafe.Add(ref firstItem, i) = (ushort)(start + i);
-        }
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AddOrSet<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull

@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using HLE.Collections;
 using HLE.Marshalling;
 using Xunit;
 
@@ -5,6 +8,15 @@ namespace HLE.Tests.Marshalling;
 
 public sealed class RawDataMarshalTest
 {
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+    public static object[][] MethodTableReferenceTestObjects { get; } =
+    [
+        [string.Empty],
+        [new int[1]],
+        [new PooledList<int>()],
+        [typeof(Assembly).Assembly]
+    ];
+
     [Fact]
     public void GetRawDataSizeTest()
     {
@@ -15,9 +27,10 @@ public sealed class RawDataMarshalTest
         Assert.Equal((nuint)(sizeof(int) + sizeof(int) + sizeof(int) * 5), size);
     }
 
-    [Fact]
-    public void GetMethodTablePointerTest()
-        => Assert.Equal((nuint)typeof(string).TypeHandle.Value, RawDataMarshal.GetMethodTableReference(string.Empty));
+    [Theory]
+    [MemberData(nameof(MethodTableReferenceTestObjects))]
+    public void GetMethodTablePointerTest(object obj)
+        => Assert.Equal((nuint)obj.GetType().TypeHandle.Value, RawDataMarshal.GetMethodTableReference(obj));
 
     [Fact]
     public void ReadObjectTest()
@@ -25,6 +38,6 @@ public sealed class RawDataMarshalTest
         ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTableReference("hello");
         string hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
         Assert.Equal("hello", hello);
-        Assert.True(ReferenceEquals("hello", hello));
+        Assert.Same("hello", hello);
     }
 }

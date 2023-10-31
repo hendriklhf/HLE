@@ -79,7 +79,7 @@ public sealed class EnumValuesTest
     public void GetMaxValueTest()
     {
         TestEnum[] actualValues = Enum.GetValues<TestEnum>();
-        TestEnum maxValue = EnumValues<TestEnum>.GetMaxValue();
+        TestEnum maxValue = EnumValues<TestEnum>.GetMaximumValue();
         Assert.Equal(12345, (int)maxValue);
         Assert.Equal(actualValues[^1], maxValue);
     }

@@ -17,7 +17,7 @@ public sealed partial class StringHelperTest
         Assert.Equal(5, str.Length);
         "hello".CopyTo(chars);
         Assert.Equal("hello", str);
-        Assert.False(ReferenceEquals(str, "hello"));
+        Assert.NotSame(str, "hello");
     }
 
     [Fact]
@@ -100,7 +100,8 @@ public sealed partial class StringHelperTest
         Assert.True(correctIndices.AsSpan().SequenceEqual(indices));
 
         indices = string.Empty.IndicesOf(' ');
-        Assert.True(indices is [] && ReferenceEquals(indices, Array.Empty<int>()));
+        Assert.Empty(indices);
+        Assert.Same(Array.Empty<int>(), indices);
     }
 
     [Fact]

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace HLE.Tests.Collections;
 
-public sealed class CollectionHelperTest
+public sealed partial class CollectionHelperTest
 {
     [Fact]
     public void RandomTest()
@@ -37,8 +37,10 @@ public sealed class CollectionHelperTest
     public void ReplaceTest()
     {
         int[] arr = [1, 2, 3, 2, 5, 2, 2, 2, 3, 3];
-        arr = arr.Replace(static i => i == 2, 4);
+        arr.Replace(WhereIsTwo, 4);
         Assert.Equal(5, arr.Count(static i => i == 4));
+
+        static bool WhereIsTwo(int i) => i == 2;
     }
 
     [Fact]

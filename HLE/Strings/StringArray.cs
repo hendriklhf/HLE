@@ -45,22 +45,16 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     bool ICollection<string>.IsReadOnly => false;
 
     internal readonly string[] _strings;
-    internal readonly int[] _stringLengths;
-    internal readonly int[] _stringStarts;
-    internal char[] _stringChars;
-    private int _freeCharBufferSpace;
+    internal readonly int[] _lengths;
+    internal readonly int[] _starts;
+    internal char[]? _chars;
+    private int _freeBufferSize;
 
     public StringArray(int length)
     {
         _strings = new string[length];
-        _stringLengths = new int[length];
-        _stringStarts = new int[length];
-        int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(roundedLength, 1 << 30, nameof(length));
-
-        int charBufferLength = roundedLength << 2;
-        _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
-        _freeCharBufferSpace = charBufferLength;
+        _lengths = new int[length];
+        _starts = new int[length];
     }
 
     public StringArray(List<string> strings) : this(strings.Count)
@@ -78,22 +72,19 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public StringArray(IEnumerable<string> strings)
     {
         _strings = strings.ToArray();
-        _stringLengths = new int[_strings.Length];
-        _stringStarts = new int[_strings.Length];
-        int charBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)_strings.Length) << 2;
-        _stringChars = GC.AllocateUninitializedArray<char>(charBufferLength);
-        _freeCharBufferSpace = charBufferLength;
+        _lengths = new int[_strings.Length];
+        _starts = new int[_strings.Length];
 
         FillArray(_strings);
     }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int GetStringLength(int index) => _stringLengths[index];
+    public int GetStringLength(int index) => _lengths[index];
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> GetChars(int index) => _stringChars.AsSpanUnsafe(_stringStarts[index], _stringLengths[index]);
+    public ReadOnlySpan<char> GetChars(int index) => _chars!.AsSpanUnsafe(_starts[index], _lengths[index]);
 
     [Pure]
     public ReadOnlySpan<string> AsSpan() => _strings;
@@ -141,9 +132,9 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
         ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-        ref int startsReference = ref MemoryMarshal.GetArrayDataReference(_stringStarts);
-        ReadOnlySpan<char> charBuffer = _stringChars;
-        ReadOnlySpan<int> stringLengths = _stringLengths;
+        ref int startsReference = ref MemoryMarshal.GetArrayDataReference(_starts);
+        ReadOnlySpan<char> charBuffer = _chars;
+        ReadOnlySpan<int> stringLengths = _lengths;
 
         int charsLength = chars.Length;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
@@ -215,15 +206,15 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         }
 
         Span<string> strings = _strings;
-        Span<int> stringLengths = _stringLengths;
-        Span<int> stringStarts = _stringStarts;
-        Span<char> stringChars = _stringChars;
+        Span<int> lengths = _lengths;
+        Span<int> starts = _starts;
+        Span<char> chars = _chars;
 
         string sourceString = strings[sourceIndex];
-        int sourceLength = stringLengths[sourceIndex];
-        int sourceStart = stringStarts[sourceIndex];
-        int destinationLength = stringLengths[destinationIndex];
-        int destinationStart = stringStarts[destinationIndex];
+        int sourceLength = lengths[sourceIndex];
+        int sourceStart = starts[sourceIndex];
+        int destinationLength = lengths[destinationIndex];
+        int destinationStart = starts[destinationIndex];
 
         int greaterIndex = sourceIndex > destinationIndex ? sourceIndex : destinationIndex;
         bool isSourceRightOfDestination = greaterIndex == sourceIndex;
@@ -231,36 +222,37 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         if (isSourceRightOfDestination)
         {
             strings[destinationIndex..sourceIndex].CopyTo(strings[(destinationIndex + 1)..]);
-            stringLengths[destinationIndex..sourceIndex].CopyTo(stringLengths[(destinationIndex + 1)..]);
-            stringChars[destinationStart..sourceStart].CopyTo(stringChars[(destinationStart + sourceLength)..]);
+            lengths[destinationIndex..sourceIndex].CopyTo(lengths[(destinationIndex + 1)..]);
+            chars[destinationStart..sourceStart].CopyTo(chars[(destinationStart + sourceLength)..]);
         }
         else
         {
             strings[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(strings[sourceIndex..]);
-            stringLengths[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(stringLengths[sourceIndex..]);
-            stringChars[(sourceStart + sourceLength)..(destinationStart + destinationLength)].CopyTo(stringChars[sourceStart..]);
+            lengths[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(lengths[sourceIndex..]);
+            chars[(sourceStart + sourceLength)..(destinationStart + destinationLength)].CopyTo(chars[sourceStart..]);
         }
 
         strings[destinationIndex] = sourceString;
-        stringLengths[destinationIndex] = sourceLength;
-        UpdateStringStarts(stringStarts, stringLengths, smallerIndex, greaterIndex);
-        sourceString.CopyTo(stringChars[stringStarts[destinationIndex]..]);
+        lengths[destinationIndex] = sourceLength;
+        UpdateStringStarts(starts, lengths, smallerIndex, greaterIndex);
+        sourceString.CopyTo(chars[starts[destinationIndex]..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void UpdateStringStarts(Span<int> stringStarts, Span<int> stringLengths, int startIndex, int endIndex)
+    private static void UpdateStringStarts(Span<int> starts, Span<int> lengths, int startIndex, int endIndex)
     {
-        int nextStart = stringStarts[startIndex] + stringLengths[startIndex];
+        int nextStart = starts[startIndex] + lengths[startIndex];
         for (int i = startIndex + 1; i <= endIndex; i++)
         {
-            stringStarts[i] = nextStart;
-            nextStart += stringLengths[i];
+            starts[i] = nextStart;
+            nextStart += lengths[i];
         }
     }
 
     private void FillArray(ReadOnlySpan<string> strings)
     {
         Debug.Assert(strings.Length == Length);
+
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
         int stringsLength = strings.Length;
         for (int i = 0; i < stringsLength; i++)
@@ -272,9 +264,9 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     public void Clear()
     {
         Array.Clear(_strings);
-        Array.Clear(_stringLengths);
-        Array.Clear(_stringStarts);
-        _freeCharBufferSpace = _stringChars.Length;
+        Array.Clear(_lengths);
+        Array.Clear(_starts);
+        _freeBufferSize = _chars?.Length ?? 0;
     }
 
     public ArrayEnumerator<string> GetEnumerator() => new(_strings, 0, _strings.Length);
@@ -323,78 +315,77 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length, nameof(index));
 
-        Span<int> stringLengths = _stringLengths;
-
-        int stringLength = str.Length;
         Span<string> strings = _strings;
-        Span<int> stringStarts = _stringStarts;
-        Span<char> stringChars = _stringChars;
+        Span<int> starts = _starts;
+        Span<int> lengths = _lengths;
+        Span<char> chars = _chars;
 
-        if (stringLength == 0)
+        int lengthDifference = str.Length - lengths[index];
+
+        switch (lengthDifference)
         {
-            stringLengths[index] = 0;
-            strings[index] = string.Empty;
-            stringStarts[index] = 0;
-            return;
+            case > 0: // new string is longer
+            {
+                GrowBufferIfNeeded(lengthDifference);
+                chars = _chars;
+                if (index != Length - 1)
+                {
+                    CopyWorker<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
+                }
+
+                CopyWorker<char>.Copy(str, chars[starts[index]..]);
+                SpanHelper.Add(starts[(index + 1)..], lengthDifference);
+                break;
+            }
+            case < 0: // new string is shorter
+            {
+                if (index != Length - 1)
+                {
+                    CopyWorker<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
+                }
+
+                CopyWorker<char>.Copy(str, chars[starts[index]..]);
+                SpanHelper.Add(starts[(index + 1)..], lengthDifference);
+                break;
+            }
+            default: // new string has same length
+            {
+                Span<char> destination = chars[starts[index]..];
+                CopyWorker<char>.Copy(str, destination);
+                break;
+            }
         }
 
-        int currentStringLength = stringLengths[index];
-        int lengthOfLeftStrings = stringLengths[..index].SumUnchecked();
         strings[index] = str;
-        stringLengths[index] = stringLength;
-        stringStarts[index] = lengthOfLeftStrings;
-
-        if (currentStringLength > stringLength)
-        {
-            Span<char> charsToCopy = stringChars[(lengthOfLeftStrings + currentStringLength)..];
-            Span<char> charDestination = stringChars[(lengthOfLeftStrings + stringLength)..];
-            charsToCopy.CopyTo(charDestination);
-
-            str.CopyTo(stringChars[lengthOfLeftStrings..]);
-            _freeCharBufferSpace -= currentStringLength - stringLength;
-            return;
-        }
-
-        if (currentStringLength < stringLength)
-        {
-            GrowBufferIfNeeded(currentStringLength, stringLength);
-
-            Span<char> charsToCopy = stringChars[(lengthOfLeftStrings + currentStringLength)..^_freeCharBufferSpace];
-            Span<char> charDestination = stringChars[(lengthOfLeftStrings + stringLength)..];
-            charsToCopy.CopyTo(charDestination);
-
-            str.CopyTo(stringChars[lengthOfLeftStrings..]);
-            _freeCharBufferSpace -= stringLength - currentStringLength;
-            return;
-        }
-
-        str.CopyTo(stringChars[lengthOfLeftStrings..]);
+        lengths[index] = str.Length;
+        _freeBufferSize -= lengthDifference;
     }
 
-    private void GrowBufferIfNeeded(int currentStringLength, int newStringLength)
+    private void GrowBufferIfNeeded(int sizeHint)
     {
-        int neededSpace = Math.Abs(newStringLength - currentStringLength);
-        if (_freeCharBufferSpace > neededSpace)
+        if (sizeHint > 0 && _freeBufferSize >= sizeHint)
         {
             return;
         }
 
-        int newBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)(_stringChars.Length + neededSpace));
-        if (newBufferLength < _stringChars.Length)
+        int currentBufferSize = _chars?.Length ?? 8;
+        const int maximumPow2Length = 1 << 30;
+        uint bufferSize = currentBufferSize == maximumPow2Length
+            ? int.MaxValue
+            : BitOperations.RoundUpToPowerOf2((uint)(currentBufferSize + sizeHint));
+        if (bufferSize > int.MaxValue)
         {
             ThrowMaximumBufferCapacityReached();
         }
 
-        char[] newBuffer = GC.AllocateUninitializedArray<char>(newBufferLength);
-        _freeCharBufferSpace += newBufferLength - _stringChars.Length;
-        CopyWorker<char>.Copy(_stringChars, newBuffer);
-
-        char[] oldBuffer = _stringChars;
-        _stringChars = newBuffer;
-        if (ArrayPool<char>.IsCommonlyPooledType)
+        char[]? oldBuffer = _chars;
+        _chars = GC.AllocateUninitializedArray<char>((int)bufferSize);
+        if (oldBuffer is not null)
         {
-            ArrayPool<char>.Shared.Return(oldBuffer);
+            CopyWorker<char>.Copy(oldBuffer[..^_freeBufferSize], _chars);
         }
+
+        _freeBufferSize += (int)bufferSize - currentBufferSize;
     }
 
     [DoesNotReturn]

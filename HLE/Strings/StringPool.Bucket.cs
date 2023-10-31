@@ -91,10 +91,10 @@ public sealed partial class StringPool
         private static int IndexOf(StringArray stringArray, ReadOnlySpan<char> span)
         {
             int arrayLength = stringArray.Length;
-            ReadOnlySpan<char> stringChars = stringArray._stringChars;
+            ReadOnlySpan<char> stringChars = stringArray._chars;
             ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._strings);
-            ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._stringLengths);
-            ref int startReference = ref MemoryMarshal.GetArrayDataReference(stringArray._stringStarts);
+            ref int lengthsReference = ref MemoryMarshal.GetArrayDataReference(stringArray._lengths);
+            ref int startReference = ref MemoryMarshal.GetArrayDataReference(stringArray._starts);
             for (int i = 0; i < arrayLength; i++)
             {
                 int length = Unsafe.Add(ref lengthsReference, i);
