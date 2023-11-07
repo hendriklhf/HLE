@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
@@ -48,8 +47,6 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     internal RentedArray<char> _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
 
-    private const int _maximumBufferSize = 1 << 30;
-
     public PooledStringBuilder() : this(0)
     {
     }
@@ -66,12 +63,7 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     private void GrowBuffer(int sizeHint)
     {
-        if (_buffer.Length == int.MaxValue)
-        {
-            ThrowMaximumBufferSizeReached();
-        }
-
-        int newSize = _buffer.Length == _maximumBufferSize ? int.MaxValue : (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + sizeHint));
+        int newSize = BufferHelpers.GrowByPow2(_buffer.Length, sizeHint);
         using RentedArray<char> oldBuffer = _buffer;
         _buffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
         if (Length != 0)
@@ -79,11 +71,6 @@ public sealed partial class PooledStringBuilder(int capacity)
             CopyWorker<char>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (nuint)Length);
         }
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumBufferSizeReached()
-        => throw new InvalidOperationException("The maximum buffer size has been reached.");
 
     public void Advance(int length) => Length += length;
 
@@ -100,7 +87,7 @@ public sealed partial class PooledStringBuilder(int capacity)
 
         if (FreeBufferSize < span.Length)
         {
-            GrowBuffer(span.Length);
+            GrowBuffer(span.Length - FreeBufferSize);
         }
 
         ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);

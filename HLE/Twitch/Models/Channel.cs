@@ -62,7 +62,7 @@ public sealed class Channel : IEquatable<Channel>
 
     internal void Update(in Roomstate args)
     {
-        ReadOnlySpan<ChangedRoomStates> allChangedRoomStatesValues = EnumValues<ChangedRoomStates>.GetValues();
+        ReadOnlySpan<ChangedRoomStates> allChangedRoomStatesValues = EnumValues<ChangedRoomStates>.AsSpan();
         for (int i = 0; i < allChangedRoomStatesValues.Length; i++)
         {
             ChangedRoomStates roomState = allChangedRoomStatesValues[i];

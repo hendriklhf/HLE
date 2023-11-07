@@ -13,29 +13,32 @@ public sealed class SpanMarshalTest
         ReadOnlySpan<char> str = "hello";
         Span<char> span = SpanMarshal.AsMutableSpan(str);
         Assert.True(span.SequenceEqual(str));
+        Assert.True(str == span);
     }
 
     [Fact]
-    public void AsMutableMemory()
+    public void AsMutableMemoryTest()
     {
         ReadOnlyMemory<char> str = "hello".AsMemory();
         Memory<char> memory = SpanMarshal.AsMutableMemory(str);
         Assert.True(memory.Span is "hello");
+        Assert.True(str.Span == memory.Span);
     }
 
     [Fact]
-    public void AsMemoryDangerousTest()
+    public void AsMemoryTest()
     {
         Span<char> span = "hello".ToCharArray();
-        Memory<char> memory = SpanMarshal.AsMemoryUnsafe(span);
+        Memory<char> memory = SpanMarshal.AsMemory(span);
         Assert.True(memory.Span is "hello");
+        Assert.True(span == memory.Span);
     }
 
     [Fact]
     public void UnsafeSliceTest()
     {
         Span<int> span = stackalloc int[50];
-        span.FillAscending();
+        SpanHelpers.FillAscending(span);
         Span<int> slice = span.SliceUnsafe(5, 10);
         Assert.Equal(10, slice.Length);
         Assert.True(slice[0] == 5 && slice[^1] == 14);

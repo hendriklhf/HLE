@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -14,7 +12,7 @@ namespace HLE.Twitch.Chatterino;
 /// Reads settings of the application <a href="https://www.chatterino.com">Chatterino</a>.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsReader>
+public static class ChatterinoSettingsReader
 {
     private static readonly string s_windowLayoutPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Chatterino2\Settings\window-layout.json";
 
@@ -24,7 +22,7 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
     /// <returns>A string array of all channels.</returns>
     public static string[] GetChannels()
     {
-        using PooledBufferWriter<byte> windowLayoutFileContentWriter = new(20_000);
+        using PooledBufferWriter<byte> windowLayoutFileContentWriter = new(32_000);
         ReadWindowLayoutFile(windowLayoutFileContentWriter);
 
         Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
@@ -78,17 +76,4 @@ public sealed class ChatterinoSettingsReader : IEquatable<ChatterinoSettingsRead
         BufferedFileReader fileReader = new(s_windowLayoutPath);
         fileReader.ReadBytes(windowLayoutFileContentWriter);
     }
-
-    [Pure]
-    public bool Equals(ChatterinoSettingsReader? other) => ReferenceEquals(this, other);
-
-    [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
-
-    [Pure]
-    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
-
-    public static bool operator ==(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right) => Equals(left, right);
-
-    public static bool operator !=(ChatterinoSettingsReader? left, ChatterinoSettingsReader? right) => !(left == right);
 }

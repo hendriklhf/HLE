@@ -23,8 +23,8 @@ public sealed class SimpleStringHasherTest(ITestOutputHelper testOutputHelper)
         {
             string str = Random.Shared.NextString(Random.Shared.Next(10, 1000), min, max);
             SimpleStringHasher hasher = new(str);
-            int hash = hasher.Hash();
-            int index = (int)((uint)hash % bucketCount);
+            uint hash = hasher.Hash();
+            int index = (int)(hash % bucketCount);
             counts[index]++;
         }
 

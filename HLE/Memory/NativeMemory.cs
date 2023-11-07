@@ -29,10 +29,10 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     public readonly Span<T> this[Range range] => AsSpan(range);
 
-    public int Length
+    public readonly int Length
     {
-        readonly get => (int)(_lengthAndDisposed & 0x7FFFFFFF);
-        init
+        get => (int)(_lengthAndDisposed & 0x7FFFFFFF);
+        private init
         {
             ArgumentOutOfRangeException.ThrowIfNegative(value);
             _lengthAndDisposed = (_lengthAndDisposed & 0x80000000) | (uint)value;

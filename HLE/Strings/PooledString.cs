@@ -48,6 +48,15 @@ public unsafe struct PooledString : IReadOnlyCollection<char>, IDisposable, IEqu
 
     public PooledString(int length)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+        if (length == 0)
+        {
+            _buffer = [];
+            Length = 0;
+            return;
+        }
+
         int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
         RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(neededBufferSize);
         buffer.AsSpan(..neededBufferSize).Clear();
@@ -60,6 +69,13 @@ public unsafe struct PooledString : IReadOnlyCollection<char>, IDisposable, IEqu
 
     public PooledString(ReadOnlySpan<char> chars)
     {
+        if (chars.Length == 0)
+        {
+            _buffer = [];
+            Length = 0;
+            return;
+        }
+
         int length = chars.Length;
         int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
         RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(neededBufferSize);

@@ -16,6 +16,14 @@ public static class StringMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe string FastAllocateString(int length, out Span<char> chars)
     {
+        if (length == 0)
+        {
+            chars = [];
+            return string.Empty;
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
         string str = s_fastAllocateString(length);
         chars = AsMutableSpan(str);
         return str;
@@ -71,7 +79,7 @@ public static class StringMarshal
         MemoryExtensions.ToLower(copyBuffer, span, CultureInfo.InvariantCulture);
     }
 
-    public static void ToUpper(string? str) => ToUpper((ReadOnlySpan<char>)str);
+    public static void ToUpper(string? str) => ToUpper(str.AsSpan());
 
     public static void ToUpper(ReadOnlySpan<char> span) => ToUpper(SpanMarshal.AsMutableSpan(span));
 

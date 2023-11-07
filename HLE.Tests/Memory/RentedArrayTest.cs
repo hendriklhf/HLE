@@ -92,7 +92,7 @@ public sealed class RentedArrayTest
     public void Indexer_Range_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
 
         Assert.True(array[..5] is [0, 1, 2, 3, 4, ..]);
         Assert.True(array[5..10] is [5, 6, 7, 8, 9, ..]);
@@ -179,8 +179,6 @@ public sealed class RentedArrayTest
     {
         using RentedArray<int> array = new();
         Assert.Equal(0, array.Length);
-        Assert.Equal([], array._array);
-        Assert.Equal([], array.Array);
         Assert.Same(Array.Empty<int>(), array._array);
         Assert.Same(Array.Empty<int>(), array.Array);
     }
@@ -336,7 +334,7 @@ public sealed class RentedArrayTest
     public void CopyTo_List_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         List<int> destination = [];
         array.CopyTo(destination);
         Assert.True(CollectionsMarshal.AsSpan(destination).SequenceEqual(array.AsSpan()));
@@ -351,7 +349,7 @@ public sealed class RentedArrayTest
     public void CopyTo_Array_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         int[] destination = new int[16];
         array.CopyTo(destination);
         Assert.True(destination.AsSpan().SequenceEqual(array.AsSpan()));
@@ -365,7 +363,7 @@ public sealed class RentedArrayTest
     public void CopyTo_Memory_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         Memory<int> destination = new int[16];
         array.CopyTo(destination);
         Assert.True(destination.Span.SequenceEqual(array.AsSpan()));
@@ -375,7 +373,7 @@ public sealed class RentedArrayTest
     public void CopyTo_Span_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         Span<int> destination = stackalloc int[16];
         array.CopyTo(destination);
         Assert.True(destination.SequenceEqual(array.AsSpan()));
@@ -385,7 +383,7 @@ public sealed class RentedArrayTest
     public void CopyTo_Reference_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         Span<int> destination = stackalloc int[16];
         array.CopyTo(ref MemoryMarshal.GetReference(destination));
         Assert.True(destination.SequenceEqual(array.AsSpan()));
@@ -395,7 +393,7 @@ public sealed class RentedArrayTest
     public unsafe void CopyTo_Pointer_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         int* destination = stackalloc int[16];
         array.CopyTo(destination);
         Assert.True(new Span<int>(destination, 16).SequenceEqual(array.AsSpan()));
@@ -414,7 +412,7 @@ public sealed class RentedArrayTest
     public void Clear_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         Assert.False(array.All(static i => i == 0));
         array.Clear();
         Assert.True(array.All(static i => i == 0));
@@ -484,7 +482,7 @@ public sealed class RentedArrayTest
     {
         int counter = 0;
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        array.AsSpan().FillAscending();
+        SpanHelpers.FillAscending(array.AsSpan());
         foreach (int i in array)
         {
             Assert.Equal(counter++, i);

@@ -11,10 +11,10 @@ internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
 {
     private readonly ReadOnlySpan<char> _chars = chars;
 
-    public int Hash() => Hash(_chars);
+    public uint Hash() => Hash(_chars);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Hash(ReadOnlySpan<char> chars)
+    public static uint Hash(ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)
         {
@@ -27,6 +27,6 @@ internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
         char lastChar = Unsafe.Add(ref firstChar, length - 1);
 
         int hash = ~(firstChar | (firstChar << 16)) ^ ~(middleChar | (middleChar << 16)) ^ ~(lastChar | (lastChar << 16));
-        return hash ^ (length | (length << 16));
+        return (uint)(hash ^ (length | (length << 16)));
     }
 }

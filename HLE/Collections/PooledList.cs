@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
@@ -48,8 +46,6 @@ public sealed class PooledList<T>(int capacity)
     bool ICollection<T>.IsReadOnly => false;
 
     internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
-
-    private const int _maximumCapacity = 1 << 30;
 
     public PooledList() : this(0)
     {
@@ -106,18 +102,8 @@ public sealed class PooledList<T>(int capacity)
             return;
         }
 
-        if (Capacity == _maximumCapacity)
-        {
-            ThrowMaximumListCapacityReached();
-        }
-
-        int neededSpace = sizeHint - freeSpace;
-        int newSize = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + neededSpace));
-        if (newSize < Capacity)
-        {
-            ThrowMaximumListCapacityReached();
-        }
-
+        int neededSize = sizeHint - freeSpace;
+        int newSize = BufferHelpers.GrowByPow2(_buffer.Length, neededSize);
         using RentedArray<T> oldBuffer = _buffer;
         _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
         if (Count != 0)
@@ -125,10 +111,6 @@ public sealed class PooledList<T>(int capacity)
             CopyWorker<T>.Copy(oldBuffer.AsSpan(..Count), _buffer.AsSpan());
         }
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumListCapacityReached() => throw new InvalidOperationException("The maximum list capacity has been reached.");
 
     public void Add(T item)
     {

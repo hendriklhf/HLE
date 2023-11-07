@@ -14,7 +14,8 @@ public sealed partial class CopyWorkerTest
         const int sourceLength = 50;
 
         Span<int> source = stackalloc int[sourceLength];
-        source.FillAscending();
+        SpanHelpers.FillAscending(source);
+
         Span<int> destination = stackalloc int[sourceLength];
 
         CopyWorker<int>.s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (nuint)source.Length);

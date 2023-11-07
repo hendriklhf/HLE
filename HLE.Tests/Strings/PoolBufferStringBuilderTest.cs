@@ -260,7 +260,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_UShort_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const ushort value = 60_000;
         builder.Append(value);

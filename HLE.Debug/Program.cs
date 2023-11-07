@@ -1,14 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Diagnosers;
 
 namespace HLE.Debug;
 
+[SuppressMessage("Style", "IDE0022:Use expression body for method")]
 public static class Program
 {
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static void Main()
     {
     }
@@ -27,12 +25,10 @@ BenchmarkRunner.Run<Bench>(config);
 
 [MemoryDiagnoser]
 [DisassemblyDiagnoser]
-[HardwareCounters(HardwareCounter.BranchInstructions)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [SuppressMessage("Performance", "CA1822:Mark members as static")]
 [SuppressMessage("ReSharper", "ClassCanBeSealed.Global")]
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 #pragma warning disable CA1001
-public class Bench
-{
-}
+#pragma warning disable CA1707
+public class Bench;

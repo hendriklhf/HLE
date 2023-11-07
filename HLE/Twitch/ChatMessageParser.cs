@@ -38,7 +38,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     public IChatMessage Parse(ReadOnlySpan<char> ircMessage)
     {
         Span<int> indicesOfWhitespacesBuffer = stackalloc int[_maximumWhitespacesNeededToHandle];
-        int whitespaceCount = ParsingHelper.GetIndicesOfWhitespaces(ircMessage, ref MemoryMarshal.GetReference(indicesOfWhitespacesBuffer), _maximumWhitespacesNeededToHandle);
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespacesBuffer, _maximumWhitespacesNeededToHandle);
         return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
     }
 

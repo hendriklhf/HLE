@@ -12,7 +12,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
 {
     private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
 
-    public static RegexPool Shared { get; set; } = [];
+    public static RegexPool Shared { get; } = [];
 
     private const int _defaultPoolCapacity = 4096;
     private const int _defaultBucketCapacity = 32;
@@ -107,7 +107,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
-        int patternHash = SimpleStringHasher.Hash(pattern);
+        uint patternHash = SimpleStringHasher.Hash(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
         int index = (int)((uint)hash % _buckets.Length);
         return _buckets[index];

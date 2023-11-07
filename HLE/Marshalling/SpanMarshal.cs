@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -20,10 +21,10 @@ public static unsafe class SpanMarshal
     public static Memory<T> AsMutableMemory<T>(ReadOnlyMemory<T> memory)
         => Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
 
-    /// <inheritdoc cref="AsMemory{T}"/>
+    /// <inheritdoc cref="AsMemory{T}(System.ReadOnlySpan{T})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Memory<T> AsMemoryUnsafe<T>(Span<T> span)
+    public static Memory<T> AsMemory<T>(Span<T> span)
         => AsMutableMemory(AsMemory((ReadOnlySpan<T>)span));
 
     /// <summary>
@@ -38,7 +39,6 @@ public static unsafe class SpanMarshal
         Unsafe.SkipInit(out ReadOnlyMemory<T> result);
         fixed (T* _ = span)
         {
-            byte* spanPointerAsBytePointer = (byte*)&span;
             byte* memoryPointerAsBytePointer = (byte*)&result;
 
             // pointers to the three fields Memory<T> consists off
@@ -46,13 +46,13 @@ public static unsafe class SpanMarshal
             int* memoryIndexField = (int*)(memoryPointerAsBytePointer + sizeof(nuint));
             int* memoryLengthField = (int*)(memoryPointerAsBytePointer + sizeof(nuint) + sizeof(int));
 
-            nuint spanReferenceFieldValue = *(nuint*)spanPointerAsBytePointer - (nuint)(sizeof(nuint) << 1);
+            nuint spanReferenceFieldValue = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
+            spanReferenceFieldValue -= (sizeof(int) + sizeof(int) + (nuint)sizeof(nuint));
+            Debug.Assert(RawDataMarshal.ReadObject<T[]>(spanReferenceFieldValue) is { } array && array.Length >= span.Length);
+
             *memoryReferenceField = spanReferenceFieldValue;
-
             *memoryIndexField = 0;
-
-            int memoryLength = *(int*)(spanPointerAsBytePointer + sizeof(nuint));
-            *memoryLengthField = memoryLength;
+            *memoryLengthField = span.Length;
 
             return result;
         }

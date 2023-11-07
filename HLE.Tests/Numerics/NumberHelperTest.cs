@@ -49,11 +49,18 @@ public sealed class NumberHelperTest
         }
     }
 
-    [Fact]
-    public void ParsePositiveNumberTest() => Assert.Equal(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"));
+    [Theory]
+    [InlineData(0, "0")]
+    [InlineData(5, "5")]
+    [InlineData(20, "20")]
+    [InlineData(95972, "95972")]
+    [InlineData(345347853, "345347853")]
+    public void ParsePositiveNumberTest(int number, string text)
+        => Assert.Equal(number, NumberHelper.ParsePositiveNumber<int>(text));
 
     [Fact]
-    public void ParsePositiveNumberFromBytesTest() => Assert.Equal(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
+    public void ParsePositiveNumberFromBytesTest()
+        => Assert.Equal(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
 
     [Fact]
     public void BringNumberIntoRangeTest()

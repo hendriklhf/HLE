@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using HLE.Twitch.Models;
 
 namespace HLE.Twitch;
@@ -77,7 +76,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     public bool Handle(ReadOnlySpan<char> ircMessage)
     {
         Span<int> indicesOfWhitespaces = stackalloc int[_maximumWhitespacesNeededToHandle];
-        int whitespaceCount = ParsingHelper.GetIndicesOfWhitespaces(ircMessage, ref MemoryMarshal.GetReference(indicesOfWhitespaces), _maximumWhitespacesNeededToHandle);
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespaces, _maximumWhitespacesNeededToHandle);
         indicesOfWhitespaces = indicesOfWhitespaces[..whitespaceCount];
 
         return whitespaceCount switch

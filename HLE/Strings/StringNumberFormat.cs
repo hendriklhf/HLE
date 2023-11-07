@@ -38,12 +38,12 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         {
             using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(charLength);
             chars = rentedBuffer.AsSpan(..charLength);
-            chars.FillAscending(minimumCharValue);
+            SpanHelpers.FillAscending(chars, minimumCharValue);
             return new(StringPool.Shared.GetOrAdd(chars));
         }
 
         chars = SpanMarshal.ReturnStackAlloced(stackalloc char[charLength]);
-        chars.FillAscending(minimumCharValue);
+        SpanHelpers.FillAscending(chars, minimumCharValue);
         return new(StringPool.Shared.GetOrAdd(chars));
     }
 

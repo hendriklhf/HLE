@@ -263,7 +263,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
     public async Task ConnectAsync(List<string> channels)
-        => await ConnectAsync(SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(channels)));
+        => await ConnectAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
 
     /// <summary>
     /// Asynchronously connects the client to the Twitch IRC server.

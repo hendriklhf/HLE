@@ -129,7 +129,7 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString() => new(AsSpan());
 
-    public readonly CharEnumerator GetEnumerator() => AsString().GetEnumerator();
+    public readonly NativeMemoryEnumerator<char> GetEnumerator() => new((char*)Unsafe.AsPointer(ref CharsReference), Length);
 
     readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
 
@@ -142,6 +142,8 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => AsString().GetHashCode();
+
+    public readonly int GetHashCode(StringComparison comparison) => AsString().GetHashCode(comparison);
 
     public static bool operator ==(NativeString left, NativeString right) => left.Equals(right);
 

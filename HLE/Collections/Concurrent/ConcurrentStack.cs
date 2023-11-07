@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using HLE.Memory;
@@ -26,7 +25,6 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
     private readonly object _syncRoot = new();
 
     private const int _defaultCapacity = 8;
-    private const int _maximumCapacity = 1 << 30;
 
     public ConcurrentStack(int capacity)
     {
@@ -140,22 +138,12 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GrowBuffer()
     {
-        if (_buffer.Length == _maximumCapacity)
-        {
-            ThrowMaximumStackCapacityReached();
-        }
-
-        int newBufferLength = (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + 1));
+        int newBufferLength = BufferHelpers.GrowByPow2(_buffer.Length, 1);
         T[] newBuffer = GC.AllocateUninitializedArray<T>(newBufferLength);
         CopyWorker<T> copyWorker = new(_buffer.AsSpan(0, Count));
         copyWorker.CopyTo(newBuffer);
         _buffer = newBuffer;
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumStackCapacityReached()
-        => throw new InvalidOperationException("The maximum stack capacity has been reached.");
 
     public void CopyTo(List<T> destination, int offset = 0)
     {

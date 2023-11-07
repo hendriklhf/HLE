@@ -22,11 +22,11 @@ public readonly unsafe ref partial struct CopyWorker<T>
             .MakeGenericMethod(typeof(T)).MethodHandle
             .GetFunctionPointer();
 
-    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>>
+    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
     public static void Copy(T[] source, T[] destination)
         => s_memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetArrayDataReference(source), (nuint)source.Length);
 
-    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>>
+    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
     public static void Copy(Span<T> source, Span<T> destination)
         => s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (nuint)source.Length);
 

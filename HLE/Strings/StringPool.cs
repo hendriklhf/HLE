@@ -153,7 +153,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     }
 
     [Pure]
-    public bool Contains(string str) => Contains((ReadOnlySpan<char>)str);
+    public bool Contains(string str) => Contains(str.AsSpan());
 
     [Pure]
     public bool Contains(ReadOnlySpan<char> span) => span.Length == 0 || GetBucket(span).Contains(span);
@@ -184,8 +184,8 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> span)
     {
-        int hash = SimpleStringHasher.Hash(span);
-        int index = (int)((uint)hash % _buckets.Length);
+        uint hash = SimpleStringHasher.Hash(span);
+        int index = (int)(hash % _buckets.Length);
         return _buckets[index];
     }
 

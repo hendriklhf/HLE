@@ -19,21 +19,6 @@ public sealed partial class CollectionHelperTest
     }
 
     [Fact]
-    public void JoinToStringTest()
-    {
-        string[] arr = ["a", "b", "c"];
-        Assert.Equal("a b c", arr.JoinToString(' '));
-    }
-
-    [Fact]
-    public void ConcatToStringTest()
-    {
-        string[] arr = ["a", "b", "c"];
-
-        Assert.Equal("abc", arr.ConcatToString());
-    }
-
-    [Fact]
     public void ReplaceTest()
     {
         int[] arr = [1, 2, 3, 2, 5, 2, 2, 2, 3, 3];

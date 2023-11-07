@@ -3,10 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
@@ -47,8 +44,6 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
-    private const int _maximumPow2Capacity = 1 << 30;
-
     public PooledBufferWriter() : this(0)
     {
     }
@@ -87,6 +82,12 @@ public sealed class PooledBufferWriter<T>(int capacity)
     {
         Span<T> buffer = GetSpan(sizeHint);
         return ref MemoryMarshal.GetReference(buffer);
+    }
+
+    public void Write(T item)
+    {
+        GetReference() = item;
+        Advance(1);
     }
 
     public void Write(List<T> data) => Write(CollectionsMarshal.AsSpan(data));
@@ -158,14 +159,8 @@ public sealed class PooledBufferWriter<T>(int capacity)
             return;
         }
 
-        if (Capacity == int.MaxValue)
-        {
-            ThrowMaximumBufferCapacityReached();
-        }
-
-        int neededSpace = sizeHint - freeSpace;
-        int newBufferSize = _buffer.Length == _maximumPow2Capacity ? int.MaxValue : (int)BitOperations.RoundUpToPowerOf2((uint)(_buffer.Length + neededSpace));
-
+        int neededSize = sizeHint - freeSpace;
+        int newBufferSize = BufferHelpers.GrowByPow2(_buffer.Length, neededSize);
         using RentedArray<T> oldBuffer = _buffer;
         _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
         if (Count != 0)
@@ -173,11 +168,6 @@ public sealed class PooledBufferWriter<T>(int capacity)
             CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (nuint)Count);
         }
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumBufferCapacityReached()
-        => throw new InvalidOperationException("The maximum buffer capacity has been reached.");
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
@@ -217,26 +207,11 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
 
-    void ICollection<T>.Add(T item)
-    {
-        GetReference() = item;
-        Advance(1);
-    }
+    void ICollection<T>.Add(T item) => Write(item);
 
-    bool ICollection<T>.Contains(T item) => _buffer.Contains(item);
+    bool ICollection<T>.Contains(T item) => throw new NotSupportedException();
 
-    bool ICollection<T>.Remove(T item)
-    {
-        int index = Array.IndexOf(_buffer.Array, item);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        _buffer[(index + 1)..].CopyTo(_buffer[index..]);
-        Advance(-1);
-        return true;
-    }
+    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     [Pure]
     public bool Equals(PooledBufferWriter<T>? other) => ReferenceEquals(this, other);

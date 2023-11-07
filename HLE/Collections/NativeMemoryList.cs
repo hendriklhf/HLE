@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
@@ -43,9 +41,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new((int)BitOperations.RoundUpToPowerOf2((uint)capacity), false);
-
-    private const int _maximumCapacity = 1 << 30;
+    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new(BufferHelpers.GrowByPow2(0, capacity), false);
 
     public NativeMemoryList() : this(0)
     {
@@ -103,27 +99,13 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
             return;
         }
 
-        if (Capacity == _maximumCapacity)
-        {
-            ThrowMaximumListCapacityReached();
-        }
-
         int neededSize = sizeHint - freeSpace;
         using NativeMemory<T> oldBuffer = _buffer;
-        int newLength = (int)BitOperations.RoundUpToPowerOf2((uint)(oldBuffer.Length + neededSize));
-        if (newLength < Capacity)
-        {
-            ThrowMaximumListCapacityReached();
-        }
-
+        int newLength = BufferHelpers.GrowByPow2(_buffer.Length, neededSize);
         _buffer = new(newLength, false);
         CopyWorker<T> copyWorker = new(oldBuffer.Pointer, Count);
         copyWorker.CopyTo(_buffer.Pointer);
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumListCapacityReached() => throw new InvalidOperationException("The maximum list capacity has been reached.");
 
     public unsafe void Add(T item)
     {

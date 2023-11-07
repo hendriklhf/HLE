@@ -14,7 +14,7 @@ namespace HLE.Strings;
 /// <summary>
 /// A class to help with any kind of <see cref="string"/>.
 /// </summary>
-public static class StringHelper
+public static class StringHelpers
 {
     /// <summary>
     /// Is invisible in Twitch chat.
@@ -203,6 +203,11 @@ public static class StringHelper
     [SkipLocalsInit]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
+        if (span.Length == 0)
+        {
+            return [];
+        }
+
         int length;
         if (!MemoryHelper.UseStackAlloc<int>(span.Length))
         {
@@ -241,7 +246,6 @@ public static class StringHelper
     public static string RegexEscape(string? input) => input is null ? string.Empty : RegexEscape(input, true);
 
     [Pure]
-    [SkipLocalsInit]
     public static string RegexEscape(ReadOnlySpan<char> input) => RegexEscape(input, false);
 
     [Pure]

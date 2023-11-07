@@ -137,7 +137,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
         _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
         _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceivedAsync(e);
-        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
+        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(SpanMarshal.AsMemory(_ircChannels.AsSpan()));
         _ircHandler.OnNoticeReceived += (_, e) => OnNoticeReceived?.Invoke(this, e);
     }
 
@@ -224,7 +224,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        await ConnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
+        await ConnectAsync(SpanMarshal.AsMemory(_ircChannels.AsSpan()));
     }
 
     private async Task ConnectAsync(ReadOnlyMemory<string> ircChannels) => await _client.ConnectAsync(ircChannels);
@@ -244,7 +244,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask JoinChannelsAsync(List<string> channels)
-        => await JoinChannelsAsync(SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(channels)));
+        => await JoinChannelsAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask JoinChannelsAsync(params string[] channels) => await JoinChannelsAsync(channels.AsMemory());
@@ -318,7 +318,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask LeaveChannelsAsync(List<string> channels)
-        => await LeaveChannelsAsync(SpanMarshal.AsMemoryUnsafe(CollectionsMarshal.AsSpan(channels)));
+        => await LeaveChannelsAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     public async ValueTask LeaveChannelsAsync(params string[] channels) => await LeaveChannelsAsync(channels.AsMemory());
@@ -342,7 +342,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (IsConnected)
         {
-            await LeaveChannelsAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
+            await LeaveChannelsAsync(SpanMarshal.AsMemory(_ircChannels.AsSpan()));
         }
 
         Channels.Clear();
@@ -411,7 +411,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
             _client.CancelTasks();
             await Task.Delay(TimeSpan.FromSeconds(10));
-            await _client.ConnectAsync(SpanMarshal.AsMemoryUnsafe(_ircChannels.AsSpan()));
+            await _client.ConnectAsync(SpanMarshal.AsMemory(_ircChannels.AsSpan()));
             await Task.Delay(TimeSpan.FromSeconds(5));
         }
         finally

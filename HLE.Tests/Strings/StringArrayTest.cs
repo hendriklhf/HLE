@@ -14,6 +14,16 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
     [Fact]
+    public void EmptyArrayCreationTest()
+    {
+        StringArray array = new(0);
+        Assert.Same(Array.Empty<string>(), array._strings);
+        Assert.Same(Array.Empty<int>(), array._starts);
+        Assert.Same(Array.Empty<int>(), array._lengths);
+        Assert.Null(array._chars);
+    }
+
+    [Fact]
     public void Indexer_Int_Test()
     {
         const int arrayLength = 64;

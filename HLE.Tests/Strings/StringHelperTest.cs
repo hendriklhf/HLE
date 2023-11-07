@@ -129,14 +129,14 @@ public sealed partial class StringHelperTest
     {
         for (int i = 0; i < 100; i++)
         {
-            string str = Random.Shared.NextString(1000, $"{StringHelper.RegexMetaChars}awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
-            Assert.Equal(Regex.Escape(str), StringHelper.RegexEscape(str));
+            string str = Random.Shared.NextString(1000, $"{StringHelpers.RegexMetaChars}awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
+            Assert.Equal(Regex.Escape(str), StringHelpers.RegexEscape(str));
         }
 
         for (int i = 0; i < 100; i++)
         {
             string str = Random.Shared.NextString(1000, "awidjhiaouwhdiuahwdiauzowgdabkiyjhgefd");
-            Assert.Equal(Regex.Escape(str), StringHelper.RegexEscape(str));
+            Assert.Equal(Regex.Escape(str), StringHelpers.RegexEscape(str));
         }
     }
 }

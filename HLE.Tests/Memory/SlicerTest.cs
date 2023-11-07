@@ -12,7 +12,7 @@ public sealed class SlicerTest
     {
         const int arrayLength = 100;
         int[] array = new int[arrayLength];
-        array.FillAscending();
+        SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         Span<int> span = slicer.CreateSpan(5);
@@ -25,7 +25,7 @@ public sealed class SlicerTest
     {
         const int arrayLength = 100;
         int[] array = new int[arrayLength];
-        array.FillAscending();
+        SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         Span<int> span = slicer.CreateSpan(5, 50);
@@ -38,7 +38,7 @@ public sealed class SlicerTest
     {
         const int arrayLength = 100;
         int[] array = new int[arrayLength];
-        array.FillAscending();
+        SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         Span<int> span = slicer.CreateSpan(5..50);
@@ -184,7 +184,7 @@ public sealed class SlicerTest
     {
         const int arrayLength = 100;
         int[] array = new int[arrayLength];
-        array.FillAscending();
+        SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         ReadOnlySpan<int> span = slicer.CreateReadOnlySpan(5);
@@ -197,7 +197,7 @@ public sealed class SlicerTest
     {
         const int arrayLength = 100;
         int[] array = new int[arrayLength];
-        array.FillAscending();
+        SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         ReadOnlySpan<int> span = slicer.CreateReadOnlySpan(5, 50);
@@ -210,7 +210,7 @@ public sealed class SlicerTest
     {
         const int arrayLength = 100;
         int[] array = new int[arrayLength];
-        array.FillAscending();
+        SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         ReadOnlySpan<int> span = slicer.CreateReadOnlySpan(5..50);

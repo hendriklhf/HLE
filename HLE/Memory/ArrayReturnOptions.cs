@@ -7,5 +7,6 @@ public enum ArrayReturnOptions
 {
     None,
     Clear = 1,
-    ClearOnlyIfManagedType = 2
+    ClearOnlyIfManagedType = 2,
+    DisposeElements = 4
 }

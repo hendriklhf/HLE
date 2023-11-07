@@ -2,16 +2,15 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using System.Threading;
 using HLE.Collections;
 using Xunit;
 
 namespace HLE.Tests.Collections;
 
-public sealed partial class CollectionHelperTest
+public sealed partial class SpanHelpersTest
 {
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-    public static object[][] FillAscendingParamters { get; } =
+    public static object[][] FillAscendingParameters { get; } =
     [
         [(byte)0],
         [(byte)128],
@@ -44,10 +43,10 @@ public sealed partial class CollectionHelperTest
     ];
 
     [Theory]
-    [MemberData(nameof(FillAscendingParamters))]
+    [MemberData(nameof(FillAscendingParameters))]
     public void FillAscendingTest(object start)
     {
-        MethodInfo? fillAscendingCoreMethod = typeof(CollectionHelperTest)
+        MethodInfo? fillAscendingCoreMethod = typeof(SpanHelpersTest)
             .GetMethod(nameof(FillAscendingCore), BindingFlags.NonPublic | BindingFlags.Static)
             ?.MakeGenericMethod(start.GetType());
 
@@ -56,10 +55,10 @@ public sealed partial class CollectionHelperTest
         fillAscendingCoreMethod.Invoke(null, [start]);
     }
 
-    private static void FillAscendingCore<T>(T start) where T : INumber<T>
+    private static void FillAscendingCore<T>(T start) where T : unmanaged, INumber<T>
     {
         T[] numbers = GC.AllocateUninitializedArray<T>(500_000);
-        numbers.FillAscending(start);
+        SpanHelpers.FillAscending(numbers.AsSpan(), start);
 
         for (int i = 0; i < numbers.Length; i++)
         {

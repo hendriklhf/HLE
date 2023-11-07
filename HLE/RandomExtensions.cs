@@ -138,7 +138,7 @@ public static class RandomExtensions
 
             if (length <= Vector512<T>.Count >> 2)
             {
-                goto UnoptimizedLoop;
+                goto Loop;
             }
 
             int remainingStart = vector512Count - length;
@@ -165,7 +165,7 @@ public static class RandomExtensions
 
             if (length <= Vector256<T>.Count >> 2)
             {
-                goto UnoptimizedLoop;
+                goto Loop;
             }
 
             int remainingStart = vector256Count - length;
@@ -192,7 +192,7 @@ public static class RandomExtensions
 
             if (length <= Vector128<T>.Count >> 2)
             {
-                goto UnoptimizedLoop;
+                goto Loop;
             }
 
             int remainingStart = vector128Count - length;
@@ -203,34 +203,7 @@ public static class RandomExtensions
             return;
         }
 
-        int vector64Count = Vector64<T>.Count;
-        if (Vector64.IsHardwareAccelerated && length >= vector64Count)
-        {
-            Vector64<T> andVector = Vector64.Create(and);
-            while (length >= vector64Count)
-            {
-                Vector64<T> vector = Vector64.LoadUnsafe(ref values);
-                vector &= andVector;
-                vector.StoreUnsafe(ref values);
-
-                values = ref Unsafe.Add(ref values, vector64Count);
-                length -= vector64Count;
-            }
-
-            if (length <= Vector64<T>.Count >> 2)
-            {
-                goto UnoptimizedLoop;
-            }
-
-            int remainingStart = vector64Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector64<T> remainder = Vector64.LoadUnsafe(ref values);
-            remainder &= andVector;
-            remainder.StoreUnsafe(ref values);
-            return;
-        }
-
-        UnoptimizedLoop:
+        Loop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) &= and;
@@ -362,7 +335,7 @@ public static class RandomExtensions
     public static T[] Shuffle<T>(this Random random, IEnumerable<T> collection)
     {
         T[] result;
-        if (CollectionHelper.TryGetNonEnumeratedCount(collection, out int count))
+        if (CollectionHelpers.TryGetNonEnumeratedCount(collection, out int count))
         {
             result = GC.AllocateUninitializedArray<T>(count);
             if (!collection.TryNonEnumeratedCopyTo(result))

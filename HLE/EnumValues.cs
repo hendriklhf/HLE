@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -6,15 +7,23 @@ using System.Runtime.InteropServices;
 
 namespace HLE;
 
-[SuppressMessage("Design", "CA1024:Use properties where appropriate")]
 public static class EnumValues<TEnum> where TEnum : struct, Enum
 {
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
     private static readonly TEnum[] s_values = Enum.GetValues<TEnum>();
-    private static readonly TEnum s_maximumValue = s_values[^1];
+
+    public static int Count => s_values.Length;
+
+    public static TEnum MaximumValue { get; } = s_values[^1];
 
     [Pure]
-    public static ReadOnlySpan<TEnum> GetValues() => s_values;
+    public static ReadOnlySpan<TEnum> AsSpan() => s_values;
+
+    [Pure]
+    public static ReadOnlyMemory<TEnum> AsMemory() => s_values;
+
+    [Pure]
+    public static ImmutableArray<TEnum> AsImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(s_values);
 
     [Pure]
     public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAs<TUnderlyingType>()
@@ -25,22 +34,15 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
             ThrowDifferentInstanceSize(typeof(TEnum), typeof(TUnderlyingType));
         }
 
-        ReadOnlySpan<TEnum> values = GetValues();
+        ReadOnlySpan<TEnum> values = AsSpan();
         ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
         ref TUnderlyingType underlyingTypeReference = ref Unsafe.As<TEnum, TUnderlyingType>(ref valuesReference);
         return MemoryMarshal.CreateReadOnlySpan(ref underlyingTypeReference, values.Length);
     }
 
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetValueCount() => GetValues().Length;
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TEnum GetMaximumValue() => s_maximumValue;
-
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
-        => throw new InvalidOperationException($"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type.");
+        => throw new InvalidOperationException(
+            $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type.");
 }

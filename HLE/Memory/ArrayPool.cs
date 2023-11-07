@@ -129,6 +129,16 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     {
         Debug.Assert(options != 0);
 
+        if (typeof(T).IsAssignableTo(typeof(IDisposable)) && options.HasFlag(ArrayReturnOptions.DisposeElements))
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                object? item = array[i];
+                IDisposable? disposable = Unsafe.As<object?, IDisposable?>(ref item);
+                disposable?.Dispose();
+            }
+        }
+
         if (options.HasFlag(ArrayReturnOptions.Clear) ||
             (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && options.HasFlag(ArrayReturnOptions.ClearOnlyIfManagedType)))
         {
