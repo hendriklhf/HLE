@@ -57,10 +57,16 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
             return;
         }
 
-        int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
-        NativeMemory<byte> buffer = new(neededBufferSize);
-        StringRawDataWriter writer = new(ref buffer.Reference);
-        writer.Write(length);
+        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(length);
+        if (neededBufferSize > int.MaxValue)
+        {
+            throw new InvalidOperationException();
+        }
+
+        NativeMemory<byte> buffer = new((int)neededBufferSize);
+        RawStringData* rawStringData = (RawStringData*)(buffer._pointer + sizeof(nuint));
+        rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
+        rawStringData->Length = length;
 
         Length = length;
         _buffer = buffer;
@@ -75,13 +81,21 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
             return;
         }
 
-        int length = chars.Length;
-        int neededBufferSize = StringRawDataWriter.GetNeededBufferSize(length);
-        NativeMemory<byte> buffer = new(neededBufferSize, false);
-        StringRawDataWriter writer = new(ref buffer.Reference);
-        writer.Write(chars);
+        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(chars.Length);
+        if (neededBufferSize > int.MaxValue)
+        {
+            throw new InvalidOperationException();
+        }
 
-        Length = length;
+        NativeMemory<byte> buffer = new((int)neededBufferSize, false);
+        byte* bufferPointer = buffer._pointer;
+        *(nuint*)bufferPointer = 0;
+        RawStringData* rawStringData = (RawStringData*)(bufferPointer + sizeof(nuint));
+        rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
+        rawStringData->Length = chars.Length;
+        CopyWorker<char>.Copy(chars, &rawStringData->Chars);
+
+        Length = chars.Length;
         _buffer = buffer;
     }
 

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace HLE.Memory;
 
-public static unsafe class MemoryHelper
+public static unsafe class MemoryHelpers
 {
     private static readonly int s_maximumStackallocSize = Environment.Is64BitProcess ? 8192 : 2048;
 

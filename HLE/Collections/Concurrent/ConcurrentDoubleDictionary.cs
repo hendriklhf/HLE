@@ -4,14 +4,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Threading;
 
 namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICountable,
-    IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IDisposable, ICollectionProvider<TValue>
+    IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _dictionary[key];
@@ -23,16 +22,9 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     {
         set
         {
-            ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
-
-            _dictionaryLock.Wait();
-            try
+            lock (_dictionary)
             {
                 _dictionary[primaryKey, secondaryKey] = value;
-            }
-            finally
-            {
-                _dictionaryLock.Release();
             }
         }
     }
@@ -41,8 +33,9 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public IReadOnlyCollection<TValue> Values => _dictionary.Values;
 
+    public object SyncRoot => _dictionary;
+
     internal readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> _dictionary;
-    private SemaphoreSlim? _dictionaryLock = new(1);
 
     public ConcurrentDoubleDictionary() => _dictionary = [];
 
@@ -55,39 +48,19 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
         IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
         => _dictionary = new(primaryKeyComparer, secondaryKeyComparer);
 
-    public void Dispose()
-    {
-        _dictionaryLock?.Dispose();
-        _dictionaryLock = null;
-    }
-
     public bool TryAdd(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
     {
-        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
-
-        _dictionaryLock.Wait();
-        try
+        lock (_dictionary)
         {
             return _dictionary.TryAdd(primaryKey, secondaryKey, value);
-        }
-        finally
-        {
-            _dictionaryLock.Release();
         }
     }
 
     public void AddOrSet(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)
     {
-        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
-
-        _dictionaryLock.Wait();
-        try
+        lock (_dictionary)
         {
             _dictionary.AddOrSet(primaryKey, secondaryKey, value);
-        }
-        finally
-        {
-            _dictionaryLock.Release();
         }
     }
 
@@ -99,31 +72,17 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public bool Remove(TPrimaryKey primaryKey, TSecondaryKey secondaryKey)
     {
-        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
-
-        _dictionaryLock.Wait();
-        try
+        lock (_dictionary)
         {
             return _dictionary.Remove(primaryKey, secondaryKey);
-        }
-        finally
-        {
-            _dictionaryLock.Release();
         }
     }
 
     public void Clear()
     {
-        ObjectDisposedException.ThrowIf(_dictionaryLock is null, typeof(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>));
-
-        _dictionaryLock.Wait();
-        try
+        lock (_dictionary)
         {
             _dictionary.Clear();
-        }
-        finally
-        {
-            _dictionaryLock.Release();
         }
     }
 

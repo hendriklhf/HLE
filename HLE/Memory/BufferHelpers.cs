@@ -8,15 +8,29 @@ namespace HLE.Memory;
 
 public static class BufferHelpers
 {
+    public const int MaximumArrayLength = 0x7FFFFFC7; // keep in sync with Array.MaxLength
+
     private const uint _maximumPow2Length = 1 << 30;
 
+    /// <summary>
+    /// Grows a buffer length by power of 2.
+    /// </summary>
+    /// <example>
+    /// If the current length is 18 and the needed size is 4, the method will return 32 (16 &lt;&lt; 1).<br/>
+    /// If the current length is 18 and the needed size is 20, the method will return 64 (16 &lt;&lt; 2).
+    /// </example>
+    /// <param name="currentLength">The current length of the buffer.</param>
+    /// <param name="neededSize">The additionally needed buffer size.</param>
+    /// <returns>Returns the new buffer size that satisfies the needed length.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="currentLength"/> or <paramref name="neededSize"/> are negative.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the maximum capacity, <see cref="int"/>.<see cref="int.MaxValue"/>, will be exceeded.</exception>
     [Pure]
     public static int GrowByPow2(int currentLength, int neededSize)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(currentLength);
         ArgumentOutOfRangeException.ThrowIfNegative(neededSize);
 
-        if (neededSize != 0 && currentLength == int.MaxValue)
+        if (neededSize != 0 && currentLength >= MaximumArrayLength)
         {
             ThrowMaximumBufferCapacityReached();
         }
@@ -25,7 +39,7 @@ public static class BufferHelpers
         return newLength switch
         {
             <= _maximumPow2Length => (int)BitOperations.RoundUpToPowerOf2(newLength),
-            <= int.MaxValue => int.MaxValue,
+            <= MaximumArrayLength => MaximumArrayLength,
             _ => ThrowMaximumBufferCapacityReached()
         };
     }

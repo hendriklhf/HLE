@@ -61,7 +61,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
         _source = ref source;
-        _length = (nuint)length;
+        _length = (uint)length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -96,7 +96,9 @@ public readonly unsafe ref partial struct CopyWorker<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CopyTo(List<T> destination, int offset = 0)
     {
-        if (_length >= int.MaxValue)
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+
+        if (_length + (uint)offset >= int.MaxValue)
         {
             ThrowItemsToCopyExceedsInt32MaxValue();
         }
@@ -131,10 +133,12 @@ public readonly unsafe ref partial struct CopyWorker<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDestinationTooShort() => throw new InvalidOperationException("The destination length is shorter than the source length.");
+    private static void ThrowDestinationTooShort()
+        => throw new InvalidOperationException("The destination length is shorter than the source length.");
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowItemsToCopyExceedsInt32MaxValue()
-        => throw new InvalidOperationException("The amount of items needed to be copied is greater than the maximum value of a 32-bit signed integer, thus can't be copied to the destination.");
+        => throw new InvalidOperationException("The amount of items needed to be copied is greater than " +
+                                               "the maximum value of a 32-bit signed integer, thus can't be copied to the destination.");
 }

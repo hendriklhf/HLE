@@ -21,7 +21,7 @@ public static unsafe class SpanMarshal
     public static Memory<T> AsMutableMemory<T>(ReadOnlyMemory<T> memory)
         => Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
 
-    /// <inheritdoc cref="AsMemory{T}(System.ReadOnlySpan{T})"/>
+    /// <inheritdoc cref="AsMemory{T}(ReadOnlySpan{T})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMemory<T>(Span<T> span)
@@ -34,28 +34,24 @@ public static unsafe class SpanMarshal
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
+    [SkipLocalsInit]
     public static ReadOnlyMemory<T> AsMemory<T>(ReadOnlySpan<T> span)
     {
         Unsafe.SkipInit(out ReadOnlyMemory<T> result);
-        fixed (T* _ = span)
-        {
-            byte* memoryPointerAsBytePointer = (byte*)&result;
 
-            // pointers to the three fields Memory<T> consists off
-            nuint* memoryReferenceField = (nuint*)memoryPointerAsBytePointer;
-            int* memoryIndexField = (int*)(memoryPointerAsBytePointer + sizeof(nuint));
-            int* memoryLengthField = (int*)(memoryPointerAsBytePointer + sizeof(nuint) + sizeof(int));
+        RawMemoryData* rawMemoryData = (RawMemoryData*)&result;
 
-            nuint spanReferenceFieldValue = (nuint)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
-            spanReferenceFieldValue -= (sizeof(int) + sizeof(int) + (nuint)sizeof(nuint));
-            Debug.Assert(RawDataMarshal.ReadObject<T[]>(spanReferenceFieldValue) is { } array && array.Length >= span.Length);
+        ref byte reference = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
+        reference = ref Unsafe.Subtract(ref reference, sizeof(nuint) << 1);
+        nuint arrayMethodTablePointer = (nuint)Unsafe.AsPointer(ref reference);
 
-            *memoryReferenceField = spanReferenceFieldValue;
-            *memoryIndexField = 0;
-            *memoryLengthField = span.Length;
+        Debug.Assert(RawDataMarshal.ReadObject<T[]>(arrayMethodTablePointer) is { } array && array.Length >= span.Length);
 
-            return result;
-        }
+        rawMemoryData->Reference = arrayMethodTablePointer;
+        rawMemoryData->Index = 0;
+        rawMemoryData->Length = span.Length;
+
+        return result;
     }
 
     /// <summary>
@@ -63,17 +59,17 @@ public static unsafe class SpanMarshal
     /// but comes at the cost that the caller has to guarantee the safety of the code by themself.<br/>
     /// </summary>
     /// <example>
-    /// For example, this code produces a compiler error:
-    /// <code>
-    /// Span&lt;T&gt; span = Span&lt;T&gt;.Empty;
+    /// This code produces a compiler error:
+    /// <br/><code>
+    /// Span&lt;T&gt; span = [];
     /// if (span.Length == 0)
     /// {
     ///     span = stackalloc int[50]; // CS8353: A result of a 'stackalloc' expression cannot be used in this context because it may be exposed outside of the containing method
     /// }
-    /// </code>
+    /// </code><br/>
     /// The error can be avoided by using this method:
-    /// <code>
-    /// Span&lt;T&gt; span = Span&lt;T&gt;.Empty;
+    /// <br/><code>
+    /// Span&lt;T&gt; span = [];
     /// if (span.Length == 0)
     /// {
     ///     span = MemoryHelper.ReturnStackAlloced(stackalloc int[50]);

@@ -96,7 +96,7 @@ public static partial class CollectionHelpers
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate)
     {
         int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        if (!MemoryHelpers.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
@@ -216,7 +216,7 @@ public static partial class CollectionHelpers
     public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate)
     {
         int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        if (!MemoryHelpers.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());

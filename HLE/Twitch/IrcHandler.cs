@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Twitch.Models;
@@ -50,7 +51,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         ParsingMode.TimeEfficient => new TimeEfficientChatMessageParser(),
         ParsingMode.Balanced => new BalancedChatMessageParser(),
         ParsingMode.MemoryEfficient => new MemoryEfficientChatMessageParser(),
-        _ => throw new ArgumentOutOfRangeException(nameof(parsingMode), parsingMode, null)
+        _ => throw new InvalidEnumArgumentException(nameof(parsingMode), (int)parsingMode, typeof(ParsingMode))
     };
 
     private readonly RoomstateParser _roomstateParser = new();

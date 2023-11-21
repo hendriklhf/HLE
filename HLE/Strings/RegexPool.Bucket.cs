@@ -13,7 +13,7 @@ namespace HLE.Strings;
 
 public sealed partial class RegexPool
 {
-    private readonly struct Bucket : IEnumerable<Regex>
+    private readonly struct Bucket : IEnumerable<Regex>, IEquatable<Bucket>
     {
         private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];
 
@@ -84,7 +84,7 @@ public sealed partial class RegexPool
             {
                 ref Regex? source = ref MemoryMarshal.GetArrayDataReference(_regexes);
                 ref Regex? destination = ref Unsafe.Add(ref source, 1);
-                CopyWorker<Regex?>.Copy(ref source, ref destination, (nuint)(_regexes.Length - 1));
+                CopyWorker<Regex?>.Copy(ref source, ref destination, (uint)(_regexes.Length - 1));
                 source = regex;
             }
             finally
@@ -159,5 +159,15 @@ public sealed partial class RegexPool
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public bool Equals(Bucket other) => _regexes.Equals(other._regexes);
+
+        public override bool Equals(object? obj) => obj is Bucket other && Equals(other);
+
+        public override int GetHashCode() => _regexes.GetHashCode();
+
+        public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
+
+        public static bool operator !=(Bucket left, Bucket right) => !left.Equals(right);
     }
 }

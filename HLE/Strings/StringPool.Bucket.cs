@@ -12,7 +12,8 @@ namespace HLE.Strings;
 
 public sealed partial class StringPool
 {
-    private readonly struct Bucket(int bucketCapacity = _defaultBucketCapacity) : IEnumerable<string>
+    private readonly struct Bucket(int bucketCapacity = _defaultBucketCapacity)
+        : IEnumerable<string>, IEquatable<Bucket>
     {
         internal readonly string?[] _strings = new string[bucketCapacity];
 
@@ -57,7 +58,7 @@ public sealed partial class StringPool
             try
             {
                 ref string? stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-                CopyWorker<string?>.Copy(ref stringsReference, ref Unsafe.Add(ref stringsReference, 1), (nuint)(_strings.Length - 1));
+                CopyWorker<string?>.Copy(ref stringsReference, ref Unsafe.Add(ref stringsReference, 1), (uint)(_strings.Length - 1));
                 stringsReference = value;
             }
             finally
@@ -119,5 +120,15 @@ public sealed partial class StringPool
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public bool Equals(Bucket other) => _strings.Equals(other._strings);
+
+        public override bool Equals(object? obj) => obj is Bucket other && Equals(other);
+
+        public override int GetHashCode() => _strings.GetHashCode();
+
+        public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
+
+        public static bool operator !=(Bucket left, Bucket right) => !left.Equals(right);
     }
 }

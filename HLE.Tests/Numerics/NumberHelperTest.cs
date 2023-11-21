@@ -16,17 +16,17 @@ public sealed class NumberHelperTest
         {
             int number = numbers[i];
             bool isNegative = number < 0;
-            Assert.Equal(number.ToString().Length - Unsafe.As<bool, byte>(ref isNegative), NumberHelper.GetNumberLength(number));
+            Assert.Equal(number.ToString().Length - Unsafe.As<bool, byte>(ref isNegative), NumberHelpers.GetNumberLength(number));
         }
     }
 
     [Fact]
     public void GetDigitsTest()
     {
-        Assert.True(NumberHelper.GetDigits(1234567) is [1, 2, 3, 4, 5, 6, 7]);
-        Assert.True(NumberHelper.GetDigits(-1234567) is [1, 2, 3, 4, 5, 6, 7]);
-        Assert.True(NumberHelper.GetDigits(0) is [0]);
-        Assert.True(NumberHelper.GetDigits(1) is [1]);
+        Assert.True(NumberHelpers.GetDigits(1234567) is [1, 2, 3, 4, 5, 6, 7]);
+        Assert.True(NumberHelpers.GetDigits(-1234567) is [1, 2, 3, 4, 5, 6, 7]);
+        Assert.True(NumberHelpers.GetDigits(0) is [0]);
+        Assert.True(NumberHelpers.GetDigits(1) is [1]);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class NumberHelperTest
         byte digit = 0;
         for (char c = '0'; c < '9' + 1; c++)
         {
-            Assert.Equal(c, NumberHelper.DigitToChar(digit++));
+            Assert.Equal(c, NumberHelpers.DigitToChar(digit++));
         }
     }
 
@@ -45,7 +45,7 @@ public sealed class NumberHelperTest
         char c = '0';
         for (byte i = 0; i < 10; i++)
         {
-            Assert.Equal(i, NumberHelper.CharToDigit(c++));
+            Assert.Equal(i, NumberHelpers.CharToDigit(c++));
         }
     }
 
@@ -56,48 +56,48 @@ public sealed class NumberHelperTest
     [InlineData(95972, "95972")]
     [InlineData(345347853, "345347853")]
     public void ParsePositiveNumberTest(int number, string text)
-        => Assert.Equal(number, NumberHelper.ParsePositiveNumber<int>(text));
+        => Assert.Equal(number, NumberHelpers.ParsePositiveNumber<int>(text));
 
     [Fact]
     public void ParsePositiveNumberFromBytesTest()
-        => Assert.Equal(7334687, NumberHelper.ParsePositiveNumber<int>("7334687"u8));
+        => Assert.Equal(7334687, NumberHelpers.ParsePositiveNumber<int>("7334687"u8));
 
     [Fact]
     public void BringNumberIntoRangeTest()
     {
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, 0, 500) is >= 0 and < 500);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, 0, 500) is >= 0 and < 500);
         }
 
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, -500, 0) is >= -500 and < 0);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, -500, 0) is >= -500 and < 0);
         }
 
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, -500, 500) is >= -500 and < 500);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, -500, 500) is >= -500 and < 500);
         }
 
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, 0, 0) == 0);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, 0, 0) == 0);
         }
 
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, 500, 500) == 500);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, 500, 500) == 500);
         }
 
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, 500, 501) == 500);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, 500, 501) == 500);
         }
 
         for (int i = -100_000; i < 100_000; i++)
         {
-            Assert.True(NumberHelper.BringNumberIntoRange(i, 500, 502) is >= 500 and < 502);
+            Assert.True(NumberHelpers.BringNumberIntoRange(i, 500, 502) is >= 500 and < 502);
         }
     }
 }

@@ -16,7 +16,7 @@ namespace HLE.SourceGenerators;
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
     private byte[]? _emojiJsonBytes;
-    private readonly Dictionary<string, string> _illegalEmojiNameReplacements = new()
+    private readonly Dictionary<string, string> _illegalEmojiNameReplacements = new(12)
     {
         { "100", "Hundred" },
         { "+1", "ThumbUp" },

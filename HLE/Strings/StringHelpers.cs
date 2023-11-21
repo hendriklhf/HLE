@@ -76,7 +76,7 @@ public static class StringHelpers
         }
 
         // TODO: remove allocation in case stackalloc can not be used
-        Span<Range> ranges = MemoryHelper.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
+        Span<Range> ranges = MemoryHelpers.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
         int rangesLength = span.Span.Split(ranges, separator);
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[rangesLength];
@@ -137,7 +137,7 @@ public static class StringHelpers
         }
 
         int resultLength;
-        if (!MemoryHelper.UseStackAlloc<char>(str.Length))
+        if (!MemoryHelpers.UseStackAlloc<char>(str.Length))
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
@@ -209,7 +209,7 @@ public static class StringHelpers
         }
 
         int length;
-        if (!MemoryHelper.UseStackAlloc<int>(span.Length))
+        if (!MemoryHelpers.UseStackAlloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
@@ -265,7 +265,7 @@ public static class StringHelpers
 
         int resultLength;
         int maximumResultLength = input.Length << 1;
-        if (!MemoryHelper.UseStackAlloc<char>(maximumResultLength))
+        if (!MemoryHelpers.UseStackAlloc<char>(maximumResultLength))
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
@@ -454,19 +454,15 @@ public static class StringHelpers
 
     /// <summary>
     /// Returns the UTF-16 bytes of a string by reinterpreting the chars the string consists of.<br/>
-    /// Basically returns the same as <c>Encoding.Unicode.GetBytes(str)</c> without allocating.
+    /// Basically returns the same as <c>Encoding.Unicode.GetBytes(string)</c> without allocating.
     /// </summary>
     /// <param name="str">The string of which the bytes will be read from.</param>
     /// <returns>A span of UTF-16 bytes of the string.</returns>
     [Pure]
     public static ReadOnlySpan<byte> AsByteSpan(this string? str)
     {
-        if (str is not { Length: not 0 })
-        {
-            return [];
-        }
-
-        ref char charsReference = ref MemoryMarshal.GetReference((ReadOnlySpan<char>)str);
-        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, byte>(ref charsReference), str.Length << 1);
+        ReadOnlySpan<char> chars = str.AsSpan();
+        ref char charsReference = ref MemoryMarshal.GetReference(chars);
+        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, byte>(ref charsReference), chars.Length << 1);
     }
 }

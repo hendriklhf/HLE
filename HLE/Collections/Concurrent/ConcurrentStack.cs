@@ -13,7 +13,8 @@ namespace HLE.Collections.Concurrent;
 /// A concurrent stack that doesn't allocate on pushing items onto the stack, in comparision to <see cref="System.Collections.Concurrent.ConcurrentStack{T}"/>.
 /// </summary>
 /// <typeparam name="T">The type of stored items.</typeparam>
-public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOnlyCollection<T>, ICopyable<T>, IReadOnlySpanProvider<T>, ICountable, IIndexAccessible<T>
+public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOnlyCollection<T>, ICopyable<T>, IReadOnlySpanProvider<T>, ICountable,
+    IIndexAccessible<T>
 {
     T IIndexAccessible<T>.this[int index] => AsSpan()[index];
 

@@ -11,8 +11,9 @@ using HLE.Memory;
 namespace HLE.Resources;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly unsafe struct Resource(byte* pointer, int length) : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICountable,
-    ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>, ICollectionProvider<byte>
+public readonly unsafe struct Resource(byte* pointer, int length)
+    : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICountable,
+        ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>, ICollectionProvider<byte>
 {
     byte IReadOnlyList<byte>.this[int index]
     {

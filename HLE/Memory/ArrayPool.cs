@@ -33,44 +33,41 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         64, 64, 64,
         // 131072,262144,524288,1048576
         16, 16, 16, 16,
-        // 2097152,4194304
-        8, 8
+        // 2097152,4194304,8388608
+        8, 8, 8
     };
 
-    private readonly Bucket[] _buckets;
+    internal readonly Bucket[] _buckets;
+
+    [ThreadStatic]
+    private static ThreadLocalBucket s_threadLocalBucket;
 
     internal const int MinimumArrayLength = 0x10; // has to be pow of 2
-    internal const int MaximumArrayLength = 0x400000; // has to be pow of 2
-    internal const int IndexOffset = 4; // BitOperations.TrailingZeroCount(MinimumArrayLength)
+    internal const int MaximumArrayLength = 0x800000; // has to be pow of 2
+    internal static readonly int s_indexOffset = BitOperations.TrailingZeroCount(MinimumArrayLength);
 
     public ArrayPool()
     {
-        int poolCount = BitOperations.TrailingZeroCount(MaximumArrayLength) - BitOperations.TrailingZeroCount(MinimumArrayLength) + 1;
-        _buckets = new Bucket[poolCount];
+        int bucketCount = BitOperations.TrailingZeroCount(MaximumArrayLength) - BitOperations.TrailingZeroCount(MinimumArrayLength) + 1;
+        Debug.Assert(BucketCapacities.Length == bucketCount);
+
+        _buckets = new Bucket[bucketCount];
         int arrayLength = MinimumArrayLength;
         for (int i = 0; i < _buckets.Length; i++)
         {
-            _buckets[i] = new(arrayLength, int.Max(BucketCapacities[i], Environment.ProcessorCount));
+            _buckets[i] = new(arrayLength, BucketCapacities[i]);
             arrayLength <<= 1;
         }
 
-        Debug.Assert(BucketCapacities.Length == poolCount);
         Debug.Assert(arrayLength >> 1 == MaximumArrayLength);
     }
 
     [Pure]
     public T[] Rent(int minimumLength)
     {
-        switch (minimumLength)
-        {
-            case 0:
-                return [];
-            case < 0:
-                ThrowMinimumLengthIsNegative(minimumLength);
-                break;
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(minimumLength);
 
-        int length = (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
+        int length = minimumLength >= 1 << 30 ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
         switch (length)
         {
             case > MaximumArrayLength:
@@ -80,7 +77,12 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
                 break;
         }
 
-        int bucketIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
+        int bucketIndex = BitOperations.TrailingZeroCount(length) - s_indexOffset;
+        return TryRentFromThreadLocalBucket(length, bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
+    }
+
+    private T[] RentFromSharedBuckets(int bucketIndex)
+    {
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
         ref Bucket initialBucket = ref bucket;
         int bucketsLength = _buckets.Length;
@@ -101,28 +103,81 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         return initialBucket.Rent();
     }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMinimumLengthIsNegative(int minimumLength)
-        => throw new ArgumentOutOfRangeException(nameof(minimumLength), minimumLength, "The minimum length is negative.");
+    private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
+    {
+        ref ThreadLocalBucket threadLocalBucket = ref s_threadLocalBucket;
+        if (!threadLocalBucket.IsInitialized)
+        {
+            threadLocalBucket = new();
+            threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
+            {
+                array = GC.AllocateUninitializedArray<T>(arrayLength);
+                return true;
+            }
+        }
+
+        if ((threadLocalBucket.BucketInitializationStatuses & arrayLength) != arrayLength)
+        {
+            threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
+            {
+                array = GC.AllocateUninitializedArray<T>(arrayLength);
+                return true;
+            }
+        }
+
+        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.Reference, bucketIndex);
+        if (arrayReference is not null)
+        {
+            array = arrayReference;
+            arrayReference = null; // remove reference from the pool
+            return true;
+        }
+
+        array = null;
+        return false;
+    }
 
     [Pure]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[]? array, ArrayReturnOptions returnOptions = ArrayReturnOptions.ClearOnlyIfManagedType)
+    public void Return(T[]? array, ArrayReturnOptions returnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements)
     {
-        if (!TryGetBucketIndex(array, out int bucketIndex))
+        if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
         {
             return;
         }
 
-        if (returnOptions != 0)
+        ref ThreadLocalBucket threadLocalBucket = ref s_threadLocalBucket;
+        if (!threadLocalBucket.IsInitialized)
         {
-            PerformReturnActions(array, returnOptions);
+            threadLocalBucket = new();
+            threadLocalBucket.BucketInitializationStatuses |= (uint)pow2Length;
+            Unsafe.Add(ref threadLocalBucket.Reference, bucketIndex) = array;
+
+            if (returnOptions != 0)
+            {
+                PerformReturnActions(array, returnOptions);
+            }
+
+            return;
+        }
+
+        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.Reference, bucketIndex);
+        if (arrayReference is null)
+        {
+            arrayReference = array;
+            threadLocalBucket.BucketInitializationStatuses |= (uint)pow2Length;
+
+            if (returnOptions != 0)
+            {
+                PerformReturnActions(array, returnOptions);
+            }
+
+            return;
         }
 
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
-        bucket.Return(array);
+        bucket.Return(array, returnOptions);
     }
 
     private static void PerformReturnActions(T[] array, ArrayReturnOptions options)
@@ -147,21 +202,22 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetBucketIndex([NotNullWhen(true)] T[]? array, out int bucketIndex)
+    private static bool TryGetBucketIndex([NotNullWhen(true)] T[]? array, out int bucketIndex, out int pow2Length)
     {
         if (array is not { Length: >= MinimumArrayLength and <= MaximumArrayLength })
         {
             bucketIndex = -1;
+            pow2Length = -1;
             return false;
         }
 
-        int length = array.Length;
-        if (!BitOperations.IsPow2(length))
+        pow2Length = array.Length;
+        if (!BitOperations.IsPow2(pow2Length))
         {
-            length = (int)(BitOperations.RoundUpToPowerOf2((uint)length) >> 1);
+            pow2Length = (int)(BitOperations.RoundUpToPowerOf2((uint)pow2Length) >> 1);
         }
 
-        bucketIndex = BitOperations.TrailingZeroCount(length) - IndexOffset;
+        bucketIndex = BitOperations.TrailingZeroCount(pow2Length) - s_indexOffset;
         return true;
     }
 
@@ -192,6 +248,8 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         typeof(T) == typeof(bool) ||
         typeof(T) == typeof(string) ||
         typeof(T) == typeof(char) ||
+        typeof(T) == typeof(Int128) ||
+        typeof(T) == typeof(UInt128) ||
         typeof(T).IsEnum;
 
     [Pure]

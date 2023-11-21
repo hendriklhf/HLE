@@ -58,7 +58,7 @@ public ref partial struct ValueStringBuilder
 
         ref char destination = ref Unsafe.Add(ref MemoryMarshal.GetReference(_buffer), Length);
         ref char source = ref MemoryMarshal.GetReference(span);
-        CopyWorker<char>.Copy(ref source, ref destination, (nuint)span.Length);
+        CopyWorker<char>.Copy(ref source, ref destination, (uint)span.Length);
         Length += span.Length;
     }
 

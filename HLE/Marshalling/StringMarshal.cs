@@ -66,7 +66,7 @@ public static class StringMarshal
             return;
         }
 
-        if (!MemoryHelper.UseStackAlloc<char>(span.Length))
+        if (!MemoryHelpers.UseStackAlloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
             span.CopyTo(rentedCopyBuffer.AsSpan());
@@ -87,7 +87,7 @@ public static class StringMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToUpper(Span<char> span)
     {
-        if (!MemoryHelper.UseStackAlloc<char>(span.Length))
+        if (!MemoryHelpers.UseStackAlloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
             span.CopyTo(rentedCopyBuffer.AsSpan());

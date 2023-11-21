@@ -9,9 +9,9 @@ namespace HLE.Collections;
 
 public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>>
 {
-    public T Current => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_array), _current++);
+    public readonly T Current => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_array), _current);
 
-    object? IEnumerator.Current => Current;
+    readonly object? IEnumerator.Current => Current;
 
     private readonly T[] _array;
     private readonly int _start;
@@ -24,11 +24,11 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
 
         _array = array;
         _start = start;
-        _current = start;
+        _current = start - 1;
         _end = _current + length;
     }
 
-    public readonly bool MoveNext() => _current < _end;
+    public bool MoveNext() => _current++ < _end;
 
     public void Reset() => _current = _start;
 

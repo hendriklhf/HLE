@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
 using System.Security.Cryptography;
 using HLE.Collections;
 using HLE.Marshalling;
@@ -25,14 +23,14 @@ public static class RandomExtensions
     public static byte NextUInt8(this Random random, byte min = byte.MinValue, byte max = byte.MaxValue)
     {
         byte result = random.NextStruct<byte>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static sbyte NextInt8(this Random random, sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
     {
         sbyte result = random.NextStruct<sbyte>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
@@ -51,14 +49,14 @@ public static class RandomExtensions
     public static uint NextUInt32(this Random random, uint min = uint.MinValue, uint max = uint.MaxValue)
     {
         uint result = random.NextStruct<uint>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static ulong NextUInt64(this Random random, ulong min = ulong.MinValue, ulong max = ulong.MaxValue)
     {
         random.NextStruct(out ulong result);
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
@@ -116,98 +114,8 @@ public static class RandomExtensions
 
         random.Fill(chars);
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        BitwiseAnd(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
+        SpanHelpers.BitwiseAnd(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
         return result;
-    }
-
-    private static void BitwiseAnd<T>(ref T values, int length, T and) where T : IBitwiseOperators<T, T, T>
-    {
-        int vector512Count = Vector512<T>.Count;
-        if (Vector512.IsHardwareAccelerated && length >= vector512Count)
-        {
-            Vector512<T> andVector = Vector512.Create(and);
-            while (length >= vector512Count)
-            {
-                Vector512<T> vector = Vector512.LoadUnsafe(ref values);
-                vector &= andVector;
-                vector.StoreUnsafe(ref values);
-
-                values = ref Unsafe.Add(ref values, vector512Count);
-                length -= vector512Count;
-            }
-
-            if (length <= Vector512<T>.Count >> 2)
-            {
-                goto Loop;
-            }
-
-            int remainingStart = vector512Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector512<T> remainder = Vector512.LoadUnsafe(ref values);
-            remainder &= andVector;
-            remainder.StoreUnsafe(ref values);
-            return;
-        }
-
-        int vector256Count = Vector256<T>.Count;
-        if (Vector256.IsHardwareAccelerated && length >= vector256Count)
-        {
-            Vector256<T> andVector = Vector256.Create(and);
-            while (length >= vector256Count)
-            {
-                Vector256<T> vector = Vector256.LoadUnsafe(ref values);
-                vector &= andVector;
-                vector.StoreUnsafe(ref values);
-
-                values = ref Unsafe.Add(ref values, vector256Count);
-                length -= vector256Count;
-            }
-
-            if (length <= Vector256<T>.Count >> 2)
-            {
-                goto Loop;
-            }
-
-            int remainingStart = vector256Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector256<T> remainder = Vector256.LoadUnsafe(ref values);
-            remainder &= andVector;
-            remainder.StoreUnsafe(ref values);
-            return;
-        }
-
-        int vector128Count = Vector128<T>.Count;
-        if (Vector128.IsHardwareAccelerated && length >= vector128Count)
-        {
-            Vector128<T> andVector = Vector128.Create(and);
-            while (length >= vector128Count)
-            {
-                Vector128<T> vector = Vector128.LoadUnsafe(ref values);
-                vector &= andVector;
-                vector.StoreUnsafe(ref values);
-
-                values = ref Unsafe.Add(ref values, vector128Count);
-                length -= vector128Count;
-            }
-
-            if (length <= Vector128<T>.Count >> 2)
-            {
-                goto Loop;
-            }
-
-            int remainingStart = vector128Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector128<T> remainder = Vector128.LoadUnsafe(ref values);
-            remainder &= andVector;
-            remainder.StoreUnsafe(ref values);
-            return;
-        }
-
-        Loop:
-        for (int i = 0; i < length; i++)
-        {
-            Unsafe.Add(ref values, i) &= and;
-        }
     }
 
     [Pure]
@@ -247,7 +155,7 @@ public static class RandomExtensions
         for (int i = 0; i < length; i++)
         {
             ref char c = ref Unsafe.Add(ref charsReference, i);
-            c = NumberHelper.BringNumberIntoRange(c, min, max);
+            c = NumberHelpers.BringNumberIntoRange(c, min, max);
         }
 
         return result;
@@ -268,13 +176,14 @@ public static class RandomExtensions
             return result;
         }
 
-        if (!MemoryHelper.UseStackAlloc<uint>(length))
+        uint choicesLength = (uint)choices.Length;
+        if (!MemoryHelpers.UseStackAlloc<uint>(length))
         {
             using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));
             for (int i = 0; i < length; i++)
             {
-                int randomIndex = (int)(randomIndicesBuffer[i] % choices.Length);
+                int randomIndex = (int)(randomIndicesBuffer[i] % choicesLength);
                 resultSpan[i] = choices[randomIndex];
             }
 
@@ -285,7 +194,7 @@ public static class RandomExtensions
         random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
-            int randomIndex = (int)(randomIndices[i] % choices.Length);
+            int randomIndex = (int)(randomIndices[i] % choicesLength);
             resultSpan[i] = choices[randomIndex];
         }
 
@@ -397,56 +306,56 @@ public static class RandomExtensions
     public static byte GetUInt8(this RandomNumberGenerator random, byte min = byte.MinValue, byte max = byte.MaxValue)
     {
         byte result = random.GetStruct<byte>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static sbyte GetInt8(this RandomNumberGenerator random, sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
     {
         sbyte result = random.GetStruct<sbyte>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static short GetInt16(this RandomNumberGenerator random, short min = short.MinValue, short max = short.MaxValue)
     {
         short result = random.GetStruct<short>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static ushort GetUInt16(this RandomNumberGenerator random, ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
     {
         ushort result = random.GetStruct<ushort>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static int GetInt32(this RandomNumberGenerator random, int min = int.MinValue, int max = int.MaxValue)
     {
         int result = random.GetStruct<int>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static uint GetUInt32(this RandomNumberGenerator random, uint min = uint.MinValue, uint max = uint.MaxValue)
     {
         uint result = random.GetStruct<uint>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static long GetInt64(this RandomNumberGenerator random, long min = long.MinValue, long max = long.MaxValue)
     {
         random.GetStruct(out long result);
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
     public static ulong GetUInt64(this RandomNumberGenerator random, ulong min = ulong.MinValue, ulong max = ulong.MaxValue)
     {
         random.GetStruct(out ulong result);
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
@@ -488,7 +397,7 @@ public static class RandomExtensions
     public static char GetChar(this RandomNumberGenerator random, char min = char.MinValue, char max = char.MaxValue)
     {
         char result = random.GetStruct<char>();
-        return NumberHelper.BringNumberIntoRange(result, min, max);
+        return NumberHelpers.BringNumberIntoRange(result, min, max);
     }
 
     [Pure]
@@ -525,7 +434,7 @@ public static class RandomExtensions
 
         random.Fill(chars);
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        BitwiseAnd(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
+        SpanHelpers.BitwiseAnd(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
         return result;
     }
 
@@ -566,7 +475,7 @@ public static class RandomExtensions
         for (int i = 0; i < length; i++)
         {
             ref char c = ref Unsafe.Add(ref charsReference, i);
-            c = NumberHelper.BringNumberIntoRange(c, min, max);
+            c = NumberHelpers.BringNumberIntoRange(c, min, max);
         }
 
         return result;
@@ -581,18 +490,19 @@ public static class RandomExtensions
         }
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> resultSpan);
-        if (choices.Length == 0)
+        uint choicesLength = (uint)choices.Length;
+        if (choicesLength == 0)
         {
             return result;
         }
 
-        if (!MemoryHelper.UseStackAlloc<uint>(length))
+        if (!MemoryHelpers.UseStackAlloc<uint>(length))
         {
             using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));
             for (int i = 0; i < length; i++)
             {
-                int randomIndex = (int)(randomIndicesBuffer[i] % choices.Length);
+                int randomIndex = (int)(randomIndicesBuffer[i] % choicesLength);
                 resultSpan[i] = choices[randomIndex];
             }
 
@@ -603,7 +513,7 @@ public static class RandomExtensions
         random.Fill(randomIndices);
         for (int i = 0; i < length; i++)
         {
-            int randomIndex = (int)(randomIndices[i] % choices.Length);
+            int randomIndex = (int)(randomIndices[i] % choicesLength);
             resultSpan[i] = choices[randomIndex];
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -49,6 +50,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     readonly bool ICollection<T>.IsReadOnly => false;
 
+    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     internal readonly T[] Array
     {
         get

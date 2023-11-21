@@ -6,10 +6,10 @@ namespace HLE.Collections;
 
 public ref struct MemoryEnumerator<T>
 {
-    public T Current => Unsafe.Add(ref _reference, _current++);
+    public readonly T Current => Unsafe.Add(ref _reference, _current);
 
     private readonly ref T _reference;
-    private int _current;
+    private int _current = -1;
     private readonly int _end;
 
     public MemoryEnumerator(ref T reference, int length)
@@ -17,15 +17,16 @@ public ref struct MemoryEnumerator<T>
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         _reference = ref reference;
-        _end = length;
+        _end = length - 1;
     }
 
-    public readonly bool MoveNext() => _current < _end;
+    public bool MoveNext() => _current++ < _end;
 
     public void Reset() => _current = 0;
 
     [Pure]
-    public readonly bool Equals(MemoryEnumerator<T> other) => Unsafe.AreSame(ref _reference, ref other._reference) && _current == other._current && _end == other._end;
+    public readonly bool Equals(MemoryEnumerator<T> other)
+        => Unsafe.AreSame(ref _reference, ref other._reference) && _current == other._current && _end == other._end;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

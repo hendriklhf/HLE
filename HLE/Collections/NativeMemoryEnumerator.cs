@@ -8,28 +8,28 @@ namespace HLE.Collections;
 public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IEquatable<NativeMemoryEnumerator<T>>
     where T : unmanaged
 {
-    public T Current => _ptr[_current++];
+    public readonly T Current => _memory[_current];
 
-    object IEnumerator.Current => Current;
+    readonly object IEnumerator.Current => Current;
 
-    private readonly T* _ptr;
-    private int _current;
+    private readonly T* _memory;
+    private int _current = -1;
     private readonly int _end;
 
-    public NativeMemoryEnumerator(T* ptr, int length)
+    public NativeMemoryEnumerator(T* memory, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        _ptr = ptr;
-        _end = length;
+        _memory = memory;
+        _end = length - 1;
     }
 
-    public readonly bool MoveNext() => _current < _end;
+    public bool MoveNext() => _current++ < _end;
 
     public void Reset() => _current = 0;
 
     [Pure]
-    public readonly bool Equals(NativeMemoryEnumerator<T> other) => _ptr == other._ptr && _current == other._current && _end == other._end;
+    public readonly bool Equals(NativeMemoryEnumerator<T> other) => _memory == other._memory && _current == other._current && _end == other._end;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
@@ -37,7 +37,7 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IEquatable<Nati
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly int GetHashCode() => HashCode.Combine((nuint)_ptr, _end);
+    public override readonly int GetHashCode() => HashCode.Combine((nuint)_memory, _end);
 
     public static bool operator ==(NativeMemoryEnumerator<T> left, NativeMemoryEnumerator<T> right) => left.Equals(right);
 

@@ -23,7 +23,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     public void Parse(ReadOnlySpan<char> ircMessage, out Roomstate roomstate)
     {
         int whitespaceCount;
-        if (!MemoryHelper.UseStackAlloc<int>(ircMessage.Length))
+        if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
@@ -108,16 +108,16 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int GetFollowersOnly(ReadOnlySpan<char> value)
-        => value[0] == '-' ? -1 : NumberHelper.ParsePositiveNumber<int>(value);
+        => value[0] == '-' ? -1 : NumberHelpers.ParsePositiveNumber<int>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetR9K(ReadOnlySpan<char> value) => value[0] == '1';
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<long>(value);
+    private static long GetChannelId(ReadOnlySpan<char> value) => NumberHelpers.ParsePositiveNumber<long>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetSlowMode(ReadOnlySpan<char> value) => NumberHelper.ParsePositiveNumber<int>(value);
+    private static int GetSlowMode(ReadOnlySpan<char> value) => NumberHelpers.ParsePositiveNumber<int>(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';

@@ -16,8 +16,8 @@ public sealed class BufferHelpersTest
         [128, 8, 120],
         [256, 8, 121],
         [1 << 16, 1 << 15, 1],
-        [int.MaxValue, 1 << 30, 1],
-        [int.MaxValue, int.MaxValue, 0]
+        [Array.MaxLength, 1 << 30, 1],
+        [Array.MaxLength, Array.MaxLength, 0]
     ];
 
     [Theory]

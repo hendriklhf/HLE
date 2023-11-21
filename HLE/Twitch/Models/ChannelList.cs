@@ -14,24 +14,17 @@ namespace HLE.Twitch.Models;
 /// A class that represents a list of channels the client is connected to.
 /// </summary>
 [DebuggerDisplay("Count = {_channels.Count}")]
-public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<ChannelList>, ICountable, IDisposable, ICollectionProvider<Channel>
+public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<ChannelList>, ICountable, ICollectionProvider<Channel>
 {
     /// <summary>
     /// Gets the amount of channels in the list.
     /// </summary>
-    public int Count
-    {
-        get
-        {
-            ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-            return _channels.Count;
-        }
-    }
+    public int Count => _channels.Count;
 
     /// <summary>
     /// Uses channel id as primary key and hashed channel name with OrdinalIgnoreCase comparison as secondary key.
     /// </summary>
-    private ConcurrentDoubleDictionary<long, int, Channel>? _channels = new();
+    private readonly ConcurrentDoubleDictionary<long, int, Channel> _channels = new();
 
     /// <summary>
     /// Retrieves a channel by the user id of the channel owner.
@@ -39,10 +32,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     /// <param name="channelId">The user id of the channel owner.</param>
     /// <param name="channel">The channel.</param>;
     public bool TryGet(long channelId, [MaybeNullWhen(false)] out Channel channel)
-    {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        return _channels.TryGetByPrimaryKey(channelId, out channel);
-    }
+        => _channels.TryGetByPrimaryKey(channelId, out channel);
 
     /// <summary>
     /// Retrieves a channel by the username of the channel owner.
@@ -51,8 +41,6 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     /// <param name="channel">The channel.</param>
     public bool TryGet(ReadOnlySpan<char> channelName, [MaybeNullWhen(false)] out Channel channel)
     {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-
         if (channelName.Length == 0)
         {
             channel = null;
@@ -73,16 +61,8 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
         return _channels.TryGetBySecondaryKey(channelNameHash, out channel);
     }
 
-    public void Dispose()
-    {
-        _channels?.Dispose();
-        _channels = null;
-    }
-
     internal void Update(in Roomstate args)
     {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-
         Channel? channel = Get(args.ChannelId);
         if (channel is not null)
         {
@@ -97,8 +77,6 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
 
     internal void Remove(ReadOnlySpan<char> channelName)
     {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-
         Channel? channel = Get(channelName);
         if (channel is null)
         {
@@ -109,22 +87,13 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
         _channels.Remove(channel.Id, channelNameHash);
     }
 
-    internal void Clear()
-    {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        _channels.Clear();
-    }
+    internal void Clear() => _channels.Clear();
 
     private Channel? Get(long channelId)
-    {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        return _channels.TryGetByPrimaryKey(channelId, out Channel? channel) ? channel : null;
-    }
+        => _channels.TryGetByPrimaryKey(channelId, out Channel? channel) ? channel : null;
 
     private Channel? Get(ReadOnlySpan<char> name)
     {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-
         if (name.Length == 0)
         {
             return null;
@@ -144,18 +113,10 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     }
 
     [Pure]
-    public Channel[] ToArray()
-    {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        return _channels.ToArray();
-    }
+    public Channel[] ToArray() => _channels.ToArray();
 
     [Pure]
-    public List<Channel> ToList()
-    {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        return _channels.ToList();
-    }
+    public List<Channel> ToList() => _channels.ToList();
 
     [Pure]
     public bool Equals(ChannelList? other) => ReferenceEquals(this, other);

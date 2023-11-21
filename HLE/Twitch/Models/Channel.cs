@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Twitch.Models;
 
@@ -90,10 +92,16 @@ public sealed class Channel : IEquatable<Channel>
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    throw new InvalidEnumArgumentException(nameof(roomState), (int)roomState, typeof(ChangedRoomStates));
+                    ThrowInvalidChangedRoomstates(roomState);
+                    break;
             }
         }
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowInvalidChangedRoomstates(ChangedRoomStates roomState)
+        => throw new InvalidEnumArgumentException(nameof(roomState), (int)roomState, typeof(ChangedRoomStates));
 
     [Pure]
     public bool Equals(Channel? other) => ReferenceEquals(this, other) || Id == other?.Id;

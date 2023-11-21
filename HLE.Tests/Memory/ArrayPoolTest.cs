@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using HLE.Memory;
 using Xunit;
@@ -12,14 +13,20 @@ public sealed class ArrayPoolTest
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
-        => Assert.Equal(ArrayPool<int>.IndexOffset, BitOperations.TrailingZeroCount(ArrayPool<int>.MinimumArrayLength));
+        => Assert.Equal(ArrayPool<int>.s_indexOffset, BitOperations.TrailingZeroCount(ArrayPool<int>.MinimumArrayLength));
 
     [Fact]
-    public void RentReturnsEmptyArrayForLengthZero()
+    public void MinimumAndMaximumLengthArePow2()
+    {
+        Assert.True(BitOperations.IsPow2(ArrayPool<int>.MinimumArrayLength));
+        Assert.True(BitOperations.IsPow2(ArrayPool<int>.MaximumArrayLength));
+    }
+
+    [Fact]
+    public void RentReturnsNonEmptyArrayForLengthZero()
     {
         int[] array = _integerArrayPool.Rent(0);
-        Assert.Empty(array);
-        Assert.Same(array, Array.Empty<int>());
+        Assert.True(array.Length > 0);
     }
 
     [Theory]
@@ -51,25 +58,6 @@ public sealed class ArrayPoolTest
         {
             array = _integerArrayPool.Rent(arrayLength);
             Assert.Equal(arrayLength, array.Length);
-            Assert.Same(previousArray, array);
-            _integerArrayPool.Return(array);
-            previousArray = array;
-        }
-    }
-
-    [Theory]
-    [InlineData(ArrayPool<int>.MinimumArrayLength)]
-    [InlineData(256)]
-    [InlineData(2048)]
-    public void RentArrayOfLargerSizeAndThanSmallerSize(int arrayLength)
-    {
-        int[] array = _integerArrayPool.Rent(arrayLength << 1);
-        int[] previousArray = array;
-        _integerArrayPool.Return(array);
-        for (int i = 0; i < 1024; i++)
-        {
-            array = _integerArrayPool.Rent(arrayLength);
-            Assert.Equal(arrayLength << 1, array.Length);
             Assert.Same(previousArray, array);
             _integerArrayPool.Return(array);
             previousArray = array;
@@ -146,21 +134,20 @@ public sealed class ArrayPoolTest
     [Fact]
     public void ClearPoolTest()
     {
-        int[][] arrays = new int[8][];
         for (int i = 0; i < 8; i++)
         {
             int[] array = _integerArrayPool.Rent(ArrayPool<int>.MinimumArrayLength << i);
-            arrays[i] = array;
+            int[] array2 = _integerArrayPool.Rent(ArrayPool<int>.MinimumArrayLength << i);
             _integerArrayPool.Return(array);
+            _integerArrayPool.Return(array2);
         }
+
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        Assert.False(_integerArrayPool._buckets.All(static b => b._stack.All(static a => a is null)));
 
         _integerArrayPool.Clear();
 
-        for (int i = 0; i < 8; i++)
-        {
-            int[] array = _integerArrayPool.Rent(ArrayPool<int>.MinimumArrayLength << i);
-            Assert.Equal(arrays[i].Length, array.Length);
-            Assert.NotSame(arrays[i], array);
-        }
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        Assert.True(_integerArrayPool._buckets.All(static b => b._stack.All(static a => a is null)));
     }
 }

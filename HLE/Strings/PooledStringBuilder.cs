@@ -68,7 +68,7 @@ public sealed partial class PooledStringBuilder(int capacity)
         _buffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
         if (Length != 0)
         {
-            CopyWorker<char>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (nuint)Length);
+            CopyWorker<char>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Length);
         }
     }
 
@@ -92,7 +92,7 @@ public sealed partial class PooledStringBuilder(int capacity)
 
         ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);
         ref char source = ref MemoryMarshal.GetReference(span);
-        CopyWorker<char>.Copy(ref source, ref destination, (nuint)span.Length);
+        CopyWorker<char>.Copy(ref source, ref destination, (uint)span.Length);
         Length += span.Length;
     }
 
@@ -258,8 +258,10 @@ public sealed partial class PooledStringBuilder(int capacity)
     [Pure]
     public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
+    [Pure]
     public bool Equals(PooledStringBuilder? other) => Length == other?.Length && _buffer.Equals(other._buffer);
 
+    [Pure]
     public override bool Equals(object? obj) => obj is PooledStringBuilder other && Equals(other);
 
     [Pure]

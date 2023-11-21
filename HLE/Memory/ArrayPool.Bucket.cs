@@ -3,46 +3,28 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    private struct Bucket(int arrayLength, int capacity)
+    internal struct Bucket(int arrayLength, int capacity) : IEquatable<Bucket>
     {
-        private readonly T[][] _stack = new T[capacity][];
+        public readonly bool CanReturn => _count != _stack.Length;
+
+        public readonly object SyncRoot => _stack;
+
+        internal readonly T[][] _stack = new T[capacity][];
         private readonly int _arrayLength = arrayLength;
         private int _count;
 
         [Pure]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] Rent()
-        {
-            Monitor.Enter(_stack);
-            try
-            {
-                if (_count == 0)
-                {
-                    return GC.AllocateUninitializedArray<T>(_arrayLength);
-                }
-
-                ref T[] arrayReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --_count);
-                T[] array = arrayReference;
-                arrayReference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
-                return array;
-            }
-            finally
-            {
-                Monitor.Exit(_stack);
-            }
-        }
+        public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
-            Monitor.Enter(_stack);
-            try
+            lock (_stack)
             {
                 if (_count == 0)
                 {
@@ -55,44 +37,47 @@ public sealed partial class ArrayPool<T>
                 arrayReference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
                 return true;
             }
-            finally
-            {
-                Monitor.Exit(_stack);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Return(T[] array)
+        public void Return(T[] array, ArrayReturnOptions returnOptions)
         {
-            Monitor.Enter(_stack);
-            try
+            lock (_stack)
             {
                 if (_count == _stack.Length)
                 {
                     return;
                 }
 
+                if (returnOptions != 0)
+                {
+                    PerformReturnActions(array, returnOptions);
+                }
+
                 Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), _count++) = array;
-            }
-            finally
-            {
-                Monitor.Exit(_stack);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
-            Monitor.Enter(_stack);
-            try
+            lock (_stack)
             {
                 Array.Clear(_stack);
                 _count = 0;
             }
-            finally
-            {
-                Monitor.Exit(_stack);
-            }
         }
+
+        public readonly bool Equals(Bucket other) => ReferenceEquals(_stack, other._stack) && _arrayLength == other._arrayLength && _count == other._count;
+
+        // ReSharper disable once ArrangeModifiersOrder
+        public override readonly bool Equals(object? obj) => obj is Bucket other && Equals(other);
+
+        // ReSharper disable once ArrangeModifiersOrder
+        public override readonly int GetHashCode() => HashCode.Combine(_stack, _arrayLength, _count);
+
+        public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
+
+        public static bool operator !=(Bucket left, Bucket right) => !left.Equals(right);
     }
 }

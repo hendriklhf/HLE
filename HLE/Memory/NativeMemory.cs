@@ -29,6 +29,15 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     public readonly Span<T> this[Range range] => AsSpan(range);
 
+    public readonly T* Pointer
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(IsDisposed, typeof(NativeMemory<T>));
+            return _pointer;
+        }
+    }
+
     public readonly int Length
     {
         get => (int)(_lengthAndDisposed & 0x7FFFFFFF);
@@ -39,16 +48,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         }
     }
 
-    public readonly T* Pointer
-    {
-        get
-        {
-            ObjectDisposedException.ThrowIf(IsDisposed, typeof(NativeMemory<T>));
-            return _pointer;
-        }
-    }
-
-    internal bool IsDisposed
+    private bool IsDisposed
     {
         readonly get => (_lengthAndDisposed & 0x80000000) == 0x80000000;
         set
@@ -69,6 +69,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     readonly bool ICollection<T>.IsReadOnly => false;
 
     internal readonly T* _pointer;
+
     // | 0 | 000 0000 0000 0000 0000 0000 0000 |
     // most significant bit is the disposed state
     // the other bits are the length
@@ -89,7 +90,9 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         Length = length;
         IsDisposed = false;
 
-        long byteCount = sizeof(T) * (long)length;
+        long byteCount = checked(sizeof(T) * (long)length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)byteCount, nuint.MaxValue);
+
         _pointer = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (nuint)sizeof(nuint));
         if (zeroed)
         {
@@ -118,6 +121,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
             return;
         }
 
+        Debug.Assert((nuint)_pointer % (nuint)sizeof(nuint) == 0);
         NativeMemory.AlignedFree(_pointer);
         IsDisposed = true;
     }
@@ -210,7 +214,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
         Type thisType = typeof(NativeMemory<T>);
         Type typeOfT = typeof(T);
-        return $"{thisType.Namespace}.{thisType.Name.AsSpan(..^2)}<{typeOfT.Namespace}.{typeOfT.Name}>[{Length}]";
+        return $"{thisType.Namespace}.{nameof(NativeMemory<T>)}<{typeOfT.Namespace}.{typeOfT.Name}>[{Length}]";
     }
 
     [Pure]

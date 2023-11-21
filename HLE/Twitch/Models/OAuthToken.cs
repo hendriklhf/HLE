@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -42,7 +43,7 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
     {
         if (!GetTokenPattern().IsMatch(token))
         {
-            throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {GetTokenPattern()}");
+            ThrowInvalidOAuthTokenFormat();
         }
 
         ValueStringBuilder builder = new(stackalloc char[_tokenLength]);
@@ -55,6 +56,11 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
         builder.Advance(token.Length);
         _token = StringPool.Shared.GetOrAdd(builder.WrittenSpan);
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowInvalidOAuthTokenFormat()
+        => throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {GetTokenPattern()}");
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

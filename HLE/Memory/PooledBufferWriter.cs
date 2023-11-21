@@ -34,7 +34,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     /// <summary>
     /// The amount of written elements.
     /// </summary>
-    public int Count { get; internal set; }
+    public int Count { get; private set; }
 
     public int Capacity => _buffer.Length;
 
@@ -51,7 +51,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
         CopyWorker<T>.Copy(data, _buffer.AsSpan());
-        Advance(data.Length);
+        Count = data.Length;
     }
 
     public void Dispose() => _buffer.Dispose();
@@ -87,7 +87,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     public void Write(T item)
     {
         GetReference() = item;
-        Advance(1);
+        Count++;
     }
 
     public void Write(List<T> data) => Write(CollectionsMarshal.AsSpan(data));
@@ -100,7 +100,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     {
         Span<T> buffer = GetSpan(data.Length);
         CopyWorker<T>.Copy(data, buffer);
-        Advance(data.Length);
+        Count += data.Length;
     }
 
     public void Clear()
@@ -165,7 +165,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
         _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
         if (Count != 0)
         {
-            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (nuint)Count);
+            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Count);
         }
     }
 
@@ -214,15 +214,6 @@ public sealed class PooledBufferWriter<T>(int capacity)
     bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     [Pure]
-    public bool Equals(PooledBufferWriter<T>? other) => ReferenceEquals(this, other);
-
-    [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
-
-    [Pure]
-    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
-
-    [Pure]
     public override string ToString()
     {
         if (typeof(char) == typeof(T))
@@ -240,4 +231,17 @@ public sealed class PooledBufferWriter<T>(int capacity)
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    [Pure]
+    public bool Equals(PooledBufferWriter<T>? other) => ReferenceEquals(this, other);
+
+    [Pure]
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+
+    public static bool operator ==(PooledBufferWriter<T>? left, PooledBufferWriter<T>? right) => Equals(left, right);
+
+    public static bool operator !=(PooledBufferWriter<T>? left, PooledBufferWriter<T>? right) => !(left == right);
 }

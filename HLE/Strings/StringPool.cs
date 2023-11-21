@@ -11,9 +11,11 @@ namespace HLE.Strings;
 
 public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<string>
 {
-    public int Capacity => _buckets.Length;
+    public int BucketCount => _buckets.Length;
 
     public int BucketCapacity => _buckets[0]._strings.Length;
+
+    public int Capacity => BucketCount * BucketCapacity;
 
     private readonly Bucket[] _buckets;
 
@@ -85,7 +87,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
-        if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
+        if (!MemoryHelpers.UseStackAlloc<char>(maxCharCount))
         {
             using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
@@ -140,7 +142,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
-        if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
+        if (!MemoryHelpers.UseStackAlloc<char>(maxCharCount))
         {
             using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
@@ -169,7 +171,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
-        if (!MemoryHelper.UseStackAlloc<char>(maxCharCount))
+        if (!MemoryHelpers.UseStackAlloc<char>(maxCharCount))
         {
             using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
@@ -185,7 +187,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     private Bucket GetBucket(ReadOnlySpan<char> span)
     {
         uint hash = SimpleStringHasher.Hash(span);
-        int index = (int)(hash % _buckets.Length);
+        int index = (int)(hash % (uint)_buckets.Length);
         return _buckets[index];
     }
 

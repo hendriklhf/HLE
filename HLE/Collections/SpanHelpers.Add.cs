@@ -38,9 +38,9 @@ public static partial class SpanHelpers
     {
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
+            Vector512<T> additionVector = Vector512.Create(addition);
             while (length >= Vector512<T>.Count)
             {
-                Vector512<T> additionVector = Vector512.Create(addition);
                 Vector512<T> vector = Vector512.LoadUnsafe(ref numbers);
                 vector += additionVector;
                 vector.StoreUnsafe(ref numbers);
@@ -53,9 +53,9 @@ public static partial class SpanHelpers
 
         if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
         {
+            Vector256<T> additionVector = Vector256.Create(addition);
             while (length >= Vector256<T>.Count)
             {
-                Vector256<T> additionVector = Vector256.Create(addition);
                 Vector256<T> vector = Vector256.LoadUnsafe(ref numbers);
                 vector += additionVector;
                 vector.StoreUnsafe(ref numbers);
@@ -68,9 +68,9 @@ public static partial class SpanHelpers
 
         if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
         {
+            Vector128<T> additionVector = Vector128.Create(addition);
             while (length >= Vector128<T>.Count)
             {
-                Vector128<T> additionVector = Vector128.Create(addition);
                 Vector128<T> vector = Vector128.LoadUnsafe(ref numbers);
                 vector += additionVector;
                 vector.StoreUnsafe(ref numbers);

@@ -92,7 +92,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> GetChars(int index) => _chars!.AsSpanUnsafe(_starts[index], _lengths[index]);
+    public ReadOnlySpan<char> GetChars(int index) => _chars is null ? [] : _chars.AsSpanUnsafe(_starts[index], _lengths[index]);
 
     [Pure]
     public ReadOnlySpan<string> AsSpan() => _strings;
@@ -150,7 +150,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
         Span<int> indices;
         int[]? rentedIndices = null;
-        if (!MemoryHelper.UseStackAlloc<int>(lengths.Length))
+        if (!MemoryHelpers.UseStackAlloc<int>(lengths.Length))
         {
             rentedIndices = ArrayPool<int>.Shared.Rent(lengths.Length);
             indices = rentedIndices.AsSpan(..lengths.Length);

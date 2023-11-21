@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -91,7 +92,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private async ValueTask SendAsync(ReadOnlyMemory<char> message)
     {
-        using RentedArray<byte> bytes = ArrayPool<byte>.Shared.RentAsRentedArray(message.Length << 1);
+        using RentedArray<byte> bytes = Memory.ArrayPool<byte>.Shared.RentAsRentedArray(message.Length << 1);
         int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.AsSpan());
         await SendAsync(bytes.AsMemory(..byteCount));
     }
@@ -115,9 +116,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private void StartListeningThread()
     {
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        Thread listeningThread = new(() => StartListeningAsync())
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        Thread listeningThread = new(StartListeningAsync)
         {
             IsBackground = true,
             Priority = ThreadPriority.AboveNormal
@@ -125,7 +124,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         listeningThread.Start();
     }
 
-    private async Task StartListeningAsync()
+    // ReSharper disable once AsyncVoidMethod
+    private async void StartListeningAsync()
     {
         try
         {
@@ -135,8 +135,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             char carriageReturn = _newLine[0];
             char newLine = _newLine[1];
 
-            Memory<byte> byteBuffer = GC.AllocateUninitializedArray<byte>(4096);
-            Memory<char> charBuffer = GC.AllocateUninitializedArray<char>(4096);
+            Memory<byte> byteBuffer = GC.AllocateUninitializedArray<byte>(4096, true);
+            Memory<char> charBuffer = GC.AllocateUninitializedArray<char>(4096, true);
             int bufferLength = 0;
             while (!cancellationTokenSource.IsCancellationRequested && State is WebSocketState.Open)
             {

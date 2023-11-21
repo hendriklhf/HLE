@@ -73,7 +73,8 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     [Fact]
     public void Indexer_Index_Test()
     {
-        StringArray array = new(["hello", "abc", "xd"]);
+        ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+        StringArray array = new(strings);
         Assert.Equal("hello", array[^3]);
         Assert.Equal("abc", array[^2]);
         Assert.Equal("xd", array[^1]);
@@ -92,7 +93,8 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     [Fact]
     public void Indexer_Range_Test()
     {
-        StringArray array = new(["hello", "abc", "xd"]);
+        ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+        StringArray array = new(strings);
         ReadOnlySpan<string> span = array[..2];
         Assert.True(span is ["hello", "abc"]);
     }
@@ -102,13 +104,15 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            StringArray array = new(["hello", "abc", "xd"]);
+            ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+            StringArray array = new(strings);
             _ = array[..4];
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            StringArray array = new(["hello", "abc", "xd"]);
+            ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+            StringArray array = new(strings);
             _ = array[4..];
         });
     }
@@ -235,13 +239,15 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     {
         Assert.Throws<IndexOutOfRangeException>(() =>
         {
-            StringArray array = new(["hello", "abc", "xd"]);
+            ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+            StringArray array = new(strings);
             _ = array.GetStringLength(-1);
         });
 
         Assert.Throws<IndexOutOfRangeException>(() =>
         {
-            StringArray array = new(["hello", "abc", "xd"]);
+            ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+            StringArray array = new(strings);
             _ = array.GetStringLength(3);
         });
     }
@@ -343,7 +349,8 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     [Fact]
     public void IReadOnlySpanProvider_GetReadOnlySpan_Test()
     {
-        StringArray stringArray = new(["hello", "abc", "xd"]);
+        ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+        StringArray stringArray = new(strings);
         IReadOnlySpanProvider<string> readOnlySpanProvider = stringArray;
         Assert.True(stringArray.AsSpan().SequenceEqual(readOnlySpanProvider.GetReadOnlySpan()));
     }

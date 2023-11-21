@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.WebSockets;
@@ -159,18 +160,36 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!IsConnected)
         {
-            throw new ClientNotConnectedException();
+            ThrowClientNotConnectedException();
         }
 
         if (IsAnonymousLogin)
         {
-            throw new AnonymousClientException();
+            ThrowAnonymousClientException();
         }
 
         Channels.TryGet(channel.Span, out Channel? channelObject);
-        string prefixedChannel = channelObject?._prefixedName ?? throw new NotConnectedToTheChannelException(new string(channel.Span));
+        if (channelObject is null)
+        {
+            ThrowNotConnectedToChannelException(channel);
+        }
+
+        string prefixedChannel = channelObject._prefixedName;
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowNotConnectedToChannelException(ReadOnlyMemory<char> channel)
+        => throw new NotConnectedToChannelException(new string(channel.Span));
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowAnonymousClientException() => throw new AnonymousClientException();
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowClientNotConnectedException() => throw new ClientNotConnectedException();
 
     /// <inheritdoc cref="SendAsync(long,ReadOnlyMemory{char})"/>
     public async ValueTask SendAsync(long channelId, string message) => await SendAsync(channelId, message.AsMemory());
@@ -184,16 +203,16 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!IsConnected)
         {
-            throw new ClientNotConnectedException();
+            ThrowClientNotConnectedException();
         }
 
         if (IsAnonymousLogin)
         {
-            throw new AnonymousClientException();
+            ThrowAnonymousClientException();
         }
 
         Channels.TryGet(channelId, out Channel? channelObject);
-        string prefixedChannel = channelObject?._prefixedName ?? throw new NotConnectedToTheChannelException(channelId);
+        string prefixedChannel = channelObject?._prefixedName ?? throw new NotConnectedToChannelException(channelId);
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), message);
     }
 
@@ -208,7 +227,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!IsConnected)
         {
-            throw new ClientNotConnectedException();
+            ThrowClientNotConnectedException();
         }
 
         await _client.SendRawAsync(rawMessage);
@@ -432,7 +451,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (!GetChannelPattern().IsMatch(channel))
         {
-            throw new FormatException($"The channel name (\"{channel}\") is in an invalid format.");
+            ThrowInvalidChannelFormat(channel);
         }
 
         if (withHashtag)
@@ -457,6 +476,11 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
         channel.ToLowerInvariant(result);
         return channel.Length;
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowInvalidChannelFormat(ReadOnlySpan<char> channel)
+        => throw new FormatException($"The channel name (\"{channel}\") is in an invalid format.");
 
     [GeneratedRegex(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
     private static partial Regex GetChannelPattern();

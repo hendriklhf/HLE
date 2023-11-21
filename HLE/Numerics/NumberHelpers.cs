@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -7,7 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace HLE.Numerics;
 
-public static class NumberHelper
+public static class NumberHelpers
 {
     [Pure]
     public static int GetNumberLength<T>(T number) where T : INumber<T>
@@ -140,4 +141,22 @@ public static class NumberHelper
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Throw128BitIntegerNotSupported()
         => throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
+
+    [Pure]
+    public static T Align<T>(T number, T alignment, AlignmentMethod method = AlignmentMethod.Add) where T : INumber<T>
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(alignment);
+
+        return method switch
+        {
+            AlignmentMethod.Add => number + alignment - (number % alignment),
+            AlignmentMethod.Subtract => number - (number % alignment),
+            _ => ThrowInvalidEnumArgumentException<T>(method)
+        };
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static T ThrowInvalidEnumArgumentException<T>(AlignmentMethod method) where T : INumber<T>
+        => throw new InvalidEnumArgumentException(nameof(method), (int)method, typeof(AlignmentMethod));
 }

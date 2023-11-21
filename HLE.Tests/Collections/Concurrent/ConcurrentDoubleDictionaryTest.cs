@@ -11,7 +11,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public void SetTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 
@@ -35,7 +35,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [Fact]
     public void TryAddTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 
@@ -53,7 +53,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     public void AddOrSetTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
 
         dictionary.AddOrSet(1, "a", value);
@@ -80,7 +80,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [Fact]
     public void TryGetValueTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 
@@ -106,7 +106,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [Fact]
     public void RemoveTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
         dictionary.AddOrSet(2, "b", value);
@@ -128,7 +128,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [Fact]
     public void ClearTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
         dictionary.AddOrSet(2, "b", value);
@@ -143,7 +143,7 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
     [Fact]
     public void ContainsTest()
     {
-        using ConcurrentDoubleDictionary<int, string, string> dictionary = new();
+        ConcurrentDoubleDictionary<int, string, string> dictionary = new();
         const string value = "xd";
         dictionary.AddOrSet(1, "a", value);
 

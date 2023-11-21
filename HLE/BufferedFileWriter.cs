@@ -87,7 +87,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     {
         int bytesWritten;
         int byteCount = fileEncoding.GetMaxByteCount(fileContent.Length);
-        if (!MemoryHelper.UseStackAlloc<byte>(byteCount))
+        if (!MemoryHelpers.UseStackAlloc<byte>(byteCount))
         {
             using RentedArray<byte> byteArrayBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(byteCount);
             bytesWritten = fileEncoding.GetBytes(fileContent, byteArrayBuffer.AsSpan());

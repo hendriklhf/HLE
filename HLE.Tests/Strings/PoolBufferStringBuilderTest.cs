@@ -300,7 +300,7 @@ public sealed class PoolBufferStringBuilderTest
     public void Append_UInt_Test()
     {
         using PooledStringBuilder builder = new(16);
-        Assert.Equal(16, builder.Capacity);
+        Assert.True(builder.Capacity >= 16);
 
         const uint value = uint.MaxValue;
         builder.Append(value);
