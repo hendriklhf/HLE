@@ -8,7 +8,7 @@ namespace HLE.Collections.Concurrent;
 public static class ConcurrentPooledList
 {
     [Pure]
-    public static ConcurrentPooledList<T> Create<T>(IEnumerable<T> items) where T : IEquatable<T>
+    public static ConcurrentPooledList<T> Create<T>(IEnumerable<T> items)
     {
         ConcurrentPooledList<T> list = [];
         list.AddRange(items);
@@ -16,18 +16,18 @@ public static class ConcurrentPooledList
     }
 
     [Pure]
-    public static ConcurrentPooledList<T> Create<T>(List<T> items) where T : IEquatable<T>
+    public static ConcurrentPooledList<T> Create<T>(List<T> items)
         => new(CollectionsMarshal.AsSpan(items));
 
     [Pure]
-    public static ConcurrentPooledList<T> Create<T>(T[] items) where T : IEquatable<T>
+    public static ConcurrentPooledList<T> Create<T>(T[] items)
         => new(items);
 
     [Pure]
-    public static ConcurrentPooledList<T> Create<T>(Span<T> items) where T : IEquatable<T>
+    public static ConcurrentPooledList<T> Create<T>(Span<T> items)
         => new(items);
 
     [Pure]
-    public static ConcurrentPooledList<T> Create<T>(ReadOnlySpan<T> items) where T : IEquatable<T>
+    public static ConcurrentPooledList<T> Create<T>(ReadOnlySpan<T> items)
         => new(items);
 }

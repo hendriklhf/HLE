@@ -25,9 +25,9 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
     public void ReadBytes<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
     {
         using FileStream fileStream = File.OpenRead(FilePath);
-        if (fileStream.Length > int.MaxValue)
+        if (fileStream.Length > Array.MaxLength)
         {
-            ThrowFileSizeExceedsInt32MaxValue();
+            ThrowFileSizeExceedsMaxArrayLength();
         }
 
         int bytesRead = fileStream.Read(writer.GetSpan((int)fileStream.Length));
@@ -37,38 +37,75 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowFileSizeExceedsInt32MaxValue()
-        => throw new NotSupportedException($"The file size exceeds the the maximum {typeof(int)} value.");
+    private static void ThrowFileSizeExceedsMaxArrayLength()
+        => throw new NotSupportedException($"The file size exceeds the the maximum array length ({Array.MaxLength}).");
 
-    public async ValueTask ReadBytesAsync<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
+    public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
         await using FileStream fileStream = File.OpenRead(FilePath);
-        if (fileStream.Length > int.MaxValue)
+        if (fileStream.Length > Array.MaxLength)
         {
-            ThrowFileSizeExceedsInt32MaxValue();
+            ThrowFileSizeExceedsMaxArrayLength();
         }
 
-        int bytesRead = await fileStream.ReadAsync(writer.GetMemory((int)fileStream.Length));
+        int bytesRead = await fileStream.ReadAsync(byteWriter.GetMemory((int)fileStream.Length));
         Debug.Assert(bytesRead == fileStream.Length);
-        writer.Advance(bytesRead);
+        byteWriter.Advance(bytesRead);
     }
 
-    public void ReadChars<TWriter>(TWriter writer, Encoding fileEncoding) where TWriter : IBufferWriter<char>
+    public void ReadChars<TWriter>(TWriter charWriter, Encoding fileEncoding) where TWriter : IBufferWriter<char>
     {
         using PooledBufferWriter<byte> byteWriter = new();
         ReadBytes(byteWriter);
         int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
-        int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, writer.GetSpan(charCount));
-        writer.Advance(charsWritten);
+        int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, charWriter.GetSpan(charCount));
+        charWriter.Advance(charsWritten);
     }
 
-    public async ValueTask ReadCharsAsync<TWriter>(TWriter writer, Encoding fileEncoding) where TWriter : IBufferWriter<char>
+    public async ValueTask ReadCharsAsync<TWriter>(TWriter charWriter, Encoding fileEncoding) where TWriter : IBufferWriter<char>
     {
         using PooledBufferWriter<byte> byteWriter = new();
         await ReadBytesAsync(byteWriter);
         int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
-        int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, writer.GetSpan(charCount));
-        writer.Advance(charsWritten);
+        int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, charWriter.GetSpan(charCount));
+        charWriter.Advance(charsWritten);
+    }
+
+    public void ReadLines<TWriter>(TWriter lines) where TWriter : IBufferWriter<string>
+    {
+        BufferedFileReader reader = new(FilePath);
+        using PooledBufferWriter<char> charsWriter = new();
+        reader.ReadChars(charsWriter, Encoding.UTF8);
+
+        ReadOnlySpan<char> chars = charsWriter.WrittenSpan;
+        while (true)
+        {
+            int indexOfNewLine = chars.IndexOfAny('\r', '\n');
+            if (indexOfNewLine < 0)
+            {
+                break;
+            }
+
+            string line = new(chars[..indexOfNewLine]);
+            if (typeof(TWriter) == typeof(PooledBufferWriter<string>))
+            {
+                Unsafe.As<TWriter, PooledBufferWriter<string>>(ref lines).Write(line);
+            }
+            else
+            {
+                lines.GetSpan(1)[0] = line;
+                lines.Advance(1);
+            }
+
+            chars = chars[indexOfNewLine..];
+            int skip = 1;
+            if (chars.StartsWith("\r\n"))
+            {
+                skip++;
+            }
+
+            chars = chars[skip..];
+        }
     }
 
     [Pure]

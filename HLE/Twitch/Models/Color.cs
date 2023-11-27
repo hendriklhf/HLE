@@ -1,12 +1,13 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using HLE.Marshalling;
+using HLE.Memory;
 using HLE.Strings;
 
 namespace HLE.Twitch.Models;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly struct Color : IEquatable<Color>
+public readonly struct Color : IBitwiseEquatable<Color>
 {
     public byte Red { get; }
 
@@ -48,7 +49,7 @@ public readonly struct Color : IEquatable<Color>
 #pragma warning restore CA2225
 
     [Pure]
-    public bool Equals(Color other) => IsEmpty && other.IsEmpty && Red == other.Red && Green == other.Green && Blue == other.Blue;
+    public bool Equals(Color other) => StructMarshal.EqualsBitwise(this, other);
 
     [Pure]
     public override bool Equals(object? obj) => obj is Color other && Equals(other);

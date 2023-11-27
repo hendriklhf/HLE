@@ -11,7 +11,8 @@ namespace HLE.Collections.Concurrent;
 [DebuggerDisplay("Count = {Count}")]
 public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICountable,
     IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
-    where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
+    where TPrimaryKey : IEquatable<TPrimaryKey>
+    where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _dictionary[key];
 

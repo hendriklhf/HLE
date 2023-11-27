@@ -15,7 +15,6 @@ namespace HLE.Collections.Concurrent;
 [CollectionBuilder(typeof(ConcurrentPooledList), nameof(ConcurrentPooledList.Create))]
 public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable,
     IIndexAccessible<T>, IReadOnlyList<T>, ICollectionProvider<T>
-    where T : IEquatable<T>
 {
     public T this[int index]
     {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
@@ -50,18 +49,6 @@ public static class NumberHelpers
     }
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static char DigitToChar(byte digit) => (char)(digit + (byte)'0');
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte CharToDigit(char c) => (byte)(c - '0');
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte CharToDigit(byte c) => (byte)(c - '0');
-
-    [Pure]
     public static T ParsePositiveNumber<T>(ReadOnlySpan<char> number) where T : INumberBase<T>
     {
         T result = T.Zero;
@@ -89,58 +76,100 @@ public static class NumberHelpers
         return result;
     }
 
+    /// <summary>
+    /// Brings a number into a range between two numbers.
+    /// </summary>
+    /// <param name="number">The number that will be brought into the range.</param>
+    /// <param name="min">The lower bound of the range.</param>
+    /// <param name="max">The upper bound of the range.</param>
+    /// <typeparam name="T">The number type.</typeparam>
+    /// <returns>A number between <paramref name="min"/> and exclusive <paramref name="max"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="min"/> is greater than <paramref name="max"/>.</exception>
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe T BringNumberIntoRange<T>(T number, T min, T max) where T : INumber<T>
+    public static T BringIntoRange<T>(T number, T min, T max) where T : INumber<T>, IMinMaxValue<T>
     {
-        if (sizeof(T) == sizeof(Int128))
-        {
-            Throw128BitIntegerNotSupported();
-        }
+        ThrowIfNumberTypeNotSupported<T>();
+
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(min, max);
 
         if (min == max)
         {
             return min;
         }
 
-        switch (sizeof(T))
+        if (min == T.Zero && number >= T.Zero)
         {
-            case sizeof(byte):
-                short numberAsInt16 = short.CreateTruncating(number);
-                short minAsInt16 = short.CreateTruncating(min);
-                short maxAsInt16 = short.CreateTruncating(max);
-                short rangeAsInt16 = short.Abs(short.CreateTruncating(maxAsInt16 - minAsInt16));
-                return T.CreateTruncating(int.Abs(numberAsInt16 % rangeAsInt16) + minAsInt16);
-            case sizeof(short):
-                int numberAsInt32 = int.CreateTruncating(number);
-                int minAsInt32 = int.CreateTruncating(min);
-                int maxAsInt32 = int.CreateTruncating(max);
-                int rangeAsInt32 = int.Abs(int.CreateTruncating(maxAsInt32 - minAsInt32));
-                return T.CreateTruncating(int.Abs(numberAsInt32 % rangeAsInt32) + minAsInt32);
-            case sizeof(int):
-                long numberAsInt64 = long.CreateTruncating(number);
-                long minAsInt64 = long.CreateTruncating(min);
-                long maxAsInt64 = long.CreateTruncating(max);
-                long rangeAsInt64 = long.Abs(long.CreateTruncating(maxAsInt64 - minAsInt64));
-                return T.CreateTruncating(long.Abs(numberAsInt64 % rangeAsInt64) + minAsInt64);
-            case sizeof(long):
-                Int128 numberAsInt128 = Int128.CreateTruncating(number);
-                Int128 minAsInt128 = Int128.CreateTruncating(min);
-                Int128 maxAsInt128 = Int128.CreateTruncating(max);
-                Int128 rangeAsInt128 = Int128.Abs(Int128.CreateTruncating(maxAsInt128 - minAsInt128));
-                return T.CreateTruncating(Int128.Abs(numberAsInt128 % rangeAsInt128) + minAsInt128);
+            return number % max;
         }
 
-        return ThrowUnreachableException<T>("This shouldn't happen, as all number types are covered.");
+        if (typeof(T) == typeof(sbyte))
+        {
+            byte numberAsUInt8 = Unsafe.As<T, byte>(ref number);
+            byte maxAsInt8 = Unsafe.As<T, byte>(ref max);
+            byte minAsInt8 = Unsafe.As<T, byte>(ref min);
+            byte rangeAsInt8 = (byte)(maxAsInt8 - minAsInt8);
+            return T.CreateTruncating((numberAsUInt8 % rangeAsInt8) + minAsInt8);
+        }
+
+        if (typeof(T) == typeof(short))
+        {
+            ushort numberAsUInt16 = Unsafe.As<T, ushort>(ref number);
+            ushort maxAsInt16 = Unsafe.As<T, ushort>(ref max);
+            ushort minAsInt16 = Unsafe.As<T, ushort>(ref min);
+            ushort rangeAsInt16 = (ushort)(maxAsInt16 - minAsInt16);
+            return T.CreateTruncating((numberAsUInt16 % rangeAsInt16) + minAsInt16);
+        }
+
+        if (typeof(T) == typeof(int))
+        {
+            uint numberAsUInt32 = Unsafe.As<T, uint>(ref number);
+            uint maxAsInt32 = Unsafe.As<T, uint>(ref max);
+            uint minAsInt32 = Unsafe.As<T, uint>(ref min);
+            uint rangeAsInt32 = maxAsInt32 - minAsInt32;
+            return T.CreateTruncating((numberAsUInt32 % rangeAsInt32) + minAsInt32);
+        }
+
+        if (typeof(T) == typeof(long))
+        {
+            ulong numberAsUInt32 = Unsafe.As<T, ulong>(ref number);
+            ulong maxAsInt32 = Unsafe.As<T, ulong>(ref max);
+            ulong minAsInt32 = Unsafe.As<T, ulong>(ref min);
+            ulong rangeAsInt32 = maxAsInt32 - minAsInt32;
+            return T.CreateTruncating((numberAsUInt32 % rangeAsInt32) + minAsInt32);
+        }
+
+        if (typeof(T) == typeof(Int128))
+        {
+            UInt128 numberAsUInt32 = Unsafe.As<T, UInt128>(ref number);
+            UInt128 maxAsInt32 = Unsafe.As<T, UInt128>(ref max);
+            UInt128 minAsInt32 = Unsafe.As<T, UInt128>(ref min);
+            UInt128 rangeAsInt32 = maxAsInt32 - minAsInt32;
+            return T.CreateTruncating((numberAsUInt32 % rangeAsInt32) + minAsInt32);
+        }
+
+        T range = max - min;
+        return T.CreateTruncating((number % range) + min);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ThrowIfNumberTypeNotSupported<T>()
+    {
+        if (typeof(T) != typeof(byte) && typeof(T) != typeof(sbyte) &&
+            typeof(T) != typeof(ushort) && typeof(T) != typeof(short) &&
+            typeof(T) != typeof(uint) && typeof(T) != typeof(int) &&
+            typeof(T) != typeof(ulong) && typeof(T) != typeof(long) &&
+            typeof(T) != typeof(UInt128) && typeof(T) != typeof(Int128) &&
+            typeof(T) != typeof(char))
+        {
+            ThrowNumberTypeNotSupported<T>();
+        }
     }
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static T ThrowUnreachableException<T>(string message) => throw new UnreachableException(message);
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void Throw128BitIntegerNotSupported()
-        => throw new NotSupportedException($"{typeof(Int128)} and {typeof(UInt128)} are not supported.");
+    private static void ThrowNumberTypeNotSupported<T>()
+        => throw new NotSupportedException($"The type {typeof(T)} is not supported.");
 
     [Pure]
     public static T Align<T>(T number, T alignment, AlignmentMethod method = AlignmentMethod.Add) where T : INumber<T>

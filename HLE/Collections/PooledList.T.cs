@@ -15,7 +15,6 @@ namespace HLE.Collections;
 public sealed class PooledList<T>(int capacity)
     : IList<T>, ICopyable<T>, ICountable, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>,
         ICollectionProvider<T>
-    where T : IEquatable<T>
 {
     public ref T this[int index]
     {
@@ -64,13 +63,13 @@ public sealed class PooledList<T>(int capacity)
     public Span<T> AsSpan() => _buffer.AsSpan(..Count);
 
     [Pure]
-    public Span<T> AsSpan(int start) => new Slicer<T>(ref _buffer.Reference, Count).CreateSpan(start);
+    public Span<T> AsSpan(int start) => new Slicer<T>(ref _buffer.Reference, Count).SliceSpan(start);
 
     [Pure]
-    public Span<T> AsSpan(int start, int length) => new Slicer<T>(ref _buffer.Reference, Count).CreateSpan(start, length);
+    public Span<T> AsSpan(int start, int length) => new Slicer<T>(ref _buffer.Reference, Count).SliceSpan(start, length);
 
     [Pure]
-    public Span<T> AsSpan(Range range) => new Slicer<T>(ref _buffer.Reference, Count).CreateSpan(range);
+    public Span<T> AsSpan(Range range) => new Slicer<T>(ref _buffer.Reference, Count).SliceSpan(range);
 
     [Pure]
     public T[] ToArray()
@@ -177,6 +176,35 @@ public sealed class PooledList<T>(int capacity)
         Count += items.Length;
     }
 
+    /// <summary>
+    /// Trims unused buffer size.<br/>
+    /// This method should ideally be called, when <see cref="Capacity"/> of the <see cref="PooledList{T}"/> is much larger than <see cref="Count"/>.
+    /// </summary>
+    /// <example>
+    /// After having removed a lot of items from the <see cref="PooledList{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.
+    /// If there are 32 items remaining and the <see cref="Capacity"/> is 1024, the buffer of 1024 items will be returned to the <see cref="ArrayPool{T}"/>
+    /// and a new buffer that has at least the size of the remaining items will be rented and the remaining 32 items are copied into it.
+    /// </example>
+    public void TrimBuffer()
+    {
+        int trimmedBufferSize = BufferHelpers.GrowByPow2(Count, 0);
+        if (trimmedBufferSize == Capacity)
+        {
+            return;
+        }
+
+        if (trimmedBufferSize == 0)
+        {
+            _buffer.Dispose();
+            _buffer = [];
+            return;
+        }
+
+        using RentedArray<T> oldBuffer = _buffer;
+        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
+        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Count);
+    }
+
     public void Clear()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -190,7 +218,7 @@ public sealed class PooledList<T>(int capacity)
     public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
     [Pure]
-    public bool Contains(T item) => _buffer.AsSpan(..Count).Contains(item);
+    public bool Contains(T item) => IndexOf(item) >= 0;
 
     public bool Remove(T item)
     {
@@ -206,7 +234,7 @@ public sealed class PooledList<T>(int capacity)
     }
 
     [Pure]
-    public int IndexOf(T item) => _buffer.AsSpan(..Count).IndexOf(item);
+    public int IndexOf(T item) => Array.IndexOf(_buffer.Array, item, 0, Count);
 
     public void Insert(int index, T item)
     {

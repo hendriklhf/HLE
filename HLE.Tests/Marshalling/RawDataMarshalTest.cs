@@ -36,7 +36,7 @@ public sealed class RawDataMarshalTest
     public void ReadObjectTest()
     {
         ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTableReference("hello");
-        string hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
+        string? hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
         Assert.Equal("hello", hello);
         Assert.Same("hello", hello);
     }

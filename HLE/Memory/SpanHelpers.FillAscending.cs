@@ -1,17 +1,18 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
-namespace HLE.Collections;
+namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
-    public static void FillAscending<T>(Span<T> destination) where T : unmanaged, INumber<T>
+    public static void FillAscending<T>(Span<T> destination) where T : INumber<T>
         => FillAscending(destination, T.Zero);
 
-    public static unsafe void FillAscending<T>(Span<T> destination, T start) where T : unmanaged, INumber<T>
+    public static unsafe void FillAscending<T>(Span<T> destination, T start) where T : INumber<T>
     {
         ref T destinationReference = ref MemoryMarshal.GetReference(destination);
 
@@ -37,8 +38,10 @@ public static partial class SpanHelpers
         }
     }
 
-    public static void FillAscending<T>(ref T destination, int length, T start) where T : unmanaged, INumber<T>
+    public static void FillAscending<T>(ref T destination, int length, T start) where T : INumber<T>
     {
+        Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
+
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
             Vector512<T> ascendingValueAdditions = Vector512<T>.Zero;

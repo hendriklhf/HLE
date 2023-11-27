@@ -12,8 +12,10 @@ namespace HLE.Collections;
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
-    : IReadOnlyCollection<TValue>, ICountable, IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
-    where TPrimaryKey : IEquatable<TPrimaryKey> where TSecondaryKey : IEquatable<TSecondaryKey>
+    : IReadOnlyCollection<TValue>, IReadOnlyDictionary<TPrimaryKey, TValue>, ICountable,
+        IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
+    where TPrimaryKey : IEquatable<TPrimaryKey>
+    where TSecondaryKey : IEquatable<TSecondaryKey>
 {
     public TValue this[TPrimaryKey key] => _values[key];
 
@@ -52,12 +54,18 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
 
     public int Count => _values.Count;
 
+    public IReadOnlyCollection<TPrimaryKey> PrimaryKeys => _values.Keys;
+
+    public IReadOnlyCollection<TSecondaryKey> SecondaryKeys => _secondaryKeyTranslations.Keys;
+
+    IEnumerable<TPrimaryKey> IReadOnlyDictionary<TPrimaryKey, TValue>.Keys => PrimaryKeys;
+
+    IEnumerable<TValue> IReadOnlyDictionary<TPrimaryKey, TValue>.Values => Values;
+
     public IReadOnlyCollection<TValue> Values => _values.Values;
 
     internal readonly Dictionary<TPrimaryKey, TValue> _values;
     internal readonly Dictionary<TSecondaryKey, TPrimaryKey> _secondaryKeyTranslations;
-
-    private static readonly IEnumerator<TValue> s_emptyEnumerator = default(ArrayEnumerator<TValue>);
 
     public DoubleDictionary()
     {
@@ -126,7 +134,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
                 _secondaryKeyTranslations.Remove(secondaryKey);
             }
 
-            ThrowKeyNotFoundException("The given secondary key does not exists with the matching primary key.");
+            ThrowKeyNotFoundException("The given secondary key does not exist with the matching primary key.");
         }
 
         valueRef = value;
@@ -179,6 +187,10 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     [Pure]
     public bool ContainsValue(TValue value) => _values.ContainsValue(value);
 
+    bool IReadOnlyDictionary<TPrimaryKey, TValue>.ContainsKey(TPrimaryKey key) => ContainsPrimaryKey(key);
+
+    bool IReadOnlyDictionary<TPrimaryKey, TValue>.TryGetValue(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value) => TryGetByPrimaryKey(key, out value);
+
     public void EnsureCapacity(int capacity)
     {
         _secondaryKeyTranslations.EnsureCapacity(capacity);
@@ -218,9 +230,11 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowKeyNotFoundException(string message) => throw new KeyNotFoundException(message);
 
-    public IEnumerator<TValue> GetEnumerator() => Count == 0 ? s_emptyEnumerator : Values.GetEnumerator();
+    public IEnumerator<TValue> GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    IEnumerator<KeyValuePair<TPrimaryKey, TValue>> IEnumerable<KeyValuePair<TPrimaryKey, TValue>>.GetEnumerator() => _values.GetEnumerator();
 
     [Pure]
     public bool Equals(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);
@@ -230,4 +244,12 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(_values, _secondaryKeyTranslations);
+
+    public static bool operator ==(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left,
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+        => Equals(left, right);
+
+    public static bool operator !=(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left,
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+        => !(left == right);
 }

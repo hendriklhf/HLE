@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using HLE.Marshalling;
+using HLE.Memory;
 
 namespace HLE.Twitch.Models;
 
 /// <summary>
 /// Options for <see cref="TwitchClient"/>.
 /// </summary>
-public readonly struct ClientOptions : IEquatable<ClientOptions>
+public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
 {
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
@@ -32,7 +33,7 @@ public readonly struct ClientOptions : IEquatable<ClientOptions>
     }
 
     [Pure]
-    public bool Equals(ClientOptions other) => StructMarshal<ClientOptions>.EqualsBitwise(this, other);
+    public bool Equals(ClientOptions other) => StructMarshal.EqualsBitwise(this, other);
 
     [Pure]
     public override bool Equals(object? obj) => obj is ClientOptions other && Equals(other);

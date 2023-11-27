@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using HLE.Memory;
+using HLE.Collections;
+using HLE.Marshalling;
 
-namespace HLE.Collections;
+namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
@@ -55,7 +57,7 @@ public static partial class SpanHelpers
             return 0;
         }
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (!StructMarshal.IsBitwiseEquatable<T>())
         {
             return IndicesOfNonOptimizedFallback(span, item, destination);
         }
@@ -73,6 +75,8 @@ public static partial class SpanHelpers
 
     public static int IndicesOf<T>(ref T items, int length, T item, Span<int> destination) where T : unmanaged, IEquatable<T>
     {
+        Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
+
         int indicesLength = 0;
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {

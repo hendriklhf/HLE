@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using HLE.Collections;
+using HLE.Memory;
 using Xunit;
 
 namespace HLE.Tests.Collections;
@@ -12,7 +12,7 @@ public sealed partial class SpanHelpersTest
 {
     private const int _elementCount = 4096;
 
-#pragma warning disable IDE0300
+#pragma warning disable IDE0300 // simplify collection initialization
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public static object[][] SumUncheckedParameters { get; } =
     {

@@ -38,6 +38,9 @@ public readonly unsafe ref partial struct CopyWorker<T>
     public static void Copy(ReadOnlySpan<T> source, Span<T> destination)
         => s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
+    public static void Copy(ReadOnlySpan<T> source, ref T destination)
+        => s_memmove(ref destination, ref MemoryMarshal.GetReference(source), (uint)source.Length);
+
     public static void Copy(ReadOnlySpan<T> source, T* destination)
         => s_memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 

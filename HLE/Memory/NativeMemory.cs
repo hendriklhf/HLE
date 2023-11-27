@@ -6,6 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Strings;
 
 namespace HLE.Memory;
 
@@ -43,7 +44,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         get => (int)(_lengthAndDisposed & 0x7FFFFFFF);
         private init
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            Debug.Assert(value >= 0); // value is validated by ctor
             _lengthAndDisposed = (_lengthAndDisposed & 0x80000000) | (uint)value;
         }
     }
@@ -53,7 +54,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         readonly get => (_lengthAndDisposed & 0x80000000) == 0x80000000;
         set
         {
-            uint valueAsUInt = (uint)(value ? 1 : 0);
+            uint valueAsUInt = (uint)(value ? 1 : 0); // value has to be a "valid" bool
             _lengthAndDisposed = (_lengthAndDisposed & 0x7FFFFFFF) | (valueAsUInt << 31);
         }
     }
@@ -90,13 +91,33 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         Length = length;
         IsDisposed = false;
 
-        long byteCount = checked(sizeof(T) * (long)length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)byteCount, nuint.MaxValue);
+        ulong byteCount = checked((ulong)sizeof(T) * (ulong)length);
+        if (!Environment.Is64BitProcess)
+        {
+            // TODO: specify exception message
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(byteCount, nuint.MaxValue);
+        }
 
         _pointer = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (nuint)sizeof(nuint));
         if (zeroed)
         {
-            Unsafe.InitBlock(_pointer, 0, (uint)byteCount);
+            ClearMemory(byteCount);
+        }
+    }
+
+    private readonly void ClearMemory(ulong byteCount)
+    {
+        byte* ptr = (byte*)_pointer;
+        while (byteCount >= uint.MaxValue)
+        {
+            Unsafe.InitBlock(ptr, 0, uint.MaxValue);
+            ptr += uint.MaxValue;
+            byteCount -= uint.MaxValue;
+        }
+
+        if (byteCount != 0)
+        {
+            Unsafe.InitBlock(ptr, 0, (uint)byteCount);
         }
     }
 
@@ -104,13 +125,13 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     public readonly Span<T> AsSpan() => new(Pointer, Length);
 
     [Pure]
-    public readonly Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).CreateSpan(start);
+    public readonly Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
 
     [Pure]
-    public readonly Span<T> AsSpan(int start, int length) => new Slicer<T>(Pointer, Length).CreateSpan(start, length);
+    public readonly Span<T> AsSpan(int start, int length) => new Slicer<T>(Pointer, Length).SliceSpan(start, length);
 
     [Pure]
-    public readonly Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).CreateSpan(range);
+    public readonly Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).SliceSpan(range);
 
     readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
@@ -212,9 +233,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
             return Length == 0 ? string.Empty : new((char*)Pointer, 0, Length);
         }
 
-        Type thisType = typeof(NativeMemory<T>);
-        Type typeOfT = typeof(T);
-        return $"{thisType.Namespace}.{nameof(NativeMemory<T>)}<{typeOfT.Namespace}.{typeOfT.Name}>[{Length}]";
+        return ToStringHelpers.FormatCollection(this);
     }
 
     [Pure]

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Strings;
 
 namespace HLE.Memory;
 
@@ -203,16 +204,14 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString()
     {
-        if (typeof(T) == typeof(char))
+        if (typeof(T) != typeof(char))
         {
-            T[] array = Array;
-            ReadOnlySpan<char> chars = Unsafe.As<T[], char[]>(ref array);
-            return new(chars);
+            return ToStringHelpers.FormatCollection(this);
         }
 
-        Type thisType = typeof(RentedArray<T>);
-        Type genericType = typeof(T);
-        return $"{thisType.Namespace}.{nameof(RentedArray<T>)}<{genericType.Namespace}.{genericType.Name}>[{Array.Length}]";
+        T[] array = Array;
+        ReadOnlySpan<char> chars = Unsafe.As<T[], char[]>(ref array);
+        return new(chars);
     }
 
     public readonly ArrayEnumerator<T> GetEnumerator() => new(Array, 0, Array.Length);

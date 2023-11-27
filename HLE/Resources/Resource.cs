@@ -7,13 +7,14 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
+using HLE.Strings;
 
 namespace HLE.Resources;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly unsafe struct Resource(byte* pointer, int length)
-    : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICountable,
-        ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>, ICollectionProvider<byte>
+public readonly unsafe struct Resource(byte* resource, int length)
+    : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICountable, ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>,
+        ICollectionProvider<byte>
 {
     byte IReadOnlyList<byte>.this[int index]
     {
@@ -43,7 +44,7 @@ public readonly unsafe struct Resource(byte* pointer, int length)
 
     bool ICollection<byte>.IsReadOnly => true;
 
-    private readonly byte* _pointer = pointer;
+    private readonly byte* _pointer = resource;
 
     public static Resource Empty => new();
 
@@ -136,11 +137,7 @@ public readonly unsafe struct Resource(byte* pointer, int length)
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public override string ToString()
-    {
-        Type thisType = typeof(Resource);
-        return $"{thisType.Namespace}.{thisType.Name}[{Length}]";
-    }
+    public override string ToString() => ToStringHelpers.FormatCollection(this);
 
     [Pure]
     public bool Equals(Resource other) => _pointer == other._pointer && Length == other.Length;

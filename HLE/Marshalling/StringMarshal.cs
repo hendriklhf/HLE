@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics.Contracts;
-using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -10,7 +9,9 @@ namespace HLE.Marshalling;
 
 public static class StringMarshal
 {
-    private static readonly unsafe delegate*<int, string> s_fastAllocateString = (delegate*<int, string>)typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+    private static readonly unsafe delegate*<int, string> s_fastAllocateString = (delegate*<int, string>)typeof(string)
+        .GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!
+        .MethodHandle.GetFunctionPointer();
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,7 +23,7 @@ public static class StringMarshal
             return string.Empty;
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfNegative(length); // otherwise an OutOfMemoryException will be thrown
 
         string str = s_fastAllocateString(length);
         chars = AsMutableSpan(str);
@@ -53,7 +54,7 @@ public static class StringMarshal
         span.Replace(oldChar, newChar);
     }
 
-    public static void ToLower(string? str) => ToLower((ReadOnlySpan<char>)str);
+    public static void ToLower(string? str) => ToLower(str.AsSpan());
 
     public static void ToLower(ReadOnlySpan<char> span) => ToLower(SpanMarshal.AsMutableSpan(span));
 
@@ -70,13 +71,13 @@ public static class StringMarshal
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
             span.CopyTo(rentedCopyBuffer.AsSpan());
-            MemoryExtensions.ToLower(rentedCopyBuffer[..span.Length], span, CultureInfo.InvariantCulture);
+            MemoryExtensions.ToLowerInvariant(rentedCopyBuffer[..span.Length], span);
             return;
         }
 
         Span<char> copyBuffer = stackalloc char[span.Length];
         span.CopyTo(copyBuffer);
-        MemoryExtensions.ToLower(copyBuffer, span, CultureInfo.InvariantCulture);
+        MemoryExtensions.ToLowerInvariant(copyBuffer, span);
     }
 
     public static void ToUpper(string? str) => ToUpper(str.AsSpan());
@@ -91,30 +92,30 @@ public static class StringMarshal
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
             span.CopyTo(rentedCopyBuffer.AsSpan());
-            MemoryExtensions.ToUpper(rentedCopyBuffer[..span.Length], span, CultureInfo.InvariantCulture);
+            MemoryExtensions.ToUpperInvariant(rentedCopyBuffer[..span.Length], span);
             return;
         }
 
         Span<char> copyBuffer = stackalloc char[span.Length];
         span.CopyTo(copyBuffer);
-        MemoryExtensions.ToUpper(copyBuffer, span, CultureInfo.InvariantCulture);
+        MemoryExtensions.ToUpperInvariant(copyBuffer, span);
     }
 
     /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string AsString(Span<char> span) => AsString((ReadOnlySpan<char>)span);
+    public static string? AsString(Span<char> span) => AsString((ReadOnlySpan<char>)span);
 
     /// <summary>
-    /// Converts a <see cref="ReadOnlySpan{T}"/> back to a <see cref="string"/>.
-    /// The caller has to be sure that the <see cref="ReadOnlySpan{T}"/> was definitely a <see cref="string"/>,
-    /// otherwise this method is potentially dangerous.
+    /// Converts a <see cref="ReadOnlySpan{Char}"/> back to a <see cref="string"/>.
+    /// ⚠️ The caller has to be sure that the <see cref="ReadOnlySpan{Char}"/> was definitely a <see cref="string"/>,
+    /// otherwise this method is potentially dangerous. ⚠️
     /// </summary>
-    /// <param name="span">The <see cref="ReadOnlySpan{T}"/> that will be converted to a <see cref="string"/>.</param>
-    /// <returns>The <see cref="ReadOnlySpan{T}"/> as a <see cref="string"/>.</returns>
+    /// <param name="span">The <see cref="ReadOnlySpan{Char}"/> that will be converted to a <see cref="string"/>.</param>
+    /// <returns>The <see cref="ReadOnlySpan{Char}"/> as a <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe string AsString(ReadOnlySpan<char> span)
+    public static unsafe string? AsString(ReadOnlySpan<char> span)
     {
         ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
         charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));

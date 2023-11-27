@@ -38,36 +38,36 @@ internal readonly ref struct Slicer<T>
     }
 
     [Pure]
-    public Span<T> CreateSpan(Range range)
+    public Span<T> SliceSpan(Range range)
     {
         int start = range.Start.GetOffset(_length);
         int length = range.End.GetOffset(_length) - start;
-        return CreateSpan(start, length);
+        return SliceSpan(start, length);
     }
 
     [Pure]
-    public Span<T> CreateSpan(int start) => CreateSpan(start, _length - start);
+    public Span<T> SliceSpan(int start) => SliceSpan(start, _length - start);
 
     [Pure]
-    public Span<T> CreateSpan(int start, int length)
+    public Span<T> SliceSpan(int start, int length)
     {
         ref T startReference = ref GetStartReferenceAndValidate(start, length);
         return MemoryMarshal.CreateSpan(ref startReference, length);
     }
 
     [Pure]
-    public ReadOnlySpan<T> CreateReadOnlySpan(Range range)
+    public ReadOnlySpan<T> SliceReadOnlySpan(Range range)
     {
         int start = range.Start.GetOffset(_length);
         int length = range.End.GetOffset(_length) - start;
-        return CreateReadOnlySpan(start, length);
+        return SliceReadOnlySpan(start, length);
     }
 
     [Pure]
-    public ReadOnlySpan<T> CreateReadOnlySpan(int start) => CreateReadOnlySpan(start, _length - start);
+    public ReadOnlySpan<T> SliceReadOnlySpan(int start) => SliceReadOnlySpan(start, _length - start);
 
     [Pure]
-    public ReadOnlySpan<T> CreateReadOnlySpan(int start, int length)
+    public ReadOnlySpan<T> SliceReadOnlySpan(int start, int length)
     {
         ref T startReference = ref GetStartReferenceAndValidate(start, length);
         return MemoryMarshal.CreateReadOnlySpan(ref startReference, length);

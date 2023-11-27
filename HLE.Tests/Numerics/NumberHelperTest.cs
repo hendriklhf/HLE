@@ -1,12 +1,63 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using HLE.Numerics;
 using Xunit;
 
 namespace HLE.Tests.Numerics;
 
+[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 public sealed class NumberHelperTest
 {
+    public static object[][] BringIntoRangeParameters { get; } =
+    [
+        [(byte)0, (byte)0],
+        [(byte)0, (byte)64],
+        [(byte)16, (byte)32],
+        [(byte)0, byte.MaxValue],
+        [(sbyte)0, (sbyte)0],
+        [(sbyte)-10, (sbyte)10],
+        [(sbyte)-64, (sbyte)32],
+        [(sbyte)-64, (sbyte)0],
+        [(sbyte)-120, (sbyte)120],
+        [sbyte.MinValue, sbyte.MaxValue],
+        [(ushort)0, (ushort)0],
+        [(ushort)0, (ushort)1000],
+        [(ushort)1000, (ushort)5000],
+        [(ushort)0, ushort.MaxValue],
+        [(short)0, (short)0],
+        [(short)0, (short)512],
+        [(short)64, (short)512],
+        [(short)-1000, (short)512],
+        [(short)-1000, (short)0],
+        [(short)-30_000, (short)30_000],
+        [short.MinValue, short.MaxValue],
+        [0U, 0U],
+        [0U, 2048U],
+        [1024U, 8192U],
+        [0, 0],
+        [0, 64],
+        [64, 512],
+        [-64, 512],
+        [-64, 0],
+        [0UL, 0UL],
+        [0UL, 128UL],
+        [128UL, 2048UL],
+        [0L, 0L],
+        [0L, 64L],
+        [-64L, 64L],
+        [-64L, 0L],
+        [(UInt128)0, (UInt128)0],
+        [(UInt128)0, (UInt128)64],
+        [(UInt128)64, (UInt128)128],
+        [(Int128)0, (Int128)0],
+        [(Int128)0, (Int128)64],
+        [(Int128)(-64), (Int128)(-64)],
+        [(Int128)(-64), (Int128)0]
+    ];
+
     [Fact]
     public void GetNumberLengthTest()
     {
@@ -29,26 +80,6 @@ public sealed class NumberHelperTest
         Assert.True(NumberHelpers.GetDigits(1) is [1]);
     }
 
-    [Fact]
-    public void DigitToCharTest()
-    {
-        byte digit = 0;
-        for (char c = '0'; c < '9' + 1; c++)
-        {
-            Assert.Equal(c, NumberHelpers.DigitToChar(digit++));
-        }
-    }
-
-    [Fact]
-    public void CharToDigitTest()
-    {
-        char c = '0';
-        for (byte i = 0; i < 10; i++)
-        {
-            Assert.Equal(i, NumberHelpers.CharToDigit(c++));
-        }
-    }
-
     [Theory]
     [InlineData(0, "0")]
     [InlineData(5, "5")]
@@ -62,42 +93,34 @@ public sealed class NumberHelperTest
     public void ParsePositiveNumberFromBytesTest()
         => Assert.Equal(7334687, NumberHelpers.ParsePositiveNumber<int>("7334687"u8));
 
-    [Fact]
-    public void BringNumberIntoRangeTest()
+    [Theory]
+    [MemberData(nameof(BringIntoRangeParameters))]
+    public void BringIntoRangeTest(object min, object max)
     {
-        for (int i = -100_000; i < 100_000; i++)
-        {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, 0, 500) is >= 0 and < 500);
-        }
+        MethodInfo bringIntoRangeCore = typeof(NumberHelperTest)
+            .GetMethod(nameof(BringIntoRangeTestCore), BindingFlags.NonPublic | BindingFlags.Static)!
+            .MakeGenericMethod(min.GetType());
 
-        for (int i = -100_000; i < 100_000; i++)
-        {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, -500, 0) is >= -500 and < 0);
-        }
+        Assert.Equal(min.GetType(), max.GetType());
 
-        for (int i = -100_000; i < 100_000; i++)
-        {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, -500, 500) is >= -500 and < 500);
-        }
+        bringIntoRangeCore.Invoke(null, [min, max]);
+    }
 
-        for (int i = -100_000; i < 100_000; i++)
+    private static void BringIntoRangeTestCore<T>(T min, T max) where T : INumber<T>, IMinMaxValue<T>
+    {
+        T start = T.Max(T.CreateSaturating(-1_000_000), T.MinValue);
+        T end = T.Min(T.CreateSaturating(1_000_000), T.MaxValue);
+        for (T i = start; i < end; i++)
         {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, 0, 0) == 0);
-        }
+            T value = NumberHelpers.BringIntoRange(i, min, max);
+            if (min == max)
+            {
+                Assert.Equal(value, min);
+                Assert.Equal(value, max);
+                continue;
+            }
 
-        for (int i = -100_000; i < 100_000; i++)
-        {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, 500, 500) == 500);
-        }
-
-        for (int i = -100_000; i < 100_000; i++)
-        {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, 500, 501) == 500);
-        }
-
-        for (int i = -100_000; i < 100_000; i++)
-        {
-            Assert.True(NumberHelpers.BringNumberIntoRange(i, 500, 502) is >= 500 and < 502);
+            Assert.True(value >= min && value < max);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using HLE.Collections;
 using HLE.Memory;
 using Xunit;
 

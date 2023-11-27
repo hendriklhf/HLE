@@ -201,4 +201,16 @@ public sealed class DoubleDictionaryTest
 
         Assert.True(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
+
+    [Fact]
+    public void EmptyDictionariesReturnSameEnumeratorTest()
+    {
+        DoubleDictionary<int, string, Type> dictionary1 = [];
+        DoubleDictionary<char, nuint, Type> dictionary2 = [];
+
+        IEnumerator<Type> enumerator1 = dictionary1.GetEnumerator();
+        IEnumerator<Type> enumerator2 = dictionary2.GetEnumerator();
+
+        Assert.Same(enumerator1, enumerator2);
+    }
 }

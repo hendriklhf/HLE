@@ -9,7 +9,7 @@ namespace HLE.Collections;
 public sealed class PooledList
 {
     [Pure]
-    public static PooledList<T> Create<T>(IEnumerable<T> items) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(IEnumerable<T> items)
     {
         PooledList<T> list = [];
         list.AddRange(items);
@@ -17,23 +17,23 @@ public sealed class PooledList
     }
 
     [Pure]
-    public static PooledList<T> Create<T>(List<T> items) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(List<T> items)
         => new(CollectionsMarshal.AsSpan(items));
 
     [Pure]
-    public static PooledList<T> Create<T>(params T[] items) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(params T[] items)
         => new((ReadOnlySpan<T>)items);
 
     [Pure]
-    public static PooledList<T> Create<T>(Span<T> items) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(Span<T> items)
         => new(items);
 
     [Pure]
-    public static PooledList<T> Create<T>(ReadOnlySpan<T> items) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(ReadOnlySpan<T> items)
         => new(items);
 
     [Pure]
-    public static PooledList<T> Create<T>(T item) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(T item)
     {
         PooledList<T> list = new(1);
         list._buffer.Reference = item;
@@ -42,7 +42,7 @@ public sealed class PooledList
     }
 
     [Pure]
-    public static PooledList<T> Create<T>(T item0, T item1) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(T item0, T item1)
     {
         PooledList<T> list = new(2);
 
@@ -55,7 +55,7 @@ public sealed class PooledList
     }
 
     [Pure]
-    public static PooledList<T> Create<T>(T item0, T item1, T item2) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(T item0, T item1, T item2)
     {
         PooledList<T> list = new(3);
 
@@ -69,7 +69,7 @@ public sealed class PooledList
     }
 
     [Pure]
-    public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3)
     {
         PooledList<T> list = new(4);
 
@@ -84,7 +84,7 @@ public sealed class PooledList
     }
 
     [Pure]
-    public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4)
     {
         PooledList<T> list = new(5);
 
@@ -100,7 +100,7 @@ public sealed class PooledList
     }
 
     [Pure]
-    public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4, T item5) where T : IEquatable<T>
+    public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4, T item5)
     {
         PooledList<T> list = new(6);
 

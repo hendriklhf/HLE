@@ -40,13 +40,8 @@ public readonly unsafe ref partial struct CopyWorker<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public CopyWorker(T* source, long length)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)length, nuint.MaxValue);
-        _source = ref Unsafe.AsRef<T>(source);
-        _length = (nuint)length;
-    }
+    public CopyWorker(T* source, long length) : this(source, (ulong)length)
+        => ArgumentOutOfRangeException.ThrowIfNegative(length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CopyWorker(T* source, ulong length)
@@ -57,12 +52,8 @@ public readonly unsafe ref partial struct CopyWorker<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public CopyWorker(ref T source, int length)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
-        _source = ref source;
-        _length = (uint)length;
-    }
+    public CopyWorker(ref T source, int length) : this(ref source, (uint)length)
+        => ArgumentOutOfRangeException.ThrowIfNegative(length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CopyWorker(ref T source, uint length)
@@ -78,13 +69,8 @@ public readonly unsafe ref partial struct CopyWorker<T>
         _length = length;
     }
 
-    public CopyWorker(ref T source, long length)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)length, nuint.MaxValue);
-        _source = ref source;
-        _length = (nuint)length;
-    }
+    public CopyWorker(ref T source, long length) : this(ref source, (ulong)length)
+        => ArgumentOutOfRangeException.ThrowIfNegative(length);
 
     public CopyWorker(ref T source, ulong length)
     {
@@ -98,9 +84,9 @@ public readonly unsafe ref partial struct CopyWorker<T>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
-        if (_length + (uint)offset >= int.MaxValue)
+        if (_length + (uint)offset >= (uint)Array.MaxLength)
         {
-            ThrowItemsToCopyExceedsInt32MaxValue();
+            ThrowItemsToCopyExceedsMaxArrayLength();
         }
 
         if (destination.Count < (int)_length + offset)
@@ -138,7 +124,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowItemsToCopyExceedsInt32MaxValue()
+    private static void ThrowItemsToCopyExceedsMaxArrayLength()
         => throw new InvalidOperationException("The amount of items needed to be copied is greater than " +
                                                "the maximum value of a 32-bit signed integer, thus can't be copied to the destination.");
 }

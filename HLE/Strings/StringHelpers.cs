@@ -260,7 +260,7 @@ public static class StringHelpers
         int indexOfMetaChar = input.IndexOfAny(s_regexMetaCharsSearchValues);
         if (indexOfMetaChar < 0)
         {
-            return inputIsString ? StringMarshal.AsString(input) : new(input);
+            return inputIsString ? StringMarshal.AsString(input)! : new(input); // null has been checked before
         }
 
         int resultLength;
@@ -269,12 +269,12 @@ public static class StringHelpers
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
-            return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
+            return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input)! : new(rentedBuffer[..resultLength]); // null has been checked before
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];
         resultLength = RegexEscape(input, buffer, indexOfMetaChar);
-        return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(buffer[..resultLength]);
+        return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input)! : new(buffer[..resultLength]); // null has been checked before
     }
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination)
@@ -291,7 +291,8 @@ public static class StringHelpers
 
     private static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination, int indexOfMetaChar)
     {
-        Debug.Assert(indexOfMetaChar >= 0);
+        Debug.Assert(indexOfMetaChar >= 0, "This method should only be called if the input contains a meta char.");
+
         if (input.Length == 0)
         {
             return 0;

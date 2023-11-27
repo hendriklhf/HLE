@@ -10,7 +10,6 @@ namespace HLE.Memory;
 
 /// <summary>
 /// A pool of arrays from which you can rent arrays and return arrays to in order to reuse them.<br/>
-/// Arrays rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.<br/>
 /// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
@@ -44,6 +43,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
     internal const int MinimumArrayLength = 0x10; // has to be pow of 2
     internal const int MaximumArrayLength = 0x800000; // has to be pow of 2
+    // ReSharper disable once StaticMemberInGenericType
     internal static readonly int s_indexOffset = BitOperations.TrailingZeroCount(MinimumArrayLength);
 
     public ArrayPool()

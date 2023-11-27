@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using HLE.Collections;
+using HLE.Memory;
 using Xunit;
 
 namespace HLE.Tests.Collections;
@@ -47,7 +47,7 @@ public sealed partial class SpanHelpersTest
     public void FillAscendingTest(object start)
     {
         MethodInfo? fillAscendingCoreMethod = typeof(SpanHelpersTest)
-            .GetMethod(nameof(FillAscendingCore), BindingFlags.NonPublic | BindingFlags.Static)
+            .GetMethod(nameof(FillAscendingTestCore), BindingFlags.NonPublic | BindingFlags.Static)
             ?.MakeGenericMethod(start.GetType());
 
         Assert.NotNull(fillAscendingCoreMethod);
@@ -55,7 +55,7 @@ public sealed partial class SpanHelpersTest
         fillAscendingCoreMethod.Invoke(null, [start]);
     }
 
-    private static void FillAscendingCore<T>(T start) where T : unmanaged, INumber<T>
+    private static void FillAscendingTestCore<T>(T start) where T : unmanaged, INumber<T>
     {
         T[] numbers = GC.AllocateUninitializedArray<T>(500_000);
         SpanHelpers.FillAscending(numbers.AsSpan(), start);

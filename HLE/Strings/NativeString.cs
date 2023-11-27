@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -13,7 +14,8 @@ namespace HLE.Strings;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{AsString()}\"")]
-public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEquatable<NativeString>, ICountable, IIndexAccessible<char>, ISpanProvider<char>
+public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable<NativeString>, ICountable, IIndexAccessible<char>,
+    ISpanProvider<char>
 {
     public readonly ref char this[int index]
     {
@@ -23,6 +25,8 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
             return ref Unsafe.Add(ref CharsReference, index);
         }
     }
+
+    readonly char IReadOnlyList<char>.this[int index] => this[index];
 
     readonly char IIndexAccessible<char>.this[int index] => this[index];
 
@@ -60,7 +64,7 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
         nuint neededBufferSize = RawDataMarshal.GetRawStringSize(length);
         if (neededBufferSize > int.MaxValue)
         {
-            throw new InvalidOperationException();
+            ThrowNeededBufferSizeExceedsMaxInt32Value();
         }
 
         NativeMemory<byte> buffer = new((int)neededBufferSize);
@@ -84,12 +88,13 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
         nuint neededBufferSize = RawDataMarshal.GetRawStringSize(chars.Length);
         if (neededBufferSize > int.MaxValue)
         {
-            throw new InvalidOperationException();
+            ThrowNeededBufferSizeExceedsMaxInt32Value();
         }
 
         NativeMemory<byte> buffer = new((int)neededBufferSize, false);
         byte* bufferPointer = buffer._pointer;
         *(nuint*)bufferPointer = 0;
+
         RawStringData* rawStringData = (RawStringData*)(bufferPointer + sizeof(nuint));
         rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
         rawStringData->Length = chars.Length;
@@ -99,23 +104,28 @@ public unsafe struct NativeString : IReadOnlyCollection<char>, IDisposable, IEqu
         _buffer = buffer;
     }
 
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowNeededBufferSizeExceedsMaxInt32Value()
+        => throw new InvalidOperationException($"The needed buffer size exceeds the maximum {typeof(int)} value.");
+
     public void Dispose() => _buffer.Dispose();
 
     [Pure]
     public readonly string AsString()
-        => Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)));
+        => Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)))!;
 
     [Pure]
     public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref CharsReference, Length);
 
     [Pure]
-    public readonly Span<char> AsSpan(int start) => new Slicer<char>(ref CharsReference, Length).CreateSpan(start);
+    public readonly Span<char> AsSpan(int start) => new Slicer<char>(ref CharsReference, Length).SliceSpan(start);
 
     [Pure]
-    public readonly Span<char> AsSpan(int start, int length) => new Slicer<char>(ref CharsReference, Length).CreateSpan(start, length);
+    public readonly Span<char> AsSpan(int start, int length) => new Slicer<char>(ref CharsReference, Length).SliceSpan(start, length);
 
     [Pure]
-    public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref CharsReference, Length).CreateSpan(range);
+    public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref CharsReference, Length).SliceSpan(range);
 
     readonly Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
 

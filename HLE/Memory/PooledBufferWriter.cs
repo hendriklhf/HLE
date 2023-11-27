@@ -7,6 +7,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Strings;
 
 namespace HLE.Memory;
 
@@ -37,8 +38,6 @@ public sealed class PooledBufferWriter<T>(int capacity)
     public int Count { get; private set; }
 
     public int Capacity => _buffer.Length;
-
-    int ICollection<T>.Count => Count;
 
     bool ICollection<T>.IsReadOnly => false;
 
@@ -80,8 +79,8 @@ public sealed class PooledBufferWriter<T>(int capacity)
     /// <returns>A reference to the buffer that can be written to.</returns>
     public ref T GetReference(int sizeHint = 0)
     {
-        Span<T> buffer = GetSpan(sizeHint);
-        return ref MemoryMarshal.GetReference(buffer);
+        GrowIfNeeded(sizeHint);
+        return ref Unsafe.Add(ref _buffer.Reference, Count);
     }
 
     public void Write(T item)
@@ -90,16 +89,16 @@ public sealed class PooledBufferWriter<T>(int capacity)
         Count++;
     }
 
-    public void Write(List<T> data) => Write(CollectionsMarshal.AsSpan(data));
+    public void WriteRange(List<T> data) => WriteRange(CollectionsMarshal.AsSpan(data));
 
-    public void Write(T[] data) => Write((ReadOnlySpan<T>)data);
+    public void WriteRange(T[] data) => WriteRange(data.AsSpan());
 
-    public void Write(Span<T> data) => Write((ReadOnlySpan<T>)data);
+    public void WriteRange(Span<T> data) => WriteRange((ReadOnlySpan<T>)data);
 
-    public void Write(ReadOnlySpan<T> data)
+    public void WriteRange(ReadOnlySpan<T> data)
     {
-        Span<T> buffer = GetSpan(data.Length);
-        CopyWorker<T>.Copy(data, buffer);
+        ref T buffer = ref GetReference(data.Length);
+        CopyWorker<T>.Copy(data, ref buffer);
         Count += data.Length;
     }
 
@@ -140,6 +139,35 @@ public sealed class PooledBufferWriter<T>(int capacity)
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(result);
         return result;
+    }
+
+    /// <summary>
+    /// Trims unused buffer size.<br/>
+    /// This method should ideally be called, when <see cref="Capacity"/> of the <see cref="PooledBufferWriter{T}"/> is much larger than <see cref="Count"/>.
+    /// </summary>
+    /// <example>
+    /// After having removed a lot of items from the <see cref="PooledBufferWriter{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.
+    /// If there are 32 items remaining and the <see cref="Capacity"/> is 1024, the buffer of 1024 items will be returned to the <see cref="ArrayPool{T}"/>
+    /// and a new buffer that has at least the size of the remaining items will be rented and the remaining 32 items are copied into it.
+    /// </example>
+    public void TrimBuffer()
+    {
+        int trimmedBufferSize = BufferHelpers.GrowByPow2(Count, 0);
+        if (trimmedBufferSize == Capacity)
+        {
+            return;
+        }
+
+        if (trimmedBufferSize == 0)
+        {
+            _buffer.Dispose();
+            _buffer = [];
+            return;
+        }
+
+        using RentedArray<T> oldBuffer = _buffer;
+        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
+        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Count);
     }
 
     /// <summary>
@@ -215,16 +243,9 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     [Pure]
     public override string ToString()
-    {
-        if (typeof(char) == typeof(T))
-        {
-            return Unsafe.As<RentedArray<T>, RentedArray<char>>(ref _buffer).ToString();
-        }
-
-        Type thisType = typeof(PooledBufferWriter<T>);
-        Type genericType = typeof(T);
-        return $"{thisType.Namespace}.{nameof(PooledBufferWriter<T>)}<{genericType.Namespace}.{genericType.Name}>[{Count}]";
-    }
+        => typeof(char) == typeof(T)
+            ? Unsafe.As<RentedArray<T>, RentedArray<char>>(ref _buffer).ToString()
+            : ToStringHelpers.FormatCollection(this);
 
     public ArrayEnumerator<T> GetEnumerator() => new(_buffer.Array, 0, Count);
 

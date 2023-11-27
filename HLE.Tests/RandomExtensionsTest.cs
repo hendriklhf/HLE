@@ -143,7 +143,7 @@ public sealed class RandomExtensionsTest
         using RandomNumberGenerator rng = RandomNumberGenerator.Create();
         for (int i = 0; i < _loopIterations; i++)
         {
-            Assert.True(rng.GetInt16(-20_000, 20000) is >= -20_000 and < 20_000);
+            Assert.True(rng.GetInt16(-20_000, 30_000) is >= -20_000 and < 30_000);
         }
     }
 

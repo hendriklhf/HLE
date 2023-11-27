@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 

@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
-namespace HLE.Collections;
+namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {

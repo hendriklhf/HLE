@@ -197,8 +197,6 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     public void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
-    void ICollection<char>.Clear() => Clear();
-
     public void Clear() => Length = 0;
 
     [Pure]

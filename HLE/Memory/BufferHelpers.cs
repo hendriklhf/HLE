@@ -23,7 +23,7 @@ public static class BufferHelpers
     /// <param name="neededSize">The additionally needed buffer size.</param>
     /// <returns>Returns the new buffer size that satisfies the needed length.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="currentLength"/> or <paramref name="neededSize"/> are negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the maximum capacity, <see cref="int"/>.<see cref="int.MaxValue"/>, will be exceeded.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the maximum capacity, <see cref="Array.MaxLength"/>, will be exceeded.</exception>
     [Pure]
     public static int GrowByPow2(int currentLength, int neededSize)
     {

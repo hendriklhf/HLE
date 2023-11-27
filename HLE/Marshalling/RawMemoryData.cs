@@ -7,7 +7,8 @@ namespace HLE.Marshalling;
 [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
 public struct RawMemoryData
 {
-    public nuint Reference;
+    [SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "not the type name")]
+    public nuint Object;
 
     public int Index;
 

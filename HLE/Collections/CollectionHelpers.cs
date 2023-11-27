@@ -23,7 +23,7 @@ public static partial class CollectionHelpers
     {
         foreach (T item in collection)
         {
-            yield return predicate(item) ? replacement : item;
+            yield return predicate(item) ? replacement : item; // TODO: create own enumerator
         }
     }
 

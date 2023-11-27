@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -29,29 +28,53 @@ public static unsafe class SpanMarshal
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{T}"/> to a <see cref="ReadOnlyMemory{T}"/>. Does not allocate any memory. <br/>
-    /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/> of type <typeparamref name="T"/>. Otherwise this method is potentially dangerous. ⚠️
+    /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/> of type <typeparamref name="T"/> or <see cref="string"/>, if <typeparamref name="T"/> is <see cref="char"/>. Otherwise this method is potentially dangerous. ⚠️
     /// </summary>
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    [SkipLocalsInit]
     public static ReadOnlyMemory<T> AsMemory<T>(ReadOnlySpan<T> span)
     {
+        if (span.Length == 0)
+        {
+            return ReadOnlyMemory<T>.Empty;
+        }
+
         Unsafe.SkipInit(out ReadOnlyMemory<T> result);
 
         RawMemoryData* rawMemoryData = (RawMemoryData*)&result;
 
-        ref byte reference = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
-        reference = ref Unsafe.Subtract(ref reference, sizeof(nuint) << 1);
-        nuint arrayMethodTablePointer = (nuint)Unsafe.AsPointer(ref reference);
+        ref byte firstElement = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
+        ref byte methodTable = ref GetMethodTablePointer<T>(ref firstElement);
 
-        Debug.Assert(RawDataMarshal.ReadObject<T[]>(arrayMethodTablePointer) is { } array && array.Length >= span.Length);
-
-        rawMemoryData->Reference = arrayMethodTablePointer;
+        rawMemoryData->Object = (nuint)Unsafe.AsPointer(ref methodTable);
         rawMemoryData->Index = 0;
         rawMemoryData->Length = span.Length;
 
         return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ref byte GetMethodTablePointer<T>(ref byte firstElement)
+    {
+        if (typeof(T) == typeof(char))
+        {
+            int stringBytesToSubtract = sizeof(nuint) + sizeof(int);
+            ref byte stringMethodTable = ref Unsafe.Subtract(ref firstElement, stringBytesToSubtract);
+            if (Unsafe.As<byte, nuint>(ref stringMethodTable) == (nuint)typeof(string).TypeHandle.Value)
+            {
+                return ref stringMethodTable;
+            }
+        }
+
+        int arrayBytesToSubtract = sizeof(nuint) << 1;
+        ref byte arrayMethodTable = ref Unsafe.Subtract(ref firstElement, arrayBytesToSubtract);
+        if (Unsafe.As<byte, nuint>(ref arrayMethodTable) == (nuint)typeof(T[]).TypeHandle.Value)
+        {
+            return ref arrayMethodTable;
+        }
+
+        throw new InvalidOperationException($"The {typeof(Span<T>)} is backed by an unknown type or native memory. It's not possible to convert it to "); // finding the MemoryManager is impossible
     }
 
     /// <summary>

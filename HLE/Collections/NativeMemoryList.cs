@@ -53,13 +53,13 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
     public Span<T> AsSpan() => _buffer.AsSpan(..Count);
 
     [Pure]
-    public unsafe Span<T> AsSpan(int start) => new Slicer<T>(_buffer.Pointer, Count).CreateSpan(start);
+    public unsafe Span<T> AsSpan(int start) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(start);
 
     [Pure]
-    public unsafe Span<T> AsSpan(int start, int length) => new Slicer<T>(_buffer.Pointer, Count).CreateSpan(start, length);
+    public unsafe Span<T> AsSpan(int start, int length) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(start, length);
 
     [Pure]
-    public unsafe Span<T> AsSpan(Range range) => new Slicer<T>(_buffer.Pointer, Count).CreateSpan(range);
+    public unsafe Span<T> AsSpan(Range range) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(range);
 
     [Pure]
     public T[] ToArray()

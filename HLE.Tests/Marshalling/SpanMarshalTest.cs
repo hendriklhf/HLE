@@ -1,6 +1,7 @@
 ﻿using System;
 using HLE.Collections;
 using HLE.Marshalling;
+using HLE.Memory;
 using Xunit;
 
 namespace HLE.Tests.Marshalling;
