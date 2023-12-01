@@ -11,8 +11,6 @@ public sealed partial class ObjectPool<T>
     {
         public int ArrayLength { get; }
 
-        private readonly bool _skipClearing;
-
         public ArrayFactory(int arrayLength)
         {
             if (!typeof(T).IsArray)
@@ -28,9 +26,6 @@ public sealed partial class ObjectPool<T>
             ArrayLength = arrayLength;
         }
 
-        internal ArrayFactory(int arrayLength, bool skipClearing) : this(arrayLength)
-            => _skipClearing = skipClearing;
-
         [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Create()
@@ -42,7 +37,7 @@ public sealed partial class ObjectPool<T>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Return(T obj)
         {
-            if (!RuntimeHelpers.IsReferenceOrContainsReferences<TElement>() || _skipClearing)
+            if (!RuntimeHelpers.IsReferenceOrContainsReferences<TElement>())
             {
                 return;
             }

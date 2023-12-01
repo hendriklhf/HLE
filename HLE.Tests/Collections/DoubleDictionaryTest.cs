@@ -11,25 +11,25 @@ public sealed class DoubleDictionaryTest
     public void AddTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
 
-        Assert.Equal(value, dictionary[1]);
-        Assert.Equal(value, dictionary["a"]);
+        Assert.Equal(Value, dictionary[1]);
+        Assert.Equal(Value, dictionary["a"]);
 
         Assert.Throws<ArgumentException>(() =>
         {
-            dictionary.Add(1, "a", value);
+            dictionary.Add(1, "a", Value);
         });
 
         Assert.Throws<ArgumentException>(() =>
         {
-            dictionary.Add(2, "a", value);
+            dictionary.Add(2, "a", Value);
         });
 
         Assert.Throws<ArgumentException>(() =>
         {
-            dictionary.Add(1, "b", value);
+            dictionary.Add(1, "b", Value);
         });
 
         Assert.Single(dictionary);
@@ -41,25 +41,25 @@ public sealed class DoubleDictionaryTest
     public void SetTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
 
-        Assert.Equal(value, dictionary[1]);
-        Assert.Equal(value, dictionary["a"]);
+        Assert.Equal(Value, dictionary[1]);
+        Assert.Equal(Value, dictionary["a"]);
 
         Assert.Throws<KeyNotFoundException>(() =>
         {
-            dictionary[1, "b"] = value;
+            dictionary[1, "b"] = Value;
         });
 
         Assert.Throws<KeyNotFoundException>(() =>
         {
-            dictionary[2, "a"] = value;
+            dictionary[2, "a"] = Value;
         });
 
         Assert.Throws<KeyNotFoundException>(() =>
         {
-            dictionary[2, "b"] = value;
+            dictionary[2, "b"] = Value;
         });
 
         Assert.Single(dictionary);
@@ -74,14 +74,14 @@ public sealed class DoubleDictionaryTest
     public void TryAddTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
 
-        Assert.False(dictionary.TryAdd(1, "a", value));
-        Assert.False(dictionary.TryAdd(1, "b", value));
-        Assert.False(dictionary.TryAdd(2, "a", value));
+        Assert.False(dictionary.TryAdd(1, "a", Value));
+        Assert.False(dictionary.TryAdd(1, "b", Value));
+        Assert.False(dictionary.TryAdd(2, "a", Value));
 
-        Assert.True(dictionary.TryAdd(2, "b", value));
+        Assert.True(dictionary.TryAdd(2, "b", Value));
         Assert.Equal(2, dictionary.Count);
 
         Assert.True(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
@@ -91,11 +91,11 @@ public sealed class DoubleDictionaryTest
     public void AddOrSetTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
+        const string Value = "xd";
 
-        dictionary.AddOrSet(1, "a", value);
-        Assert.Equal(value, dictionary[1]);
-        Assert.Equal(value, dictionary["a"]);
+        dictionary.AddOrSet(1, "a", Value);
+        Assert.Equal(Value, dictionary[1]);
+        Assert.Equal(Value, dictionary["a"]);
         Assert.Single(dictionary);
 
         dictionary.AddOrSet(1, "a", "abc");
@@ -105,17 +105,17 @@ public sealed class DoubleDictionaryTest
 
         Assert.Throws<KeyNotFoundException>(() =>
         {
-            dictionary.AddOrSet(1, "b", value);
+            dictionary.AddOrSet(1, "b", Value);
         });
 
         Assert.Throws<KeyNotFoundException>(() =>
         {
-            dictionary.AddOrSet(2, "a", value);
+            dictionary.AddOrSet(2, "a", Value);
         });
 
-        dictionary.AddOrSet(2, "b", value);
-        Assert.Equal(value, dictionary[2]);
-        Assert.Equal(value, dictionary["b"]);
+        dictionary.AddOrSet(2, "b", Value);
+        Assert.Equal(Value, dictionary[2]);
+        Assert.Equal(Value, dictionary["b"]);
         Assert.Equal(2, dictionary.Count);
         Assert.True(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
@@ -124,16 +124,16 @@ public sealed class DoubleDictionaryTest
     public void TryGetValueTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
 
         bool success = dictionary.TryGetByPrimaryKey(1, out string? retrievedValue);
         Assert.True(success);
-        Assert.Equal(value, retrievedValue);
+        Assert.Equal(Value, retrievedValue);
 
         success = dictionary.TryGetBySecondaryKey("a", out retrievedValue);
         Assert.True(success);
-        Assert.Equal(value, retrievedValue);
+        Assert.Equal(Value, retrievedValue);
 
         success = dictionary.TryGetByPrimaryKey(2, out retrievedValue);
         Assert.False(success);
@@ -150,20 +150,20 @@ public sealed class DoubleDictionaryTest
     public void RemoveTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
-        dictionary.Add(2, "b", value);
-        dictionary.Add(3, "c", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
+        dictionary.Add(2, "b", Value);
+        dictionary.Add(3, "c", Value);
 
         Assert.False(dictionary.Remove(3, "b"));
         Assert.True(dictionary.ContainsPrimaryKey(3) && dictionary.ContainsSecondaryKey("b"));
         Assert.True(dictionary.Remove(3, "c"));
 
         Assert.Equal(2, dictionary.Count);
-        Assert.Equal(value, dictionary[1]);
-        Assert.Equal(value, dictionary["a"]);
+        Assert.Equal(Value, dictionary[1]);
+        Assert.Equal(Value, dictionary["a"]);
 
-        Assert.True(dictionary.TryAdd(3, "c", value));
+        Assert.True(dictionary.TryAdd(3, "c", Value));
 
         Assert.True(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);
     }
@@ -172,10 +172,10 @@ public sealed class DoubleDictionaryTest
     public void ClearTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
-        dictionary.Add(2, "b", value);
-        dictionary.Add(3, "c", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
+        dictionary.Add(2, "b", Value);
+        dictionary.Add(3, "c", Value);
 
         dictionary.Clear();
         Assert.Empty(dictionary);
@@ -187,8 +187,8 @@ public sealed class DoubleDictionaryTest
     public void ContainsTest()
     {
         DoubleDictionary<int, string, string> dictionary = [];
-        const string value = "xd";
-        dictionary.Add(1, "a", value);
+        const string Value = "xd";
+        dictionary.Add(1, "a", Value);
 
         Assert.True(dictionary.ContainsPrimaryKey(1));
         Assert.False(dictionary.ContainsPrimaryKey(2));
@@ -196,7 +196,7 @@ public sealed class DoubleDictionaryTest
         Assert.True(dictionary.ContainsSecondaryKey("a"));
         Assert.False(dictionary.ContainsSecondaryKey("b"));
 
-        Assert.True(dictionary.ContainsValue(value));
+        Assert.True(dictionary.ContainsValue(Value));
         Assert.False(dictionary.ContainsValue("abc"));
 
         Assert.True(dictionary._values.Count == dictionary._secondaryKeyTranslations.Count);

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -92,10 +93,9 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         IsDisposed = false;
 
         ulong byteCount = checked((ulong)sizeof(T) * (ulong)length);
-        if (!Environment.Is64BitProcess)
+        if (!Environment.Is64BitProcess && byteCount > nuint.MaxValue)
         {
-            // TODO: specify exception message
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(byteCount, nuint.MaxValue);
+            ThrowAmountBytesExceed32BitIntegerRange();
         }
 
         _pointer = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (nuint)sizeof(nuint));
@@ -104,6 +104,12 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
             ClearMemory(byteCount);
         }
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowAmountBytesExceed32BitIntegerRange() =>
+        throw new InvalidOperationException("The amount of bytes (sizeof(T) * length) needing to be allocated, " +
+                                            "exceed the address range of the 32-bit architecture.");
 
     private readonly void ClearMemory(ulong byteCount)
     {
@@ -241,7 +247,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => obj is NativeMemory<T> other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is NativeMemory<T> other && Equals(other);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

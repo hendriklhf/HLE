@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -249,10 +250,10 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(NativeMemoryList<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] NativeMemoryList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Twitch.Models;
@@ -58,7 +59,7 @@ public readonly struct Roomstate(ChangedRoomStates changedRoomStates) : IEquatab
         && SubsOnly == other.SubsOnly && ChangedStates == other.ChangedStates;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is Roomstate other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is Roomstate other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(ChannelId, EmoteOnly, FollowersOnly, R9K, SlowMode, SubsOnly, ChangedStates);

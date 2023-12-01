@@ -3,7 +3,7 @@
 namespace HLE.Twitch.Models;
 
 [Flags]
-public enum ChatMessageTags
+public enum ChatMessageFlags
 {
     IsFirstMessage = 1 << 0,
     IsModerator = 1 << 1,

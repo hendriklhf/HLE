@@ -162,7 +162,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
     public readonly bool Equals(NativeString other) => AsString() == other.AsString();
 
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => obj is NativeString other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is NativeString other && Equals(other);
 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => AsString().GetHashCode();

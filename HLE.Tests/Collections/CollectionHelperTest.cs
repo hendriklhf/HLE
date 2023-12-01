@@ -31,8 +31,8 @@ public sealed partial class CollectionHelperTest
     [Fact]
     public void IndicesOfTest()
     {
-        const string str = "test string";
-        int[] indices = str.IndicesOf(static c => c is 's');
+        const string Str = "test string";
+        int[] indices = Str.IndicesOf(static c => c is 's');
         Assert.True(indices is [2, 5]);
     }
 

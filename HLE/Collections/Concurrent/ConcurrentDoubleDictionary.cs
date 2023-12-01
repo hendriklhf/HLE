@@ -104,11 +104,11 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
+    public bool Equals([NotNullWhen(true)] ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other)
         => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => _dictionary.GetHashCode();

@@ -20,6 +20,11 @@ public sealed class BufferHelpersTest
         [Array.MaxLength, Array.MaxLength, 0]
     ];
 
+    [Fact]
+    [SuppressMessage("Assertions", "xUnit2000:Constants and literals should be the expected argument", Justification = "Array.MaxLength is correctly expected.")]
+    public void MaximumArrayLengthIsInSyncWithArrayMaxLengthTest()
+        => Assert.Equal(Array.MaxLength, BufferHelpers.MaximumArrayLength);
+
     [Theory]
     [MemberData(nameof(GrowByPow2Parameters))]
     public void GrowByPow2Test(int expected, int currentLength, int neededSize)

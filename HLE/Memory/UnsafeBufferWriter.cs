@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Strings;
@@ -60,7 +61,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
     public readonly bool Equals(UnsafeBufferWriter<T> other) => Count == other.Count && Unsafe.AreSame(ref _buffer, ref other._buffer);
 
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => false;
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => ((nuint)Unsafe.AsPointer(ref _buffer)).GetHashCode();

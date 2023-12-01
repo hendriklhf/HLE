@@ -15,7 +15,7 @@ public sealed partial class RegexPool
 {
     private readonly struct Bucket : IEnumerable<Regex>, IEquatable<Bucket>
     {
-        private readonly Regex?[] _regexes = new Regex[_defaultBucketCapacity];
+        private readonly Regex?[] _regexes = new Regex[DefaultBucketCapacity];
 
         public Bucket()
         {
@@ -162,7 +162,7 @@ public sealed partial class RegexPool
 
         public bool Equals(Bucket other) => _regexes.Equals(other._regexes);
 
-        public override bool Equals(object? obj) => obj is Bucket other && Equals(other);
+        public override bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
         public override int GetHashCode() => _regexes.GetHashCode();
 

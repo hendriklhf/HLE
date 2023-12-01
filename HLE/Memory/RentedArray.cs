@@ -181,7 +181,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) =>
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) =>
         obj switch
         {
             RentedArray<T> rentedArray => Equals(rentedArray.Array),
@@ -193,7 +193,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, ICount
     public readonly bool Equals(RentedArray<T> other) => ReferenceEquals(Array, other.Array);
 
     [Pure]
-    public readonly bool Equals(T[]? other) => ReferenceEquals(Array, other);
+    public readonly bool Equals([NotNullWhen(true)] T[]? other) => ReferenceEquals(Array, other);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

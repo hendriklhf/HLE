@@ -18,7 +18,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
     private static delegate*<ref T, ref T, nuint, void> GetMemmoveFunctionPointer() =>
         (delegate*<ref T, ref T, nuint, void>)
         typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-            .FirstOrDefault(static m => m is { Name: "Memmove", IsGenericMethod: true })!
+            .First(static m => m is { Name: "Memmove", IsGenericMethod: true })
             .MakeGenericMethod(typeof(T)).MethodHandle
             .GetFunctionPointer();
 

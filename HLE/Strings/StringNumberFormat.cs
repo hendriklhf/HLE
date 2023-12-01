@@ -76,7 +76,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     public bool Equals(StringNumberFormat other) => Chars.SequenceEqual(other._chars);
 
-    public override bool Equals(object? obj) => obj is StringNumberFormat other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is StringNumberFormat other && Equals(other);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

@@ -34,9 +34,9 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     private static readonly TimeSpan s_cacheTime = TimeSpan.FromDays(1);
 
-    private const string _httpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
-    private const string _indentation = "    ";
-    private const string _cacheDirectory = "HLE.SourceGenerators.EmojiFileGenerator\\";
+    private const string HttpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
+    private const string Indentation = "    ";
+    private const string CacheDirectory = "HLE.SourceGenerators.EmojiFileGenerator\\";
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -51,7 +51,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
 
         using HttpClient httpClient = new();
-        Task<byte[]> task = httpClient.GetByteArrayAsync(_httpRequestUrl);
+        Task<byte[]> task = httpClient.GetByteArrayAsync(HttpRequestUrl);
         task.Wait();
         _emojiJsonBytes = task.Result;
         WriteBytesToCacheFile(_emojiJsonBytes);
@@ -75,7 +75,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
     private static bool TryGetEmojiJsonBytesFromCache(out byte[]? emojiJsonBytes)
     {
-        string cacheDirectory = Path.GetTempPath() + _cacheDirectory;
+        string cacheDirectory = Path.GetTempPath() + CacheDirectory;
         if (!Directory.Exists(cacheDirectory))
         {
             emojiJsonBytes = null;
@@ -104,7 +104,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
     private static void WriteBytesToCacheFile(byte[] emojiJsonBytes)
     {
-        string cacheDirectory = Path.GetTempPath() + _cacheDirectory;
+        string cacheDirectory = Path.GetTempPath() + CacheDirectory;
         if (!Directory.Exists(cacheDirectory))
         {
             Directory.CreateDirectory(cacheDirectory);
@@ -147,7 +147,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
                     nameBuffer[0] = char.ToUpper(nameBuffer[0]);
                     CheckForIllegalName(nameBuffer, ref nameLength);
 
-                    sourceBuilder.Append(_indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
+                    sourceBuilder.Append(Indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
                     sourceBuilder.Append("= \"").Append(emojiBuffer.AsSpan().Slice(0, emojiLength).ToArray()).AppendLine("\";");
                     break;
                 default:

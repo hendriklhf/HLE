@@ -177,18 +177,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const byte value = 255;
-        builder.Append(value);
+        const byte Value = 255;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -196,18 +196,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const sbyte value = 120;
-        builder.Append(value);
+        const sbyte Value = 120;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -215,18 +215,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const short value = 30_000;
-        builder.Append(value);
+        const short Value = 30_000;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -234,18 +234,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const ushort value = 60_000;
-        builder.Append(value);
+        const ushort Value = 60_000;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -253,18 +253,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const int value = int.MaxValue;
-        builder.Append(value);
+        const int Value = int.MaxValue;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -272,18 +272,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const uint value = uint.MaxValue;
-        builder.Append(value);
+        const uint Value = uint.MaxValue;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -291,18 +291,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const long value = long.MaxValue;
-        builder.Append(value);
+        const long Value = long.MaxValue;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -310,18 +310,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const ulong value = ulong.MaxValue;
-        builder.Append(value);
+        const ulong Value = ulong.MaxValue;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(), builder.ToString());
+        Assert.Equal(Value.ToString(), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString().Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString().Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -329,18 +329,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const float value = float.Pi;
-        builder.Append(value);
+        const float Value = float.Pi;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(CultureInfo.InvariantCulture), builder.ToString());
+        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString(CultureInfo.InvariantCulture).Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture).Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]
@@ -348,18 +348,18 @@ public sealed class ValueStringBuilderTest
     {
         ValueStringBuilder builder = new(stackalloc char[1000]);
 
-        const double value = double.Pi;
-        builder.Append(value);
+        const double Value = double.Pi;
+        builder.Append(Value);
 
-        Assert.Equal(value.ToString(CultureInfo.InvariantCulture), builder.ToString());
+        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
-            builder.Append(value);
+            builder.Append(Value);
         }
 
-        Assert.Equal(value.ToString(CultureInfo.InvariantCulture).Length * 6, builder.Length);
-        Assert.Equal($"{value}{value}{value}{value}{value}{value}", builder.ToString());
+        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture).Length * 6, builder.Length);
+        Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
     [Fact]

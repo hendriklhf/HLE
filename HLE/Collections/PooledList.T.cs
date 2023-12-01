@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -100,6 +101,7 @@ public sealed class PooledList<T>(int capacity)
 
     Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowIfNeeded(int sizeHint)
     {
         int freeSpace = Capacity - Count;
@@ -108,14 +110,22 @@ public sealed class PooledList<T>(int capacity)
             return;
         }
 
-        int neededSize = sizeHint - freeSpace;
-        int newSize = BufferHelpers.GrowByPow2(_buffer.Length, neededSize);
+        Grow(sizeHint - freeSpace);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
+    private void Grow(int neededSize)
+    {
+        int count = Count;
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
-        if (Count != 0)
+        int newSize = BufferHelpers.GrowByPow2(oldBuffer.Length, neededSize);
+        RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
+        if (count != 0)
         {
-            CopyWorker<T>.Copy(oldBuffer.AsSpan(..Count), _buffer.AsSpan());
+            CopyWorker<T>.Copy(oldBuffer.AsSpan(..count), newBuffer.AsSpan());
         }
+
+        _buffer = newBuffer;
     }
 
     public void Add(T item)
@@ -294,10 +304,10 @@ public sealed class PooledList<T>(int capacity)
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(PooledList<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] PooledList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

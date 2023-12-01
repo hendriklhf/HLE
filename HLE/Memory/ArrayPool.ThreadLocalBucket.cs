@@ -24,7 +24,7 @@ public sealed partial class ArrayPool<T>
         public readonly bool Equals(ThreadLocalBucket other) => ReferenceEquals(_pool, other._pool);
 
         // ReSharper disable once ArrangeModifiersOrder
-        public override readonly bool Equals(object? obj) => obj is ThreadLocalBucket other && Equals(other);
+        public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ThreadLocalBucket other && Equals(other);
 
         // ReSharper disable once ArrangeModifiersOrder
         public override readonly int GetHashCode() => _pool.GetHashCode();

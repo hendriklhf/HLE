@@ -21,17 +21,11 @@ public static class RandomExtensions
 
     [Pure]
     public static byte NextUInt8(this Random random, byte min = byte.MinValue, byte max = byte.MaxValue)
-    {
-        byte result = random.NextStruct<byte>();
-        return NumberHelpers.BringIntoRange(result, min, max);
-    }
+        => (byte)random.Next(min, max);
 
     [Pure]
     public static sbyte NextInt8(this Random random, sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
-    {
-        sbyte result = random.NextStruct<sbyte>();
-        return NumberHelpers.BringIntoRange(result, min, max);
-    }
+        => (sbyte)random.Next(min, max);
 
     [Pure]
     public static short NextInt16(this Random random, short min = short.MinValue, short max = short.MaxValue)

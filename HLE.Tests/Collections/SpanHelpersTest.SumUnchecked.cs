@@ -10,22 +10,22 @@ namespace HLE.Tests.Collections;
 
 public sealed partial class SpanHelpersTest
 {
-    private const int _elementCount = 4096;
+    private const int ElementCount = 4096;
 
 #pragma warning disable IDE0300 // simplify collection initialization
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public static object[][] SumUncheckedParameters { get; } =
     {
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextUInt8()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextInt8()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextUInt16()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextInt16()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextUInt32()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextInt32()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextUInt64()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextInt64()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextUInt128()).ToArray() },
-        new object[] { Enumerable.Range(0, _elementCount).Select(static _ => Random.Shared.NextInt128()).ToArray() }
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt8()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt8()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt16()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt16()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt32()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt32()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt64()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt64()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt128()).ToArray() },
+        new object[] { Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt128()).ToArray() }
     };
 #pragma warning restore IDE0300
 

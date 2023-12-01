@@ -57,7 +57,7 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
     public bool Equals(EnvironmentVariables other) => ReferenceEquals(_environmentVariables, other._environmentVariables);
 
     [Pure]
-    public override bool Equals(object? obj) => obj is EnvironmentVariables other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is EnvironmentVariables other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => _environmentVariables.GetHashCode();

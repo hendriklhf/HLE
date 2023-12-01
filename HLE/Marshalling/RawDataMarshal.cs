@@ -24,7 +24,7 @@ public static unsafe class RawDataMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint* GetMethodTablePointer<T>(T obj) where T : class
-        => (nuint*)*(nuint*)&obj;
+        => *(nuint**)&obj;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

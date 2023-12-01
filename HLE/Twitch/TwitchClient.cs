@@ -93,9 +93,9 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     internal readonly PooledList<string> _ircChannels = [];
     private readonly SemaphoreSlim _reconnectionLock = new(1);
 
-    private const string _anonymousUsername = "justinfan123";
-    private const char _channelPrefix = '#';
-    private const string _pongPrefix = "PONG :";
+    private const string AnonymousUsername = "justinfan123";
+    private const char ChannelPrefix = '#';
+    private const string PongPrefix = "PONG :";
 
     /// <summary>
     /// The constructor for an anonymous chat client. An anonymous chat client can only receive messages, but cannot send any messages.
@@ -104,7 +104,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public TwitchClient(ClientOptions options)
     {
-        _client = new(_anonymousUsername, OAuthToken.Empty, options);
+        _client = new(AnonymousUsername, OAuthToken.Empty, options);
         _ircHandler = new(options.ParsingMode);
         IsAnonymousLogin = true;
         SubscribeToEvents();
@@ -408,7 +408,7 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
         try
         {
             using PooledStringBuilder builder = new(50);
-            builder.Append(_pongPrefix, data.Span);
+            builder.Append(PongPrefix, data.Span);
             await SendRawAsync(builder.WrittenMemory);
         }
         finally
@@ -456,18 +456,18 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
         if (withHashtag)
         {
-            if (channel[0] == _channelPrefix)
+            if (channel[0] == ChannelPrefix)
             {
                 channel.ToLowerInvariant(result);
                 return channel.Length;
             }
 
-            result[0] = _channelPrefix;
+            result[0] = ChannelPrefix;
             channel.ToLowerInvariant(result[1..]);
             return channel.Length + 1;
         }
 
-        if (channel[0] == _channelPrefix)
+        if (channel[0] == ChannelPrefix)
         {
             channel[1..].ToLowerInvariant(result);
             return channel.Length - 1;
@@ -494,10 +494,10 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     [Pure]
-    public bool Equals(TwitchClient? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] TwitchClient? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

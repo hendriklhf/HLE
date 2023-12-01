@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HLE.Twitch.Models;
 
@@ -16,18 +17,18 @@ public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEffic
     /// <summary>
     /// The default constructor of <see cref="TimeEfficientChatMessage"/>.
     /// </summary>
-    public TimeEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageTags tags)
+    public TimeEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
         _badges = badges;
         _badgeCount = badgeCount;
-        _tags = tags;
+        _flags = flags;
     }
 
-    public bool Equals(TimeEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] TimeEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
-    public override bool Equals(object? obj) => obj is TimeEfficientChatMessage other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is TimeEfficientChatMessage other && Equals(other);
 
     public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Strings;
@@ -17,23 +18,23 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public virtual required string DisplayName { get; init; }
 
-    public bool IsFirstMessage => (_tags & ChatMessageTags.IsFirstMessage) == ChatMessageTags.IsFirstMessage;
+    public bool IsFirstMessage => (_flags & ChatMessageFlags.IsFirstMessage) != 0;
 
     public required Guid Id { get; init; }
 
-    public bool IsModerator => (_tags & ChatMessageTags.IsModerator) == ChatMessageTags.IsModerator;
+    public bool IsModerator => (_flags & ChatMessageFlags.IsModerator) != 0;
 
     public required long ChannelId { get; init; }
 
-    public bool IsSubscriber => (_tags & ChatMessageTags.IsSubscriber) == ChatMessageTags.IsSubscriber;
+    public bool IsSubscriber => (_flags & ChatMessageFlags.IsSubscriber) != 0;
 
     public required long TmiSentTs { get; init; }
 
-    public bool IsTurboUser => (_tags & ChatMessageTags.IsTurboUser) == ChatMessageTags.IsTurboUser;
+    public bool IsTurboUser => (_flags & ChatMessageFlags.IsTurboUser) != 0;
 
     public required long UserId { get; init; }
 
-    public bool IsAction => (_tags & ChatMessageTags.IsAction) == ChatMessageTags.IsAction;
+    public bool IsAction => (_flags & ChatMessageFlags.IsAction) != 0;
 
     public virtual required string Username { get; init; }
 
@@ -41,7 +42,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public virtual required string Message { get; init; }
 
-    private protected ChatMessageTags _tags;
+    private protected ChatMessageFlags _flags;
 
     /// <summary>
     /// Returns the message in the following format: "&lt;#Channel&gt; Username: Message".
@@ -57,13 +58,13 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     }
 
     [Pure]
-    public bool Equals(ChatMessage? other) => Equals((IChatMessage?)other);
+    public bool Equals([NotNullWhen(true)] ChatMessage? other) => Equals((IChatMessage?)other);
 
     [Pure]
-    public bool Equals(IChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] IChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
     [Pure]
-    public override bool Equals(object? obj) => obj is IChatMessage other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is IChatMessage other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);

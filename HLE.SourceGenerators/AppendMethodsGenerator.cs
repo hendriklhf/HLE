@@ -11,12 +11,13 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private readonly List<string[]> _arguments = [];
     private readonly string[] _argumentTypes = ["scoped ReadOnlySpan<char>", "char"];
 
-    private const int _maxAmountOfArguments = 8;
-    private const string _indentation = "    ";
+    private const int MinimumAmountOfArguments = 2;
+    private const int MaximumAmountOfArguments = 8;
+    private const string Indentation = "    ";
 
     public void Initialize(GeneratorInitializationContext context)
     {
-        for (int i = 2; i <= _maxAmountOfArguments; i++)
+        for (int i = MinimumAmountOfArguments; i <= MaximumAmountOfArguments; i++)
         {
             for (int j = 0; j < _argumentTypes.Length; j++)
             {
@@ -69,8 +70,10 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
 
     private static string CreateAppendMethod(ReadOnlySpan<string> argumentTypes)
     {
+        const string ArgumentNamePrefix = "s";
+
         StringBuilder methodBuilder = new();
-        methodBuilder.Append(_indentation).Append("public void Append(");
+        methodBuilder.Append(Indentation).Append("public void Append(");
         for (int i = 0; i < argumentTypes.Length; i++)
         {
             if (i != 0)
@@ -78,16 +81,21 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
                 methodBuilder.Append(", ");
             }
 
-            methodBuilder.Append(argumentTypes[i]).Append(" arg").Append(i);
+            methodBuilder.Append(argumentTypes[i]).Append(' ').Append(ArgumentNamePrefix).Append(i);
         }
 
-        methodBuilder.AppendLine(")").Append(_indentation).AppendLine("{");
+        methodBuilder.AppendLine(")").Append(Indentation).AppendLine("{");
+
         for (int i = 0; i < argumentTypes.Length; i++)
         {
-            methodBuilder.Append(_indentation + _indentation).Append("Append(arg").Append(i).AppendLine(");");
+            string argumentName = $"{ArgumentNamePrefix}{i}";
+            AppendMethodLine(methodBuilder, $"Append({argumentName});");
         }
 
-        methodBuilder.Append(_indentation).AppendLine("}");
+        methodBuilder.Append(Indentation).AppendLine("}");
         return methodBuilder.ToString();
     }
+
+    private static void AppendMethodLine(StringBuilder builder, string text)
+        => builder.Append(Indentation).Append(Indentation).AppendLine(text);
 }

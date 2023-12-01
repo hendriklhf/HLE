@@ -87,8 +87,8 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         ref Bucket initialBucket = ref bucket;
         int bucketsLength = _buckets.Length;
         int tryCount = 0;
-        const int maximumTryCount = 3;
-        while (bucketIndex < bucketsLength && tryCount < maximumTryCount)
+        const int MaximumTryCount = 3;
+        while (bucketIndex < bucketsLength && tryCount < MaximumTryCount)
         {
             if (bucket.TryRent(out T[]? array))
             {
@@ -116,7 +116,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             }
         }
 
-        if ((threadLocalBucket.BucketInitializationStatuses & arrayLength) != arrayLength)
+        if ((threadLocalBucket.BucketInitializationStatuses & arrayLength) == 0)
         {
             threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
             {
@@ -253,10 +253,10 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         typeof(T).IsEnum;
 
     [Pure]
-    public bool Equals(ArrayPool<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] ArrayPool<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

@@ -10,12 +10,12 @@ public sealed partial class CopyWorkerTest
     [Fact]
     public unsafe void MemmoveTest()
     {
-        const int sourceLength = 50;
+        const int SourceLength = 50;
 
-        Span<int> source = stackalloc int[sourceLength];
+        Span<int> source = stackalloc int[SourceLength];
         SpanHelpers.FillAscending(source);
 
-        Span<int> destination = stackalloc int[sourceLength];
+        Span<int> destination = stackalloc int[SourceLength];
 
         CopyWorker<int>.s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (nuint)source.Length);
         Assert.True(destination.SequenceEqual(source));

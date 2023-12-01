@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using HLE.Marshalling;
 using HLE.Memory;
@@ -52,7 +53,7 @@ public readonly struct Color : IBitwiseEquatable<Color>
     public bool Equals(Color other) => StructMarshal.EqualsBitwise(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => obj is Color other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is Color other && Equals(other);
 
     [Pure]
     public override unsafe int GetHashCode()

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Memory;
@@ -76,7 +77,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
             ObjectDisposedException.ThrowIf(_messageBuffer is null, typeof(MemoryEfficientChatMessage));
 
             ReadOnlySpan<char> message = _messageBuffer.AsSpan(.._messageLength);
-            _message = message.Length <= _maxMessagePoolingLength ? StringPool.Shared.GetOrAdd(message) : new(message);
+            _message = message.Length <= MaxMessagePoolingLength ? StringPool.Shared.GetOrAdd(message) : new(message);
             ArrayPool<char>.Shared.Return(_messageBuffer!);
             _messageBuffer = null;
             return _message;
@@ -101,19 +102,19 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
     private char[]? _messageBuffer;
     private readonly int _messageLength;
 
-    private const int _maxMessagePoolingLength = 25;
+    private const int MaxMessagePoolingLength = 25;
 
     /// <summary>
     /// The default constructor of <see cref="MemoryEfficientChatMessage"/>.
     /// </summary>
-    public MemoryEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageTags tags,
+    public MemoryEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags,
         char[] displayName, char[] username, int nameLength, char[] message, int messageLength)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
         _badges = badges;
         _badgeCount = badgeCount;
-        _tags = tags;
+        _flags = flags;
 
         _displayNameBuffer = displayName;
         _usernameBuffer = username;
@@ -166,10 +167,10 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
     }
 
     [Pure]
-    public bool Equals(MemoryEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] MemoryEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
     [Pure]
-    public override bool Equals(object? obj) => obj is MemoryEfficientChatMessage other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is MemoryEfficientChatMessage other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);

@@ -21,8 +21,8 @@ public sealed class StringMarshalTest
     [Fact]
     public void AsMutableSpanTest()
     {
-        const string str = "hello";
-        Span<char> chars = StringMarshal.AsMutableSpan(str);
+        const string Str = "hello";
+        Span<char> chars = StringMarshal.AsMutableSpan(Str);
         Assert.True(chars is "hello");
     }
 

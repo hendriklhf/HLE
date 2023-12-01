@@ -63,6 +63,8 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     private void GrowBuffer(int sizeHint)
     {
+        Debug.Assert(sizeHint > 0);
+
         int newSize = BufferHelpers.GrowByPow2(_buffer.Length, sizeHint);
         using RentedArray<char> oldBuffer = _buffer;
         _buffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
@@ -70,6 +72,16 @@ public sealed partial class PooledStringBuilder(int capacity)
         {
             CopyWorker<char>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Length);
         }
+    }
+
+    public void EnsureCapacity(int capacity)
+    {
+        if (capacity <= Capacity)
+        {
+            return;
+        }
+
+        GrowBuffer(capacity - Capacity);
     }
 
     public void Advance(int length) => Length += length;
@@ -168,11 +180,11 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
     {
-        const int maximumFormattingTries = 5;
+        const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
         while (true)
         {
-            if (countOfFailedTries == maximumFormattingTries)
+            if (countOfFailedTries == MaximumFormattingTries)
             {
                 ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
             }
@@ -257,10 +269,10 @@ public sealed partial class PooledStringBuilder(int capacity)
     public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
     [Pure]
-    public bool Equals(PooledStringBuilder? other) => Length == other?.Length && _buffer.Equals(other._buffer);
+    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => Length == other?.Length && _buffer.Equals(other._buffer);
 
     [Pure]
-    public override bool Equals(object? obj) => obj is PooledStringBuilder other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is PooledStringBuilder other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

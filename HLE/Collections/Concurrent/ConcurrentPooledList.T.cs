@@ -2,17 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using HLE.Memory;
 
 namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-[CollectionBuilder(typeof(ConcurrentPooledList), nameof(ConcurrentPooledList.Create))]
 public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable, IEquatable<ConcurrentPooledList<T>>, IDisposable,
     IIndexAccessible<T>, IReadOnlyList<T>, ICollectionProvider<T>
 {
@@ -100,27 +98,17 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
 
     public void Add(T item)
     {
-        Monitor.Enter(_list);
-        try
+        lock (_list)
         {
             _list.Add(item);
-        }
-        finally
-        {
-            Monitor.Exit(_list);
         }
     }
 
     public void AddRange(IEnumerable<T> items)
     {
-        Monitor.Enter(_list);
-        try
+        lock (_list)
         {
             _list.AddRange(items);
-        }
-        finally
-        {
-            Monitor.Exit(_list);
         }
     }
 
@@ -132,40 +120,25 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
 
     public void AddRange(ReadOnlySpan<T> items)
     {
-        Monitor.Enter(_list);
-        try
+        lock (_list)
         {
             _list.AddRange(items);
-        }
-        finally
-        {
-            Monitor.Exit(_list);
         }
     }
 
     public void Clear()
     {
-        Monitor.Enter(_list);
-        try
+        lock (_list)
         {
             _list.Clear();
-        }
-        finally
-        {
-            Monitor.Exit(_list);
         }
     }
 
     public void EnsureCapacity(int capacity)
     {
-        Monitor.Enter(_list);
-        try
+        lock (_list)
         {
             _list.EnsureCapacity(capacity);
-        }
-        finally
-        {
-            Monitor.Exit(_list);
         }
     }
 
@@ -267,6 +240,7 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     }
 
     // TODO: enumerator has to lock the list
+    // ReSharper disable once InconsistentlySynchronizedField
     public ArrayEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
@@ -274,12 +248,13 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, ICountable
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(ConcurrentPooledList<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] ConcurrentPooledList<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
+    [SuppressMessage("ReSharper", "InconsistentlySynchronizedField", Justification = "doesnt need to be locked")]
     public override int GetHashCode() => _list.GetHashCode();
 
     public static bool operator ==(ConcurrentPooledList<T>? left, ConcurrentPooledList<T>? right) => Equals(left, right);

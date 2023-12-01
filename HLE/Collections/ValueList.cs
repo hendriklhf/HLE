@@ -10,9 +10,16 @@ namespace HLE.Collections;
 
 public ref struct ValueList<T> where T : IEquatable<T>
 {
-    public readonly ref T this[int index] => ref AsSpan()[index];
+    public readonly ref T this[int index]
+    {
+        get
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)_buffer.Length);
+            return ref Unsafe.Add(ref MemoryMarshal.GetReference(_buffer), index);
+        }
+    }
 
-    public readonly ref T this[Index index] => ref AsSpan()[index];
+    public readonly ref T this[Index index] => ref this[index.GetOffset(_buffer.Length)];
 
     public readonly Span<T> this[Range range] => _buffer[range];
 
@@ -219,7 +226,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => false;
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

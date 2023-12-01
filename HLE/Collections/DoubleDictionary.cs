@@ -237,10 +237,10 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     IEnumerator<KeyValuePair<TPrimaryKey, TValue>> IEnumerable<KeyValuePair<TPrimaryKey, TValue>>.GetEnumerator() => _values.GetEnumerator();
 
     [Pure]
-    public bool Equals(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(_values, _secondaryKeyTranslations);

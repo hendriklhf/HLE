@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -166,14 +167,16 @@ public sealed class PooledBufferWriter<T>(int capacity)
         }
 
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
-        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Count);
+        RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
+        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)Count);
+        _buffer = newBuffer;
     }
 
     /// <summary>
     /// Grows the buffer if <paramref name="sizeHint"/> amount of elements won't fit into the buffer.
     /// </summary>
     /// <param name="sizeHint">The amount of elements waiting to be written.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowIfNeeded(int sizeHint)
     {
         if (sizeHint < 1)
@@ -187,14 +190,21 @@ public sealed class PooledBufferWriter<T>(int capacity)
             return;
         }
 
-        int neededSize = sizeHint - freeSpace;
-        int newBufferSize = BufferHelpers.GrowByPow2(_buffer.Length, neededSize);
+        Grow(sizeHint - freeSpace);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
+    private void Grow(int neededSize)
+    {
         using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
+        int newBufferSize = BufferHelpers.GrowByPow2(oldBuffer.Length, neededSize);
+        RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
         if (Count != 0)
         {
-            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Count);
+            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)Count);
         }
+
+        _buffer = newBuffer;
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
@@ -254,10 +264,10 @@ public sealed class PooledBufferWriter<T>(int capacity)
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(PooledBufferWriter<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] PooledBufferWriter<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

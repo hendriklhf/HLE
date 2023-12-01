@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
@@ -30,7 +31,7 @@ public ref struct MemoryEnumerator<T>
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => false;
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

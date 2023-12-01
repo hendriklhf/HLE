@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Timers;
@@ -107,10 +108,10 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
     }
 
     [Pure]
-    public bool Equals(HTimer? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] HTimer? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

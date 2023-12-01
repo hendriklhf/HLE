@@ -183,7 +183,7 @@ public readonly struct UnitPrefix(string name, string symbol, double value)
     public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) == 0;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is UnitPrefix other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is UnitPrefix other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(Name, Symbol, Value);

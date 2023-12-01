@@ -161,7 +161,7 @@ public ref partial struct ValueStringBuilder
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => false;
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
     public readonly bool Equals(ValueStringBuilder other)

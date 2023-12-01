@@ -96,7 +96,7 @@ public readonly struct StringNumberFormatter(StringNumberFormat format) : IEquat
 
     public bool Equals(StringNumberFormatter other) => NumberFormat.Equals(other.NumberFormat);
 
-    public override bool Equals(object? obj) => obj is StringNumberFormatter other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is StringNumberFormatter other && Equals(other);
 
     public override int GetHashCode() => string.GetHashCode(NumberFormat._chars);
 

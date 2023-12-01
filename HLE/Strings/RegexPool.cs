@@ -10,12 +10,12 @@ namespace HLE.Strings;
 
 public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
 {
-    private readonly Bucket[] _buckets = new Bucket[_defaultPoolCapacity];
+    private readonly Bucket[] _buckets = new Bucket[DefaultPoolCapacity];
 
     public static RegexPool Shared { get; } = [];
 
-    private const int _defaultPoolCapacity = 4096;
-    private const int _defaultBucketCapacity = 32;
+    private const int DefaultPoolCapacity = 4096;
+    private const int DefaultBucketCapacity = 32;
 
     public RegexPool()
     {
@@ -114,10 +114,10 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
     }
 
     [Pure]
-    public bool Equals(RegexPool? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] RegexPool? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

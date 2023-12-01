@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using HLE.Marshalling;
 using HLE.Memory;
@@ -36,7 +37,7 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     public bool Equals(ClientOptions other) => StructMarshal.EqualsBitwise(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => obj is ClientOptions other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is ClientOptions other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(UseSSL, IsVerifiedBot, ParsingMode);

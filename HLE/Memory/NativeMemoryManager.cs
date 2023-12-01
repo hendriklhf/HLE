@@ -46,9 +46,9 @@ public sealed class NativeMemoryManager<T>(NativeMemory<T> memory) : MemoryManag
         }
     }
 
-    public bool Equals(NativeMemoryManager<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] NativeMemoryManager<T>? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj) => obj is NativeMemoryManager<T> other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is NativeMemoryManager<T> other && Equals(other);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

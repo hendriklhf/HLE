@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -12,30 +11,24 @@ namespace HLE.Strings;
 
 public sealed partial class StringPool
 {
-    private readonly struct Bucket(int bucketCapacity = _defaultBucketCapacity)
+    private readonly struct Bucket(int bucketCapacity = DefaultBucketCapacity)
         : IEnumerable<string>, IEquatable<Bucket>
     {
         internal readonly string?[] _strings = new string[bucketCapacity];
 
-        private const int _moveItemThreshold = 6;
+        private const int MoveItemThreshold = 6;
 
         public void Clear()
         {
-            Monitor.Enter(_strings);
-            try
+            lock (_strings)
             {
                 Array.Clear(_strings);
-            }
-            finally
-            {
-                Monitor.Exit(_strings);
             }
         }
 
         public string GetOrAdd(ReadOnlySpan<char> span)
         {
-            Monitor.Enter(_strings);
-            try
+            lock (_strings)
             {
                 if (TryGet(span, out string? value))
                 {
@@ -46,31 +39,21 @@ public sealed partial class StringPool
                 Add(value);
                 return value;
             }
-            finally
-            {
-                Monitor.Exit(_strings);
-            }
         }
 
         public void Add(string value)
         {
-            Monitor.Enter(_strings);
-            try
+            lock (_strings)
             {
                 ref string? stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
                 CopyWorker<string?>.Copy(ref stringsReference, ref Unsafe.Add(ref stringsReference, 1), (uint)(_strings.Length - 1));
                 stringsReference = value;
             }
-            finally
-            {
-                Monitor.Exit(_strings);
-            }
         }
 
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            Monitor.Enter(_strings);
-            try
+            lock (_strings)
             {
                 Span<string?> strings = _strings;
                 for (int i = 0; i < strings.Length; i++)
@@ -87,9 +70,9 @@ public sealed partial class StringPool
                         continue;
                     }
 
-                    if (i > _moveItemThreshold)
+                    if (i > MoveItemThreshold)
                     {
-                        strings.MoveItem(i, i - _moveItemThreshold - 1);
+                        strings.MoveItem(i, i - MoveItemThreshold - 1);
                     }
 
                     value = str;
@@ -98,10 +81,6 @@ public sealed partial class StringPool
 
                 value = null;
                 return false;
-            }
-            finally
-            {
-                Monitor.Exit(_strings);
             }
         }
 
@@ -123,7 +102,7 @@ public sealed partial class StringPool
 
         public bool Equals(Bucket other) => _strings.Equals(other._strings);
 
-        public override bool Equals(object? obj) => obj is Bucket other && Equals(other);
+        public override bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
         public override int GetHashCode() => _strings.GetHashCode();
 

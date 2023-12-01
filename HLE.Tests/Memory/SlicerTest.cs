@@ -9,21 +9,21 @@ public sealed class SlicerTest
     [Fact]
     public void CreateSpan_Start_Test()
     {
-        const int arrayLength = 100;
-        int[] array = new int[arrayLength];
+        const int ArrayLength = 100;
+        int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         Span<int> span = slicer.SliceSpan(5);
-        Assert.Equal(arrayLength - 5, span.Length);
+        Assert.Equal(ArrayLength - 5, span.Length);
         Assert.True(span is [5, .., 99]);
     }
 
     [Fact]
     public void CreateSpan_Start_Length_Test()
     {
-        const int arrayLength = 100;
-        int[] array = new int[arrayLength];
+        const int ArrayLength = 100;
+        int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
@@ -35,8 +35,8 @@ public sealed class SlicerTest
     [Fact]
     public void CreateSpan_Range_Test()
     {
-        const int arrayLength = 100;
-        int[] array = new int[arrayLength];
+        const int ArrayLength = 100;
+        int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
@@ -181,21 +181,21 @@ public sealed class SlicerTest
     [Fact]
     public void CreateReadOnlySpan_Start_Test()
     {
-        const int arrayLength = 100;
-        int[] array = new int[arrayLength];
+        const int ArrayLength = 100;
+        int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
         ReadOnlySpan<int> span = slicer.SliceReadOnlySpan(5);
-        Assert.Equal(arrayLength - 5, span.Length);
+        Assert.Equal(ArrayLength - 5, span.Length);
         Assert.True(span is [5, .., 99]);
     }
 
     [Fact]
     public void CreateReadOnlySpan_Start_Length_Test()
     {
-        const int arrayLength = 100;
-        int[] array = new int[arrayLength];
+        const int ArrayLength = 100;
+        int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);
@@ -207,8 +207,8 @@ public sealed class SlicerTest
     [Fact]
     public void CreateReadOnlySpan_Range_Test()
     {
-        const int arrayLength = 100;
-        int[] array = new int[arrayLength];
+        const int ArrayLength = 100;
+        int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
         Slicer<int> slicer = new(array);

@@ -25,19 +25,19 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
     internal T[] _buffer;
     private readonly object _syncRoot = new();
 
-    private const int _defaultCapacity = 8;
+    private const int DefaultCapacity = 8;
 
     public ConcurrentStack(int capacity)
     {
-        if (capacity < _defaultCapacity)
+        if (capacity < DefaultCapacity)
         {
-            capacity = _defaultCapacity;
+            capacity = DefaultCapacity;
         }
 
         _buffer = GC.AllocateUninitializedArray<T>(capacity);
     }
 
-    public ConcurrentStack() : this(_defaultCapacity)
+    public ConcurrentStack() : this(DefaultCapacity)
     {
     }
 
@@ -191,9 +191,9 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(ConcurrentStack<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] ConcurrentStack<T>? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

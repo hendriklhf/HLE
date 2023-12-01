@@ -7,16 +7,16 @@ namespace HLE.Tests.Twitch;
 
 public sealed class IrcHandlerTest
 {
-    private const string _privMsg =
+    private const string PrivMsg =
         "@badge-info=;badges=moderator/1,twitchconEU2022/1;color=#C29900;display-name=Strbhlfe;emotes=;first-msg=0;flags=;id=03c90865-31ff-493f-a711-dcd6d788624b;mod=1;rm-received-ts=1654020884037;room-id=616177816;subscriber=0;tmi-sent-ts=1654020883875;turbo=0;user-id=87633910;user-type=mod :strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PRIVMSG #lbnshlfe :xd xd xd";
-    private const string _privMsgAction =
+    private const string PrivMsgAction =
         "@badge-info=;badges=moderator/1,twitchconEU2022/1;color=#C29900;display-name=Strbhlfe;emotes=;first-msg=0;flags=;id=03c90865-31ff-493f-a711-dcd6d788624b;mod=1;returning-chatter=0;room-id=616177816;subscriber=0;tmi-sent-ts=1654020883875;turbo=0;user-id=87633910;user-type=mod :strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PRIVMSG #lbnshlfe :\u0001ACTION xd xd xd\u0001";
-    private const string _roomstateAllOff = "@emote-only=0;followers-only=-1;r9k=0;room-id=87633910;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #strbhlfe";
-    private const string _roomstateAllOn = "@emote-only=1;followers-only=15;r9k=1;room-id=87633910;slow=10;subs-only=1 :tmi.twitch.tv ROOMSTATE #strbhlfe";
-    private const string _join = ":strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv JOIN #lbnshlfe";
-    private const string _part = ":strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PART #lbnshlfe";
-    private const string _noticeWithTag = "@msg-id=already_emote_only_off :tmi.twitch.tv NOTICE #lbnshlfe :This room is not in emote-only mode.";
-    private const string _noticeWithoutTag = ":tmi.twitch.tv NOTICE * :Login authentication failed";
+    private const string RoomstateAllOff = "@emote-only=0;followers-only=-1;r9k=0;room-id=87633910;slow=0;subs-only=0 :tmi.twitch.tv ROOMSTATE #strbhlfe";
+    private const string RoomstateAllOn = "@emote-only=1;followers-only=15;r9k=1;room-id=87633910;slow=10;subs-only=1 :tmi.twitch.tv ROOMSTATE #strbhlfe";
+    private const string Join = ":strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv JOIN #lbnshlfe";
+    private const string Part = ":strbhlfe!strbhlfe@strbhlfe.tmi.twitch.tv PART #lbnshlfe";
+    private const string NoticeWithTag = "@msg-id=already_emote_only_off :tmi.twitch.tv NOTICE #lbnshlfe :This room is not in emote-only mode.";
+    private const string NoticeWithoutTag = ":tmi.twitch.tv NOTICE * :Login authentication failed";
 
     [Theory]
     [InlineData(ParsingMode.TimeEfficient)]
@@ -52,8 +52,8 @@ public sealed class IrcHandlerTest
             }
         };
 
-        Assert.True(handler.Handle(_privMsg));
-        Assert.True(handler.Handle(_privMsgAction));
+        Assert.True(handler.Handle(PrivMsg));
+        Assert.True(handler.Handle(PrivMsgAction));
     }
 
     [Theory]
@@ -75,7 +75,7 @@ public sealed class IrcHandlerTest
             Assert.Equal("strbhlfe", roomstateArgs.Channel);
         };
 
-        Assert.True(handler.Handle(_roomstateAllOff));
+        Assert.True(handler.Handle(RoomstateAllOff));
     }
 
     [Theory]
@@ -97,7 +97,7 @@ public sealed class IrcHandlerTest
             Assert.Equal("strbhlfe", roomstateArgs.Channel);
         };
 
-        Assert.True(handler.Handle(_roomstateAllOn));
+        Assert.True(handler.Handle(RoomstateAllOn));
     }
 
     [Theory]
@@ -114,7 +114,7 @@ public sealed class IrcHandlerTest
             Assert.Equal("lbnshlfe", joinedChannelArgs.Channel);
         };
 
-        Assert.True(handler.Handle(_join));
+        Assert.True(handler.Handle(Join));
     }
 
     [Theory]
@@ -131,7 +131,7 @@ public sealed class IrcHandlerTest
             Assert.Equal("lbnshlfe", leftChannelArgs.Channel);
         };
 
-        Assert.True(handler.Handle(_part));
+        Assert.True(handler.Handle(Part));
     }
 
     [Theory]
@@ -149,7 +149,7 @@ public sealed class IrcHandlerTest
             Assert.Equal("This room is not in emote-only mode.", notice.Message);
         };
 
-        Assert.True(handler.Handle(_noticeWithTag));
+        Assert.True(handler.Handle(NoticeWithTag));
     }
 
     [Theory]
@@ -167,6 +167,6 @@ public sealed class IrcHandlerTest
             Assert.Equal("Login authentication failed", notice.Message);
         };
 
-        Assert.True(handler.Handle(_noticeWithoutTag));
+        Assert.True(handler.Handle(NoticeWithoutTag));
     }
 }

@@ -12,33 +12,33 @@ namespace HLE.Twitch;
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMessageParser>
 {
-    private protected const string _actionPrefix = ":\u0001ACTION";
-    private protected const string _escapedWhitespace = "\\s";
+    private protected const string ActionPrefix = ":\u0001ACTION";
+    private protected const string EscapedWhitespace = "\\s";
 
-    private protected const char _upperCaseAMinus10 = (char)('A' - 10);
-    private protected const char _charZero = '0';
+    private protected const char UpperCaseAMinus10 = (char)('A' - 10);
+    private protected const char CharZero = '0';
 
-    private protected const string _badgeInfoTag = "badge-info";
-    private protected const string _badgesTag = "badges";
-    private protected const string _colorTag = "color";
-    private protected const string _displayNameTag = "display-name";
-    private protected const string _firstMsgTag = "first-msg";
-    private protected const string _idTag = "id";
-    private protected const string _modTag = "mod";
-    private protected const string _roomIdTag = "room-id";
-    private protected const string _subscriberTag = "subscriber";
-    private protected const string _tmiSentTsTag = "tmi-sent-ts";
-    private protected const string _turboTag = "turbo";
-    private protected const string _userIdTag = "user-id";
+    private protected const string BadgeInfoTag = "badge-info";
+    private protected const string BadgesTag = "badges";
+    private protected const string ColorTag = "color";
+    private protected const string DisplayNameTag = "display-name";
+    private protected const string FirstMsgTag = "first-msg";
+    private protected const string IdTag = "id";
+    private protected const string ModTag = "mod";
+    private protected const string RoomIdTag = "room-id";
+    private protected const string SubscriberTag = "subscriber";
+    private protected const string TmiSentTsTag = "tmi-sent-ts";
+    private protected const string TurboTag = "turbo";
+    private protected const string UserIdTag = "user-id";
 
-    private const int _maximumWhitespacesNeededToHandle = 5;
+    private const int MaximumWhitespacesNeededToHandle = 5;
 
     [Pure]
     [SkipLocalsInit]
     public IChatMessage Parse(ReadOnlySpan<char> ircMessage)
     {
-        Span<int> indicesOfWhitespacesBuffer = stackalloc int[_maximumWhitespacesNeededToHandle];
-        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespacesBuffer, _maximumWhitespacesNeededToHandle);
+        Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespacesBuffer, MaximumWhitespacesNeededToHandle);
         return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
     }
 
@@ -50,7 +50,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         => ircMessage[(indicesOfWhitespaces[2] + 1)..indicesOfWhitespaces[3]][1..];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageTags GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    private protected static ChatMessageFlags GetIsAction(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         if (indicesOfWhitespaces.Length < 5)
         {
@@ -58,9 +58,9 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         }
 
         ReadOnlySpan<char> actionPrefix = ircMessage[(indicesOfWhitespaces[3] + 1)..indicesOfWhitespaces[4]];
-        bool isAction = actionPrefix.SequenceEqual(_actionPrefix);
+        bool isAction = actionPrefix.SequenceEqual(ActionPrefix);
         int asByte = Unsafe.As<bool, byte>(ref isAction);
-        return (ChatMessageTags)(asByte << 4);
+        return (ChatMessageFlags)(asByte << 4);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -81,8 +81,8 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         }
 
         // skipping chars to speed up .IndexOf
-        const int maximumAmountOfCharsThatCanBeIgnored = 242;
-        ircMessage = ircMessage[maximumAmountOfCharsThatCanBeIgnored..];
+        const int MaximumAmountOfCharsThatCanBeIgnored = 242;
+        ircMessage = ircMessage[MaximumAmountOfCharsThatCanBeIgnored..];
         return ircMessage[(ircMessage.IndexOf('\u0001') + 8)..^1];
     }
 
@@ -127,44 +127,44 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageTags GetIsFirstMsg(ReadOnlySpan<char> value)
+    private protected static ChatMessageFlags GetIsFirstMsg(ReadOnlySpan<char> value)
     {
         bool isFirstMessage = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
-        return (ChatMessageTags)asByte;
+        return (ChatMessageFlags)asByte;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static Guid GetId(ReadOnlySpan<char> value) => Guid.ParseExact(value, "D");
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageTags GetIsModerator(ReadOnlySpan<char> value)
+    private protected static ChatMessageFlags GetIsModerator(ReadOnlySpan<char> value)
     {
         bool isModerator = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isModerator);
-        return (ChatMessageTags)(asByte << 1);
+        return (ChatMessageFlags)(asByte << 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static long GetChannelId(ReadOnlySpan<char> value) => ParseInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageTags GetIsSubscriber(ReadOnlySpan<char> value)
+    private protected static ChatMessageFlags GetIsSubscriber(ReadOnlySpan<char> value)
     {
         bool isSubscriber = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isSubscriber);
-        return (ChatMessageTags)(asByte << 2);
+        return (ChatMessageFlags)(asByte << 2);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected static long GetTmiSentTs(ReadOnlySpan<char> value) => ParseInt64(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private protected static ChatMessageTags GetIsTurboUser(ReadOnlySpan<char> value)
+    private protected static ChatMessageFlags GetIsTurboUser(ReadOnlySpan<char> value)
     {
         bool isTurboUser = value[0] == '1';
         int asByte = Unsafe.As<bool, byte>(ref isTurboUser);
-        return (ChatMessageTags)(asByte << 3);
+        return (ChatMessageFlags)(asByte << 3);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -187,7 +187,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Color ParseHexColor(ref char numberReference)
     {
-        const int charAAndZeroDiff = _upperCaseAMinus10 - _charZero;
+        const int CharAAndZeroDiff = UpperCaseAMinus10 - CharZero;
 
         char firstChar = Unsafe.Add(ref numberReference, 0);
         char thirdChar = Unsafe.Add(ref numberReference, 2);
@@ -197,9 +197,9 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         bool isThirdCharHexLetter = IsHexLetter(thirdChar);
         bool isFifthCharHexLetter = IsHexLetter(fifthChar);
 
-        int red = firstChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFirstCharHexLetter)));
-        int green = thirdChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isThirdCharHexLetter)));
-        int blue = fifthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isFifthCharHexLetter)));
+        int red = firstChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isFirstCharHexLetter)));
+        int green = thirdChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isThirdCharHexLetter)));
+        int blue = fifthChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isFifthCharHexLetter)));
 
         red <<= 4;
         green <<= 4;
@@ -213,9 +213,9 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         bool isForthCharHexLetter = IsHexLetter(forthChar);
         bool isSixthCharHexLetter = IsHexLetter(sixthChar);
 
-        red |= secondChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSecondCharHexLetter)));
-        green |= forthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isForthCharHexLetter)));
-        blue |= sixthChar - (_charZero + (charAAndZeroDiff * Unsafe.As<bool, byte>(ref isSixthCharHexLetter)));
+        red |= secondChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isSecondCharHexLetter)));
+        green |= forthChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isForthCharHexLetter)));
+        blue |= sixthChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isSixthCharHexLetter)));
 
         return new((byte)red, (byte)green, (byte)blue);
     }
@@ -224,10 +224,10 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private static bool IsHexLetter(char hexChar) => hexChar > '9';
 
     [Pure]
-    public bool Equals(ChatMessageParser? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] ChatMessageParser? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

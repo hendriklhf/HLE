@@ -8,9 +8,12 @@ namespace HLE.Memory;
 
 public static class BufferHelpers
 {
+    /// <summary>
+    /// A <i>const</i> mirror of <see cref="Array.MaxLength"/>.
+    /// </summary>
     public const int MaximumArrayLength = 0x7FFFFFC7; // keep in sync with Array.MaxLength
 
-    private const uint _maximumPow2Length = 1 << 30;
+    private const uint MaximumPow2Length = 1 << 30;
 
     /// <summary>
     /// Grows a buffer length by power of 2.
@@ -38,7 +41,7 @@ public static class BufferHelpers
         uint newLength = (uint)currentLength + (uint)neededSize;
         return newLength switch
         {
-            <= _maximumPow2Length => (int)BitOperations.RoundUpToPowerOf2(newLength),
+            <= MaximumPow2Length => (int)BitOperations.RoundUpToPowerOf2(newLength),
             <= MaximumArrayLength => MaximumArrayLength,
             _ => ThrowMaximumBufferCapacityReached()
         };

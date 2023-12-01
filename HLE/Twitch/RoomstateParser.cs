@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
@@ -11,12 +12,12 @@ namespace HLE.Twitch;
 
 public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstateParser>
 {
-    private const string _emoteOnlyTag = "emote-only";
-    private const string _followersOnlyTag = "followers-only";
-    private const string _r9KTag = "r9k";
-    private const string _roomIdTag = "room-id";
-    private const string _slowModeTag = "slow";
-    private const string _subsOnlyTag = "subs-only";
+    private const string EmoteOnlyTag = "emote-only";
+    private const string FollowersOnlyTag = "followers-only";
+    private const string R9KTag = "r9k";
+    private const string RoomIdTag = "room-id";
+    private const string SlowModeTag = "slow";
+    private const string SubsOnlyTag = "subs-only";
 
     [Pure]
     [SkipLocalsInit]
@@ -59,26 +60,26 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
 
             switch (key)
             {
-                case _emoteOnlyTag:
+                case EmoteOnlyTag:
                     emoteOnly = GetEmoteOnly(value);
                     changedStates |= ChangedRoomStates.EmoteOnly;
                     break;
-                case _followersOnlyTag:
+                case FollowersOnlyTag:
                     followersOnly = GetFollowersOnly(value);
                     changedStates |= ChangedRoomStates.FollowersOnly;
                     break;
-                case _r9KTag:
+                case R9KTag:
                     r9K = GetR9K(value);
                     changedStates |= ChangedRoomStates.R9K;
                     break;
-                case _roomIdTag:
+                case RoomIdTag:
                     channelId = GetChannelId(value);
                     break;
-                case _slowModeTag:
+                case SlowModeTag:
                     slowMode = GetSlowMode(value);
                     changedStates |= ChangedRoomStates.SlowMode;
                     break;
-                case _subsOnlyTag:
+                case SubsOnlyTag:
                     subsOnly = GetSubsOnly(value);
                     changedStates |= ChangedRoomStates.SubsOnly;
                     break;
@@ -123,10 +124,10 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     private static bool GetSubsOnly(ReadOnlySpan<char> value) => value[0] == '1';
 
     [Pure]
-    public bool Equals(RoomstateParser? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] RoomstateParser? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

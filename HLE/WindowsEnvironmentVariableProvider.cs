@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -44,10 +45,10 @@ public sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariablePro
     }
 
     [Pure]
-    public bool Equals(WindowsEnvironmentVariableProvider? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] WindowsEnvironmentVariableProvider? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

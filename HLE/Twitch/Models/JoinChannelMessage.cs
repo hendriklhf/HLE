@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Twitch.Models;
@@ -26,7 +27,7 @@ public readonly struct JoinChannelMessage(string username, string channel)
     public bool Equals(JoinChannelMessage other) => Username == other.Username && Channel == other.Channel;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is JoinChannelMessage other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is JoinChannelMessage other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(Username, Channel);

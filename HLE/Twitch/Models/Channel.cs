@@ -68,7 +68,7 @@ public sealed class Channel : IEquatable<Channel>
         for (int i = 0; i < allChangedRoomStatesValues.Length; i++)
         {
             ChangedRoomStates roomState = allChangedRoomStatesValues[i];
-            bool roomstateChanged = (args.ChangedStates & roomState) == roomState;
+            bool roomstateChanged = (args.ChangedStates & roomState) != 0;
             if (!roomstateChanged)
             {
                 continue;
@@ -104,10 +104,10 @@ public sealed class Channel : IEquatable<Channel>
         => throw new InvalidEnumArgumentException(nameof(roomState), (int)roomState, typeof(ChangedRoomStates));
 
     [Pure]
-    public bool Equals(Channel? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals([NotNullWhen(true)] Channel? other) => ReferenceEquals(this, other) || Id == other?.Id;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is Channel other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is Channel other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => Id.GetHashCode();

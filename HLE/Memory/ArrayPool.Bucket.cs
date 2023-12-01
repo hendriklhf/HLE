@@ -71,7 +71,7 @@ public sealed partial class ArrayPool<T>
         public readonly bool Equals(Bucket other) => ReferenceEquals(_stack, other._stack) && _arrayLength == other._arrayLength && _count == other._count;
 
         // ReSharper disable once ArrangeModifiersOrder
-        public override readonly bool Equals(object? obj) => obj is Bucket other && Equals(other);
+        public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
         // ReSharper disable once ArrangeModifiersOrder
         public override readonly int GetHashCode() => HashCode.Combine(_stack, _arrayLength, _count);

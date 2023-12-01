@@ -112,7 +112,7 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
     public bool Equals(BufferedFileReader other) => FilePath == other.FilePath;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is BufferedFileReader other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is BufferedFileReader other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => FilePath.GetHashCode();

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -206,57 +207,6 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     bool ICollection<string>.Remove(string str) => throw new NotSupportedException();
 
-    internal void MoveString(int sourceIndex, int destinationIndex)
-    {
-        if (sourceIndex == destinationIndex)
-        {
-            return;
-        }
-
-        Span<string> strings = _strings;
-        Span<int> lengths = _lengths;
-        Span<int> starts = _starts;
-        Span<char> chars = _chars;
-
-        string sourceString = strings[sourceIndex];
-        int sourceLength = lengths[sourceIndex];
-        int sourceStart = starts[sourceIndex];
-        int destinationLength = lengths[destinationIndex];
-        int destinationStart = starts[destinationIndex];
-
-        int greaterIndex = sourceIndex > destinationIndex ? sourceIndex : destinationIndex;
-        bool isSourceRightOfDestination = greaterIndex == sourceIndex;
-        int smallerIndex = isSourceRightOfDestination ? destinationIndex : sourceIndex;
-        if (isSourceRightOfDestination)
-        {
-            strings[destinationIndex..sourceIndex].CopyTo(strings[(destinationIndex + 1)..]);
-            lengths[destinationIndex..sourceIndex].CopyTo(lengths[(destinationIndex + 1)..]);
-            chars[destinationStart..sourceStart].CopyTo(chars[(destinationStart + sourceLength)..]);
-        }
-        else
-        {
-            strings[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(strings[sourceIndex..]);
-            lengths[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(lengths[sourceIndex..]);
-            chars[(sourceStart + sourceLength)..(destinationStart + destinationLength)].CopyTo(chars[sourceStart..]);
-        }
-
-        strings[destinationIndex] = sourceString;
-        lengths[destinationIndex] = sourceLength;
-        UpdateStringStarts(starts, lengths, smallerIndex, greaterIndex);
-        sourceString.CopyTo(chars[starts[destinationIndex]..]);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void UpdateStringStarts(Span<int> starts, Span<int> lengths, int startIndex, int endIndex)
-    {
-        int nextStart = starts[startIndex] + lengths[startIndex];
-        for (int i = startIndex + 1; i <= endIndex; i++)
-        {
-            starts[i] = nextStart;
-            nextStart += lengths[i];
-        }
-    }
-
     private void FillArray(ReadOnlySpan<string> strings)
     {
         Debug.Assert(strings.Length == Length);
@@ -390,9 +340,9 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         _freeBufferSize += newBufferSize - currentBufferSize;
     }
 
-    public bool Equals(StringArray? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] StringArray? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

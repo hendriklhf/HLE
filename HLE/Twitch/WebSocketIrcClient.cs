@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.WebSockets;
@@ -64,16 +65,15 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private static readonly Uri s_sslConnectionUri = new("wss://irc-ws.chat.twitch.tv:443");
     private static readonly Uri s_nonSslConnectionUri = new("ws://irc-ws.chat.twitch.tv:80");
 
-    // ReSharper disable once InconsistentNaming
-    private const string _newLine = "\r\n";
-    private const string _passPrefix = "PASS ";
-    private const string _nickPrefix = "NICK ";
-    private const string _capReqMessage = "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership";
-    private const string _privMsgPrefix = "PRIVMSG ";
-    private const string _joinPrefix = "JOIN ";
-    private const string _partPrefix = "PART ";
-    private const byte _maxChannelNameLength = 26; // 25 for the name + 1 for the '#'
-    private const ushort _maxMessageLength = 500;
+    private const string NewLine = "\r\n";
+    private const string PassPrefix = "PASS ";
+    private const string NickPrefix = "NICK ";
+    private const string CapReqMessage = "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership";
+    private const string PrivMsgPrefix = "PRIVMSG ";
+    private const string JoinPrefix = "JOIN ";
+    private const string PartPrefix = "PART ";
+    private const byte MaximumChannelNameLength = 26; // 25 for the name + 1 for the '#'
+    private const ushort MaximumMessageLength = 500;
 
     /// <summary>
     /// The default constructor of <see cref="WebSocketIrcClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
@@ -177,14 +177,14 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PassAllLinesExceptLast(ref ReadOnlyMemory<char> receivedChars)
     {
-        int indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
+        int indexOfLineEnding = receivedChars.Span.IndexOf(NewLine);
         while (indexOfLineEnding >= 0)
         {
             ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
             ReceivedData receivedData = new(lineOfData.Span);
             InvokeDataReceived(this, in receivedData);
-            receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
-            indexOfLineEnding = receivedChars.Span.IndexOf(_newLine);
+            receivedChars = receivedChars[(indexOfLineEnding + NewLine.Length)..];
+            indexOfLineEnding = receivedChars.Span.IndexOf(NewLine);
         }
     }
 
@@ -193,11 +193,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         while (receivedChars.Length > 2)
         {
-            int indexOfLineEnding = receivedChars.IndexOf(_newLine);
+            int indexOfLineEnding = receivedChars.IndexOf(NewLine);
             ReadOnlySpan<char> lineOfData = receivedChars[..indexOfLineEnding];
             ReceivedData receivedData = new(lineOfData);
             InvokeDataReceived(this, in receivedData);
-            receivedChars = receivedChars[(indexOfLineEnding + _newLine.Length)..];
+            receivedChars = receivedChars[(indexOfLineEnding + NewLine.Length)..];
         }
     }
 
@@ -272,19 +272,19 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         StartListeningThread();
         OnConnected?.Invoke(this, EventArgs.Empty);
 
-        using PooledStringBuilder messageBuilder = new(_capReqMessage.Length);
+        using PooledStringBuilder messageBuilder = new(CapReqMessage.Length);
         if (_oAuthToken != OAuthToken.Empty)
         {
-            messageBuilder.Append(_passPrefix, _oAuthToken.AsSpan());
+            messageBuilder.Append(PassPrefix, _oAuthToken.AsSpan());
             await SendAsync(messageBuilder.WrittenMemory);
         }
 
         messageBuilder.Clear();
-        messageBuilder.Append(_nickPrefix, Username);
+        messageBuilder.Append(NickPrefix, Username);
         await SendAsync(messageBuilder.WrittenMemory);
 
         messageBuilder.Clear();
-        messageBuilder.Append(_capReqMessage);
+        messageBuilder.Append(CapReqMessage);
         await SendAsync(messageBuilder.WrittenMemory);
 
         await JoinChannelsThrottledAsync(channels);
@@ -334,8 +334,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="message">The message that will be sent to the channel.</param>
     public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
-        using PooledStringBuilder messageBuilder = new(_privMsgPrefix.Length + _maxChannelNameLength + 2 + _maxMessageLength);
-        messageBuilder.Append(_privMsgPrefix, channel.Span, " :", message.Span);
+        using PooledStringBuilder messageBuilder = new(PrivMsgPrefix.Length + MaximumChannelNameLength + 2 + MaximumMessageLength);
+        messageBuilder.Append(PrivMsgPrefix, channel.Span, " :", message.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
@@ -348,8 +348,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="channel">The channel the client will join.</param>
     public async ValueTask JoinChannelAsync(ReadOnlyMemory<char> channel)
     {
-        using PooledStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
-        messageBuilder.Append(_joinPrefix, channel.Span);
+        using PooledStringBuilder messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
+        messageBuilder.Append(JoinPrefix, channel.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
@@ -362,8 +362,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="channel">The channel the client will leave.</param>
     public async ValueTask LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
-        using PooledStringBuilder messageBuilder = new(_partPrefix.Length + _maxChannelNameLength);
-        messageBuilder.Append(_partPrefix, channel.Span);
+        using PooledStringBuilder messageBuilder = new(PartPrefix.Length + MaximumChannelNameLength);
+        messageBuilder.Append(PartPrefix, channel.Span);
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
@@ -378,7 +378,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         int maximumJoinsInPeriod = 20 + 180 * isVerifiedBotFactor;
         TimeSpan period = TimeSpan.FromSeconds(10);
 
-        using PooledStringBuilder messageBuilder = new(_joinPrefix.Length + _maxChannelNameLength);
+        using PooledStringBuilder messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
         DateTimeOffset start = DateTimeOffset.UtcNow;
         for (int i = 0; i < channels.Length && !_cancellationTokenSource.IsCancellationRequested; i++)
         {
@@ -394,7 +394,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
                 start = now + waitTime;
             }
 
-            messageBuilder.Append(_joinPrefix, channels.Span[i]);
+            messageBuilder.Append(JoinPrefix, channels.Span[i]);
             await SendAsync(messageBuilder.WrittenMemory);
             messageBuilder.Clear();
         }
@@ -428,10 +428,10 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     [Pure]
-    public bool Equals(WebSocketIrcClient? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] WebSocketIrcClient? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Memory;
@@ -18,7 +19,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         int badgeCount = 0;
         Color color = Color.Empty;
         ReadOnlySpan<char> displayName = [];
-        ChatMessageTags chatMessageTags = 0;
+        ChatMessageFlags chatMessageFlags = 0;
         Guid id = Guid.Empty;
         long channelId = 0;
         long tmiSentTs = 0;
@@ -39,49 +40,49 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
             equalsSignIndex = tags.IndexOf('=');
             switch (key)
             {
-                case _badgeInfoTag:
+                case BadgeInfoTag:
                     badgeInfos = GetBadges(value, out badgeInfoCount);
                     break;
-                case _badgesTag:
+                case BadgesTag:
                     badges = GetBadges(value, out badgeCount);
                     break;
-                case _colorTag:
+                case ColorTag:
                     color = GetColor(value);
                     break;
-                case _displayNameTag:
+                case DisplayNameTag:
                     displayName = GetDisplayName(value);
                     break;
-                case _firstMsgTag:
-                    chatMessageTags |= GetIsFirstMsg(value);
+                case FirstMsgTag:
+                    chatMessageFlags |= GetIsFirstMsg(value);
                     break;
-                case _idTag:
+                case IdTag:
                     id = GetId(value);
                     break;
-                case _modTag:
-                    chatMessageTags |= GetIsModerator(value);
+                case ModTag:
+                    chatMessageFlags |= GetIsModerator(value);
                     break;
-                case _roomIdTag:
+                case RoomIdTag:
                     channelId = GetChannelId(value);
                     break;
-                case _subscriberTag:
-                    chatMessageTags |= GetIsSubscriber(value);
+                case SubscriberTag:
+                    chatMessageFlags |= GetIsSubscriber(value);
                     break;
-                case _tmiSentTsTag:
+                case TmiSentTsTag:
                     tmiSentTs = GetTmiSentTs(value);
                     break;
-                case _turboTag:
-                    chatMessageTags |= GetIsTurboUser(value);
+                case TurboTag:
+                    chatMessageFlags |= GetIsTurboUser(value);
                     break;
-                case _userIdTag:
+                case UserIdTag:
                     userId = GetUserId(value);
                     break;
             }
         }
 
-        chatMessageTags |= GetIsAction(ircMessage, indicesOfWhitespaces);
+        chatMessageFlags |= GetIsAction(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<char> username = GetUsername(ircMessage, indicesOfWhitespaces, displayName.Length);
         ReadOnlySpan<char> channel = GetChannel(ircMessage, indicesOfWhitespaces);
-        ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageTags & ChatMessageTags.IsAction) == ChatMessageTags.IsAction);
+        ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
         char[] usernameBuffer = ArrayPool<char>.Shared.Rent(25);
         char[] displayNameBuffer = ArrayPool<char>.Shared.Rent(25);
@@ -91,7 +92,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         displayName.CopyTo(displayNameBuffer);
         message.CopyTo(messageBuffer);
 
-        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageTags, displayNameBuffer, usernameBuffer, username.Length, messageBuffer, message.Length)
+        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags, displayNameBuffer, usernameBuffer, username.Length, messageBuffer, message.Length)
         {
             Channel = StringPool.Shared.GetOrAdd(channel),
             ChannelId = channelId,
@@ -131,10 +132,10 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
     }
 
     [Pure]
-    public bool Equals(MemoryEfficientChatMessageParser? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] MemoryEfficientChatMessageParser? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

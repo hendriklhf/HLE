@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HLE.Twitch.Models;
 
@@ -19,16 +20,16 @@ public sealed class BalancedChatMessage : ChatMessage, IEquatable<BalancedChatMe
     /// <summary>
     /// The default constructor of <see cref="BalancedChatMessage"/>.
     /// </summary>
-    public BalancedChatMessage(Badge[] badgeInfos, Badge[] badges, ChatMessageTags tags)
+    public BalancedChatMessage(Badge[] badgeInfos, Badge[] badges, ChatMessageFlags flags)
     {
         _badgeInfos = badgeInfos;
         _badges = badges;
-        _tags = tags;
+        _flags = flags;
     }
 
-    public bool Equals(BalancedChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] BalancedChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
-    public override bool Equals(object? obj) => obj is BalancedChatMessage other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is BalancedChatMessage other && Equals(other);
 
     public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 

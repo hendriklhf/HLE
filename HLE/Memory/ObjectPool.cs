@@ -22,13 +22,13 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory) : IEqu
     /// <summary>
     /// Gets or sets the maximum amount of items allowed in the pool.
     /// </summary>
-    public int Capacity { get; set; } = _defaultCapacity;
+    public int Capacity { get; set; } = DefaultCapacity;
 
     public IFactory Factory { get; } = factory;
 
     private readonly ConcurrentStack<T> _rentableItems = new();
 
-    private const int _defaultCapacity = 64;
+    private const int DefaultCapacity = 64;
 
     [Pure]
     public T Rent()
@@ -57,10 +57,10 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory) : IEqu
     public void Clear() => _rentableItems.Clear();
 
     [Pure]
-    public bool Equals(ObjectPool<T>? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] ObjectPool<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

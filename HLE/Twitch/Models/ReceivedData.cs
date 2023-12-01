@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -32,7 +33,7 @@ public struct ReceivedData : IDisposable, IEquatable<ReceivedData>, ICountable, 
     public readonly bool Equals(ReceivedData other) => _data.Equals(other._data);
 
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => obj is ReceivedData other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ReceivedData other && Equals(other);
 
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => HashCode.Combine(_data, Length);

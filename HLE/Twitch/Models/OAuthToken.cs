@@ -27,8 +27,8 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
     [GeneratedRegex("^(oauth:)?[a-z0-9]{30}?", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
     private static partial Regex GetTokenPattern();
 
-    private const string _tokenPrefix = "oauth:";
-    private const int _tokenLength = 36;
+    private const string TokenPrefix = "oauth:";
+    private const int TokenLength = 36;
 
     public OAuthToken()
     {
@@ -46,10 +46,10 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
             ThrowInvalidOAuthTokenFormat();
         }
 
-        ValueStringBuilder builder = new(stackalloc char[_tokenLength]);
-        if (!token.StartsWith(_tokenPrefix))
+        ValueStringBuilder builder = new(stackalloc char[TokenLength]);
+        if (!token.StartsWith(TokenPrefix))
         {
-            builder.Append(_tokenPrefix);
+            builder.Append(TokenPrefix);
         }
 
         token.ToLowerInvariant(builder.FreeBuffer);
@@ -70,7 +70,7 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
     public bool Equals(OAuthToken other) => _token == other._token;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is OAuthToken other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is OAuthToken other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => string.GetHashCode(_token);

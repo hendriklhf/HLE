@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -143,7 +144,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
     public bool Equals(Resource other) => _pointer == other._pointer && Length == other.Length;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is Resource other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is Resource other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine((nuint)_pointer, Length);

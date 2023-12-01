@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -37,7 +38,7 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => obj is ArrayEnumerator<T> other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ArrayEnumerator<T> other && Equals(other);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

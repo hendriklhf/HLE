@@ -113,7 +113,7 @@ public readonly struct BufferedFileWriter : IEquatable<BufferedFileWriter>
     public bool Equals(BufferedFileWriter other) => FilePath == other.FilePath;
 
     [Pure]
-    public override bool Equals(object? obj) => obj is BufferedFileWriter other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is BufferedFileWriter other && Equals(other);
 
     [Pure]
     public override int GetHashCode() => FilePath.GetHashCode();

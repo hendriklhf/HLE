@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Twitch.Models;
@@ -58,16 +59,16 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     private readonly MembershipMessageParser _membershipMessageParser = new();
     private readonly NoticeParser _noticeParser = new();
 
-    private const string _joinCommand = "JOIN";
-    private const string _roomstateCommand = "ROOMSTATE";
-    private const string _privmsgCommand = "PRIVMSG";
-    private const string _pingCommand = "PING";
-    private const string _partCommand = "PART";
-    private const string _reconnectCommand = "RECONNECT";
-    private const string _noticeCommand = "NOTICE";
+    private const string JoinCommand = "JOIN";
+    private const string RoomstateCommand = "ROOMSTATE";
+    private const string PrivmsgCommand = "PRIVMSG";
+    private const string PingCommand = "PING";
+    private const string PartCommand = "PART";
+    private const string ReconnectCommand = "RECONNECT";
+    private const string NoticeCommand = "NOTICE";
     // TODO: WHISPER, CLEARMSG, CLEARCHAT, USERSTATE, USERNOTICE
 
-    private const int _maximumWhitespacesNeededToHandle = 5;
+    private const int MaximumWhitespacesNeededToHandle = 5;
 
     /// <summary>
     /// Handles a messages and invokes an event, if the message could be handled.
@@ -76,8 +77,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
     public bool Handle(ReadOnlySpan<char> ircMessage)
     {
-        Span<int> indicesOfWhitespaces = stackalloc int[_maximumWhitespacesNeededToHandle];
-        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespaces, _maximumWhitespacesNeededToHandle);
+        Span<int> indicesOfWhitespaces = stackalloc int[MaximumWhitespacesNeededToHandle];
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespaces, MaximumWhitespacesNeededToHandle);
         indicesOfWhitespaces = indicesOfWhitespaces[..whitespaceCount];
 
         return whitespaceCount switch
@@ -111,7 +112,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        if (OnNoticeReceived is null || !thirdWord.SequenceEqual(_noticeCommand))
+        if (OnNoticeReceived is null || !thirdWord.SequenceEqual(NoticeCommand))
         {
             return false;
         }
@@ -136,7 +137,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandleReconnectCommand(ReadOnlySpan<char> secondWord)
     {
-        if (OnReconnectReceived is null || !secondWord.SequenceEqual(_reconnectCommand))
+        if (OnReconnectReceived is null || !secondWord.SequenceEqual(ReconnectCommand))
         {
             return false;
         }
@@ -148,7 +149,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandlePingCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<char> firstWord)
     {
-        if (OnPingReceived is null || !firstWord.SequenceEqual(_pingCommand))
+        if (OnPingReceived is null || !firstWord.SequenceEqual(PingCommand))
         {
             return false;
         }
@@ -167,7 +168,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandlePartCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
     {
-        if (OnPartReceived is null || !secondWord.SequenceEqual(_partCommand))
+        if (OnPartReceived is null || !secondWord.SequenceEqual(PartCommand))
         {
             return false;
         }
@@ -179,7 +180,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandleJoinCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
     {
-        if (OnJoinReceived is null || !secondWord.SequenceEqual(_joinCommand))
+        if (OnJoinReceived is null || !secondWord.SequenceEqual(JoinCommand))
         {
             return false;
         }
@@ -204,7 +205,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandleNoticeCommandWithoutTag(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
     {
-        if (OnNoticeReceived is null || !secondWord.SequenceEqual(_noticeCommand))
+        if (OnNoticeReceived is null || !secondWord.SequenceEqual(NoticeCommand))
         {
             return false;
         }
@@ -216,7 +217,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandleRoomstateCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> thirdWord)
     {
-        if (OnRoomstateReceived is null || !thirdWord.SequenceEqual(_roomstateCommand))
+        if (OnRoomstateReceived is null || !thirdWord.SequenceEqual(RoomstateCommand))
         {
             return false;
         }
@@ -229,7 +230,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool HandlePrivMsgCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> thirdWord)
     {
-        if (OnChatMessageReceived is null || !thirdWord.SequenceEqual(_privmsgCommand))
+        if (OnChatMessageReceived is null || !thirdWord.SequenceEqual(PrivmsgCommand))
         {
             return false;
         }
@@ -239,10 +240,10 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     }
 
     [Pure]
-    public bool Equals(IrcHandler? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] IrcHandler? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

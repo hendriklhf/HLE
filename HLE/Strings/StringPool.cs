@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Memory;
 
@@ -21,15 +22,15 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
     public static StringPool Shared { get; } = [];
 
-    private const int _defaultPoolCapacity = 4096;
-    private const int _defaultBucketCapacity = 32;
+    private const int DefaultPoolCapacity = 4096;
+    private const int DefaultBucketCapacity = 32;
 
     /// <summary>
     /// Constructor for a <see cref="StringPool"/>.
     /// </summary>
     /// <param name="poolCapacity">The amount of buckets in the pool.</param>
     /// <param name="bucketCapacity">The amount of strings per bucket in the pool.</param>
-    public StringPool(int poolCapacity = _defaultPoolCapacity, int bucketCapacity = _defaultBucketCapacity)
+    public StringPool(int poolCapacity = DefaultPoolCapacity, int bucketCapacity = DefaultBucketCapacity)
     {
         _buckets = new Bucket[poolCapacity];
         for (int i = 0; i < poolCapacity; i++)
@@ -186,9 +187,10 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Bucket GetBucket(ReadOnlySpan<char> span)
     {
+        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(_buckets);
         uint hash = SimpleStringHasher.Hash(span);
         int index = (int)(hash % (uint)_buckets.Length);
-        return _buckets[index];
+        return Unsafe.Add(ref bucketReference, index);
     }
 
     public IEnumerator<string> GetEnumerator()
@@ -205,10 +207,10 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals(StringPool? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] StringPool? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

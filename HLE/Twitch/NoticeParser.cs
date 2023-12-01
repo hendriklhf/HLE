@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
@@ -74,10 +75,10 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
     }
 
     [Pure]
-    public bool Equals(NoticeParser? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] NoticeParser? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

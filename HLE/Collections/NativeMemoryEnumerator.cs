@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
 namespace HLE.Collections;
@@ -33,7 +34,7 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IEquatable<Nati
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
-    public override readonly bool Equals(object? obj) => obj is NativeMemoryEnumerator<T> other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is NativeMemoryEnumerator<T> other && Equals(other);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
