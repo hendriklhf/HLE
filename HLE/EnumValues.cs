@@ -16,6 +16,8 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
 
     public static TEnum MaximumValue { get; } = s_values[^1];
 
+    internal static ref TEnum Reference => ref MemoryMarshal.GetArrayDataReference(s_values);
+
     [Pure]
     public static ReadOnlySpan<TEnum> AsSpan() => s_values;
 

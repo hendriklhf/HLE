@@ -22,7 +22,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
         get
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length);
-            return _pointer[index];
+            return _resource[index];
         }
     }
 
@@ -31,7 +31,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
         get
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length);
-            return _pointer[index];
+            return _resource[index];
         }
     }
 
@@ -45,7 +45,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
 
     bool ICollection<byte>.IsReadOnly => true;
 
-    private readonly byte* _pointer = resource;
+    private readonly byte* _resource = resource;
 
     public static Resource Empty => new();
 
@@ -54,7 +54,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
     }
 
     [Pure]
-    public ReadOnlySpan<byte> AsSpan() => new(_pointer, Length);
+    public ReadOnlySpan<byte> AsSpan() => new(_resource, Length);
 
     [Pure]
     public byte[] ToArray()
@@ -66,7 +66,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
 
         byte[] result = GC.AllocateUninitializedArray<byte>(Length);
         ref byte destination = ref MemoryMarshal.GetArrayDataReference(result);
-        ref byte source = ref Unsafe.AsRef<byte>(_pointer);
+        ref byte source = ref Unsafe.AsRef<byte>(_resource);
         Unsafe.CopyBlock(ref destination, ref source, (uint)Length);
         return result;
     }
@@ -80,44 +80,44 @@ public readonly unsafe struct Resource(byte* resource, int length)
         }
 
         List<byte> result = new(Length);
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(result);
         return result;
     }
 
     public void CopyTo(List<byte> destination, int offset = 0)
     {
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(byte[] destination, int offset = 0)
     {
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(destination, offset);
     }
 
     public void CopyTo(Memory<byte> destination)
     {
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(Span<byte> destination)
     {
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(destination);
     }
 
     public void CopyTo(ref byte destination)
     {
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(ref destination);
     }
 
     public void CopyTo(byte* destination)
     {
-        CopyWorker<byte> copyWorker = new(_pointer, Length);
+        CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(destination);
     }
 
@@ -131,7 +131,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
 
     bool ICollection<byte>.Remove(byte item) => throw new NotSupportedException();
 
-    public NativeMemoryEnumerator<byte> GetEnumerator() => new(_pointer, Length);
+    public NativeMemoryEnumerator<byte> GetEnumerator() => new(_resource, Length);
 
     IEnumerator<byte> IEnumerable<byte>.GetEnumerator() => GetEnumerator();
 
@@ -141,13 +141,13 @@ public readonly unsafe struct Resource(byte* resource, int length)
     public override string ToString() => ToStringHelpers.FormatCollection(this);
 
     [Pure]
-    public bool Equals(Resource other) => _pointer == other._pointer && Length == other.Length;
+    public bool Equals(Resource other) => _resource == other._resource && Length == other.Length;
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is Resource other && Equals(other);
 
     [Pure]
-    public override int GetHashCode() => HashCode.Combine((nuint)_pointer, Length);
+    public override int GetHashCode() => HashCode.Combine((nuint)_resource, Length);
 
     public static bool operator ==(Resource left, Resource right) => left.Equals(right);
 

@@ -90,13 +90,13 @@ public sealed class PooledBufferWriter<T>(int capacity)
         Count++;
     }
 
-    public void WriteRange(List<T> data) => WriteRange(CollectionsMarshal.AsSpan(data));
+    public void Write(List<T> data) => Write(CollectionsMarshal.AsSpan(data));
 
-    public void WriteRange(T[] data) => WriteRange(data.AsSpan());
+    public void Write(T[] data) => Write(data.AsSpan());
 
-    public void WriteRange(Span<T> data) => WriteRange((ReadOnlySpan<T>)data);
+    public void Write(Span<T> data) => Write((ReadOnlySpan<T>)data);
 
-    public void WriteRange(ReadOnlySpan<T> data)
+    public void Write(ReadOnlySpan<T> data)
     {
         ref T buffer = ref GetReference(data.Length);
         CopyWorker<T>.Copy(data, ref buffer);

@@ -11,7 +11,7 @@ public sealed class ResourceReaderTest
     [Fact]
     public void ReadResourceTest()
     {
-        ResourceReader reader = new(Assembly.GetExecutingAssembly());
+        using ResourceReader reader = new(Assembly.GetExecutingAssembly());
         List<string> resources = [];
         for (int i = 1; i <= 3; i++)
         {

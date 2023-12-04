@@ -1,29 +1,65 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Memory;
 using HLE.Strings;
 
 namespace HLE.Resources;
 
-public sealed unsafe class ResourceReader : IEquatable<ResourceReader>
+public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceReader>
 {
     public Assembly Assembly { get; }
 
     private readonly string _assemblyName;
     private readonly ConcurrentDictionary<string, Resource> _resources = new();
 
+    private List<GCHandle>? _handles;
+
     public ResourceReader(Assembly assembly)
     {
         Assembly = assembly;
         string? assemblyName = assembly.GetName().Name;
         ArgumentException.ThrowIfNullOrEmpty(assemblyName);
-        _assemblyName = assemblyName;
+        _assemblyName = $"{assemblyName}.";
     }
+
+    public void Dispose()
+    {
+        if (_handles is null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _handles.Count; i++)
+        {
+            _handles[i].Free();
+        }
+    }
+
+    [Pure]
+    public Resource Read(ReadOnlySpan<char> resourceName)
+    {
+        string resourcePath = BuildResourcePath(resourceName);
+        if (!TryReadCore(resourcePath, out Resource resource))
+        {
+            ThrowResourceDoesntExist(resourcePath);
+        }
+
+        return resource;
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowResourceDoesntExist(ReadOnlySpan<char> resourcePath)
+        => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
 
     /// <summary>
     /// Tries to read a resource.
@@ -34,20 +70,20 @@ public sealed unsafe class ResourceReader : IEquatable<ResourceReader>
     public bool TryRead(ReadOnlySpan<char> resourceName, out Resource resource)
     {
         string resourcePath = BuildResourcePath(resourceName);
-        return TryReadResource(resourcePath, out resource);
+        return TryReadCore(resourcePath, out resource);
     }
 
     [SkipLocalsInit]
     private string BuildResourcePath(ReadOnlySpan<char> resourceName)
     {
-        ValueStringBuilder pathBuilder = new(stackalloc char[1 + _assemblyName.Length + resourceName.Length]);
-        pathBuilder.Append(_assemblyName);
-        pathBuilder.Append('.');
-        pathBuilder.Append(resourceName);
-        return StringPool.Shared.GetOrAdd(pathBuilder.WrittenSpan);
+        UnsafeBufferWriter<char> bufferWriter = new(stackalloc char[_assemblyName.Length + resourceName.Length]);
+        bufferWriter.Write(_assemblyName); // _assemblyName ends with a '.'
+        bufferWriter.Write(resourceName);
+
+        return StringPool.Shared.GetOrAdd(bufferWriter.WrittenSpan);
     }
 
-    private bool TryReadResource(string resourcePath, out Resource resource)
+    private bool TryReadCore(string resourcePath, out Resource resource)
     {
         if (_resources.TryGetValue(resourcePath, out resource))
         {
@@ -66,12 +102,41 @@ public sealed unsafe class ResourceReader : IEquatable<ResourceReader>
             ThrowStreamLengthExceedsInt32();
         }
 
-        UnmanagedMemoryStream memoryStream = (UnmanagedMemoryStream)stream;
-        memoryStream.Position = 0;
-        byte* pointer = memoryStream.PositionPointer;
-        resource = new(pointer, (int)memoryStream.Length);
+        Debug.Assert(stream is UnmanagedMemoryStream);
+
+        int streamLength = (int)stream.Length;
+        if (stream is UnmanagedMemoryStream memoryStream)
+        {
+            memoryStream.Position = 0;
+            byte* pointer = memoryStream.PositionPointer;
+            resource = new(pointer, streamLength);
+            _resources.AddOrSet(resourcePath, resource);
+            return true;
+        }
+
+        // unlikely path
+        byte[] buffer = GC.AllocateUninitializedArray<byte>(streamLength, true);
+        GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Normal);
+        StoreHandle(handle);
+
+        int bytesRead = 0;
+        do
+        {
+            bytesRead += stream.Read(buffer);
+        }
+        while (bytesRead != streamLength);
+
+        byte* bufferPointer = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(buffer));
+        resource = new(bufferPointer, streamLength);
         _resources.AddOrSet(resourcePath, resource);
         return true;
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    private void StoreHandle(GCHandle handle)
+    {
+        _handles ??= new(4);
+        _handles.Add(handle);
     }
 
     [DoesNotReturn]

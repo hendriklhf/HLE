@@ -111,7 +111,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             threadLocalBucket = new();
             threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
             {
-                array = GC.AllocateUninitializedArray<T>(arrayLength);
+                array = GC.AllocateUninitializedArray<T>(arrayLength, true);
                 return true;
             }
         }
@@ -120,7 +120,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         {
             threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
             {
-                array = GC.AllocateUninitializedArray<T>(arrayLength);
+                array = GC.AllocateUninitializedArray<T>(arrayLength, true);
                 return true;
             }
         }

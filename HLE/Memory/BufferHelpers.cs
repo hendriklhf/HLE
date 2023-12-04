@@ -9,7 +9,7 @@ namespace HLE.Memory;
 public static class BufferHelpers
 {
     /// <summary>
-    /// A <i>const</i> mirror of <see cref="Array.MaxLength"/>.
+    /// A <see langword="const" /> mirror of <see cref="Array"/>.<see cref="Array.MaxLength"/>.
     /// </summary>
     public const int MaximumArrayLength = 0x7FFFFFC7; // keep in sync with Array.MaxLength
 

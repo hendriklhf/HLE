@@ -19,7 +19,7 @@ public sealed partial class ArrayPool<T>
         private int _count;
 
         [Pure]
-        public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength);
+        public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength, true);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryRent([MaybeNullWhen(false)] out T[] array)

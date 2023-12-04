@@ -20,7 +20,7 @@ public static partial class SpanHelpers
     /// <param name="items">The elements that will be summed up.</param>
     /// <returns>The sum of all elements.</returns>
     [Pure]
-    public static unsafe T SumUnchecked<T>(this ReadOnlySpan<T> items) where T : IBinaryInteger<T>
+    public static unsafe T SumUnchecked<T>(ReadOnlySpan<T> items) where T : IBinaryInteger<T>
     {
         ref T reference = ref MemoryMarshal.GetReference(items);
 

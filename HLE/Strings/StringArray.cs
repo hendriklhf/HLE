@@ -163,6 +163,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
         try
         {
+            // TODO: maybe partition it, so not every index of the right length has to be found
             int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(stringLengths), stringLengths.Length, charsLength, indices);
             indices = indices.SliceUnsafe(..indicesLength);
 

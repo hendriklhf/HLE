@@ -218,11 +218,7 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     [Pure]
     public readonly bool Equals(ValueList<T> other)
-    {
-        ref T thisReference = ref MemoryMarshal.GetReference(_buffer);
-        ref T otherReference = ref MemoryMarshal.GetReference(other._buffer);
-        return Unsafe.AreSame(ref thisReference, ref otherReference) && Count == other.Count;
-    }
+        => _buffer == other._buffer && Count == other.Count;
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

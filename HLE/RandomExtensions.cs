@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -221,6 +224,46 @@ public static class RandomExtensions
         Unsafe.SkipInit(out result);
         Span<byte> bytes = StructMarshal.GetBytes(ref result);
         random.NextBytes(bytes);
+    }
+
+    [Pure]
+    public static TEnum NextEnumValue<TEnum>(this Random random) where TEnum : struct, Enum
+    {
+        ref TEnum values = ref EnumValues<TEnum>.Reference;
+        int count = EnumValues<TEnum>.Count;
+        return Unsafe.Add(ref values, random.Next(0, count));
+    }
+
+#pragma warning disable
+    private static ReadOnlySpan<uint> LeadingZeroFlagMaskValues =>
+    [
+        0xFFFFFFFF >>> 0, 0xFFFFFFFF >>> 1, 0xFFFFFFFF >>> 2, 0xFFFFFFFF >>> 3, 0xFFFFFFFF >>> 4,
+        0xFFFFFFFF >>> 5, 0xFFFFFFFF >>> 6, 0xFFFFFFFF >>> 7, 0xFFFFFFFF >>> 8, 0xFFFFFFFF >>> 9,
+        0xFFFFFFFF >>> 10, 0xFFFFFFFF >>> 11, 0xFFFFFFFF >>> 12, 0xFFFFFFFF >>> 13, 0xFFFFFFFF >>> 14,
+        0xFFFFFFFF >>> 15, 0xFFFFFFFF >>> 16, 0xFFFFFFFF >>> 17, 0xFFFFFFFF >>> 18, 0xFFFFFFFF >>> 19,
+        0xFFFFFFFF >>> 20, 0xFFFFFFFF >>> 21, 0xFFFFFFFF >>> 22, 0xFFFFFFFF >>> 23, 0xFFFFFFFF >>> 24,
+        0xFFFFFFFF >>> 25, 0xFFFFFFFF >>> 26, 0xFFFFFFFF >>> 27, 0xFFFFFFFF >>> 28, 0xFFFFFFFF >>> 29,
+        0xFFFFFFFF >>> 30, 0xFFFFFFFF >>> 31, 0
+    ];
+#pragma warning restore
+
+    [Pure]
+    internal static unsafe TEnum NextEnumFlags<TEnum>(this Random random) where TEnum : struct, Enum
+    {
+        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null);
+
+        TEnum maximumEnumValue = EnumValues<TEnum>.MaximumValue;
+        switch (sizeof(TEnum))
+        {
+            case sizeof(uint):
+                uint maximumValue = Unsafe.As<TEnum, uint>(ref maximumEnumValue);
+                int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
+                uint mask = random.NextStruct<uint>();
+                uint flags = LeadingZeroFlagMaskValues[leadingZeroCount] & mask;
+                return Unsafe.As<uint, TEnum>(ref flags);
+        }
+
+        throw new UnreachableException();
     }
 
     public static unsafe void Write<T>(this Random random, T* destination, int elementCount) where T : unmanaged

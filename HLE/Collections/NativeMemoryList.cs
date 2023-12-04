@@ -91,8 +91,8 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void GrowIfNeeded(int sizeHint)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    private void GrowIfNeeded(int sizeHint)
     {
         int freeSpace = Capacity - Count;
         if (freeSpace >= sizeHint)
@@ -101,11 +101,19 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
         }
 
         int neededSize = sizeHint - freeSpace;
+        Grow(neededSize);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // dont inline as slow path
+    private unsafe void Grow(int neededSize)
+    {
         using NativeMemory<T> oldBuffer = _buffer;
-        int newLength = BufferHelpers.GrowByPow2(_buffer.Length, neededSize);
-        _buffer = new(newLength, false);
-        CopyWorker<T> copyWorker = new(oldBuffer.Pointer, Count);
-        copyWorker.CopyTo(_buffer.Pointer);
+        int newLength = BufferHelpers.GrowByPow2(oldBuffer.Length, neededSize);
+        NativeMemory<T> newBuffer = new(newLength, false);
+
+        CopyWorker<T>.Copy(oldBuffer.Pointer, newBuffer.Pointer, (uint)Count);
+
+        _buffer = newBuffer;
     }
 
     public unsafe void Add(T item)
@@ -257,4 +265,8 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+
+    public static bool operator ==(NativeMemoryList<T>? left, NativeMemoryList<T>? right) => Equals(left, right);
+
+    public static bool operator !=(NativeMemoryList<T>? left, NativeMemoryList<T>? right) => !(left == right);
 }
