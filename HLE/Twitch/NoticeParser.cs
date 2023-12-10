@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Models;

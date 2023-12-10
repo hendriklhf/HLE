@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -191,6 +192,7 @@ public sealed class RentedArrayTest
     }
 
     [Fact]
+    [SuppressMessage("ReSharper", "DisposeOnUsingVariable")]
     public void Dispose_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);

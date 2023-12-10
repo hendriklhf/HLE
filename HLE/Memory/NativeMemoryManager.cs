@@ -7,13 +7,18 @@ using HLE.Collections;
 
 namespace HLE.Memory;
 
-public sealed class NativeMemoryManager<T>(NativeMemory<T> memory) : MemoryManager<T>, IEquatable<NativeMemoryManager<T>>, ISpanProvider<T>
+public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) : MemoryManager<T>, IEquatable<NativeMemoryManager<T>>, ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
-    private NativeMemory<T> _memory = memory;
+    private readonly T* _memory = memory;
+    private readonly int _length = length;
+
+    public NativeMemoryManager(NativeMemory<T> memory) : this(memory.Pointer, memory.Length)
+    {
+    }
 
     [Pure]
-    public override Span<T> GetSpan() => _memory.AsSpan();
+    public override Span<T> GetSpan() => new(_memory, _length);
 
     /// <summary>
     /// Throws a <see cref="NotSupportedException"/>.<br/>
@@ -40,10 +45,6 @@ public sealed class NativeMemoryManager<T>(NativeMemory<T> memory) : MemoryManag
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            _memory.Dispose();
-        }
     }
 
     public bool Equals([NotNullWhen(true)] NativeMemoryManager<T>? other) => ReferenceEquals(this, other);

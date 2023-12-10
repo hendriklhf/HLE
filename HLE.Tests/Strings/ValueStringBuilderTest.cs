@@ -89,7 +89,7 @@ public sealed class ValueStringBuilderTest
         ValueStringBuilder builder = new(stackalloc char[10]);
         builder.Append("hello");
 
-        Assert.True(builder.FreeBuffer.Length == builder.Capacity - builder.Length);
+        Assert.True(builder.FreeBufferSpan.Length == builder.Capacity - builder.Length);
     }
 
     [Fact]
@@ -129,9 +129,9 @@ public sealed class ValueStringBuilderTest
     public void AdvanceTest()
     {
         ValueStringBuilder builder = new(stackalloc char[10]);
-        "hello".CopyTo(builder.FreeBuffer);
+        "hello".CopyTo(builder.FreeBufferSpan);
         builder.Advance("hello".Length);
-        "hello".CopyTo(builder.FreeBuffer);
+        "hello".CopyTo(builder.FreeBufferSpan);
         builder.Advance("hello".Length);
 
         Assert.Equal("hellohello", builder.ToString());

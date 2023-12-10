@@ -67,16 +67,17 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
             ThrowNeededBufferSizeExceedsMaxInt32Value();
         }
 
-        NativeMemory<byte> buffer = new((int)neededBufferSize);
+        NativeMemory<byte> buffer = new((int)neededBufferSize, false);
         RawStringData* rawStringData = (RawStringData*)(buffer._pointer + sizeof(nuint));
         rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
         rawStringData->Length = length;
+        Unsafe.InitBlock(&rawStringData->Chars, 0, (uint)(length * sizeof(char)));
 
         Length = length;
         _buffer = buffer;
     }
 
-    public NativeString(ReadOnlySpan<char> chars)
+    public NativeString(ReadOnlySpan<char> chars) : this(chars.Length)
     {
         if (chars.Length == 0)
         {
@@ -113,7 +114,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
 
     [Pure]
     public readonly string AsString()
-        => Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)))!;
+        => Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string, byte>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)))!;
 
     [Pure]
     public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref CharsReference, Length);

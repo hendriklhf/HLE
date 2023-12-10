@@ -13,7 +13,8 @@ namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
 public sealed partial class PooledStringBuilder(int capacity)
-    : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IIndexAccessible<char>, IReadOnlyCollection<char>, ISpanProvider<char>
+    : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, ICountable, IIndexAccessible<char>, IReadOnlyCollection<char>,
+        ISpanProvider<char>
 {
     public ref char this[int index] => ref WrittenSpan[index];
 
@@ -45,6 +46,7 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     bool ICollection<char>.IsReadOnly => false;
 
+    [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "is disposed in Disposed()")]
     internal RentedArray<char> _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
 
     public PooledStringBuilder() : this(0)
@@ -65,7 +67,7 @@ public sealed partial class PooledStringBuilder(int capacity)
     {
         Debug.Assert(sizeHint > 0);
 
-        int newSize = BufferHelpers.GrowByPow2(_buffer.Length, sizeHint);
+        int newSize = BufferHelpers.GrowArray(_buffer.Length, sizeHint);
         using RentedArray<char> oldBuffer = _buffer;
         _buffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
         if (Length != 0)
@@ -178,7 +180,8 @@ public sealed partial class PooledStringBuilder(int capacity)
     public void Append(Guid guid, [StringSyntax(StringSyntaxAttribute.GuidFormat)] ReadOnlySpan<char> format = default)
         => Append<Guid>(guid, format);
 
-    public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
+    public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default)
+        where TSpanFormattable : ISpanFormattable
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
@@ -205,7 +208,8 @@ public sealed partial class PooledStringBuilder(int capacity)
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
-        => throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
+        => throw new InvalidOperationException(
+            $"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
 
     public void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
@@ -213,6 +217,15 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     [Pure]
     public override string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
+
+    [Pure]
+    public string ToString(int start) => new(WrittenSpan[start..]);
+
+    [Pure]
+    public string ToString(int start, int length) => new(WrittenSpan.Slice(start, length));
+
+    [Pure]
+    public string ToString(Range range) => new(WrittenSpan[range]);
 
     public void CopyTo(List<char> destination, int offset = 0)
     {

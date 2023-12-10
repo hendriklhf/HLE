@@ -28,14 +28,6 @@ public static unsafe class RawDataMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T? ReadObject<T>(ref byte methodTableReference) where T : class
-    {
-        nuint* pointer = (nuint*)Unsafe.AsPointer(ref methodTableReference);
-        return ReadObject<T>(pointer);
-    }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T? ReadObject<T, TRef>(ref TRef methodTableReference) where T : class
     {
         nuint* pointer = (nuint*)Unsafe.AsPointer(ref methodTableReference);
@@ -55,7 +47,7 @@ public static unsafe class RawDataMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref RawStringData GetRawStringData(string str)
-        => ref Unsafe.As<nuint, RawStringData>(ref Unsafe.AsRef<nuint>(GetMethodTablePointer(str)));
+        => ref Unsafe.AsRef<RawStringData>(*(RawStringData**)&str);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -69,5 +61,5 @@ public static unsafe class RawDataMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref RawArrayData<T> GetRawArrayData<T>(T[] array)
-        => ref Unsafe.As<nuint, RawArrayData<T>>(ref Unsafe.AsRef<nuint>(GetMethodTablePointer(array)));
+        => ref Unsafe.AsRef<RawArrayData<T>>(*(RawArrayData<T>**)&array);
 }

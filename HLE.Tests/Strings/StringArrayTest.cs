@@ -74,6 +74,7 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void Indexer_Index_Test()
     {
         ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+        // ReSharper disable once CollectionNeverUpdated.Local
         StringArray array = new(strings);
         Assert.Equal("hello", array[^3]);
         Assert.Equal("abc", array[^2]);
@@ -94,6 +95,7 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void Indexer_Range_Test()
     {
         ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+        // ReSharper disable once CollectionNeverUpdated.Local
         StringArray array = new(strings);
         ReadOnlySpan<string> span = array[..2];
         Assert.True(span is ["hello", "abc"]);
@@ -105,6 +107,7 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+            // ReSharper disable once CollectionNeverUpdated.Local
             StringArray array = new(strings);
             _ = array[..4];
         });
@@ -112,6 +115,7 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
+            // ReSharper disable once CollectionNeverUpdated.Local
             StringArray array = new(strings);
             _ = array[4..];
         });

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
@@ -42,7 +41,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new(BufferHelpers.GrowByPow2(0, capacity), false);
+    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new(BufferHelpers.GrowArray(0, capacity), false);
 
     public NativeMemoryList() : this(0)
     {
@@ -50,19 +49,19 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     public void Dispose() => _buffer.Dispose();
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public Span<T> AsSpan() => _buffer.AsSpan(..Count);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public unsafe Span<T> AsSpan(int start) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(start);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public unsafe Span<T> AsSpan(int start, int length) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(start, length);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public unsafe Span<T> AsSpan(Range range) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(range);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public T[] ToArray()
     {
         if (Count == 0)
@@ -75,7 +74,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
         return result;
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public unsafe List<T> ToList()
     {
         if (Count == 0)
@@ -108,7 +107,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
     private unsafe void Grow(int neededSize)
     {
         using NativeMemory<T> oldBuffer = _buffer;
-        int newLength = BufferHelpers.GrowByPow2(oldBuffer.Length, neededSize);
+        int newLength = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
         NativeMemory<T> newBuffer = new(newLength, false);
 
         CopyWorker<T>.Copy(oldBuffer.Pointer, newBuffer.Pointer, (uint)Count);
@@ -182,7 +181,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
         GrowIfNeeded(neededSpace);
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public bool Contains(T item) => AsSpan().Contains(item);
 
     public bool Remove(T item)
@@ -198,7 +197,7 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
         return true;
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public int IndexOf(T item) => AsSpan().IndexOf(item);
 
     public void Insert(int index, T item)
@@ -257,13 +256,13 @@ public sealed class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, 
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public bool Equals([NotNullWhen(true)] NativeMemoryList<T>? other) => ReferenceEquals(this, other);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(NativeMemoryList<T>? left, NativeMemoryList<T>? right) => Equals(left, right);

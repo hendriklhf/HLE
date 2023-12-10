@@ -28,7 +28,7 @@ public static class BufferHelpers
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="currentLength"/> or <paramref name="neededSize"/> are negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the maximum capacity, <see cref="Array.MaxLength"/>, will be exceeded.</exception>
     [Pure]
-    public static int GrowByPow2(int currentLength, int neededSize)
+    public static int GrowArray(int currentLength, int neededSize)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(currentLength);
         ArgumentOutOfRangeException.ThrowIfNegative(neededSize);

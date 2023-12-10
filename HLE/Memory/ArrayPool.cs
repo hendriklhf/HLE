@@ -1,10 +1,11 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -138,6 +139,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [Pure]
+    [MustDisposeResource]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
     public void Return(T[]? array, ArrayReturnOptions returnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements)

@@ -208,8 +208,8 @@ public sealed class DoubleDictionaryTest
         DoubleDictionary<int, string, Type> dictionary1 = [];
         DoubleDictionary<char, nuint, Type> dictionary2 = [];
 
-        IEnumerator<Type> enumerator1 = dictionary1.GetEnumerator();
-        IEnumerator<Type> enumerator2 = dictionary2.GetEnumerator();
+        using IEnumerator<Type> enumerator1 = dictionary1.GetEnumerator();
+        using IEnumerator<Type> enumerator2 = dictionary2.GetEnumerator();
 
         Assert.Same(enumerator1, enumerator2);
     }

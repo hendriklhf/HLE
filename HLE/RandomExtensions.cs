@@ -234,7 +234,7 @@ public static class RandomExtensions
         return Unsafe.Add(ref values, random.Next(0, count));
     }
 
-#pragma warning disable
+#pragma warning disable // formatting errors have to be disable, rider still doesnt recognize collection patterns
     private static ReadOnlySpan<uint> LeadingZeroFlagMaskValues =>
     [
         0xFFFFFFFF >>> 0, 0xFFFFFFFF >>> 1, 0xFFFFFFFF >>> 2, 0xFFFFFFFF >>> 3, 0xFFFFFFFF >>> 4,

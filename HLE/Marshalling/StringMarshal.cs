@@ -119,6 +119,6 @@ public static class StringMarshal
     {
         ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
         charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));
-        return RawDataMarshal.ReadObject<string>(ref charsReference);
+        return RawDataMarshal.ReadObject<string, byte>(ref charsReference);
     }
 }

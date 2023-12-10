@@ -139,7 +139,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GrowBuffer()
     {
-        int newBufferLength = BufferHelpers.GrowByPow2(_buffer.Length, 1);
+        int newBufferLength = BufferHelpers.GrowArray(_buffer.Length, 1);
         T[] newBuffer = GC.AllocateUninitializedArray<T>(newBufferLength);
         CopyWorker<T> copyWorker = new(_buffer.AsSpan(0, Count));
         copyWorker.CopyTo(newBuffer);

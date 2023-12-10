@@ -24,7 +24,7 @@ public ref partial struct ValueStringBuilder
 
     public readonly Span<char> WrittenSpan => _buffer[..Length];
 
-    public readonly Span<char> FreeBuffer => _buffer[Length..];
+    public readonly Span<char> FreeBufferSpan => _buffer[Length..];
 
     public readonly int FreeBufferSize => Capacity - Length;
 
@@ -134,7 +134,7 @@ public ref partial struct ValueStringBuilder
 
     public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
     {
-        if (!spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, null))
+        if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, null))
         {
             ThrowNotEnoughSpaceException();
         }
@@ -144,7 +144,7 @@ public ref partial struct ValueStringBuilder
 
     internal bool TryAppend<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
     {
-        bool success = spanFormattable.TryFormat(FreeBuffer, out int charsWritten, format, null);
+        bool success = spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, null);
         Advance(charsWritten);
         return success;
     }
@@ -158,6 +158,15 @@ public ref partial struct ValueStringBuilder
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
+
+    [Pure]
+    public readonly string ToString(int start) => new(WrittenSpan[start..]);
+
+    [Pure]
+    public readonly string ToString(int start, int length) => new(WrittenSpan.Slice(start, length));
+
+    [Pure]
+    public readonly string ToString(Range range) => new(WrittenSpan[range]);
 
     [Pure]
     // ReSharper disable once ArrangeModifiersOrder

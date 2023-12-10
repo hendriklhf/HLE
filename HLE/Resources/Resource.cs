@@ -47,7 +47,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
 
     private readonly byte* _resource = resource;
 
-    public static Resource Empty => new();
+    public static Resource Empty => [];
 
     public Resource() : this(null, 0)
     {
@@ -55,6 +55,10 @@ public readonly unsafe struct Resource(byte* resource, int length)
 
     [Pure]
     public ReadOnlySpan<byte> AsSpan() => new(_resource, Length);
+
+    // TODO: maybe cache MemoryManager
+    [Pure]
+    public ReadOnlyMemory<byte> AsMemory() => new NativeMemoryManager<byte>(_resource, Length).Memory;
 
     [Pure]
     public byte[] ToArray()

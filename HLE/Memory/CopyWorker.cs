@@ -11,20 +11,26 @@ public readonly unsafe ref partial struct CopyWorker<T>
     private readonly ref T _source;
     private readonly nuint _length;
 
-    public CopyWorker(List<T> source) : this(ref MemoryMarshal.GetReference(CollectionsMarshal.AsSpan(source)), source.Count)
+    public CopyWorker(List<T> source) : this(CollectionsMarshal.AsSpan(source))
     {
     }
 
-    public CopyWorker(T[] source) : this(ref MemoryMarshal.GetArrayDataReference(source), source.Length)
+    public CopyWorker(T[] source)
     {
+        _source = ref MemoryMarshal.GetArrayDataReference(source);
+        _length = (uint)source.Length;
     }
 
-    public CopyWorker(Span<T> source) : this(ref MemoryMarshal.GetReference(source), source.Length)
+    public CopyWorker(Span<T> source)
     {
+        _source = ref MemoryMarshal.GetReference(source);
+        _length = (uint)source.Length;
     }
 
-    public CopyWorker(ReadOnlySpan<T> source) : this(ref MemoryMarshal.GetReference(source), source.Length)
+    public CopyWorker(ReadOnlySpan<T> source)
     {
+        _source = ref MemoryMarshal.GetReference(source);
+        _length = (uint)source.Length;
     }
 
     public CopyWorker(T* source, int length) : this(ref Unsafe.AsRef<T>(source), length)
@@ -39,30 +45,22 @@ public readonly unsafe ref partial struct CopyWorker<T>
     {
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CopyWorker(T* source, long length) : this(source, (ulong)length)
         => ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public CopyWorker(T* source, ulong length)
+    public CopyWorker(T* source, ulong length) : this(ref Unsafe.AsRef<T>(source), length)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(length, nuint.MaxValue);
-        _source = ref Unsafe.AsRef<T>(source);
-        _length = (nuint)length;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CopyWorker(ref T source, int length) : this(ref source, (uint)length)
         => ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CopyWorker(ref T source, uint length)
     {
         _source = ref source;
         _length = length;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CopyWorker(ref T source, nuint length)
     {
         _source = ref source;
@@ -74,12 +72,15 @@ public readonly unsafe ref partial struct CopyWorker<T>
 
     public CopyWorker(ref T source, ulong length)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(length, nuint.MaxValue);
+        if (!Environment.Is64BitProcess)
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(length, nuint.MaxValue);
+        }
+
         _source = ref source;
         _length = (nuint)length;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CopyTo(List<T> destination, int offset = 0)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);

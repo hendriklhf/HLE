@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using HLE.Resources;
 using Xunit;
@@ -11,7 +10,7 @@ public sealed class ResourceReaderTest
     [Fact]
     public void ReadResourceTest()
     {
-        using ResourceReader reader = new(Assembly.GetExecutingAssembly());
+        using ResourceReader reader = new(typeof(ResourceReaderTest).Assembly);
         List<string> resources = [];
         for (int i = 1; i <= 3; i++)
         {

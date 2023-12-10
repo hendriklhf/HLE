@@ -52,7 +52,7 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
             builder.Append(TokenPrefix);
         }
 
-        token.ToLowerInvariant(builder.FreeBuffer);
+        token.ToLowerInvariant(builder.FreeBufferSpan);
         builder.Advance(token.Length);
         _token = StringPool.Shared.GetOrAdd(builder.WrittenSpan);
     }

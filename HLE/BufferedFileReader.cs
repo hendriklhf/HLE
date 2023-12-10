@@ -20,7 +20,11 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 
     public BufferedFileReader(ReadOnlySpan<char> filePath) => FilePath = StringPool.Shared.GetOrAdd(filePath);
 
-    public BufferedFileReader(string filePath) => FilePath = filePath;
+    public BufferedFileReader(string filePath)
+    {
+        StringPool.Shared.Add(filePath);
+        FilePath = filePath;
+    }
 
     public void ReadBytes<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
     {
@@ -73,11 +77,22 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
 
     public void ReadLines<TWriter>(TWriter lines) where TWriter : IBufferWriter<string>
     {
-        BufferedFileReader reader = new(FilePath);
         using PooledBufferWriter<char> charsWriter = new();
-        reader.ReadChars(charsWriter, Encoding.UTF8);
-
+        ReadChars(charsWriter, Encoding.UTF8);
         ReadOnlySpan<char> chars = charsWriter.WrittenSpan;
+        ReadLinesCore(lines, chars);
+    }
+
+    public async ValueTask ReadLinesAsync<TWriter>(TWriter lines) where TWriter : IBufferWriter<string>
+    {
+        using PooledBufferWriter<char> charsWriter = new();
+        await ReadCharsAsync(charsWriter, Encoding.UTF8);
+        ReadOnlyMemory<char> chars = charsWriter.WrittenMemory;
+        ReadLinesCore(lines, chars.Span);
+    }
+
+    private static void ReadLinesCore<TWriter>(TWriter lines, ReadOnlySpan<char> chars) where TWriter : IBufferWriter<string>
+    {
         while (true)
         {
             int indexOfNewLine = chars.IndexOfAny('\r', '\n');
@@ -98,13 +113,13 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
             }
 
             chars = chars[indexOfNewLine..];
-            int skip = 1;
+            int skipCount = 1;
             if (chars.StartsWith("\r\n"))
             {
-                skip++;
+                skipCount++;
             }
 
-            chars = chars[skip..];
+            chars = chars[skipCount..];
         }
     }
 

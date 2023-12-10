@@ -28,15 +28,15 @@ public sealed class BufferHelpersTest
     [Theory]
     [MemberData(nameof(GrowByPow2Parameters))]
     public void GrowByPow2Test(int expected, int currentLength, int neededSize)
-        => Assert.Equal(expected, BufferHelpers.GrowByPow2(currentLength, neededSize));
+        => Assert.Equal(expected, BufferHelpers.GrowArray(currentLength, neededSize));
 
     [Fact]
     public void GrowByPow2_Throws_Test()
     {
-        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowByPow2(int.MaxValue, 1));
-        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowByPow2(int.MaxValue, int.MaxValue));
-        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowByPow2(1 << 30, 1 << 30));
-        Assert.Throws<ArgumentOutOfRangeException>(static () => BufferHelpers.GrowByPow2(16, -1));
-        Assert.Throws<ArgumentOutOfRangeException>(static () => BufferHelpers.GrowByPow2(-1, 16));
+        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(int.MaxValue, 1));
+        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(int.MaxValue, int.MaxValue));
+        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(1 << 30, 1 << 30));
+        Assert.Throws<ArgumentOutOfRangeException>(static () => BufferHelpers.GrowArray(16, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(static () => BufferHelpers.GrowArray(-1, 16));
     }
 }

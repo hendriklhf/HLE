@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
@@ -127,16 +126,16 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         }
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly Span<T> AsSpan() => new(Pointer, Length);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly Span<T> AsSpan(int start, int length) => new Slicer<T>(Pointer, Length).SliceSpan(start, length);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).SliceSpan(range);
 
     readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
@@ -189,7 +188,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         copyWorker.CopyTo(destination);
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly T[] ToArray()
     {
         if (Length == 0)
@@ -202,7 +201,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         return result;
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly List<T> ToList()
     {
         if (Length == 0)
@@ -231,7 +230,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     // ReSharper disable once ArrangeModifiersOrder
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public override readonly string ToString()
     {
         if (typeof(T) == typeof(char))
@@ -242,14 +241,14 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         return ToStringHelpers.FormatCollection(this);
     }
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     public readonly bool Equals(NativeMemory<T> other) => Length == other.Length && Pointer == other.Pointer;
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is NativeMemory<T> other && Equals(other);
 
-    [Pure]
+    [System.Diagnostics.Contracts.Pure]
     // ReSharper disable once ArrangeModifiersOrder
     public override readonly int GetHashCode() => HashCode.Combine((nuint)Pointer, Length);
 

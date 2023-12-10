@@ -46,6 +46,7 @@ public sealed class PooledList<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
+    [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "is disposed in Dispose()")]
     internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
     public PooledList() : this(0)
@@ -118,7 +119,7 @@ public sealed class PooledList<T>(int capacity)
     {
         int count = Count;
         using RentedArray<T> oldBuffer = _buffer;
-        int newSize = BufferHelpers.GrowByPow2(oldBuffer.Length, neededSize);
+        int newSize = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
         RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
         if (count != 0)
         {
@@ -197,7 +198,7 @@ public sealed class PooledList<T>(int capacity)
     /// </example>
     public void TrimBuffer()
     {
-        int trimmedBufferSize = BufferHelpers.GrowByPow2(Count, 0);
+        int trimmedBufferSize = BufferHelpers.GrowArray(Count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;

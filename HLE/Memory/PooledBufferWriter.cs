@@ -42,6 +42,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     bool ICollection<T>.IsReadOnly => false;
 
+    [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "disposed in Dispose()")]
     internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
     public PooledBufferWriter() : this(0)
@@ -144,7 +145,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
 
     /// <summary>
     /// Trims unused buffer size.<br/>
-    /// This method should ideally be called, when <see cref="Capacity"/> of the <see cref="PooledBufferWriter{T}"/> is much larger than <see cref="Count"/>.
+    /// This method should ideally be called, when <see cref="Capacity"/> is much larger than <see cref="Count"/>.
     /// </summary>
     /// <example>
     /// After having removed a lot of items from the <see cref="PooledBufferWriter{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.
@@ -153,7 +154,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     /// </example>
     public void TrimBuffer()
     {
-        int trimmedBufferSize = BufferHelpers.GrowByPow2(Count, 0);
+        int trimmedBufferSize = BufferHelpers.GrowArray(Count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;
@@ -197,7 +198,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     private void Grow(int neededSize)
     {
         using RentedArray<T> oldBuffer = _buffer;
-        int newBufferSize = BufferHelpers.GrowByPow2(oldBuffer.Length, neededSize);
+        int newBufferSize = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
         RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
         if (Count != 0)
         {

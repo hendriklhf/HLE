@@ -6,7 +6,7 @@ using Xunit;
 
 namespace HLE.Tests.Collections;
 
-public sealed partial class CollectionHelperTest
+public sealed class CollectionHelperTest
 {
     [Fact]
     public void RandomTest()

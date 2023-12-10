@@ -329,7 +329,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         }
 
         int currentBufferSize = _chars?.Length ?? 8;
-        int newBufferSize = BufferHelpers.GrowByPow2(currentBufferSize, sizeHint - _freeBufferSize);
+        int newBufferSize = BufferHelpers.GrowArray(currentBufferSize, sizeHint - _freeBufferSize);
         char[]? oldBuffer = _chars;
         _chars = GC.AllocateUninitializedArray<char>(newBufferSize);
         if (oldBuffer is not null)
