@@ -76,24 +76,26 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public TValue[] ToArray()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
+        TValue[] result = GC.AllocateUninitializedArray<TValue>(count);
         CopyWorker<TValue>.Copy(Values.AsSpan(), result);
         return result;
     }
 
     public List<TValue> ToList()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        List<TValue> result = new(Count);
+        List<TValue> result = new(count);
         CopyWorker<TValue> copyWorker = new(Values.AsSpan());
         copyWorker.CopyTo(result);
         return result;

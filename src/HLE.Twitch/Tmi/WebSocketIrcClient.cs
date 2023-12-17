@@ -102,13 +102,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         {
             await _webSocket.SendAsync(message, WebSocketMessageType.Text, true, _cancellationTokenSource.Token);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            if (ex is not (WebSocketException or InvalidOperationException))
-            {
-                throw;
-            }
-
             HandleConnectionException();
         }
     }
@@ -181,7 +176,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         {
             ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
             ReceivedData receivedData = new(lineOfData.Span);
-            InvokeDataReceived(this, in receivedData);
+            InvokeDataReceived(this, ref receivedData);
             receivedChars = receivedChars[(indexOfLineEnding + NewLine.Length)..];
             indexOfLineEnding = receivedChars.Span.IndexOf(NewLine);
         }
@@ -195,7 +190,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             int indexOfLineEnding = receivedChars.IndexOf(NewLine);
             ReadOnlySpan<char> lineOfData = receivedChars[..indexOfLineEnding];
             ReceivedData receivedData = new(lineOfData);
-            InvokeDataReceived(this, in receivedData);
+            InvokeDataReceived(this, ref receivedData);
             receivedChars = receivedChars[(indexOfLineEnding + NewLine.Length)..];
         }
     }
@@ -206,13 +201,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         {
             await _webSocket.ConnectAsync(_connectionUri, _cancellationTokenSource.Token);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            if (ex is not (WebSocketException or InvalidOperationException))
-            {
-                throw;
-            }
-
             HandleConnectionException();
         }
     }
@@ -223,13 +213,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         {
             await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _cancellationTokenSource.Token);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            if (ex is not (WebSocketException or InvalidOperationException))
-            {
-                throw;
-            }
-
             HandleConnectionException();
         }
     }
@@ -385,9 +370,10 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         int maximumJoinsInPeriod = 20 + 180 * isVerifiedBotFactor;
         TimeSpan period = TimeSpan.FromSeconds(10);
 
+        CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
         using PooledStringBuilder messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
         DateTimeOffset start = DateTimeOffset.UtcNow;
-        for (int i = 0; i < channels.Length && !_cancellationTokenSource.IsCancellationRequested; i++)
+        for (int i = 0; i < channels.Length && !cancellationTokenSource.IsCancellationRequested; i++)
         {
             if (i != 0 && i % maximumJoinsInPeriod == 0)
             {
@@ -395,7 +381,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
                 TimeSpan waitTime = period - (now - start);
                 if (waitTime.TotalMilliseconds > 0)
                 {
-                    await Task.Delay(waitTime, _cancellationTokenSource.Token);
+                    await Task.Delay(waitTime, cancellationTokenSource.Token);
                 }
 
                 start = now + waitTime;
@@ -407,12 +393,10 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
-    private void InvokeDataReceived(WebSocketIrcClient sender, in ReceivedData data)
+    private void InvokeDataReceived(WebSocketIrcClient sender, ref ReceivedData data)
     {
         if (OnDataReceived is null)
         {
-            // ReSharper disable once PossiblyImpureMethodCallOnReadonlyVariable
-            // doesnt matter, because lifetime of the struct ends here
             data.Dispose();
             return;
         }

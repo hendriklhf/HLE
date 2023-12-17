@@ -16,9 +16,9 @@ public struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
 
     private readonly PooledStringBuilder _builder;
 
-    public UrlBuilder(ReadOnlySpan<char> baseUrl, ReadOnlySpan<char> endpoint, int initialBufferLength = 100)
+    public UrlBuilder(ReadOnlySpan<char> baseUrl, ReadOnlySpan<char> endpoint, int capacity = 100)
     {
-        _builder = new(initialBufferLength);
+        _builder = new(capacity);
         _builder.Append(baseUrl);
         if (baseUrl[^1] != '/' && endpoint[0] != '/')
         {

@@ -142,19 +142,22 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
         if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
             GrowIfNeeded(itemsCount);
-            T* destination = _buffer.Pointer + Count;
+            int count = Count;
+            T* destination = _buffer.Pointer + count;
             if (items is ICopyable<T> copyable)
             {
                 copyable.CopyTo(destination);
-                Count += itemsCount;
+                count += itemsCount;
+                Count = count;
                 return;
             }
 
             foreach (T item in items)
             {
-                destination[Count++] = item;
+                destination[count++] = item;
             }
 
+            Count = count;
             return;
         }
 
@@ -182,12 +185,13 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
 
     public void EnsureCapacity(int capacity)
     {
-        if (capacity < Capacity)
+        int currentCapacity = Capacity;
+        if (capacity < currentCapacity)
         {
             return;
         }
 
-        int neededSpace = capacity - Capacity;
+        int neededSpace = capacity - currentCapacity;
         GrowIfNeeded(neededSpace);
     }
 

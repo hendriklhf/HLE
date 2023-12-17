@@ -7,7 +7,7 @@ using HLE.Memory;
 
 namespace HLE.Twitch;
 
-public struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
+internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
 {
     public int Length { get; }
 

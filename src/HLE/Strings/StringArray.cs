@@ -101,12 +101,13 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     [Pure]
     public string[] ToArray()
     {
-        if (Length == 0)
+        int length = Length;
+        if (length == 0)
         {
             return [];
         }
 
-        string[] result = new string[Length];
+        string[] result = new string[length];
         CopyWorker<string>.Copy(_strings, result);
         return result;
     }
@@ -114,12 +115,13 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     [Pure]
     public List<string> ToList()
     {
-        if (Length == 0)
+        int length = Length;
+        if (length == 0)
         {
             return [];
         }
 
-        List<string> result = new(Length);
+        List<string> result = new(length);
         CopyWorker<string> copyWorker = new(_strings);
         copyWorker.CopyTo(result);
         return result;

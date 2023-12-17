@@ -151,26 +151,28 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [Pure]
     public T[] ToArray()
     {
-        if (Count == 0)
+        Span<T> writtenSpan = WrittenSpan;
+        if (writtenSpan.Length == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(Count);
-        CopyWorker<T>.Copy(WrittenSpan, result);
+        T[] result = GC.AllocateUninitializedArray<T>(writtenSpan.Length);
+        CopyWorker<T>.Copy(writtenSpan, result);
         return result;
     }
 
     [Pure]
     public List<T> ToList()
     {
-        if (Count == 0)
+        Span<T> writtenSpan = WrittenSpan;
+        if (writtenSpan.Length == 0)
         {
             return [];
         }
 
-        List<T> result = new(Count);
-        CopyWorker<T> copyWorker = new(WrittenSpan);
+        List<T> result = new(writtenSpan.Length);
+        CopyWorker<T> copyWorker = new(writtenSpan);
         copyWorker.CopyTo(result);
         return result;
     }
@@ -186,22 +188,22 @@ public sealed class PooledBufferWriter<T>(int capacity)
     /// </example>
     public void TrimBuffer()
     {
-        int trimmedBufferSize = BufferHelpers.GrowArray(Count, 0);
+        int count = Count;
+        int trimmedBufferSize = BufferHelpers.GrowArray(count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;
         }
 
+        using RentedArray<T> oldBuffer = _buffer;
         if (trimmedBufferSize == 0)
         {
-            _buffer.Dispose();
             _buffer = [];
             return;
         }
 
-        using RentedArray<T> oldBuffer = _buffer;
         RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
-        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)Count);
+        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)count);
         _buffer = newBuffer;
     }
 
@@ -232,9 +234,10 @@ public sealed class PooledBufferWriter<T>(int capacity)
         using RentedArray<T> oldBuffer = _buffer;
         int newBufferSize = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
         RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
-        if (Count != 0)
+        int count = Count;
+        if (count != 0)
         {
-            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)Count);
+            CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)count);
         }
 
         _buffer = newBuffer;
@@ -293,7 +296,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [Pure]
     public override string ToString()
         => typeof(char) == typeof(T)
-            ? Unsafe.As<RentedArray<T>, RentedArray<char>>(ref _buffer).ToString()
+            ? Unsafe.As<RentedArray<T>, RentedArray<char>>(ref _buffer).AsSpan(..Count).ToString()
             : ToStringHelpers.FormatCollection(this);
 
     public ArrayEnumerator<T> GetEnumerator() => new(_buffer.Array, 0, Count);

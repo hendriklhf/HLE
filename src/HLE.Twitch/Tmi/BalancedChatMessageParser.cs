@@ -10,6 +10,7 @@ namespace HLE.Twitch.Tmi;
 public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<BalancedChatMessageParser>
 {
     [Pure]
+    [SkipLocalsInit]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];

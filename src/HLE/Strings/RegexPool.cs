@@ -109,8 +109,9 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
     {
         uint patternHash = SimpleStringHasher.Hash(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
-        int index = (int)((uint)hash % (uint)_buckets.Length);
-        return _buckets[index];
+        ReadOnlySpan<Bucket> buckets = _buckets;
+        int index = (int)((uint)hash % (uint)buckets.Length);
+        return buckets[index];
     }
 
     [Pure]

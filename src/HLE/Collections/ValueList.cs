@@ -43,25 +43,27 @@ public ref struct ValueList<T> where T : IEquatable<T>
     [Pure]
     public readonly T[] ToArray()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(Count);
-        CopyWorker<T>.Copy(_buffer[..Count], result);
+        T[] result = GC.AllocateUninitializedArray<T>(count);
+        CopyWorker<T>.Copy(_buffer[..count], result);
         return result;
     }
 
     [Pure]
     public readonly List<T> ToList()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        List<T> result = new(Count);
+        List<T> result = new(count);
         CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(result);
         return result;
@@ -75,24 +77,26 @@ public ref struct ValueList<T> where T : IEquatable<T>
 
     public void AddRange(IEnumerable<T> items)
     {
+        int count = Count;
         if (items.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             ThrowIfNotEnoughSpace(span.Length);
-            Span<T> destination = _buffer[Count..];
+            Span<T> destination = _buffer[count..];
             CopyWorker<T>.Copy(span, destination);
-            Count += span.Length;
+            Count = count + span.Length;
             return;
         }
 
-        if (items.TryGetNonEnumeratedCount(out int count))
+        if (items.TryGetNonEnumeratedCount(out int itemCount))
         {
-            ThrowIfNotEnoughSpace(count);
+            ThrowIfNotEnoughSpace(itemCount);
             ref T destinationReference = ref MemoryMarshal.GetReference(_buffer);
             foreach (T item in items)
             {
-                Unsafe.Add(ref destinationReference, Count++) = item;
+                Unsafe.Add(ref destinationReference, count++) = item;
             }
 
+            Count = count;
             return;
         }
 
@@ -137,9 +141,10 @@ public ref struct ValueList<T> where T : IEquatable<T>
             return false;
         }
 
-        Span<T> buffer = _buffer[..Count];
+        int count = Count;
+        Span<T> buffer = _buffer[..count];
         buffer[(index + 1)..].CopyTo(buffer[index..]);
-        Count--;
+        Count = count - 1;
         return true;
     }
 

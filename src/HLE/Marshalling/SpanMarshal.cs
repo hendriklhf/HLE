@@ -61,7 +61,7 @@ public static unsafe class SpanMarshal
         {
             int stringBytesToSubtract = sizeof(nuint) + sizeof(int);
             ref byte stringMethodTable = ref Unsafe.Subtract(ref firstElement, stringBytesToSubtract);
-            if (Unsafe.As<byte, nuint>(ref stringMethodTable) == (nuint)typeof(string).TypeHandle.Value)
+            if (Unsafe.As<byte, nint>(ref stringMethodTable) == typeof(string).TypeHandle.Value)
             {
                 return ref stringMethodTable;
             }
@@ -69,12 +69,13 @@ public static unsafe class SpanMarshal
 
         int arrayBytesToSubtract = sizeof(nuint) << 1;
         ref byte arrayMethodTable = ref Unsafe.Subtract(ref firstElement, arrayBytesToSubtract);
-        if (Unsafe.As<byte, nuint>(ref arrayMethodTable) == (nuint)typeof(T[]).TypeHandle.Value)
+        if (Unsafe.As<byte, nint>(ref arrayMethodTable) == typeof(T[]).TypeHandle.Value)
         {
             return ref arrayMethodTable;
         }
 
-        throw new InvalidOperationException($"The {typeof(Span<T>)} is backed by an unknown type or native memory. It's not possible to convert it to "); // finding the MemoryManager is impossible
+        throw new InvalidOperationException($"The {typeof(Span<T>)} is backed by an unknown type or native memory. " +
+                                            $"It's not possible to convert it to a {typeof(Span<T>)}"); // finding the MemoryManager is impossible
     }
 
     /// <summary>

@@ -69,7 +69,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     {
         if (_disposed)
         {
-            ThrowHelper.ThrowObjectDisposed<ResourceReader>();
+            ThrowHelper.ThrowObjectDisposedException<ResourceReader>();
         }
     }
 

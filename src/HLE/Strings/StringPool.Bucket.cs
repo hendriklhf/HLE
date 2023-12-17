@@ -61,6 +61,8 @@ public sealed partial class StringPool
                     string? str = strings[i];
                     if (str is null)
                     {
+                        // a null reference can only be followed by more null references,
+                        // so we can exit early because the regex can definitely not be found
                         value = null;
                         return false;
                     }

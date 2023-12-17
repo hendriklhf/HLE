@@ -47,6 +47,8 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     // ReSharper disable once StaticMemberInGenericType
     internal static readonly int s_indexOffset = BitOperations.TrailingZeroCount(MinimumArrayLength);
 
+    private const ArrayReturnOptions DefaultReturnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements;
+
     public ArrayPool()
     {
         int bucketCount = BitOperations.TrailingZeroCount(MaximumArrayLength) - BitOperations.TrailingZeroCount(MinimumArrayLength) + 1;
@@ -142,7 +144,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MustDisposeResource]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[]? array, ArrayReturnOptions returnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements)
+    public void Return(T[]? array, ArrayReturnOptions returnOptions = DefaultReturnOptions)
     {
         if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
         {

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -259,8 +258,10 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        // TODO: try other ways before using .ToArray()
-        await JoinChannelsAsync(channels.ToArray());
+        foreach (string channel in channels)
+        {
+            await JoinChannelAsync(channel);
+        }
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
@@ -333,8 +334,10 @@ public sealed partial class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return;
         }
 
-        // TODO: try other ways before using .ToArray()
-        await LeaveChannelsAsync(channels.ToArray());
+        foreach (string channel in channels)
+        {
+            await LeaveChannelAsync(channel);
+        }
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>

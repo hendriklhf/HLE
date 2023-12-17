@@ -6,6 +6,11 @@ namespace HLE.Memory;
 
 public static unsafe class MemoryHelpers
 {
+    /// <summary>
+    /// The threshold for which allocating native non-zeroed memory is faster than cleared managed memory.
+    /// </summary>
+    public const int NonZeroedNativeMemoryThreshold = 512;
+
     private static readonly int s_maximumStackallocSize = Environment.Is64BitProcess ? 8192 : 2048;
 
     /// <summary>

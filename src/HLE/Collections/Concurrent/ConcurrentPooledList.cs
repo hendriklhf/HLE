@@ -155,8 +155,7 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, IEquatable
     {
         lock (_list)
         {
-            int index = _list.IndexOf(item);
-            return index >= 0 && _list.Remove(item);
+            return _list.Remove(item);
         }
     }
 

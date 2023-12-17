@@ -118,12 +118,12 @@ public sealed partial class TwitchApi
 
     public async ValueTask<Stream[]> GetStreamsAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds)
     {
-        using RentedArray<Stream> streamBuffer = ArrayPool<Stream>.Shared.RentAsRentedArray(usernames.Length + channelIds.Length);
-        int streamCount = await GetStreamsAsync(usernames, channelIds, streamBuffer.AsMemory());
-        return streamCount == 0 ? [] : streamBuffer[..streamCount].ToArray();
+        using RentedArray<Stream> buffer = ArrayPool<Stream>.Shared.RentAsRentedArray(usernames.Length + channelIds.Length);
+        int streamCount = await GetStreamsAsync(usernames, channelIds, RentedArrayMarshal<Stream>.GetArray(buffer));
+        return streamCount == 0 ? [] : buffer[..streamCount].ToArray();
     }
 
-    public async ValueTask<int> GetStreamsAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Memory<Stream> resultBuffer)
+    public async ValueTask<int> GetStreamsAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Stream[] destination)
     {
         int parameterCount = usernames.Length + channelIds.Length;
         switch (parameterCount)
@@ -141,7 +141,7 @@ public sealed partial class TwitchApi
             string username = usernames.Span[i];
             if (TryGetStreamFromCache(username, out Stream? stream))
             {
-                resultBuffer.Span[cachedStreamCount++] = stream;
+                destination[cachedStreamCount++] = stream;
                 continue;
             }
 
@@ -153,7 +153,7 @@ public sealed partial class TwitchApi
             long userId = channelIds.Span[i];
             if (TryGetStreamFromCache(userId, out Stream? stream))
             {
-                resultBuffer.Span[cachedStreamCount++] = stream;
+                destination[cachedStreamCount++] = stream;
                 continue;
             }
 
@@ -170,10 +170,10 @@ public sealed partial class TwitchApi
         int deserializedStreamCount = getResponse.Items.Length;
         if (deserializedStreamCount != 0)
         {
-            getResponse.Items.CopyTo(resultBuffer.Span[cachedStreamCount..]);
+            getResponse.Items.CopyTo(destination[cachedStreamCount..]);
         }
 
-        Cache?.AddStreams(resultBuffer.Span[cachedStreamCount..(cachedStreamCount + deserializedStreamCount)]);
+        Cache?.AddStreams(destination.AsSpan(cachedStreamCount..(cachedStreamCount + deserializedStreamCount)));
         return deserializedStreamCount + cachedStreamCount;
     }
 

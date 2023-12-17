@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\HLE.Twitch\HLE.Twitch.csproj" />
         <ProjectReference Include="..\..\src\HLE\HLE.csproj" />
     </ItemGroup>
 

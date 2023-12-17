@@ -32,18 +32,21 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     /// <param name="bucketCapacity">The amount of strings per bucket in the pool.</param>
     public StringPool(int poolCapacity = DefaultPoolCapacity, int bucketCapacity = DefaultBucketCapacity)
     {
-        _buckets = new Bucket[poolCapacity];
+        Bucket[] buckets = new Bucket[poolCapacity];
         for (int i = 0; i < poolCapacity; i++)
         {
-            _buckets[i] = new(bucketCapacity);
+            buckets[i] = new(bucketCapacity);
         }
+
+        _buckets = buckets;
     }
 
     public void Clear()
     {
-        for (int i = 0; i < _buckets.Length; i++)
+        Span<Bucket> buckets = _buckets;
+        for (int i = 0; i < buckets.Length; i++)
         {
-            _buckets[i].Clear();
+            buckets[i].Clear();
         }
     }
 

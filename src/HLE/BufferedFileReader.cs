@@ -8,53 +8,47 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HLE.Memory;
-using HLE.Strings;
+using Microsoft.Win32.SafeHandles;
 
 namespace HLE;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{FilePath}\"")]
-public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
+public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<BufferedFileReader>
 {
-    public string FilePath { get; }
+    public string FilePath { get; } = filePath;
 
-    public BufferedFileReader(ReadOnlySpan<char> filePath) => FilePath = StringPool.Shared.GetOrAdd(filePath);
+    private SafeFileHandle? _fileHandle;
 
-    public BufferedFileReader(string filePath)
+    private const FileMode HandleMode = FileMode.Open;
+    private const FileAccess HandleAccess = FileAccess.Read;
+    private const FileShare HandleShare = FileShare.Read;
+    private const FileOptions HandleOptions = FileOptions.SequentialScan;
+
+    public void Dispose()
     {
-        StringPool.Shared.Add(filePath);
-        FilePath = filePath;
+        _fileHandle?.Dispose();
+        _fileHandle = null;
     }
 
-    public void ReadBytes<TWriter>(TWriter writer) where TWriter : IBufferWriter<byte>
+    public void ReadBytes<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
-        using FileStream fileStream = File.OpenRead(FilePath);
-        if (fileStream.Length > Array.MaxLength)
-        {
-            ThrowFileSizeExceedsMaxArrayLength();
-        }
+        OpenHandleIfNotOpen();
 
-        int bytesRead = fileStream.Read(writer.GetSpan((int)fileStream.Length));
-        Debug.Assert(bytesRead == fileStream.Length);
-        writer.Advance(bytesRead);
+        SafeFileHandle fileHandle = _fileHandle;
+        int fileSize = GetFileSize(fileHandle);
+        RandomAccess.Read(fileHandle, byteWriter.GetSpan(fileSize), 0);
+        byteWriter.Advance(fileSize);
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowFileSizeExceedsMaxArrayLength()
-        => throw new NotSupportedException($"The file size exceeds the the maximum array length ({Array.MaxLength}).");
 
     public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
-        await using FileStream fileStream = File.OpenRead(FilePath);
-        if (fileStream.Length > Array.MaxLength)
-        {
-            ThrowFileSizeExceedsMaxArrayLength();
-        }
+        OpenHandleIfNotOpen();
 
-        int bytesRead = await fileStream.ReadAsync(byteWriter.GetMemory((int)fileStream.Length));
-        Debug.Assert(bytesRead == fileStream.Length);
-        byteWriter.Advance(bytesRead);
+        SafeFileHandle handle = _fileHandle;
+        int fileSize = GetFileSize(handle);
+        await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0);
+        byteWriter.Advance(fileSize);
     }
 
     public void ReadChars<TWriter>(TWriter charWriter, Encoding fileEncoding) where TWriter : IBufferWriter<char>
@@ -75,18 +69,17 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
         charWriter.Advance(charsWritten);
     }
 
-    public void ReadLines<TWriter>(TWriter lines) where TWriter : IBufferWriter<string>
+    public void ReadLines<TWriter>(TWriter lines, Encoding fileEncoding) where TWriter : IBufferWriter<string>
     {
         using PooledBufferWriter<char> charsWriter = new();
-        ReadChars(charsWriter, Encoding.UTF8);
-        ReadOnlySpan<char> chars = charsWriter.WrittenSpan;
-        ReadLinesCore(lines, chars);
+        ReadChars(charsWriter, fileEncoding);
+        ReadLinesCore(lines, charsWriter.WrittenSpan);
     }
 
-    public async ValueTask ReadLinesAsync<TWriter>(TWriter lines) where TWriter : IBufferWriter<string>
+    public async ValueTask ReadLinesAsync<TWriter>(TWriter lines, Encoding fileEncoding) where TWriter : IBufferWriter<string>
     {
         using PooledBufferWriter<char> charsWriter = new();
-        await ReadCharsAsync(charsWriter, Encoding.UTF8);
+        await ReadCharsAsync(charsWriter, fileEncoding);
         ReadLinesCore(lines, charsWriter.WrittenSpan);
     }
 
@@ -122,14 +115,49 @@ public readonly struct BufferedFileReader : IEquatable<BufferedFileReader>
         }
     }
 
-    [Pure]
-    public bool Equals(BufferedFileReader other) => FilePath == other.FilePath;
+    [MemberNotNull(nameof(_fileHandle))]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void OpenHandleIfNotOpen()
+    {
+        if (_fileHandle is { IsClosed: false })
+        {
+            return;
+        }
+
+        _fileHandle?.Dispose();
+        _fileHandle = File.OpenHandle(FilePath, HandleMode, HandleAccess, HandleShare, HandleOptions);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetFileSize(SafeFileHandle fileHandle)
+    {
+        long fileSize = RandomAccess.GetLength(fileHandle);
+        EnsureFileSizeDoesntExceedMaxArrayLength(fileSize);
+        return (int)fileSize;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureFileSizeDoesntExceedMaxArrayLength(long fileSize)
+    {
+        if (fileSize > Array.MaxLength)
+        {
+            ThrowFileSizeExceedsMaxArrayLength();
+        }
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowFileSizeExceedsMaxArrayLength()
+        => throw new NotSupportedException($"The file size exceeds the the maximum array length ({Array.MaxLength}).");
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is BufferedFileReader other && Equals(other);
+    public readonly bool Equals(BufferedFileReader other) => FilePath == other.FilePath && _fileHandle?.Equals(other._fileHandle) == true;
 
     [Pure]
-    public override int GetHashCode() => FilePath.GetHashCode();
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is BufferedFileReader other && Equals(other);
+
+    [Pure]
+    public override readonly int GetHashCode() => FilePath.GetHashCode();
 
     public static bool operator ==(BufferedFileReader left, BufferedFileReader right) => left.Equals(right);
 

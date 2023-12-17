@@ -121,11 +121,12 @@ public static class RandomNumberGeneratorExtensions
     [Pure]
     public static string GetString(this RandomNumberGenerator random, int length)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
         random.Fill(chars);
@@ -135,11 +136,12 @@ public static class RandomNumberGeneratorExtensions
     [Pure]
     public static string GetString(this RandomNumberGenerator random, int length, char max)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         if (max == char.MaxValue)
         {
@@ -161,11 +163,12 @@ public static class RandomNumberGeneratorExtensions
     [Pure]
     public static string GetString(this RandomNumberGenerator random, int length, char min, char max)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         if (min == 0)
         {
@@ -205,11 +208,12 @@ public static class RandomNumberGeneratorExtensions
     [Pure]
     public static string GetString(this RandomNumberGenerator random, int length, ReadOnlySpan<char> choices)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> resultSpan);
         uint choicesLength = (uint)choices.Length;

@@ -23,7 +23,7 @@ internal static class ToStringHelpers
     [Pure]
     public static string FormatCollection(Type collectionType, int elementCount)
     {
-        using PooledStringBuilder builder = new(32);
+        using PooledStringBuilder builder = new(64);
 
         AppendTypeAndGenericParameters(collectionType, builder);
 

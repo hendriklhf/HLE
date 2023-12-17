@@ -9,6 +9,7 @@ namespace HLE.Twitch.Tmi;
 public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatable<TimeEfficientChatMessageParser>
 {
     [Pure]
+    [SkipLocalsInit]
     public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];

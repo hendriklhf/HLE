@@ -43,7 +43,19 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
         }
     }
 
-    public TimeSpan RemainingTime => RemainingTimeCore();
+    public TimeSpan RemainingTime
+    {
+        get
+        {
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            if (_end == default || now >= _end)
+            {
+                return TimeSpan.Zero;
+            }
+
+            return _end - now;
+        }
+    }
 
     public event EventHandler? OnElapsed;
 
@@ -94,17 +106,6 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
 
         _end = default;
         _timer.Stop();
-    }
-
-    private TimeSpan RemainingTimeCore()
-    {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        if (_end == default || now >= _end)
-        {
-            return TimeSpan.Zero;
-        }
-
-        return _end - now;
     }
 
     [Pure]

@@ -26,13 +26,15 @@ public sealed partial class ArrayPool<T>
         {
             lock (_stack)
             {
-                if (_count == 0)
+                int count = _count;
+                if (count == 0)
                 {
                     array = null;
                     return false;
                 }
 
-                ref T[] arrayReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --_count);
+                ref T[] arrayReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --count);
+                _count = count;
                 array = arrayReference;
                 arrayReference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
                 return true;
@@ -44,7 +46,8 @@ public sealed partial class ArrayPool<T>
         {
             lock (_stack)
             {
-                if (_count == _stack.Length)
+                int count = _count;
+                if (count == _stack.Length)
                 {
                     return;
                 }
@@ -54,7 +57,8 @@ public sealed partial class ArrayPool<T>
                     PerformReturnActions(array, returnOptions);
                 }
 
-                Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), _count++) = array;
+                Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), count++) = array;
+                _count = count;
             }
         }
 

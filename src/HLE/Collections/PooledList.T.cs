@@ -79,26 +79,28 @@ public sealed class PooledList<T>(int capacity)
     [Pure]
     public T[] ToArray()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(Count);
-        CopyWorker<T>.Copy(_buffer.AsSpan(..Count), result);
+        T[] result = GC.AllocateUninitializedArray<T>(count);
+        CopyWorker<T>.Copy(_buffer.AsSpan(..count), result);
         return result;
     }
 
     [Pure]
     public List<T> ToList()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        List<T> result = new(Count);
-        CopyWorker<T> copyWorker = new(ref _buffer.Reference, Count);
+        List<T> result = new(count);
+        CopyWorker<T> copyWorker = new(ref _buffer.Reference, count);
         copyWorker.CopyTo(result);
         return result;
     }
@@ -155,18 +157,20 @@ public sealed class PooledList<T>(int capacity)
 
             GrowIfNeeded(itemsCount);
             T[] buffer = _buffer.Array;
-            if (items.TryNonEnumeratedCopyTo(buffer, Count))
+            int count = Count;
+            if (items.TryNonEnumeratedCopyTo(buffer, count))
             {
-                Count += itemsCount;
+                Count = count + itemsCount;
                 return;
             }
 
             ref T destination = ref _buffer.Reference;
             foreach (T item in items)
             {
-                Unsafe.Add(ref destination, Count++) = item;
+                Unsafe.Add(ref destination, count++) = item;
             }
 
+            Count = count;
             return;
         }
 
@@ -190,10 +194,11 @@ public sealed class PooledList<T>(int capacity)
         }
 
         GrowIfNeeded(items.Length);
-        ref T destination = ref Unsafe.Add(ref _buffer.Reference, Count);
+        int count = Count;
+        ref T destination = ref Unsafe.Add(ref _buffer.Reference, count);
         CopyWorker<T> copyWorker = new(items);
         copyWorker.CopyTo(ref destination);
-        Count += items.Length;
+        Count = count + items.Length;
     }
 
     /// <summary>
@@ -207,22 +212,24 @@ public sealed class PooledList<T>(int capacity)
     /// </example>
     public void TrimBuffer()
     {
-        int trimmedBufferSize = BufferHelpers.GrowArray(Count, 0);
+        int count = Count;
+        int trimmedBufferSize = BufferHelpers.GrowArray(count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;
         }
 
+        using RentedArray<T> oldBuffer = _buffer;
         if (trimmedBufferSize == 0)
         {
-            _buffer.Dispose();
+            oldBuffer.Dispose();
             _buffer = [];
             return;
         }
 
-        using RentedArray<T> oldBuffer = _buffer;
-        _buffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
-        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref _buffer.Reference, (uint)Count);
+        RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(trimmedBufferSize);
+        CopyWorker<T>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)count);
+        _buffer = newBuffer;
     }
 
     public void Clear()
@@ -248,7 +255,8 @@ public sealed class PooledList<T>(int capacity)
             return false;
         }
 
-        _buffer.AsSpan((index + 1)..).CopyTo(_buffer.AsSpan(index..));
+        RentedArray<T> buffer = _buffer;
+        buffer.AsSpan((index + 1)..).CopyTo(buffer.AsSpan(index..));
         Count--;
         return true;
     }
@@ -260,13 +268,15 @@ public sealed class PooledList<T>(int capacity)
     {
         GrowIfNeeded(1);
         Count++;
-        _buffer.AsSpan(index..^1).CopyTo(_buffer.AsSpan((index + 1)..));
-        _buffer[index] = item;
+        RentedArray<T> buffer = _buffer;
+        buffer.AsSpan(index..^1).CopyTo(buffer.AsSpan((index + 1)..));
+        buffer[index] = item;
     }
 
     public void RemoveAt(int index)
     {
-        _buffer.AsSpan((index + 1)..).CopyTo(_buffer.AsSpan(index..));
+        RentedArray<T> buffer = _buffer;
+        buffer.AsSpan((index + 1)..).CopyTo(buffer.AsSpan(index..));
         Count--;
     }
 

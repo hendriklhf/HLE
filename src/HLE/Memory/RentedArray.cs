@@ -117,26 +117,28 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquat
     [Pure]
     public readonly T[] ToArray()
     {
-        if (Length == 0)
+        T[] array = Array;
+        if (array.Length == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(Length);
-        CopyWorker<T>.Copy(Array, result);
+        T[] result = GC.AllocateUninitializedArray<T>(array.Length);
+        CopyWorker<T>.Copy(array, result);
         return result;
     }
 
     [Pure]
     public readonly List<T> ToList()
     {
-        if (Length == 0)
+        T[] array = Array;
+        if (array.Length == 0)
         {
             return [];
         }
 
-        List<T> result = new(Length);
-        CopyWorker<T> copyWorker = new(Array);
+        List<T> result = new(array.Length);
+        CopyWorker<T> copyWorker = new(array);
         copyWorker.CopyTo(result);
         return result;
     }

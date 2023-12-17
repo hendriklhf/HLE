@@ -77,7 +77,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
         _buffer = buffer;
     }
 
-    public NativeString(ReadOnlySpan<char> chars) : this(chars.Length)
+    public NativeString(ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)
         {
@@ -152,11 +152,8 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
             return;
         }
 
-        ref nuint methodTableReference = ref RawDataMarshal.GetMethodTableReference(str);
-        methodTableReference = ref Unsafe.Subtract(ref methodTableReference, 1);
-        void* ptr = Unsafe.AsPointer(ref methodTableReference);
-        Debug.Assert((nuint)ptr % (nuint)sizeof(nuint) == 0); // is aligned
-        NativeMemory.AlignedFree(ptr);
+        nuint* ptr = *(nuint**)&str;
+        NativeMemory.AlignedFree(--ptr);
     }
 
     [Pure]

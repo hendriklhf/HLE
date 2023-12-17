@@ -96,26 +96,27 @@ public sealed partial class PooledStringBuilder(int capacity)
 
     public void Advance(int length) => Length += length;
 
-    public void Append(scoped ReadOnlySpan<char> span)
+    public void Append(scoped ReadOnlySpan<char> chars)
     {
-        switch (span.Length)
+        switch (chars.Length)
         {
             case 0:
                 return;
             case 1:
-                Append(span[0]);
+                Append(chars[0]);
                 return;
         }
 
-        if (FreeBufferSize < span.Length)
+        int freeBufferSize = FreeBufferSize;
+        if (freeBufferSize < chars.Length)
         {
-            GrowBuffer(span.Length - FreeBufferSize);
+            GrowBuffer(chars.Length - freeBufferSize);
         }
 
         ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);
-        ref char source = ref MemoryMarshal.GetReference(span);
-        CopyWorker<char>.Copy(ref source, ref destination, (uint)span.Length);
-        Length += span.Length;
+        ref char source = ref MemoryMarshal.GetReference(chars);
+        CopyWorker<char>.Copy(ref source, ref destination, (uint)chars.Length);
+        Length += chars.Length;
     }
 
     public void Append(char c)
@@ -188,11 +189,12 @@ public sealed partial class PooledStringBuilder(int capacity)
     public void Append(Guid guid, [StringSyntax(StringSyntaxAttribute.GuidFormat)] ReadOnlySpan<char> format = default)
         => Append<Guid>(guid, format);
 
-    public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default)
+    public void Append<TSpanFormattable>(TSpanFormattable formattable, ReadOnlySpan<char> format = default)
         where TSpanFormattable : ISpanFormattable
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
+        Span<char> freeBufferSpan = FreeBufferSpan;
         while (true)
         {
             if (countOfFailedTries == MaximumFormattingTries)
@@ -200,8 +202,8 @@ public sealed partial class PooledStringBuilder(int capacity)
                 ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
             }
 
-            ValueStringBuilder builder = new(FreeBufferSpan);
-            if (!builder.TryAppend(spanFormattable, format))
+            ValueStringBuilder builder = new(freeBufferSpan);
+            if (!builder.TryAppend(formattable, format))
             {
                 countOfFailedTries++;
                 GrowBuffer(128);

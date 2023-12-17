@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -23,22 +22,16 @@ public sealed partial class RegexPool
 
         public void Clear()
         {
-            Monitor.Enter(_regexes);
-            try
+            lock (_regexes)
             {
                 Array.Clear(_regexes);
-            }
-            finally
-            {
-                Monitor.Exit(_regexes);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Regex GetOrAdd(string pattern, RegexOptions options, TimeSpan timeout)
         {
-            Monitor.Enter(_regexes);
-            try
+            lock (_regexes)
             {
                 if (TryGet(pattern, options, timeout, out Regex? regex))
                 {
@@ -49,17 +42,12 @@ public sealed partial class RegexPool
                 Add(regex);
                 return regex;
             }
-            finally
-            {
-                Monitor.Exit(_regexes);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Regex GetOrAdd(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
         {
-            Monitor.Enter(_regexes);
-            try
+            lock (_regexes)
             {
                 if (TryGet(pattern, options, timeout, out Regex? regex))
                 {
@@ -70,34 +58,24 @@ public sealed partial class RegexPool
                 Add(regex);
                 return regex;
             }
-            finally
-            {
-                Monitor.Exit(_regexes);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(Regex regex)
         {
-            Monitor.Enter(_regexes);
-            try
+            lock (_regexes)
             {
                 ref Regex? source = ref MemoryMarshal.GetArrayDataReference(_regexes);
                 ref Regex? destination = ref Unsafe.Add(ref source, 1);
                 CopyWorker<Regex?>.Copy(ref source, ref destination, (uint)(_regexes.Length - 1));
                 source = regex;
             }
-            finally
-            {
-                Monitor.Exit(_regexes);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
-            Monitor.Enter(_regexes);
-            try
+            lock (_regexes)
             {
                 ref Regex? regexesReference = ref MemoryMarshal.GetArrayDataReference(_regexes);
                 int regexesLength = _regexes.Length;
@@ -128,10 +106,6 @@ public sealed partial class RegexPool
 
                 regex = null;
                 return false;
-            }
-            finally
-            {
-                Monitor.Exit(_regexes);
             }
         }
 
