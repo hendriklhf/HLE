@@ -88,6 +88,11 @@ public static class StringMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToUpper(Span<char> span)
     {
+        if (span.Length == 0)
+        {
+            return;
+        }
+
         if (!MemoryHelpers.UseStackAlloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
@@ -127,7 +132,6 @@ public static class StringMarshal
     public static unsafe ref char GetReference(string str)
     {
         byte* ptr = *(byte**)&str;
-        ptr += sizeof(nuint) + sizeof(int);
-        return ref Unsafe.AsRef<char>(ptr);
+        return ref Unsafe.AsRef<char>(ptr + sizeof(nuint) + sizeof(int));
     }
 }

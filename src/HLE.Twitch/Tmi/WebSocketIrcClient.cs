@@ -235,7 +235,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             return;
         }
 
-        // TODO: try other ways before using .ToArray()
         await ConnectAsync(channels.ToArray());
     }
 

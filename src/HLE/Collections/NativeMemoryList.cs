@@ -68,26 +68,30 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
     [Pure]
     public T[] ToArray()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(Count);
-        CopyWorker<T>.Copy(AsSpan(), result);
+        Span<T> source = AsSpan();
+        T[] result = GC.AllocateUninitializedArray<T>(count);
+        CopyWorker<T>.Copy(source, result);
         return result;
     }
 
     [Pure]
     public List<T> ToList()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        List<T> result = new(Count);
-        CopyWorker<T> copyWorker = new(_buffer.Pointer, Count);
+        T* source = _buffer.Pointer;
+        List<T> result = new(count);
+        CopyWorker<T> copyWorker = new(source, count);
         copyWorker.CopyTo(result);
         return result;
     }
@@ -117,10 +121,12 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
     private void Grow(int neededSize)
     {
         using NativeMemory<T> oldBuffer = _buffer;
+        T* source = _buffer.Pointer;
+
         int newLength = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
         NativeMemory<T> newBuffer = new(newLength, false);
 
-        CopyWorker<T>.Copy(oldBuffer.Pointer, newBuffer.Pointer, (uint)Count);
+        CopyWorker<T>.Copy(source, newBuffer.Pointer, (uint)Count);
 
         _buffer = newBuffer;
     }
@@ -147,8 +153,7 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
             if (items is ICopyable<T> copyable)
             {
                 copyable.CopyTo(destination);
-                count += itemsCount;
-                Count = count;
+                Count = count + itemsCount;
                 return;
             }
 

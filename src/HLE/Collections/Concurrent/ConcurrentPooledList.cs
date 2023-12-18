@@ -64,6 +64,9 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, IEquatable
 
     internal readonly PooledList<T> _list;
 
+    // ReSharper disable once InconsistentlySynchronizedField
+    public object SyncRoot => _list;
+
     public ConcurrentPooledList() => _list = [];
 
     public ConcurrentPooledList(ReadOnlySpan<T> items) => _list = new(items);

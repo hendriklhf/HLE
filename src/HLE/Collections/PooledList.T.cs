@@ -85,8 +85,9 @@ public sealed class PooledList<T>(int capacity)
             return [];
         }
 
+        Span<T> source = _buffer.AsSpan(..count);
         T[] result = GC.AllocateUninitializedArray<T>(count);
-        CopyWorker<T>.Copy(_buffer.AsSpan(..count), result);
+        CopyWorker<T>.Copy(source, result);
         return result;
     }
 
@@ -99,8 +100,9 @@ public sealed class PooledList<T>(int capacity)
             return [];
         }
 
+        ref T source = ref _buffer.Reference;
         List<T> result = new(count);
-        CopyWorker<T> copyWorker = new(ref _buffer.Reference, count);
+        CopyWorker<T> copyWorker = new(ref source, count);
         copyWorker.CopyTo(result);
         return result;
     }
@@ -196,8 +198,7 @@ public sealed class PooledList<T>(int capacity)
         GrowIfNeeded(items.Length);
         int count = Count;
         ref T destination = ref Unsafe.Add(ref _buffer.Reference, count);
-        CopyWorker<T> copyWorker = new(items);
-        copyWorker.CopyTo(ref destination);
+        CopyWorker<T>.Copy(items, ref destination);
         Count = count + items.Length;
     }
 

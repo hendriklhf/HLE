@@ -39,9 +39,11 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquat
 
     public readonly ref T Reference => ref MemoryMarshal.GetArrayDataReference(Array);
 
+    internal readonly ref T UncheckedReference => ref MemoryMarshal.GetArrayDataReference(_array!);
+
     public readonly int Length => Array.Length;
 
-    public readonly bool IsDisposed => _array is not null;
+    public readonly bool IsDisposed => _array is null;
 
     readonly int ICountable.Count => Length;
 

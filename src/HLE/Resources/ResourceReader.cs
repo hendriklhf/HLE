@@ -25,7 +25,6 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     private readonly ConcurrentDictionary<string, Resource> _resources = new();
 
     private List<GCHandle>? _handles;
-    private bool _disposed;
 
     public ResourceReader(Assembly assembly)
     {
@@ -37,24 +36,24 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
 
     public void Dispose()
     {
-        if (_disposed || _handles is null)
+        List<GCHandle>? handlesList = _handles;
+        if (handlesList is null)
         {
             return;
         }
 
-        _disposed = true;
-        Span<GCHandle> handles = CollectionsMarshal.AsSpan(_handles);
+        Span<GCHandle> handles = CollectionsMarshal.AsSpan(handlesList);
         for (int i = 0; i < handles.Length; i++)
         {
             handles[i].Free();
         }
+
+        _handles = null;
     }
 
     [Pure]
     public Resource Read(ReadOnlySpan<char> resourceName)
     {
-        ThrowIfDisposed();
-
         string resourcePath = BuildResourcePath(resourceName);
         if (!TryReadCore(resourcePath, out Resource resource))
         {
@@ -62,15 +61,6 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
         }
 
         return resource;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            ThrowHelper.ThrowObjectDisposedException<ResourceReader>();
-        }
     }
 
     [DoesNotReturn]
@@ -86,8 +76,6 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     /// <returns>True, if the resource exists, false otherwise.</returns>
     public bool TryRead(ReadOnlySpan<char> resourceName, out Resource resource)
     {
-        ThrowIfDisposed();
-
         string resourcePath = BuildResourcePath(resourceName);
         return TryReadCore(resourcePath, out resource);
     }

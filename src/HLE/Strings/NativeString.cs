@@ -22,7 +22,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
         get
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length);
-            return ref Unsafe.Add(ref CharsReference, index);
+            return ref Unsafe.Add(ref GetCharsReference(), index);
         }
     }
 
@@ -34,8 +34,6 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
 
     public readonly Span<char> this[Range range] => AsSpan(range);
 
-    public readonly ref char CharsReference => ref Unsafe.As<byte, char>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint) * 2 + sizeof(int)));
-
     public int Length { get; }
 
     readonly int ICountable.Count => Length;
@@ -45,6 +43,9 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
     private NativeMemory<byte> _buffer = [];
 
     public static NativeString Empty => new();
+
+    // object header + method table pointer + string length
+    private static readonly int s_firstCharByteOffset = sizeof(nuint) + sizeof(nuint) + sizeof(int);
 
     public NativeString()
     {
@@ -71,7 +72,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
         RawStringData* rawStringData = (RawStringData*)(buffer._pointer + sizeof(nuint));
         rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
         rawStringData->Length = length;
-        Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)(length * sizeof(char)));
+        Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
 
         Length = length;
         _buffer = buffer;
@@ -114,22 +115,31 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
 
     [Pure]
     public readonly string AsString()
-        => Length == 0 ? string.Empty : RawDataMarshal.ReadObject<string, byte>(ref Unsafe.Add(ref _buffer.Reference, sizeof(nuint)))!;
+    {
+        if (Length == 0)
+        {
+            return string.Empty;
+        }
+
+        byte* buffer = _buffer.Pointer;
+        byte* methodTablePointer = buffer + sizeof(nuint);
+        return RawDataMarshal.ReadObject<string>(methodTablePointer)!;
+    }
 
     [Pure]
-    public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref CharsReference, Length);
+    public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref GetCharsReference(), Length);
 
     [Pure]
-    public readonly Span<char> AsSpan(int start) => new Slicer<char>(ref CharsReference, Length).SliceSpan(start);
+    public readonly Span<char> AsSpan(int start) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(start);
 
     [Pure]
-    public readonly Span<char> AsSpan(int start, int length) => new Slicer<char>(ref CharsReference, Length).SliceSpan(start, length);
+    public readonly Span<char> AsSpan(int start, int length) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(start, length);
 
     [Pure]
-    public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref CharsReference, Length).SliceSpan(range);
+    public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(range);
 
     [Pure]
-    public readonly Memory<char> AsMemory() => new NativeMemoryManager<char>((char*)Unsafe.AsPointer(ref CharsReference), Length).Memory;
+    public readonly Memory<char> AsMemory() => new NativeMemoryManager<char>((char*)Unsafe.AsPointer(ref GetCharsReference()), Length).Memory;
 
     readonly Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
 
@@ -139,6 +149,14 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
 
     readonly ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private readonly ref char GetCharsReference()
+    {
+        byte* buffer = _buffer.Pointer;
+        char* firstChar = (char*)(buffer + s_firstCharByteOffset);
+        return ref Unsafe.AsRef<char>(firstChar);
+    }
+
     [Pure]
     public static string Alloc(int length) => length == 0 ? string.Empty : new NativeString(length).AsString();
 
@@ -147,7 +165,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
 
     public static void Free(string? str)
     {
-        if (str is not { Length: not 0 })
+        if (str is null or { Length: 0 })
         {
             return;
         }
@@ -159,7 +177,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
     [Pure]
     public override readonly string ToString() => new(AsSpan());
 
-    public readonly NativeMemoryEnumerator<char> GetEnumerator() => new((char*)Unsafe.AsPointer(ref CharsReference), Length);
+    public readonly NativeMemoryEnumerator<char> GetEnumerator() => new((char*)Unsafe.AsPointer(ref GetCharsReference()), Length);
 
     readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
 

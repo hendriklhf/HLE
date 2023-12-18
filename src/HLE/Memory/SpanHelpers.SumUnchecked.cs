@@ -63,6 +63,25 @@ public static partial class SpanHelpers
                 return items;
             case 2:
                 return items + Unsafe.Add(ref items, 1);
+            case 3:
+                return items + Unsafe.Add(ref items, 1) + Unsafe.Add(ref items, 2);
+            case 4:
+                return items + Unsafe.Add(ref items, 1) + Unsafe.Add(ref items, 2) +
+                       Unsafe.Add(ref items, 3);
+            case 5:
+                return items + Unsafe.Add(ref items, 1) + Unsafe.Add(ref items, 2) +
+                       Unsafe.Add(ref items, 3) + Unsafe.Add(ref items, 4);
+            case 6:
+                return items + Unsafe.Add(ref items, 1) + Unsafe.Add(ref items, 2) +
+                       Unsafe.Add(ref items, 3) + Unsafe.Add(ref items, 4) + Unsafe.Add(ref items, 5);
+            case 7:
+                return items + Unsafe.Add(ref items, 1) + Unsafe.Add(ref items, 2) +
+                       Unsafe.Add(ref items, 3) + Unsafe.Add(ref items, 4) + Unsafe.Add(ref items, 5) +
+                       Unsafe.Add(ref items, 6);
+            case 8:
+                return items + Unsafe.Add(ref items, 1) + Unsafe.Add(ref items, 2) +
+                       Unsafe.Add(ref items, 3) + Unsafe.Add(ref items, 4) + Unsafe.Add(ref items, 5) +
+                       Unsafe.Add(ref items, 6) + Unsafe.Add(ref items, 7);
         }
 
         T sum = T.Zero;

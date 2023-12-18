@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
@@ -19,4 +20,7 @@ public static class EnumNames<TEnum> where TEnum : struct, Enum
 
     [Pure]
     public static ImmutableArray<string> AsImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(s_values);
+
+    [Pure]
+    public static IEnumerable<string> AsEnumerable() => s_values;
 }

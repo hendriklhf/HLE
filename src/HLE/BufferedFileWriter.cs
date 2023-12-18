@@ -32,10 +32,10 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
             return;
         }
 
-        if (_size != -1)
+        long size = _size;
+        if (size != -1)
         {
-            // TODO: only set length when shrinking file
-            RandomAccess.SetLength(fileHandle, _size);
+            RandomAccess.SetLength(fileHandle, size);
         }
 
         fileHandle.Dispose();
@@ -50,8 +50,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         long size = GetFileSize(fileHandle, false);
 
         RandomAccess.Write(fileHandle, bytes, size);
-        size += bytes.Length;
-        _size = size;
+        _size = size + bytes.Length;
     }
 
     public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> bytes)
@@ -62,8 +61,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         long size = GetFileSize(fileHandle, false);
 
         await RandomAccess.WriteAsync(fileHandle, bytes, size);
-        size += bytes.Length;
-        _size = size;
+        _size = size + bytes.Length;
     }
 
     public void AppendBytes(ReadOnlySpan<byte> bytes)
@@ -74,8 +72,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         long size = GetFileSize(fileHandle, true);
 
         RandomAccess.Write(fileHandle, bytes, size);
-        size += bytes.Length;
-        _size = size;
+        _size = size + bytes.Length;
     }
 
     public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> bytes)
@@ -87,8 +84,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
 
         await RandomAccess.WriteAsync(fileHandle, bytes, size);
 
-        size += bytes.Length;
-        _size = size;
+        _size = size + bytes.Length;
     }
 
     public void WriteChars(ReadOnlySpan<char> chars, Encoding fileEncoding)

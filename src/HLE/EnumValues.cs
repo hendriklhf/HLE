@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -26,6 +27,9 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
 
     [Pure]
     public static ImmutableArray<TEnum> AsImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(s_values);
+
+    [Pure]
+    public static IEnumerable<TEnum> AsEnumerable() => s_values;
 
     [Pure]
     public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAs<TUnderlyingType>()

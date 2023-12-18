@@ -204,26 +204,30 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     [Pure]
     public readonly T[] ToArray()
     {
-        if (Length == 0)
+        int length = Length;
+        if (length == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(Length);
-        CopyWorker<T>.Copy(AsSpan(), result);
+        ref T source = ref Reference;
+        T[] result = GC.AllocateUninitializedArray<T>(length);
+        CopyWorker<T>.Copy(ref source, ref MemoryMarshal.GetArrayDataReference(result), (uint)length);
         return result;
     }
 
     [Pure]
     public readonly List<T> ToList()
     {
-        if (Length == 0)
+        int length = Length;
+        if (length == 0)
         {
             return [];
         }
 
-        List<T> result = new(Length);
-        CopyWorker<T> copyWorker = new(Pointer, Length);
+        T* source = Pointer;
+        List<T> result = new(length);
+        CopyWorker<T> copyWorker = new(source, length);
         copyWorker.CopyTo(result);
         return result;
     }

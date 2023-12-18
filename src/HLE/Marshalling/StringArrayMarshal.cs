@@ -10,5 +10,5 @@ public static class StringArrayMarshal
 
     public static int[] GetStringStartIndices(StringArray array) => array._starts;
 
-    public static char[] GetCharBuffer(StringArray array) => array._chars!; // TODO: remove !
+    public static char[]? GetCharBuffer(StringArray array) => array._chars;
 }

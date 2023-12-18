@@ -194,7 +194,6 @@ public sealed partial class PooledStringBuilder(int capacity)
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
-        Span<char> freeBufferSpan = FreeBufferSpan;
         while (true)
         {
             if (countOfFailedTries == MaximumFormattingTries)
@@ -202,7 +201,7 @@ public sealed partial class PooledStringBuilder(int capacity)
                 ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
             }
 
-            ValueStringBuilder builder = new(freeBufferSpan);
+            ValueStringBuilder builder = new(FreeBufferSpan);
             if (!builder.TryAppend(formattable, format))
             {
                 countOfFailedTries++;
