@@ -7,8 +7,9 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
 using HLE.Collections.Concurrent;
+using HLE.Twitch.Tmi.Models;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 /// <summary>
 /// A class that represents a list of channels the client is connected to.
@@ -41,7 +42,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     /// <param name="channel">The channel.</param>
     public bool TryGet(ReadOnlySpan<char> channelName, [MaybeNullWhen(false)] out Channel channel)
     {
-        if (channelName.Length == 0)
+        if (channelName.Length is < ChannelFormatter.MinimumChannelNameLength or > ChannelFormatter.MaximumChannelNameLength)
         {
             channel = null;
             return false;
@@ -63,8 +64,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
 
     internal void Update(in Roomstate args)
     {
-        Channel? channel = Get(args.ChannelId);
-        if (channel is not null)
+        if (TryGet(args.ChannelId, out Channel? channel))
         {
             channel.Update(in args);
             return;
@@ -77,8 +77,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
 
     internal void Remove(ReadOnlySpan<char> channelName)
     {
-        Channel? channel = Get(channelName);
-        if (channel is null)
+        if (!TryGet(channelName, out Channel? channel))
         {
             return;
         }
@@ -88,29 +87,6 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     }
 
     internal void Clear() => _channels.Clear();
-
-    private Channel? Get(long channelId)
-        => _channels.TryGetByPrimaryKey(channelId, out Channel? channel) ? channel : null;
-
-    private Channel? Get(ReadOnlySpan<char> name)
-    {
-        if (name.Length == 0)
-        {
-            return null;
-        }
-
-        if (name[0] == '#')
-        {
-            name = name[1..];
-            if (name.Length == 0)
-            {
-                return null;
-            }
-        }
-
-        int channelNameHash = string.GetHashCode(name, StringComparison.OrdinalIgnoreCase);
-        return _channels.TryGetBySecondaryKey(channelNameHash, out Channel? channel) ? channel : null;
-    }
 
     [Pure]
     public Channel[] ToArray() => _channels.ToArray();
@@ -127,11 +103,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public IEnumerator<Channel> GetEnumerator()
-    {
-        ObjectDisposedException.ThrowIf(_channels is null, typeof(ChannelList));
-        return _channels.GetEnumerator();
-    }
+    public IEnumerator<Channel> GetEnumerator() => _channels.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

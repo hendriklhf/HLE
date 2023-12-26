@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 
@@ -48,12 +51,12 @@ public sealed class Channel : IEquatable<Channel>
     /// </summary>
     public bool SubsOnly { get; private set; }
 
-    internal readonly string _prefixedName;
+    internal ImmutableArray<byte> PrefixedNameUtf8 { get; }
 
     internal Channel(in Roomstate args)
     {
         Name = args.Channel;
-        _prefixedName = '#' + args.Channel;
+        PrefixedNameUtf8 = ImmutableCollectionsMarshal.AsImmutableArray(Encoding.UTF8.GetBytes($"#{args.Channel}"));
         Id = args.ChannelId;
         EmoteOnly = args.EmoteOnly;
         FollowersOnly = args.FollowersOnly;

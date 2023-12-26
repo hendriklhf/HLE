@@ -5,7 +5,7 @@ namespace HLE.Twitch.Tmi;
 
 public interface IRoomstateParser
 {
-    void Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, out Roomstate roomstate);
+    void Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, out Roomstate roomstate);
 
-    void Parse(ReadOnlySpan<char> ircMessage, out Roomstate roomstate);
+    void Parse(ReadOnlySpan<byte> ircMessage, out Roomstate roomstate);
 }

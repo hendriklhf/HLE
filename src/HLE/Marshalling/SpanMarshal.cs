@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -30,9 +31,11 @@ public static unsafe class SpanMarshal
     /// Converts a <see cref="ReadOnlySpan{T}"/> to a <see cref="ReadOnlyMemory{T}"/>. Does not allocate any memory. <br/>
     /// ⚠️ Only works if the span's reference points to the first element of an <see cref="Array"/> of type <typeparamref name="T"/> or <see cref="string"/>, if <typeparamref name="T"/> is <see cref="char"/>. Otherwise this method is potentially dangerous. ⚠️
     /// </summary>
+    /// <typeparam name="T">The element type of the input and output.</typeparam>
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
+    [SkipLocalsInit]
     public static ReadOnlyMemory<T> AsMemory<T>(ReadOnlySpan<T> span)
     {
         if (span.Length == 0)
@@ -45,7 +48,7 @@ public static unsafe class SpanMarshal
         RawMemoryData* rawMemoryData = (RawMemoryData*)&result;
 
         ref byte firstElement = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
-        ref byte methodTable = ref GetMethodTablePointer<T>(ref firstElement);
+        ref byte methodTable = ref GetMethodTableOfStringOrArray<T>(ref firstElement);
 
         rawMemoryData->Object = (nuint)Unsafe.AsPointer(ref methodTable);
         rawMemoryData->Index = 0;
@@ -54,10 +57,10 @@ public static unsafe class SpanMarshal
         return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ref byte GetMethodTablePointer<T>(ref byte firstElement)
+    [SkipLocalsInit]
+    private static ref byte GetMethodTableOfStringOrArray<TSpanElement>(ref byte firstElement)
     {
-        if (typeof(T) == typeof(char))
+        if (typeof(TSpanElement) == typeof(char))
         {
             int stringBytesToSubtract = sizeof(nuint) + sizeof(int);
             ref byte stringMethodTable = ref Unsafe.Subtract(ref firstElement, stringBytesToSubtract);
@@ -69,14 +72,17 @@ public static unsafe class SpanMarshal
 
         int arrayBytesToSubtract = sizeof(nuint) << 1;
         ref byte arrayMethodTable = ref Unsafe.Subtract(ref firstElement, arrayBytesToSubtract);
-        if (Unsafe.As<byte, nint>(ref arrayMethodTable) == typeof(T[]).TypeHandle.Value)
-        {
-            return ref arrayMethodTable;
-        }
-
-        throw new InvalidOperationException($"The {typeof(Span<T>)} is backed by an unknown type or native memory. " +
-                                            $"It's not possible to convert it to a {typeof(Span<T>)}"); // finding the MemoryManager is impossible
+        return ref Unsafe.As<byte, nint>(ref arrayMethodTable) == typeof(TSpanElement[]).TypeHandle.Value
+            ? ref arrayMethodTable
+            : ref ThrowCantGetMethodTableOfUnknownType<TSpanElement>(); // finding the MemoryManager is impossible
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static ref byte ThrowCantGetMethodTableOfUnknownType<TSpanElement>() => throw new InvalidOperationException(
+        $"The {typeof(Span<TSpanElement>)} is backed by an unknown type or native memory. " +
+        $"It's not possible to convert it to a {typeof(Span<TSpanElement>)}"
+    );
 
     /// <summary>
     /// Returns the <see cref="Span{T}"/> that has been passed in. The method can be used to avoid a compiler error,

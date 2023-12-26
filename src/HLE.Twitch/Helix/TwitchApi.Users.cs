@@ -119,7 +119,7 @@ public sealed partial class TwitchApi
     public async ValueTask<ImmutableArray<User>> GetUsersAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> userIds)
     {
         using RentedArray<User> buffer = ArrayPool<User>.Shared.RentAsRentedArray(usernames.Length + userIds.Length);
-        int userCount = await GetUsersAsync(usernames, userIds, RentedArrayMarshal<User>.GetArray(buffer));
+        int userCount = await GetUsersAsync(usernames, userIds, RentedArrayMarshal.GetArray(buffer));
         return userCount == 0 ? [] : ImmutableCollectionsMarshal.AsImmutableArray(buffer[..userCount].ToArray());
     }
 

@@ -260,7 +260,7 @@ public static class StringHelpers
         int indexOfMetaChar = input.IndexOfAny(s_regexMetaCharsSearchValues);
         if (indexOfMetaChar < 0)
         {
-            return inputIsString ? StringMarshal.AsString(input)! : new(input); // null has been checked before
+            return inputIsString ? StringMarshal.AsString(input) : new(input);
         }
 
         int resultLength;
@@ -269,12 +269,12 @@ public static class StringHelpers
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
-            return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input)! : new(rentedBuffer[..resultLength]); // null has been checked before
+            return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];
         resultLength = RegexEscape(input, buffer, indexOfMetaChar);
-        return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input)! : new(buffer[..resultLength]); // null has been checked before
+        return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(buffer[..resultLength]);
     }
 
     public static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination)
@@ -300,7 +300,7 @@ public static class StringHelpers
 
         ValueStringBuilder builder = new(destination);
         SearchValues<char> regexMetaCharsSearchValues = s_regexMetaCharsSearchValues;
-        while (true)
+        do
         {
             char metaChar = input[indexOfMetaChar];
             metaChar = metaChar switch
@@ -316,11 +316,8 @@ public static class StringHelpers
             builder.Append('\\', metaChar);
             input = input.SliceUnsafe(indexOfMetaChar + 1);
             indexOfMetaChar = input.IndexOfAny(regexMetaCharsSearchValues);
-            if (indexOfMetaChar < 0)
-            {
-                break;
-            }
         }
+        while (indexOfMetaChar >= 0);
 
         builder.Append(input);
         return builder.Length;

@@ -3,17 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Strings;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
 [DebuggerDisplay("{ToString()}")]
-public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<NativeMemory<T>>, IIndexAccessible<T>,
-    IReadOnlyCollection<T>, ISpanProvider<T>, ICollectionProvider<T>, IMemoryProvider<T>
+public unsafe partial struct NativeMemory<T> :
+    IDisposable,
+    ICollection<T>,
+    ICopyable<T>,
+    IEquatable<NativeMemory<T>>,
+    IIndexAccessible<T>,
+    IReadOnlyCollection<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>,
+    IMemoryProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public readonly ref T this[int index]
@@ -35,8 +44,8 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     {
         get
         {
-            ObjectDisposedException.ThrowIf(IsDisposed, typeof(NativeMemory<T>));
-            return _pointer;
+            ThrowIfDisposed();
+            return _memory;
         }
     }
 
@@ -45,7 +54,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         get => (int)(_lengthAndDisposed & 0x7FFFFFFF);
         private init
         {
-            Debug.Assert(value >= 0); // value is validated by ctor
+            Debug.Assert(value >= 0, "value needs to be >= 0 and should be validated by the ctor");
             _lengthAndDisposed = (_lengthAndDisposed & 0x80000000) | (uint)value;
         }
     }
@@ -70,7 +79,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     readonly bool ICollection<T>.IsReadOnly => false;
 
-    internal readonly T* _pointer;
+    internal readonly T* _memory;
 
     // | 0 | 000 0000 0000 0000 0000 0000 0000 |
     // most significant bit is the disposed state
@@ -83,6 +92,7 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
     {
     }
 
+    [MustDisposeResource]
     public NativeMemory(int length, bool zeroed = true)
     {
         if (length == 0)
@@ -95,17 +105,19 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         Length = length;
         IsDisposed = false;
 
-        ulong byteCount = checked((ulong)sizeof(T) * (ulong)length);
+        ulong byteCount = checked((uint)sizeof(T) * (ulong)length);
         if (!Environment.Is64BitProcess && byteCount > nuint.MaxValue)
         {
             ThrowAmountBytesExceed32BitIntegerRange();
         }
 
-        _pointer = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (nuint)sizeof(nuint));
+        T* memory = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (uint)sizeof(nuint));
         if (zeroed)
         {
-            ClearMemory(byteCount);
+            ClearMemory((byte*)memory, byteCount);
         }
+
+        _memory = memory;
     }
 
     [DoesNotReturn]
@@ -114,24 +126,23 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
         throw new InvalidOperationException("The amount of bytes (sizeof(T) * length) needing to be allocated, " +
                                             "exceed the address range of the 32-bit architecture.");
 
-    private readonly void ClearMemory(ulong byteCount)
+    private static void ClearMemory(byte* memory, ulong byteCount)
     {
-        byte* ptr = (byte*)_pointer;
         while (byteCount >= uint.MaxValue)
         {
-            Unsafe.InitBlock(ptr, 0, uint.MaxValue);
+            Unsafe.InitBlock(memory, 0, uint.MaxValue);
             byteCount -= uint.MaxValue;
-            ptr += uint.MaxValue;
+            memory += uint.MaxValue;
         }
 
         if (byteCount != 0)
         {
-            Unsafe.InitBlock(ptr, 0, (uint)byteCount);
+            Unsafe.InitBlock(memory, 0, (uint)byteCount);
         }
     }
 
     [Pure]
-    public readonly Span<T> AsSpan() => new(Pointer, Length);
+    public readonly Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Reference, Length);
 
     [Pure]
     public readonly Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
@@ -144,6 +155,17 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     [Pure]
     public readonly Memory<T> AsMemory() => new NativeMemoryManager<T>(Pointer, Length).Memory;
+
+#pragma warning disable CA2000 // dispose NativeMemoryManager (not needed)
+    [Pure]
+    public readonly Memory<T> AsMemory(int start) => new NativeMemoryManager<T>(Pointer, Length).Memory[start..];
+
+    [Pure]
+    public readonly Memory<T> AsMemory(int start, int length) => new NativeMemoryManager<T>(Pointer, Length).Memory.Slice(start, length);
+
+    [Pure]
+    public readonly Memory<T> AsMemory(Range range) => new NativeMemoryManager<T>(Pointer, Length).Memory[range];
+#pragma warning restore CA2000
 
     readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
@@ -160,8 +182,8 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
             return;
         }
 
-        Debug.Assert((nuint)_pointer % (nuint)sizeof(nuint) == 0);
-        NativeMemory.AlignedFree(_pointer);
+        Debug.Assert((nuint)_memory % (nuint)sizeof(nuint) == 0);
+        NativeMemory.AlignedFree(_memory);
         IsDisposed = true;
     }
 
@@ -234,13 +256,21 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     readonly void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public readonly void Clear() => Unsafe.InitBlock(Pointer, 0, (uint)(sizeof(T) * Length));
+    public readonly void Clear() => ClearMemory((byte*)_memory, (uint)sizeof(T) * (ulong)Length);
 
     readonly bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
 
     readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
-    public readonly NativeMemoryEnumerator<T> GetEnumerator() => new(_pointer, Length);
+    private readonly void ThrowIfDisposed()
+    {
+        if (IsDisposed)
+        {
+            ThrowHelper.ThrowObjectDisposedException<NativeMemory<T>>();
+        }
+    }
+
+    public readonly NativeMemoryEnumerator<T> GetEnumerator() => new(_memory, Length);
 
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
@@ -248,14 +278,9 @@ public unsafe struct NativeMemory<T> : IDisposable, ICollection<T>, ICopyable<T>
 
     [Pure]
     public override readonly string ToString()
-    {
-        if (typeof(T) == typeof(char))
-        {
-            return Length == 0 ? string.Empty : new((char*)Pointer, 0, Length);
-        }
-
-        return ToStringHelpers.FormatCollection(this);
-    }
+        => typeof(T) == typeof(char)
+            ? Length == 0 ? string.Empty : new((char*)Pointer, 0, Length)
+            : ToStringHelpers.FormatCollection(this);
 
     [Pure]
     public readonly bool Equals(NativeMemory<T> other) => Length == other.Length && Pointer == other.Pointer;

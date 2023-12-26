@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -12,6 +11,8 @@ using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Resources;
 
@@ -26,6 +27,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
 
     private List<GCHandle>? _handles;
 
+    [MustDisposeResource]
     public ResourceReader(Assembly assembly)
     {
         Assembly = assembly;

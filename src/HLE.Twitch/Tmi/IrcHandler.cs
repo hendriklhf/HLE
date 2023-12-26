@@ -10,6 +10,7 @@ namespace HLE.Twitch.Tmi;
 /// <summary>
 /// A class that handles incoming IRC messages and invokes events for the associated message type.
 /// </summary>
+/// <param name="parsingMode">The parsing mode of all internal messages parsers.</param>
 public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
 {
     /// <summary>
@@ -40,7 +41,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a PING command has been received.
     /// </summary>
-    public event EventHandler<ReceivedData>? OnPingReceived;
+    public event EventHandler<Bytes>? OnPingReceived;
 
     /// <summary>
     /// Is invoked if a NOTICE command has been received.
@@ -59,13 +60,20 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     private readonly MembershipMessageParser _membershipMessageParser = new();
     private readonly NoticeParser _noticeParser = new();
 
-    private const string JoinCommand = "JOIN";
-    private const string RoomstateCommand = "ROOMSTATE";
-    private const string PrivmsgCommand = "PRIVMSG";
-    private const string PingCommand = "PING";
-    private const string PartCommand = "PART";
-    private const string ReconnectCommand = "RECONNECT";
-    private const string NoticeCommand = "NOTICE";
+    private static ReadOnlySpan<byte> JoinCommand => "JOIN"u8;
+
+    private static ReadOnlySpan<byte> RoomstateCommand => "ROOMSTATE"u8;
+
+    private static ReadOnlySpan<byte> PrivmsgCommand => "PRIVMSG"u8;
+
+    private static ReadOnlySpan<byte> PingCommand => "PING"u8;
+
+    private static ReadOnlySpan<byte> PartCommand => "PART"u8;
+
+    private static ReadOnlySpan<byte> ReconnectCommand => "RECONNECT"u8;
+
+    private static ReadOnlySpan<byte> NoticeCommand => "NOTICE"u8;
+
     // TODO: WHISPER, CLEARMSG, CLEARCHAT, USERSTATE, USERNOTICE
 
     private const int MaximumWhitespacesNeededToHandle = 5;
@@ -75,10 +83,10 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
-    public bool Handle(ReadOnlySpan<char> ircMessage)
+    public bool Handle(ReadOnlySpan<byte> ircMessage)
     {
         Span<int> indicesOfWhitespaces = stackalloc int[MaximumWhitespacesNeededToHandle];
-        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, ' ', indicesOfWhitespaces, MaximumWhitespacesNeededToHandle);
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, (byte)' ', indicesOfWhitespaces, MaximumWhitespacesNeededToHandle);
         indicesOfWhitespaces = indicesOfWhitespaces[..whitespaceCount];
 
         return whitespaceCount switch
@@ -91,21 +99,20 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         };
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleMoreThanThreeWhitespaces(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    private bool HandleMoreThanThreeWhitespaces(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> thirdWord = ircMessage[(indicesOfWhitespaces[1] + 1)..indicesOfWhitespaces[2]];
-        if (HandlePrivMsgCommand(ircMessage, indicesOfWhitespaces, thirdWord) || HandleNoticeCommandWithTag(ircMessage, indicesOfWhitespaces, thirdWord))
+        ReadOnlySpan<byte> thirdWord = ircMessage[(indicesOfWhitespaces[1] + 1)..indicesOfWhitespaces[2]];
+        if (HandlePrivMsgCommand(ircMessage, indicesOfWhitespaces, thirdWord) ||
+            HandleNoticeCommandWithTag(ircMessage, indicesOfWhitespaces, thirdWord))
         {
             return true;
         }
 
-        ReadOnlySpan<char> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..indicesOfWhitespaces[1]];
+        ReadOnlySpan<byte> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..indicesOfWhitespaces[1]];
         return HandleNoticeCommandWithoutTag(ircMessage, indicesOfWhitespaces, secondWord);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleNoticeCommandWithTag(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> thirdWord)
+    private bool HandleNoticeCommandWithTag(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> thirdWord)
     {
         if (ircMessage[0] != '@')
         {
@@ -121,21 +128,19 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleMoreThanZeroWhitespaces(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    private bool HandleMoreThanZeroWhitespaces(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> firstWord = ircMessage[..indicesOfWhitespaces[0]];
+        ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespaces[0]];
         if (HandlePingCommand(ircMessage, firstWord))
         {
             return true;
         }
 
-        ReadOnlySpan<char> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..];
+        ReadOnlySpan<byte> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..];
         return HandleReconnectCommand(secondWord);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleReconnectCommand(ReadOnlySpan<char> secondWord)
+    private bool HandleReconnectCommand(ReadOnlySpan<byte> secondWord)
     {
         if (OnReconnectReceived is null || !secondWord.SequenceEqual(ReconnectCommand))
         {
@@ -146,8 +151,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandlePingCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<char> firstWord)
+    private bool HandlePingCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<byte> firstWord)
     {
         if (OnPingReceived is null || !firstWord.SequenceEqual(PingCommand))
         {
@@ -158,15 +162,13 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleMoreThanOneWhitespace(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    private bool HandleMoreThanOneWhitespace(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..indicesOfWhitespaces[1]];
+        ReadOnlySpan<byte> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..indicesOfWhitespaces[1]];
         return HandleJoinCommand(ircMessage, indicesOfWhitespaces, secondWord) || HandlePartCommand(ircMessage, indicesOfWhitespaces, secondWord);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandlePartCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
+    private bool HandlePartCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> secondWord)
     {
         if (OnPartReceived is null || !secondWord.SequenceEqual(PartCommand))
         {
@@ -177,8 +179,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleJoinCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
+    private bool HandleJoinCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> secondWord)
     {
         if (OnJoinReceived is null || !secondWord.SequenceEqual(JoinCommand))
         {
@@ -189,21 +190,19 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleMoreThanTwoWhitespaces(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    private bool HandleMoreThanTwoWhitespaces(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        ReadOnlySpan<char> thirdWord = ircMessage[(indicesOfWhitespaces[1] + 1)..indicesOfWhitespaces[2]];
+        ReadOnlySpan<byte> thirdWord = ircMessage[(indicesOfWhitespaces[1] + 1)..indicesOfWhitespaces[2]];
         if (HandleRoomstateCommand(ircMessage, indicesOfWhitespaces, thirdWord))
         {
             return true;
         }
 
-        ReadOnlySpan<char> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..indicesOfWhitespaces[1]];
+        ReadOnlySpan<byte> secondWord = ircMessage[(indicesOfWhitespaces[0] + 1)..indicesOfWhitespaces[1]];
         return HandleNoticeCommandWithoutTag(ircMessage, indicesOfWhitespaces, secondWord);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleNoticeCommandWithoutTag(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> secondWord)
+    private bool HandleNoticeCommandWithoutTag(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> secondWord)
     {
         if (OnNoticeReceived is null || !secondWord.SequenceEqual(NoticeCommand))
         {
@@ -214,8 +213,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandleRoomstateCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> thirdWord)
+    private bool HandleRoomstateCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> thirdWord)
     {
         if (OnRoomstateReceived is null || !thirdWord.SequenceEqual(RoomstateCommand))
         {
@@ -227,8 +225,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HandlePrivMsgCommand(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<char> thirdWord)
+    private bool HandlePrivMsgCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> thirdWord)
     {
         if (OnChatMessageReceived is null || !thirdWord.SequenceEqual(PrivmsgCommand))
         {

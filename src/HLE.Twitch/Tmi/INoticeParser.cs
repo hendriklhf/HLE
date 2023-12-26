@@ -5,7 +5,7 @@ namespace HLE.Twitch.Tmi;
 
 public interface INoticeParser
 {
-    Notice Parse(ReadOnlySpan<char> ircMessage);
+    Notice Parse(ReadOnlySpan<byte> ircMessage);
 
-    Notice Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
+    Notice Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
 }

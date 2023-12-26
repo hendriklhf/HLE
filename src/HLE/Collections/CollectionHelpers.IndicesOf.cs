@@ -57,7 +57,6 @@ public static partial class CollectionHelpers
                 break;
             }
             default:
-            {
                 int currentIndex = 0;
                 foreach (T item in collection)
                 {
@@ -70,7 +69,6 @@ public static partial class CollectionHelpers
                 }
 
                 break;
-            }
         }
 
         return indices.ToArray();
@@ -177,7 +175,6 @@ public static partial class CollectionHelpers
                 break;
             }
             default:
-            {
                 int currentIndex = 0;
                 foreach (T item in collection)
                 {
@@ -190,7 +187,6 @@ public static partial class CollectionHelpers
                 }
 
                 break;
-            }
         }
 
         return indices.ToArray();
@@ -297,7 +293,6 @@ public static partial class CollectionHelpers
                 break;
             }
             default:
-            {
                 int currentIndex = 0;
                 foreach (T t in collection)
                 {
@@ -310,7 +305,6 @@ public static partial class CollectionHelpers
                 }
 
                 break;
-            }
         }
 
         return indices.ToArray();

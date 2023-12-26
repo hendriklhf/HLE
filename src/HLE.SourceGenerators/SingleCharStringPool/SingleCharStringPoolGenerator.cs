@@ -41,7 +41,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
                 sourceBuilder.Append(Indentation + Indentation);
             }
 
-            sourceBuilder.Append(cachedTokenStrings[i] + ", ");
+            sourceBuilder.Append(cachedTokenStrings[i]).Append(", ");
         }
 
         sourceBuilder.Append(cachedTokenStrings[cachedTokenStrings.Length - 1]);

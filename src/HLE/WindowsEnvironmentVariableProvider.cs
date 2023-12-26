@@ -5,11 +5,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using HLE.Marshalling;
 using HLE.Strings;
 
 namespace HLE;
 
+[SupportedOSPlatform("windows")]
 public sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<WindowsEnvironmentVariableProvider>
 {
     [Pure]

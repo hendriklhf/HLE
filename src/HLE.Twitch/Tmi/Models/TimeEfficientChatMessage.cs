@@ -17,6 +17,11 @@ public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEffic
     /// <summary>
     /// The default constructor of <see cref="TimeEfficientChatMessage"/>.
     /// </summary>
+    /// <param name="badgeInfos">The badge info buffer.</param>
+    /// <param name="badgeInfoCount">The amount of badge infos written into the buffer.</param>
+    /// <param name="badges">The badge buffer.</param>
+    /// <param name="badgeCount">The amount of badges written into the buffer.</param>
+    /// <param name="flags">The message flags.</param>
     public TimeEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags)
     {
         _badgeInfos = badgeInfos;

@@ -1,16 +1,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
-public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyable<T>, IEquatable<NativeMemoryList<T>>, IDisposable,
-    IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>, ICollectionProvider<T>, IMemoryProvider<T>
+[method: MustDisposeResource]
+public sealed unsafe class NativeMemoryList<T>(int capacity) :
+    IList<T>,
+    ICopyable<T>,
+    IEquatable<NativeMemoryList<T>>,
+    IDisposable,
+    IIndexAccessible<T>,
+    IReadOnlyList<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>,
+    IMemoryProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     public ref T this[int index]
@@ -42,8 +53,10 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new(BufferHelpers.GrowArray(0, capacity), false);
+    [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "assigned to a field")]
+    internal NativeMemory<T> _buffer = capacity == 0 ? [] : new(BufferHelpers.GrowBuffer(0, (uint)capacity), false);
 
+    [MustDisposeResource]
     public NativeMemoryList() : this(0)
     {
     }
@@ -120,10 +133,12 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) : IList<T>, ICopyab
     [MethodImpl(MethodImplOptions.NoInlining)] // dont inline as slow path
     private void Grow(int neededSize)
     {
+        Debug.Assert(neededSize >= 0);
+
         using NativeMemory<T> oldBuffer = _buffer;
         T* source = _buffer.Pointer;
 
-        int newLength = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
+        int newLength = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         NativeMemory<T> newBuffer = new(newLength, false);
 
         CopyWorker<T>.Copy(source, newBuffer.Pointer, (uint)Count);

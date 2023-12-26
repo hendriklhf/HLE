@@ -7,6 +7,8 @@ namespace HLE.Twitch.Tmi.Models;
 /// <summary>
 /// Arguments used when a user left a channel.
 /// </summary>
+/// /// <param name="username">The name of the user that left the <paramref name="channel"/>.</param>
+/// <param name="channel">The channel that the user left.</param>
 public readonly struct LeftChannelMessage(string username, string channel)
     : IMembershipMessage<LeftChannelMessage>, IEquatable<LeftChannelMessage>
 {

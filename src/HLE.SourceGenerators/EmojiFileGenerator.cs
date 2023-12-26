@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -83,7 +82,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
 
         string[] files = Directory.GetFiles(cacheDirectory);
-        string? emojiFilePath = files.FirstOrDefault(static f =>
+        string? emojiFilePath = Array.Find(files, static f =>
         {
             string fileName = Path.GetFileName(f);
             DateTimeOffset creationTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(fileName));
@@ -179,7 +178,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
             }
 
             name.Slice(i + 1, nameLength).CopyTo(name.Slice(i));
-            nameLength -= 1;
+            nameLength--;
             name[i] = char.ToUpper(name[i]);
         }
     }

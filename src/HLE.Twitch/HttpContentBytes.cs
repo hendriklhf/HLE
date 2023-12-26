@@ -38,8 +38,8 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
         }
 
         using RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(contentLength);
-        byte[] underlyingArray = RentedArrayMarshal<byte>.GetArray(buffer);
-        using MemoryStream copyDestination = new(underlyingArray);
+        byte[] underlyingArray = RentedArrayMarshal.GetArray(buffer);
+        await using MemoryStream copyDestination = new(underlyingArray);
 
         await httpResponse.Content.LoadIntoBufferAsync();
         await httpResponse.Content.CopyToAsync(copyDestination);

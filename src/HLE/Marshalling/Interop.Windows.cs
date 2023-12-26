@@ -1,10 +1,12 @@
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace HLE.Marshalling;
 
 public static partial class Interop
 {
+    [SupportedOSPlatform("windows")]
     public static unsafe partial class Windows
     {
         [Pure]

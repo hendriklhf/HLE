@@ -5,7 +5,7 @@ namespace HLE.Twitch.Tmi;
 
 public interface IChatMessageParser
 {
-    IChatMessage Parse(ReadOnlySpan<char> ircMessage);
+    IChatMessage Parse(ReadOnlySpan<byte> ircMessage);
 
-    IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
+    IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
 }

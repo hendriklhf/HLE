@@ -2,3 +2,4 @@
 
 [assembly: InternalsVisibleTo("HLE.Debug")]
 [assembly: InternalsVisibleTo("HLE.Tests")]
+[assembly: InternalsVisibleTo("HLE.Twitch")]

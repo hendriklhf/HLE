@@ -3,19 +3,28 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
+[method: MustDisposeResource]
 [DebuggerDisplay("Count = {Count}")]
 [CollectionBuilder(typeof(PooledList), nameof(PooledList.Create))]
-public sealed class PooledList<T>(int capacity)
-    : IList<T>, ICopyable<T>, IEquatable<PooledList<T>>, IDisposable, IIndexAccessible<T>, IReadOnlyList<T>, ISpanProvider<T>,
-        ICollectionProvider<T>, IMemoryProvider<T>
+public sealed class PooledList<T>(int capacity) :
+    IList<T>,
+    ICopyable<T>,
+    IEquatable<PooledList<T>>,
+    IDisposable,
+    IIndexAccessible<T>,
+    IReadOnlyList<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>,
+    IMemoryProvider<T>
 {
     public ref T this[int index]
     {
@@ -49,10 +58,12 @@ public sealed class PooledList<T>(int capacity)
     [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "is disposed in Dispose()")]
     internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
+    [MustDisposeResource]
     public PooledList() : this(0)
     {
     }
 
+    [MustDisposeResource]
     public PooledList(ReadOnlySpan<T> items) : this(items.Length)
     {
         CopyWorker<T>.Copy(items, _buffer.AsSpan());
@@ -130,9 +141,11 @@ public sealed class PooledList<T>(int capacity)
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private void Grow(int neededSize)
     {
+        Debug.Assert(neededSize >= 0);
+
         int count = Count;
         using RentedArray<T> oldBuffer = _buffer;
-        int newSize = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
+        int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newSize);
         if (count != 0)
         {
@@ -214,7 +227,7 @@ public sealed class PooledList<T>(int capacity)
     public void TrimBuffer()
     {
         int count = Count;
-        int trimmedBufferSize = BufferHelpers.GrowArray(count, 0);
+        int trimmedBufferSize = BufferHelpers.GrowArray((uint)count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;

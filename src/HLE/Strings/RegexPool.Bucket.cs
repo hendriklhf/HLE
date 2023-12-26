@@ -112,6 +112,7 @@ public sealed partial class RegexPool
         /// <summary>
         /// Moves a matching item by four places, so that it can be found faster next time.
         /// </summary>
+        /// <param name="indexOfMatchingRegex">The index of the matching regex in <see cref="_regexes"/>.</param>
         private void MoveRegexByFourIndices(int indexOfMatchingRegex)
             => _regexes.MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
 

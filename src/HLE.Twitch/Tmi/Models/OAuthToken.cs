@@ -4,22 +4,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using HLE.Collections;
 using HLE.Strings;
 
 namespace HLE.Twitch.Tmi.Models;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, IEquatable<OAuthToken>
+public readonly partial struct OAuthToken : IEquatable<OAuthToken>
 {
-    public char this[int index] => _token[index];
-
-    public char this[Index index] => _token[index];
-
-    public ReadOnlySpan<char> this[Range range] => _token.AsSpan(range);
-
-    int ICountable.Count => _token.Length;
-
     private readonly string _token = string.Empty;
 
     public static OAuthToken Empty => new();
@@ -63,7 +54,6 @@ public readonly partial struct OAuthToken : IIndexAccessible<char>, ICountable, 
         => throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {GetTokenPattern()}");
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<char> AsSpan() => _token;
 
     [Pure]

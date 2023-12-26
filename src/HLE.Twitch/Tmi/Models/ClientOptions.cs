@@ -15,12 +15,12 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; init; } = false;
+    public bool UseSSL { get; init; }
 
     /// <summary>
     /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.
     /// </summary>
-    public bool IsVerifiedBot { get; init; } = false;
+    public bool IsVerifiedBot { get; init; }
 
     /// <summary>
     /// The parsing mode of the IRC message parsers.

@@ -273,7 +273,7 @@ public static class RandomExtensions
     [Pure]
     internal static unsafe TEnum NextEnumFlags<TEnum>(this Random random) where TEnum : struct, Enum
     {
-        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null);
+        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null, $"{typeof(Enum)} is not attributed with {typeof(FlagsAttribute)}.");
 
         TEnum maximumEnumValue = EnumValues<TEnum>.MaximumValue;
         switch (sizeof(TEnum))
@@ -286,7 +286,9 @@ public static class RandomExtensions
                 return Unsafe.As<uint, TEnum>(ref flags);
         }
 
+#pragma warning disable RCS1079
         throw new NotImplementedException();
+#pragma warning restore RCS1079
     }
 
     public static unsafe void Write<T>(this Random random, T* destination, int elementCount) where T : unmanaged

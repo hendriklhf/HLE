@@ -11,7 +11,8 @@ public static class StringMarshal
 {
     private static readonly unsafe delegate*<int, string> s_fastAllocateString = (delegate*<int, string>)typeof(string)
         .GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!
-        .MethodHandle.GetFunctionPointer();
+        .MethodHandle
+        .GetFunctionPointer();
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -37,7 +38,13 @@ public static class StringMarshal
     /// <returns>A <see cref="Span{Char}"/> representation of the passed-in <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<char> AsMutableSpan(string? str) => SpanMarshal.AsMutableSpan(str.AsSpan());
+    public static unsafe Span<char> AsMutableSpan(string str)
+    {
+        byte* ptr = *(byte**)&str + sizeof(nuint);
+        int length = *(int*)ptr;
+        ref char chars = ref Unsafe.AsRef<char>(ptr + sizeof(int));
+        return MemoryMarshal.CreateSpan(ref chars, length);
+    }
 
     public static void Replace(string? str, char oldChar, char newChar) => Replace(str.AsSpan(), oldChar, newChar);
 
@@ -109,7 +116,7 @@ public static class StringMarshal
     /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string? AsString(Span<char> span) => AsString((ReadOnlySpan<char>)span);
+    public static string AsString(Span<char> span) => AsString((ReadOnlySpan<char>)span);
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{Char}"/> back to a <see cref="string"/>.
@@ -120,11 +127,16 @@ public static class StringMarshal
     /// <returns>The <see cref="ReadOnlySpan{Char}"/> as a <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe string? AsString(ReadOnlySpan<char> span)
+    public static unsafe string AsString(ReadOnlySpan<char> span)
     {
+        if (span.Length == 0)
+        {
+            return string.Empty;
+        }
+
         ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
         charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));
-        return RawDataMarshal.ReadObject<string, byte>(ref charsReference);
+        return RawDataMarshal.ReadObject<string, byte>(ref charsReference)!;
     }
 
     [Pure]

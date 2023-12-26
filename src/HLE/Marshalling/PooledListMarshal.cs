@@ -4,12 +4,12 @@ using HLE.Collections;
 
 namespace HLE.Marshalling;
 
-public static class PooledListMarshal<T>
+public static class PooledListMarshal
 {
     [Pure]
-    public static T[] GetBuffer(PooledList<T> list) => list._buffer.Array;
+    public static T[] GetBuffer<T>(PooledList<T> list) => list._buffer.Array;
 
-    public static void SetCount(PooledList<T> list, int count)
+    public static void SetCount<T>(PooledList<T> list, int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(count, Array.MaxLength);

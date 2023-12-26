@@ -27,7 +27,7 @@ public sealed class BufferHelpersTest
 
     [Theory]
     [MemberData(nameof(GrowByPow2Parameters))]
-    public void GrowByPow2Test(int expected, int currentLength, int neededSize)
+    public void GrowByPow2Test(int expected, uint currentLength, uint neededSize)
         => Assert.Equal(expected, BufferHelpers.GrowArray(currentLength, neededSize));
 
     [Fact]
@@ -36,7 +36,7 @@ public sealed class BufferHelpersTest
         Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(int.MaxValue, 1));
         Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(int.MaxValue, int.MaxValue));
         Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(1 << 30, 1 << 30));
-        Assert.Throws<ArgumentOutOfRangeException>(static () => BufferHelpers.GrowArray(16, -1));
-        Assert.Throws<ArgumentOutOfRangeException>(static () => BufferHelpers.GrowArray(-1, 16));
+        Assert.Throws<OverflowException>(static () => BufferHelpers.GrowArray(16, uint.MaxValue));
+        Assert.Throws<InvalidOperationException>(static () => BufferHelpers.GrowArray(uint.MaxValue, 16));
     }
 }

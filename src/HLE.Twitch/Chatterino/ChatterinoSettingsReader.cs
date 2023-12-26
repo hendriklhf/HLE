@@ -73,7 +73,7 @@ public static class ChatterinoSettingsReader
 
     private static void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
     {
-        BufferedFileReader fileReader = new(s_windowLayoutPath);
+        using BufferedFileReader fileReader = new(s_windowLayoutPath);
         fileReader.ReadBytes(windowLayoutFileContentWriter);
     }
 }

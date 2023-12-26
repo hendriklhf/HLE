@@ -3,11 +3,15 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Collections;
 
 namespace HLE.Memory;
 
-public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) : MemoryManager<T>, IEquatable<NativeMemoryManager<T>>, ISpanProvider<T>
+public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
+    MemoryManager<T>,
+    IEquatable<NativeMemoryManager<T>>,
+    ISpanProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     private readonly T* _memory = memory;
@@ -18,7 +22,7 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) : Memor
     }
 
     [Pure]
-    public override Span<T> GetSpan() => new(_memory, _length);
+    public override Span<T> GetSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_memory), _length);
 
     ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => GetSpan();
 
@@ -26,6 +30,7 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) : Memor
     /// Throws a <see cref="NotSupportedException"/>.<br/>
     /// The <see cref="NativeMemoryManager{T}"/> manages native memory, thus does not require nor support pinning."
     /// </summary>
+    /// <param name="elementIndex">The offset to the element within the memory at which the returned <see cref="MemoryHandle"/> points to. (default = 0)</param>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
     [DoesNotReturn]
     public override MemoryHandle Pin(int elementIndex = 0)

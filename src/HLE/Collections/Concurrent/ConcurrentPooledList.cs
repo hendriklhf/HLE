@@ -3,16 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, IEquatable<ConcurrentPooledList<T>>, IDisposable, IIndexAccessible<T>,
-    IReadOnlyList<T>, ICollectionProvider<T>
+public sealed class ConcurrentPooledList<T> :
+    IList<T>,
+    ICopyable<T>,
+    IEquatable<ConcurrentPooledList<T>>,
+    IDisposable,
+    IIndexAccessible<T>,
+    IReadOnlyList<T>,
+    ICollectionProvider<T>
 {
     public T this[int index]
     {
@@ -67,10 +74,13 @@ public sealed class ConcurrentPooledList<T> : IList<T>, ICopyable<T>, IEquatable
     // ReSharper disable once InconsistentlySynchronizedField
     public object SyncRoot => _list;
 
+    [MustDisposeResource]
     public ConcurrentPooledList() => _list = [];
 
+    [MustDisposeResource]
     public ConcurrentPooledList(ReadOnlySpan<T> items) => _list = new(items);
 
+    [MustDisposeResource]
     public ConcurrentPooledList(int capacity) => _list = new(capacity);
 
     public void Dispose()

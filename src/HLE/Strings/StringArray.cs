@@ -16,8 +16,14 @@ namespace HLE.Strings;
 /// <summary>
 /// An array that is specialized in storing strings by optimizing data locality, which makes search operations faster, but comes at the cost of higher memory usage and initialization time.
 /// </summary>
-public sealed class StringArray : ICollection<string>, IReadOnlyCollection<string>, ICopyable<string>, IIndexAccessible<string>,
-    IEquatable<StringArray>, IReadOnlySpanProvider<string>, ICollectionProvider<string>
+public sealed class StringArray :
+    ICollection<string>,
+    IReadOnlyCollection<string>,
+    ICopyable<string>,
+    IIndexAccessible<string>,
+    IEquatable<StringArray>,
+    IReadOnlySpanProvider<string>,
+    ICollectionProvider<string>
 {
     public string this[int index]
     {
@@ -147,7 +153,6 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         ReadOnlySpan<char> charBuffer = _chars;
         ReadOnlySpan<int> stringLengths = _lengths;
 
-        int charsLength = chars.Length;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
         ReadOnlySpan<int> lengths = stringLengths[startIndex..];
 
@@ -167,21 +172,26 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         {
             // TODO: maybe partition it, so not every index of the right length has to be found,
             // slow if the index is at the beginning and the whole array will be scanned
-            int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(stringLengths), stringLengths.Length, charsLength, indices);
+            int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(stringLengths), stringLengths.Length, chars.Length, indices);
+            if (indicesLength == 0)
+            {
+                return -1;
+            }
+
             indices = indices.SliceUnsafe(..indicesLength);
 
             for (int i = 0; i < indices.Length; i++)
             {
                 int actualIndex = indices[i] + startIndex;
-                ReadOnlySpan<char> str = Unsafe.Add(ref stringsReference, actualIndex);
-                ref char stringReference = ref MemoryMarshal.GetReference(str);
+                string str = Unsafe.Add(ref stringsReference, actualIndex);
+                ref char stringReference = ref StringMarshal.GetReference(str);
                 if (Unsafe.AreSame(ref charsReference, ref stringReference))
                 {
                     return actualIndex;
                 }
 
                 int strStart = Unsafe.Add(ref startsReference, actualIndex);
-                if (chars.Equals(charBuffer.SliceUnsafe(strStart..(strStart + charsLength)), comparison))
+                if (chars.Equals(charBuffer.SliceUnsafe(strStart, chars.Length), comparison))
                 {
                     return actualIndex;
                 }
@@ -207,9 +217,9 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
     [Pure]
     public bool Contains(ReadOnlySpan<char> chars, StringComparison comparison) => IndexOf(chars, comparison) >= 0;
 
-    void ICollection<string>.Add(string str) => throw new NotSupportedException();
+    void ICollection<string>.Add(string item) => throw new NotSupportedException();
 
-    bool ICollection<string>.Remove(string str) => throw new NotSupportedException();
+    bool ICollection<string>.Remove(string item) => throw new NotSupportedException();
 
     private void FillArray(ReadOnlySpan<string> strings)
     {
@@ -287,7 +297,6 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
         switch (lengthDifference)
         {
             case > 0: // new string is longer
-            {
                 GrowBufferIfNeeded(lengthDifference);
                 chars = _chars;
                 if (index != Length - 1)
@@ -299,9 +308,7 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
                 SpanHelpers.Add(starts[(index + 1)..], lengthDifference);
                 lengths[index] = str.Length;
                 break;
-            }
             case < 0: // new string is shorter
-            {
                 if (index != Length - 1)
                 {
                     CopyWorker<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
@@ -311,13 +318,10 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
                 SpanHelpers.Add(starts[(index + 1)..], lengthDifference);
                 lengths[index] = str.Length;
                 break;
-            }
             default: // new string has same length
-            {
                 Span<char> destination = chars[starts[index]..];
                 CopyWorker<char>.Copy(str, destination);
                 break;
-            }
         }
 
         strings[index] = str;
@@ -326,21 +330,27 @@ public sealed class StringArray : ICollection<string>, IReadOnlyCollection<strin
 
     private void GrowBufferIfNeeded(int sizeHint)
     {
-        if (sizeHint < 1 || _freeBufferSize >= sizeHint)
+        int freeBufferSize = _freeBufferSize;
+        if (sizeHint < 1 || freeBufferSize >= sizeHint)
         {
             return;
         }
 
-        int currentBufferSize = _chars?.Length ?? 8;
-        int newBufferSize = BufferHelpers.GrowArray(currentBufferSize, sizeHint - _freeBufferSize);
-        char[]? oldBuffer = _chars;
-        _chars = GC.AllocateUninitializedArray<char>(newBufferSize);
+        char[]? chars = _chars;
+        int currentBufferSize = chars?.Length ?? 8;
+        uint neededSize = (uint)(sizeHint - freeBufferSize);
+
+        int newBufferSize = BufferHelpers.GrowArray((uint)currentBufferSize, neededSize);
+        char[]? oldBuffer = chars;
+        chars = GC.AllocateUninitializedArray<char>(newBufferSize);
+
         if (oldBuffer is not null)
         {
-            CopyWorker<char>.Copy(oldBuffer[..^_freeBufferSize], _chars);
+            CopyWorker<char>.Copy(oldBuffer.AsSpan(..^freeBufferSize), chars);
             ArrayPool<char>.Shared.Return(oldBuffer);
         }
 
+        _chars = chars;
         _freeBufferSize += newBufferSize - currentBufferSize;
     }
 

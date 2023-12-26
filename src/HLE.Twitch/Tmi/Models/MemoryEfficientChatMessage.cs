@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Text;
 using HLE.Memory;
 using HLE.Strings;
 
@@ -29,58 +30,97 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
 
     public override required string DisplayName
     {
+        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
-            if (_displayName is not null)
+            string? displayName = _displayName;
+            if (displayName is not null)
             {
-                return _displayName;
+                return displayName;
             }
 
-            ObjectDisposedException.ThrowIf(_displayNameBuffer is null, typeof(MemoryEfficientChatMessage));
+            byte[]? displayNameBuffer = _displayNameBuffer;
+            if (displayNameBuffer is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+            }
 
-            _displayName = StringPool.Shared.GetOrAdd(_displayNameBuffer.AsSpan(.._nameLength));
-            ArrayPool<char>.Shared.Return(_displayNameBuffer!);
+            ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
+            displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.UTF8);
+
+            ArrayPool<byte>.Shared.Return(displayNameBuffer);
             _displayNameBuffer = null;
-            return _displayName;
+            _displayName = displayName;
+            return displayName;
         }
         init { }
     }
 
     public override required string Username
     {
+        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
-            if (_username is not null)
+            string? username = _username;
+            if (username is not null)
             {
-                return _username;
+                return username;
             }
 
-            ObjectDisposedException.ThrowIf(_usernameBuffer is null, typeof(MemoryEfficientChatMessage));
+            string? displayName = _displayName;
+            if (displayName is not null)
+            {
+                username = displayName.ToLowerInvariant();
+                ArrayPool<byte>.Shared.Return(_usernameBuffer);
+                _usernameBuffer = null;
+                _username = username;
+                return username;
+            }
 
-            _username = StringPool.Shared.GetOrAdd(_usernameBuffer.AsSpan(.._nameLength));
-            ArrayPool<char>.Shared.Return(_usernameBuffer!);
+            byte[]? usernameBuffer = _usernameBuffer;
+            if (usernameBuffer is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+            }
+
+            ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
+            username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.UTF8);
+
+            ArrayPool<byte>.Shared.Return(usernameBuffer);
             _usernameBuffer = null;
-            return _username;
+            _username = username;
+            return username;
         }
         init { }
     }
 
     public override required string Message
     {
+        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
-            if (_message is not null)
+            string? message = _message;
+            if (message is not null)
             {
-                return _message;
+                return message;
             }
 
-            ObjectDisposedException.ThrowIf(_messageBuffer is null, typeof(MemoryEfficientChatMessage));
+            byte[]? messageBuffer = _messageBuffer;
+            if (messageBuffer is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+            }
 
-            ReadOnlySpan<char> message = _messageBuffer.AsSpan(.._messageLength);
-            _message = message.Length <= MaxMessagePoolingLength ? StringPool.Shared.GetOrAdd(message) : new(message);
-            ArrayPool<char>.Shared.Return(_messageBuffer!);
+            Encoding utf8 = Encoding.UTF8;
+            ReadOnlySpan<byte> messageBufferSpan = messageBuffer.AsSpan(0, _messageLength);
+            message = messageBufferSpan.Length <= MaxMessagePoolingLength
+                ? StringPool.Shared.GetOrAdd(messageBufferSpan, utf8)
+                : utf8.GetString(messageBufferSpan);
+
+            ArrayPool<byte>.Shared.Return(messageBuffer);
             _messageBuffer = null;
-            return _message;
+            _message = message;
+            return message;
         }
         init { }
     }
@@ -95,20 +135,30 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
     private string? _username;
     private string? _message;
 
-    private char[]? _displayNameBuffer;
-    private char[]? _usernameBuffer;
+    private byte[]? _displayNameBuffer;
+    private byte[]? _usernameBuffer;
     private readonly int _nameLength;
 
-    private char[]? _messageBuffer;
+    private byte[]? _messageBuffer;
     private readonly int _messageLength;
 
-    private const int MaxMessagePoolingLength = 25;
+    private const int MaxMessagePoolingLength = 10;
 
     /// <summary>
     /// The default constructor of <see cref="MemoryEfficientChatMessage"/>.
     /// </summary>
+    /// <param name="badgeInfos">The badge info buffer.</param>
+    /// <param name="badgeInfoCount">The amount of written elements in the badge info buffer.</param>
+    /// <param name="badges">The badge buffer.</param>
+    /// <param name="badgeCount">The amount of written elements in the badge buffer.</param>
+    /// <param name="flags">The chat message flags.</param>
+    /// <param name="displayName">The user's display name.</param>
+    /// <param name="username">The user's username buffer.</param>
+    /// <param name="nameLength">The length of the user's username.</param>
+    /// <param name="message">The message buffer.</param>
+    /// <param name="messageLength">The length of the message.</param>
     public MemoryEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags,
-        char[] displayName, char[] username, int nameLength, char[] message, int messageLength)
+        byte[] displayName, byte[] username, int nameLength, byte[] message, int messageLength)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
@@ -126,35 +176,20 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
 
     public void Dispose()
     {
-        if (_badgeInfos is not null)
-        {
-            ArrayPool<Badge>.Shared.Return(_badgeInfos);
-            _badgeInfos = null;
-        }
+        ArrayPool<Badge>.Shared.Return(_badgeInfos);
+        _badgeInfos = null;
 
-        if (_badges is not null)
-        {
-            ArrayPool<Badge>.Shared.Return(_badges);
-            _badges = null;
-        }
+        ArrayPool<Badge>.Shared.Return(_badges);
+        _badges = null;
 
-        if (_displayNameBuffer is not null)
-        {
-            ArrayPool<char>.Shared.Return(_displayNameBuffer);
-            _displayNameBuffer = null;
-        }
+        ArrayPool<byte>.Shared.Return(_displayNameBuffer);
+        _displayNameBuffer = null;
 
-        if (_usernameBuffer is not null)
-        {
-            ArrayPool<char>.Shared.Return(_usernameBuffer);
-            _usernameBuffer = null;
-        }
+        ArrayPool<byte>.Shared.Return(_usernameBuffer);
+        _usernameBuffer = null;
 
-        if (_messageBuffer is not null)
-        {
-            ArrayPool<char>.Shared.Return(_messageBuffer);
-            _messageBuffer = null;
-        }
+        ArrayPool<byte>.Shared.Return(_messageBuffer);
+        _messageBuffer = null;
     }
 
     [Pure]
@@ -167,7 +202,8 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
     }
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] MemoryEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] MemoryEfficientChatMessage? other) =>
+        ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is MemoryEfficientChatMessage other && Equals(other);

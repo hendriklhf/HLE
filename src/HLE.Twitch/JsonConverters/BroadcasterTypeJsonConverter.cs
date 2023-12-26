@@ -22,8 +22,8 @@ internal sealed class BroadcasterTypeJsonConverter : JsonConverter<BroadcasterTy
         };
     }
 
-    public override void Write(Utf8JsonWriter writer, BroadcasterType value, JsonSerializerOptions options) =>
-        writer.WriteStringValue(value switch
+    public override void Write(Utf8JsonWriter writer, BroadcasterType value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value switch
         {
             BroadcasterType.Normal => string.Empty,
             BroadcasterType.Affiliate => "affiliate",

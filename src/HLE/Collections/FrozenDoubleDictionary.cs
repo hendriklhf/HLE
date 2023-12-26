@@ -13,8 +13,13 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : ICollection<TValue>, IReadOnlyCollection<TValue>, ICopyable<TValue>,
-    IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, IReadOnlySpanProvider<TValue>, ICollectionProvider<TValue>,
+public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
+    ICollection<TValue>,
+    IReadOnlyCollection<TValue>,
+    ICopyable<TValue>,
+    IEquatable<FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>,
+    IReadOnlySpanProvider<TValue>,
+    ICollectionProvider<TValue>,
     IReadOnlyMemoryProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey>
     where TSecondaryKey : IEquatable<TSecondaryKey>
@@ -34,17 +39,21 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Empty { get; } = new([]);
 
-    private FrozenDoubleDictionary(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
+    private FrozenDoubleDictionary(
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
         IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null)
+        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null
+    )
     {
         _values = dictionary._values.ToFrozenDictionary(primaryKeyEqualityComparer);
         _secondaryKeyTranslations = dictionary._secondaryKeyTranslations.ToFrozenDictionary(secondaryKeyEqualityComparer);
     }
 
-    public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Create(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
+    public static FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> Create(
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> dictionary,
         IEqualityComparer<TPrimaryKey>? primaryKeyEqualityComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null)
+        IEqualityComparer<TSecondaryKey>? secondaryKeyEqualityComparer = null
+    )
         => dictionary.Count == 0 ? Empty : new(dictionary, primaryKeyEqualityComparer, secondaryKeyEqualityComparer);
 
     public bool TryGetByPrimaryKey(TPrimaryKey key, [MaybeNullWhen(false)] out TValue value)

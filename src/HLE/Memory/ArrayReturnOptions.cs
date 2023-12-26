@@ -8,7 +8,7 @@ public enum ArrayReturnOptions
     /// <summary>
     /// Returns the array to the pool without performing any action on it.
     /// </summary>
-    None,
+    None = 0,
     /// <summary>
     /// Clears the array before returning it to the pool.
     /// </summary>

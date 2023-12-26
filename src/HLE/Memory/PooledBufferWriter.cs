@@ -4,22 +4,33 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Strings;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
 /// <summary>
-/// Represents an output sink consisting of buffers from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
+/// Represents an output sink consisting of a buffer from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
+/// <param name="capacity">The starting capacity of the buffer.</param>
+[method: MustDisposeResource]
 [DebuggerDisplay("{ToString()}")]
-public sealed class PooledBufferWriter<T>(int capacity)
-    : IBufferWriter<T>, ICollection<T>, IDisposable, ICopyable<T>, IEquatable<PooledBufferWriter<T>>, IIndexAccessible<T>,
-        IReadOnlyCollection<T>, ISpanProvider<T>, ICollectionProvider<T>, IMemoryProvider<T>
+public sealed class PooledBufferWriter<T>(int capacity) :
+    IBufferWriter<T>,
+    ICollection<T>,
+    IDisposable,
+    ICopyable<T>,
+    IEquatable<PooledBufferWriter<T>>,
+    IIndexAccessible<T>,
+    IReadOnlyCollection<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>,
+    IMemoryProvider<T>
 {
     T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
 
@@ -36,7 +47,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     /// <summary>
     /// The amount of written elements.
     /// </summary>
-    public int Count { get; private set; }
+    public int Count { get; internal set; }
 
     public int Capacity => _buffer.Length;
 
@@ -45,10 +56,12 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "disposed in Dispose()")]
     internal RentedArray<T> _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.RentAsRentedArray(capacity);
 
+    [MustDisposeResource]
     public PooledBufferWriter() : this(0)
     {
     }
 
+    [MustDisposeResource]
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
         CopyWorker<T>.Copy(data, _buffer.AsSpan());
@@ -189,7 +202,7 @@ public sealed class PooledBufferWriter<T>(int capacity)
     public void TrimBuffer()
     {
         int count = Count;
-        int trimmedBufferSize = BufferHelpers.GrowArray(count, 0);
+        int trimmedBufferSize = BufferHelpers.GrowArray((uint)count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;
@@ -231,8 +244,10 @@ public sealed class PooledBufferWriter<T>(int capacity)
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private void Grow(int neededSize)
     {
+        Debug.Assert(neededSize >= 0);
+
         using RentedArray<T> oldBuffer = _buffer;
-        int newBufferSize = BufferHelpers.GrowArray(oldBuffer.Length, neededSize);
+        int newBufferSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         RentedArray<T> newBuffer = ArrayPool<T>.Shared.RentAsRentedArray(newBufferSize);
         int count = Count;
         if (count != 0)

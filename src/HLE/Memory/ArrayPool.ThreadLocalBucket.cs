@@ -15,7 +15,7 @@ public sealed partial class ArrayPool<T>
         [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
         public readonly ref T[]? Reference => ref MemoryMarshal.GetArrayDataReference(_pool);
 
-        private readonly T[]?[] _pool = new T[BucketCapacities.Length][];
+        private readonly T[]?[] _pool = new T[ArrayPool.BucketCapacities.Length][];
 
         public ThreadLocalBucket()
         {

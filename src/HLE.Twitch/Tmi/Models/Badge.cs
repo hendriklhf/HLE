@@ -6,6 +6,8 @@ namespace HLE.Twitch.Tmi.Models;
 /// <summary>
 /// Represents a badge or badge info of a user.
 /// </summary>
+/// <param name="name">The name of the badge.</param>
+/// <param name="level">The level of the badge.</param>
 public readonly struct Badge(string name, string level) : IEquatable<Badge>
 {
     /// <summary>

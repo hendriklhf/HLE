@@ -1,17 +1,19 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HLE.Memory;
+using JetBrains.Annotations;
 using Microsoft.Win32.SafeHandles;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
+[method: MustDisposeResource]
 [DebuggerDisplay("\"{FilePath}\"")]
 public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<BufferedFileWriter>
 {

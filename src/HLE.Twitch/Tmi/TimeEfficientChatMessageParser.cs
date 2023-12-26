@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Text;
 using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
@@ -10,95 +11,103 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
 {
     [Pure]
     [SkipLocalsInit]
-    public override IChatMessage Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
         int badgeInfoCount = 0;
         Badge[] badges = [];
         int badgeCount = 0;
         Color color = Color.Empty;
-        ReadOnlySpan<char> displayName = [];
+        ReadOnlySpan<byte> displayName = [];
         ChatMessageFlags chatMessageFlags = 0;
         Guid id = Guid.Empty;
         long channelId = 0;
         long tmiSentTs = 0;
         long userId = 0;
 
-        ReadOnlySpan<char> tags = ircMessage[1..indicesOfWhitespaces[0]];
+        ReadOnlySpan<byte> tags = ircMessage[1..indicesOfWhitespaces[0]];
 
-        int equalsSignIndex = tags.IndexOf('=');
+        int equalsSignIndex = tags.IndexOf((byte)'=');
         while (equalsSignIndex > 0)
         {
-            int semicolonIndex = tags.IndexOf(';');
+            int semicolonIndex = tags.IndexOf((byte)';');
             // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
-            ReadOnlySpan<char> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
+            ReadOnlySpan<byte> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
             tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : [];
 
-            ReadOnlySpan<char> key = tag[..equalsSignIndex];
-            ReadOnlySpan<char> value = tag[(equalsSignIndex + 1)..];
-            equalsSignIndex = tags.IndexOf('=');
-            switch (key)
+            ReadOnlySpan<byte> key = tag[..equalsSignIndex];
+            ReadOnlySpan<byte> value = tag[(equalsSignIndex + 1)..];
+            equalsSignIndex = tags.IndexOf((byte)'=');
+            switch (key[0])
             {
-                case BadgeInfoTag:
+                case (byte)'b' when key.SequenceEqual(BadgeInfoTag):
                     badgeInfos = GetBadges(value, out badgeInfoCount);
                     break;
-                case BadgesTag:
+                case (byte)'b' when key.SequenceEqual(BadgesTag):
                     badges = GetBadges(value, out badgeCount);
                     break;
-                case ColorTag:
+                case (byte)'c' when key.SequenceEqual(ColorTag):
                     color = GetColor(value);
                     break;
-                case DisplayNameTag:
+                case (byte)'d' when key.SequenceEqual(DisplayNameTag):
                     displayName = GetDisplayName(value);
                     break;
-                case FirstMsgTag:
+                case (byte)'f' when key.SequenceEqual(FirstMsgTag):
                     chatMessageFlags |= GetIsFirstMsg(value);
                     break;
-                case IdTag:
+                case (byte)'i' when key.SequenceEqual(IdTag):
                     id = GetId(value);
                     break;
-                case ModTag:
+                case (byte)'m' when key.SequenceEqual(ModTag):
                     chatMessageFlags |= GetIsModerator(value);
                     break;
-                case RoomIdTag:
+                case (byte)'r' when key.SequenceEqual(RoomIdTag):
                     channelId = GetChannelId(value);
                     break;
-                case SubscriberTag:
+                case (byte)'s' when key.SequenceEqual(SubscriberTag):
                     chatMessageFlags |= GetIsSubscriber(value);
                     break;
-                case TmiSentTsTag:
+                case (byte)'t' when key.SequenceEqual(TmiSentTsTag):
                     tmiSentTs = GetTmiSentTs(value);
                     break;
-                case TurboTag:
+                case (byte)'t' when key.SequenceEqual(TurboTag):
                     chatMessageFlags |= GetIsTurboUser(value);
                     break;
-                case UserIdTag:
+                case (byte)'u' when key.SequenceEqual(UserIdTag):
                     userId = GetUserId(value);
                     break;
             }
         }
 
         chatMessageFlags |= GetIsAction(ircMessage, indicesOfWhitespaces);
-        ReadOnlySpan<char> username = GetUsername(ircMessage, indicesOfWhitespaces, displayName.Length);
-        ReadOnlySpan<char> channel = GetChannel(ircMessage, indicesOfWhitespaces);
-        ReadOnlySpan<char> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
+        ReadOnlySpan<byte> username = GetUsername(ircMessage, indicesOfWhitespaces, displayName.Length);
+        ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
+        ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
         return new TimeEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags)
         {
-            Channel = new(channel),
+            Channel = BytesToString(channel, Encoding.ASCII),
             ChannelId = channelId,
             Color = color,
-            DisplayName = new(displayName),
+            DisplayName = BytesToString(displayName, Encoding.ASCII),
             Id = id,
-            Message = new(message),
+            Message = BytesToString(message, Encoding.UTF8),
             TmiSentTs = tmiSentTs,
             UserId = userId,
-            Username = new(username)
+            Username = BytesToString(username, Encoding.ASCII)
         };
     }
 
+    [SkipLocalsInit]
+    private static string BytesToString(ReadOnlySpan<byte> bytes, Encoding encoding)
+    {
+        Span<char> chars = stackalloc char[bytes.Length];
+        int charCount = encoding.GetChars(bytes, chars);
+        return new(chars[..charCount]);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Badge[] GetBadges(ReadOnlySpan<char> value, out int badgeCount)
+    private static Badge[] GetBadges(ReadOnlySpan<byte> value, out int badgeCount)
     {
         badgeCount = 0;
         if (value.Length == 0)
@@ -107,15 +116,16 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         }
 
         Badge[] badges = new Badge[5];
+        Encoding utf8 = Encoding.UTF8;
         while (value.Length != 0)
         {
-            int indexOfComma = value.IndexOf(',');
+            int indexOfComma = value.IndexOf((byte)',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
-            ReadOnlySpan<char> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
+            ReadOnlySpan<byte> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
             value = indexOfComma < 0 ? [] : value[(indexOfComma + 1)..];
-            int slashIndex = info.IndexOf('/');
-            string name = new(info[..slashIndex]);
-            string level = new(info[(slashIndex + 1)..]);
+            int slashIndex = info.IndexOf((byte)'/');
+            string name = BytesToString(info[..slashIndex], utf8);
+            string level = BytesToString(info[(slashIndex + 1)..], utf8);
             badges[badgeCount++] = new(name, level);
         }
 

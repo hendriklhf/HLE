@@ -9,10 +9,12 @@ namespace HLE.Numerics;
 /// <summary>
 /// A struct that represents a unit prefix.
 /// </summary>
+/// <param name="name">The name of the prefix.</param>
+/// <param name="symbol">The symbol or abbreviation of the prefix.</param>
+/// <param name="value">The value of the prefix.</param>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("{Name}")]
-public readonly struct UnitPrefix(string name, string symbol, double value)
-    : IEquatable<UnitPrefix>
+public readonly struct UnitPrefix(string name, string symbol, double value) : IEquatable<UnitPrefix>
 {
     /// <summary>
     /// The name of the prefix.

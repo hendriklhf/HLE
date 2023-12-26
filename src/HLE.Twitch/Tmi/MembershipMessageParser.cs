@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Text;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
@@ -12,53 +13,54 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
 {
     [Pure]
     [SkipLocalsInit]
-    public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<char> ircMessage)
+    public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
         if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
-            whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
+            whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
             return ParseLeftChannelMessage(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
-        whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespaces);
+        whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespaces);
         return ParseLeftChannelMessage(ircMessage, indicesOfWhitespaces[..whitespaceCount]);
     }
 
     [Pure]
-    public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
         => Parse<LeftChannelMessage>(ircMessage, indicesOfWhitespaces);
 
     [Pure]
     [SkipLocalsInit]
-    public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<char> ircMessage)
+    public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
         if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
-            whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
+            whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
             return ParseJoinChannelMessage(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
-        whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespaces);
+        whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespaces);
         return ParseJoinChannelMessage(ircMessage, indicesOfWhitespaces[..whitespaceCount]);
     }
 
     [Pure]
-    public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
         => Parse<JoinChannelMessage>(ircMessage, indicesOfWhitespaces);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static T Parse<T>(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces) where T : IMembershipMessage<T>
+    private static T Parse<T>(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces) where T : IMembershipMessage<T>
     {
-        ReadOnlySpan<char> firstWord = ircMessage[..indicesOfWhitespaces[0]];
-        int indexOfExclamationMark = firstWord.IndexOf('!');
-        string username = new(firstWord[1..indexOfExclamationMark]);
-        string channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespaces[^1] + 2)..]);
+        ReadOnlySpan<byte> firstWord = ircMessage[..indicesOfWhitespaces[0]];
+        int indexOfExclamationMark = firstWord.IndexOf((byte)'!');
+        Encoding utf8 = Encoding.UTF8;
+        string username = utf8.GetString(firstWord[1..indexOfExclamationMark]);
+        string channel = StringPool.Shared.GetOrAdd(ircMessage[(indicesOfWhitespaces[^1] + 2)..], utf8);
         return T.Create(username, channel);
     }
 

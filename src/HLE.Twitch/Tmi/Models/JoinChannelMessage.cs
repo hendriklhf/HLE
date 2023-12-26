@@ -7,6 +7,8 @@ namespace HLE.Twitch.Tmi.Models;
 /// <summary>
 /// Arguments used when a user joined a channel.
 /// </summary>
+/// <param name="username">The name of the user that joined the <paramref name="channel"/>.</param>
+/// <param name="channel">The channel that the user joined.</param>
 public readonly struct JoinChannelMessage(string username, string channel)
     : IMembershipMessage<JoinChannelMessage>, IEquatable<JoinChannelMessage>
 {

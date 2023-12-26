@@ -13,9 +13,15 @@ using HLE.Strings;
 namespace HLE.Resources;
 
 [DebuggerDisplay("{ToString()}")]
-public readonly unsafe struct Resource(byte* resource, int length)
-    : IEquatable<Resource>, ICollection<byte>, IReadOnlySpanProvider<byte>, ICopyable<byte>, IIndexAccessible<byte>, IReadOnlyList<byte>,
-        ICollectionProvider<byte>, IReadOnlyMemoryProvider<byte>
+public readonly unsafe struct Resource(byte* resource, int length) :
+    IEquatable<Resource>,
+    ICollection<byte>,
+    IReadOnlySpanProvider<byte>,
+    ICopyable<byte>,
+    IIndexAccessible<byte>,
+    IReadOnlyList<byte>,
+    ICollectionProvider<byte>,
+    IReadOnlyMemoryProvider<byte>
 {
     byte IReadOnlyList<byte>.this[int index]
     {
@@ -54,7 +60,7 @@ public readonly unsafe struct Resource(byte* resource, int length)
     }
 
     [Pure]
-    public ReadOnlySpan<byte> AsSpan() => new(_resource, Length);
+    public ReadOnlySpan<byte> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef<byte>(_resource), Length);
 
     [Pure]
     public ReadOnlyMemory<byte> AsMemory() => new NativeMemoryManager<byte>(_resource, Length).Memory;
@@ -62,15 +68,16 @@ public readonly unsafe struct Resource(byte* resource, int length)
     [Pure]
     public byte[] ToArray()
     {
-        if (Length == 0)
+        int length = Length;
+        if (length == 0)
         {
             return [];
         }
 
-        byte[] result = GC.AllocateUninitializedArray<byte>(Length);
+        byte[] result = GC.AllocateUninitializedArray<byte>(length);
         ref byte destination = ref MemoryMarshal.GetArrayDataReference(result);
         ref byte source = ref Unsafe.AsRef<byte>(_resource);
-        Unsafe.CopyBlock(ref destination, ref source, (uint)Length);
+        Unsafe.CopyBlock(ref destination, ref source, (uint)length);
         return result;
     }
 

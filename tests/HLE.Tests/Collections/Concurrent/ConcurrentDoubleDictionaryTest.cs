@@ -18,11 +18,11 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
         Assert.Equal(Value, dictionary[1]);
         Assert.Equal(Value, dictionary["a"]);
 
-        Assert.Throws<KeyNotFoundException>(() => { dictionary[1, "b"] = Value; });
+        Assert.Throws<KeyNotFoundException>(() => dictionary[1, "b"] = Value);
 
-        Assert.Throws<KeyNotFoundException>(() => { dictionary[2, "a"] = Value; });
+        Assert.Throws<KeyNotFoundException>(() => dictionary[2, "a"] = Value);
 
-        Assert.Throws<KeyNotFoundException>(() => { dictionary[2, "b"] = Value; });
+        Assert.Throws<KeyNotFoundException>(() => dictionary[2, "b"] = Value);
 
         Assert.Single(dictionary);
         dictionary[1, "a"] = "abc";
@@ -66,9 +66,9 @@ public sealed class ConcurrentConcurrentDoubleDictionaryTest
         Assert.Equal("abc", dictionary["a"]);
         Assert.Single(dictionary);
 
-        Assert.Throws<KeyNotFoundException>(() => { dictionary.AddOrSet(1, "b", Value); });
+        Assert.Throws<KeyNotFoundException>(() => dictionary.AddOrSet(1, "b", Value));
 
-        Assert.Throws<KeyNotFoundException>(() => { dictionary.AddOrSet(2, "a", Value); });
+        Assert.Throws<KeyNotFoundException>(() => dictionary.AddOrSet(2, "a", Value));
 
         dictionary.AddOrSet(2, "b", Value);
         Assert.Equal(Value, dictionary[2]);

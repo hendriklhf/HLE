@@ -30,7 +30,7 @@ public sealed class StringMarshalTest
     public void AsStringTest()
     {
         ReadOnlySpan<char> span = "hello";
-        string? str = StringMarshal.AsString(span);
+        string str = StringMarshal.AsString(span);
         Assert.True(span.SequenceEqual(str));
 
         ref char spanRef = ref MemoryMarshal.GetReference(span);

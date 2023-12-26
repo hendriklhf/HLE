@@ -3,19 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Strings;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{AsString()}\"")]
-public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable<NativeString>, ICountable, IIndexAccessible<char>,
-    ISpanProvider<char>, IMemoryProvider<char>
+public unsafe struct NativeString :
+    IReadOnlyList<char>,
+    IDisposable,
+    IEquatable<NativeString>,
+    ICountable,
+    IIndexAccessible<char>,
+    ISpanProvider<char>,
+    IMemoryProvider<char>
 {
     public readonly ref char this[int index]
     {
@@ -47,14 +54,15 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
     // object header + method table pointer + string length
     private static readonly int s_firstCharByteOffset = sizeof(nuint) + sizeof(nuint) + sizeof(int);
 
+    public static int MaximumLength { get; } = (int.MaxValue - sizeof(nuint) * 2 - sizeof(int)) / 2;
+
     public NativeString()
     {
     }
 
+    [MustDisposeResource]
     public NativeString(int length)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
-
         if (length == 0)
         {
             _buffer = [];
@@ -62,14 +70,16 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
             return;
         }
 
-        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(length);
-        if (neededBufferSize > int.MaxValue)
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        if (length > MaximumLength)
         {
-            ThrowNeededBufferSizeExceedsMaxInt32Value();
+            ThrowLengthExceedsMaximumLength(length);
         }
 
+        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(length);
         NativeMemory<byte> buffer = new((int)neededBufferSize, false);
-        RawStringData* rawStringData = (RawStringData*)(buffer._pointer + sizeof(nuint));
+
+        RawStringData* rawStringData = (RawStringData*)(buffer._memory + sizeof(nuint));
         rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
         rawStringData->Length = length;
         Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
@@ -78,6 +88,7 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
         _buffer = buffer;
     }
 
+    [MustDisposeResource]
     public NativeString(ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)
@@ -87,14 +98,15 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
             return;
         }
 
-        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(chars.Length);
-        if (neededBufferSize > int.MaxValue)
+        if (chars.Length > MaximumLength)
         {
-            ThrowNeededBufferSizeExceedsMaxInt32Value();
+            ThrowLengthExceedsMaximumLength(chars.Length);
         }
 
+        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(chars.Length);
         NativeMemory<byte> buffer = new((int)neededBufferSize, false);
-        byte* bufferPointer = buffer._pointer;
+
+        byte* bufferPointer = buffer._memory;
         *(nuint*)bufferPointer = 0;
 
         RawStringData* rawStringData = (RawStringData*)(bufferPointer + sizeof(nuint));
@@ -108,8 +120,8 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNeededBufferSizeExceedsMaxInt32Value()
-        => throw new InvalidOperationException($"The needed buffer size exceeds the maximum {typeof(int)} value.");
+    private static void ThrowLengthExceedsMaximumLength(int length, [CallerArgumentExpression(nameof(length))] string? paramName = null)
+        => throw new ArgumentOutOfRangeException(paramName, length, $"The provided length exceeds the maximum {nameof(NativeString)} length.");
 
     public void Dispose() => _buffer.Dispose();
 
@@ -158,9 +170,11 @@ public unsafe struct NativeString : IReadOnlyList<char>, IDisposable, IEquatable
     }
 
     [Pure]
+    // ReSharper disable once NotDisposedResource
     public static string Alloc(int length) => length == 0 ? string.Empty : new NativeString(length).AsString();
 
     [Pure]
+    // ReSharper disable once NotDisposedResource
     public static string Alloc(ReadOnlySpan<char> chars) => chars.Length == 0 ? string.Empty : new NativeString(chars).AsString();
 
     public static void Free(string? str)

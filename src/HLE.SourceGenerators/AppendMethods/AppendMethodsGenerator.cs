@@ -28,11 +28,14 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         for (int argumentCount = MinimumAmountOfArguments; argumentCount <= MaximumAmountOfArguments; argumentCount++)
         {
             ImmutableArray<string> readOnlySpanArguments = Enumerable.Range(0, argumentCount)
-                .Select(static i => $"{ReadOnlySpanArgumentType} {ReadOnlySpanArgumentNamePrefix}{i}").ToImmutableArray();
+                .Select(static i => $"{ReadOnlySpanArgumentType} {ReadOnlySpanArgumentNamePrefix}{i}")
+                .ToImmutableArray();
+
             _readOnlySpanArguments.Add(readOnlySpanArguments);
 
             ImmutableArray<string> charArguments = Enumerable.Range(0, argumentCount)
-                .Select(static i => $"{CharArgumentType} {CharArgumentNamePrefix}{i}").ToImmutableArray();
+                .Select(static i => $"{CharArgumentType} {CharArgumentNamePrefix}{i}")
+                .ToImmutableArray();
             _charArguments.Add(charArguments);
         }
     }

@@ -160,7 +160,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void Initialization_List_Test()
     {
         List<string> strings = Enumerable.Range(0, 1024)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToList();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToList();
+
         StringArray stringArray = new(strings);
         Assert.Equal(strings.Count, stringArray.Length);
 
@@ -176,7 +178,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void Initialization_Array_Test()
     {
         string[] strings = Enumerable.Range(0, 1024)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(strings);
         Assert.Equal(strings.Length, stringArray.Length);
 
@@ -192,7 +196,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void Initialization_Span_Test()
     {
         Span<string> strings = Enumerable.Range(0, 1024)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(strings);
         Assert.Equal(strings.Length, stringArray.Length);
 
@@ -208,7 +214,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void Initialization_ReadOnlySpan_Test()
     {
         ReadOnlySpan<string> strings = Enumerable.Range(0, 1024)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(strings);
         Assert.Equal(strings.Length, stringArray.Length);
 
@@ -223,9 +231,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     [Fact]
     public void Initialization_IEnumerable_Test()
     {
-        string[] strings =
-            Enumerable.Range(0, 1024)
-                .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+        string[] strings = Enumerable.Range(0, 1024)
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
 
         StringArray stringArray = new(strings.AsEnumerable());
         Assert.Equal(strings.Length, stringArray.Length);
@@ -313,7 +321,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
         const int ArrayLength = 1024;
 
         Span<string> array = Enumerable.Range(0, ArrayLength)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(array);
 
         Assert.Equal(ArrayLength, stringArray.AsSpan().Length);
@@ -334,7 +344,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void ToArrayTest()
     {
         Span<string> span = Enumerable.Range(0, 1024)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(span);
         string[] array = stringArray.ToArray();
         Assert.True(stringArray.ToArray().AsSpan().SequenceEqual(array));
@@ -344,7 +356,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     public void ToListTest()
     {
         Span<string> span = Enumerable.Range(0, 1024)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(span);
         List<string> list = stringArray.ToList();
         Assert.True(stringArray.ToArray().AsSpan().SequenceEqual(CollectionsMarshal.AsSpan(list)));
@@ -380,7 +394,9 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
         const int ArrayLength = 512;
 
         Span<string> array = Enumerable.Range(0, ArrayLength)
-            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics)).ToArray();
+            .Select(static _ => Random.Shared.NextString(Random.Shared.Next(8, 64), StringConstants.AlphaNumerics))
+            .ToArray();
+
         StringArray stringArray = new(array);
 
         for (int i = 0; i < Iterations; i++)

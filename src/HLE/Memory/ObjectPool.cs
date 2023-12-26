@@ -12,6 +12,7 @@ namespace HLE.Memory;
 /// Objects rented from the pool don't necessarily have to be returned to the pool, because references to them are not stored in the pool.
 /// </summary>
 /// <typeparam name="T">The type of pooled objects.</typeparam>
+/// <param name="factory">The factory for creating and resetting pooled objects.</param>
 public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory) : IEquatable<ObjectPool<T>>, ICountable
 {
     /// <summary>

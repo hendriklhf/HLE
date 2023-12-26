@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -12,7 +14,6 @@ using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
-using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
@@ -44,9 +45,9 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public event EventHandler? OnDisconnected;
 
     /// <summary>
-    /// Is invoked if the client receives data. If this event is subscribed to, the <see cref="ReceivedData"/> instance has to be manually disposed.
+    /// Is invoked if the client receives data. If this event is subscribed to, the <see cref="Bytes"/> instance has to be manually disposed.
     /// </summary>
-    public event EventHandler<ReceivedData>? OnDataReceived;
+    public event EventHandler<Bytes>? OnBytesReceived;
 
     internal event EventHandler? OnConnectionException;
 
@@ -60,19 +61,27 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private CancellationTokenSource _cancellationTokenSource = new();
     private readonly OAuthToken _oAuthToken;
     private readonly Uri _connectionUri;
+    private readonly ImmutableArray<byte> _usernameUtf8;
+
+    private static ReadOnlySpan<byte> PassPrefix => "PASS "u8;
+
+    private static ReadOnlySpan<byte> NickPrefix => "NICK "u8;
+
+    private static ReadOnlySpan<byte> CapReqMessage => "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership"u8;
+
+    private static ReadOnlySpan<byte> PrivMsgPrefix => "PRIVMSG "u8;
+
+    private static ReadOnlySpan<byte> JoinPrefix => "JOIN "u8;
+
+    private static ReadOnlySpan<byte> PartPrefix => "PART "u8;
 
     private static readonly Uri s_sslConnectionUri = new("wss://irc-ws.chat.twitch.tv:443");
     private static readonly Uri s_nonSslConnectionUri = new("ws://irc-ws.chat.twitch.tv:80");
 
-    private const string NewLine = "\r\n";
-    private const string PassPrefix = "PASS ";
-    private const string NickPrefix = "NICK ";
-    private const string CapReqMessage = "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership";
-    private const string PrivMsgPrefix = "PRIVMSG ";
-    private const string JoinPrefix = "JOIN ";
-    private const string PartPrefix = "PART ";
-    private const byte MaximumChannelNameLength = 26; // 25 for the name + 1 for the '#'
-    private const ushort MaximumMessageLength = 500;
+    private const byte CarriageReturn = (byte)'\r';
+    private const int NewLineLength = 2;
+    private const int MaximumChannelNameLength = 26; // 25 for the name + 1 for the '#'
+    private const int MaximumMessageLength = 500;
 
     /// <summary>
     /// The default constructor of <see cref="WebSocketIrcClient"/>. An OAuth token for example can be obtained here: <a href="https://twitchapps.com/tmi">twitchapps.com/tmi</a>.
@@ -83,17 +92,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public WebSocketIrcClient(string username, OAuthToken oAuthToken, ClientOptions options)
     {
         Username = username;
+        _usernameUtf8 = ImmutableCollectionsMarshal.AsImmutableArray(Encoding.UTF8.GetBytes(username));
         _oAuthToken = oAuthToken;
         UseSSL = options.UseSSL;
         _isVerifiedBot = options.IsVerifiedBot;
         _connectionUri = UseSSL ? s_sslConnectionUri : s_nonSslConnectionUri;
-    }
-
-    private async ValueTask SendAsync(ReadOnlyMemory<char> message)
-    {
-        using RentedArray<byte> bytes = ArrayPool<byte>.Shared.RentAsRentedArray(message.Length << 1);
-        int byteCount = Encoding.UTF8.GetBytes(message.Span, bytes.AsSpan());
-        await SendAsync(bytes.AsMemory(..byteCount));
     }
 
     private async ValueTask SendAsync(ReadOnlyMemory<byte> message)
@@ -115,6 +118,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             IsBackground = true,
             Priority = ThreadPriority.AboveNormal
         };
+
         listeningThread.Start();
     }
 
@@ -126,73 +130,62 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
             ClientWebSocket webSocket = _webSocket;
 
-            Memory<byte> byteBuffer = GC.AllocateUninitializedArray<byte>(4096, true);
-            Memory<char> charBuffer = GC.AllocateUninitializedArray<char>(4096, true);
-            int bufferLength = 0;
-            while (!cancellationTokenSource.IsCancellationRequested && State is WebSocketState.Open)
+            int writtenBufferCount = 0;
+            Memory<byte> buffer = GC.AllocateUninitializedArray<byte>(8192, true);
+            while (webSocket.State is WebSocketState.Open && !cancellationTokenSource.IsCancellationRequested)
             {
-                ValueWebSocketReceiveResult webSocketReceiveResult = await webSocket.ReceiveAsync(byteBuffer, cancellationTokenSource.Token);
-                if (webSocketReceiveResult.Count == 0)
+                ValueWebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(buffer[writtenBufferCount..], cancellationTokenSource.Token);
+                if (receiveResult.Count == 0 || OnBytesReceived is null)
                 {
                     continue;
                 }
 
-                ReadOnlyMemory<byte> receivedBytes = byteBuffer[..webSocketReceiveResult.Count];
-                int charCount = Encoding.UTF8.GetChars(receivedBytes.Span, charBuffer.Span[bufferLength..]);
-                ReadOnlyMemory<char> receivedChars = charBuffer[..(bufferLength + charCount)];
-
-                bool isEndOfMessage = receivedChars.Span is [.., '\r', '\n'];
-                if (isEndOfMessage)
+                ReadOnlyMemory<byte> bytes = buffer[..(writtenBufferCount + receiveResult.Count)];
+                if (receiveResult.EndOfMessage)
                 {
-                    PassAllLines(receivedChars.Span);
-                    bufferLength = 0;
+                    PassAllLines(bytes.Span);
+                    writtenBufferCount = 0;
                     continue;
                 }
 
-                PassAllLinesExceptLast(ref receivedChars);
+                PassAllLinesExceptLast(ref bytes);
 
-                // receivedChars now only contains left-over chars, because the last received message didn't end with an new line
-                // left-over chars are copied into the charBuffer and will be handled next loop iteration when the new line has been received
-                receivedChars.Span.CopyTo(charBuffer.Span);
-                bufferLength = receivedChars.Length;
+                // "bytes" now only contains left-over bytes, because the last received message didn't end with an new line
+                // left-over bytes will be handled in the next loop iteration when the new line has been received
+                bytes.Span.CopyTo(buffer.Span);
+                writtenBufferCount = bytes.Length;
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            if (ex is not (WebSocketException or InvalidOperationException))
-            {
-                throw;
-            }
-
             HandleConnectionException();
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void PassAllLinesExceptLast(ref ReadOnlyMemory<char> receivedChars)
+    private void PassAllLinesExceptLast(ref ReadOnlyMemory<byte> receivedBytes)
     {
-        int indexOfLineEnding = receivedChars.Span.IndexOf(NewLine);
+        int indexOfLineEnding = receivedBytes.Span.IndexOf(CarriageReturn);
         while (indexOfLineEnding >= 0)
         {
-            ReadOnlyMemory<char> lineOfData = receivedChars[..indexOfLineEnding];
-            ReceivedData receivedData = new(lineOfData.Span);
-            InvokeDataReceived(this, ref receivedData);
-            receivedChars = receivedChars[(indexOfLineEnding + NewLine.Length)..];
-            indexOfLineEnding = receivedChars.Span.IndexOf(NewLine);
+            ReadOnlyMemory<byte> line = receivedBytes[..indexOfLineEnding];
+            Bytes bytes = new(line.Span);
+            InvokeBytesReceived(ref bytes);
+            receivedBytes = receivedBytes[(indexOfLineEnding + NewLineLength)..];
+            indexOfLineEnding = receivedBytes.Span.IndexOf(CarriageReturn);
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void PassAllLines(ReadOnlySpan<char> receivedChars)
+    private void PassAllLines(ReadOnlySpan<byte> receivedBytes)
     {
-        while (receivedChars.Length > 2)
+        do
         {
-            int indexOfLineEnding = receivedChars.IndexOf(NewLine);
-            ReadOnlySpan<char> lineOfData = receivedChars[..indexOfLineEnding];
-            ReceivedData receivedData = new(lineOfData);
-            InvokeDataReceived(this, ref receivedData);
-            receivedChars = receivedChars[(indexOfLineEnding + NewLine.Length)..];
+            int indexOfLineEnding = receivedBytes.IndexOf(CarriageReturn);
+            ReadOnlySpan<byte> line = receivedBytes[..indexOfLineEnding];
+            Bytes data = new(line);
+            InvokeBytesReceived(ref data);
+            receivedBytes = receivedBytes[(indexOfLineEnding + NewLineLength)..];
         }
+        while (receivedBytes.Length != 0);
     }
 
     private async Task ConnectClientAsync()
@@ -207,11 +200,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
-    private async Task DisconnectClientAsync(string closeMessage)
+    private async Task DisconnectClientAsync()
     {
         try
         {
-            await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, closeMessage, _cancellationTokenSource.Token);
+            await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Manually closed", _cancellationTokenSource.Token);
         }
         catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
@@ -226,10 +219,10 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         OnConnectionException?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
-    public async Task ConnectAsync(IEnumerable<string> channels)
+    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
+    public async Task ConnectAsync(IEnumerable<ReadOnlyMemory<byte>> channels)
     {
-        if (channels.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> channelsAsMemory))
+        if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<ReadOnlyMemory<byte>> channelsAsMemory))
         {
             await ConnectAsync(channelsAsMemory);
             return;
@@ -238,38 +231,40 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         await ConnectAsync(channels.ToArray());
     }
 
-    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
+    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
     // ReSharper disable once InconsistentNaming
-    public Task ConnectAsync(string[] channels) => ConnectAsync(channels.AsMemory());
+    public Task ConnectAsync(ReadOnlyMemory<byte>[] channels) => ConnectAsync(channels.AsMemory());
 
-    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{string})"/>
+    /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
     // ReSharper disable once InconsistentNaming
-    public Task ConnectAsync(List<string> channels)
+    public Task ConnectAsync(List<ReadOnlyMemory<byte>> channels)
         => ConnectAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
 
     /// <summary>
     /// Asynchronously connects the client to the Twitch IRC server.
     /// </summary>
     /// <param name="channels">The collection of channels the client will join on connect.</param>
-    public async Task ConnectAsync(ReadOnlyMemory<string> channels)
+    public async Task ConnectAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> channels)
     {
         await ConnectClientAsync();
         StartListeningThread();
         OnConnected?.Invoke(this, EventArgs.Empty);
 
-        using PooledStringBuilder messageBuilder = new(CapReqMessage.Length);
+        using PooledBufferWriter<byte> messageBuilder = new(CapReqMessage.Length);
         if (_oAuthToken != OAuthToken.Empty)
         {
-            messageBuilder.Append(PassPrefix, _oAuthToken.AsSpan());
+            messageBuilder.Write(PassPrefix);
+            messageBuilder.WriteUtf8(_oAuthToken.AsSpan());
             await SendAsync(messageBuilder.WrittenMemory);
         }
 
         messageBuilder.Clear();
-        messageBuilder.Append(NickPrefix, Username);
+        messageBuilder.Write(NickPrefix);
+        messageBuilder.Write(_usernameUtf8);
         await SendAsync(messageBuilder.WrittenMemory);
 
         messageBuilder.Clear();
-        messageBuilder.Append(CapReqMessage);
+        messageBuilder.Write(CapReqMessage);
         await SendAsync(messageBuilder.WrittenMemory);
 
         await JoinChannelsThrottledAsync(channels);
@@ -278,99 +273,80 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <summary>
     /// Asynchronously disconnects the client.
     /// </summary>
-    /// <param name="closeMessage">A close message or reason.</param>
-    public async Task DisconnectAsync(string closeMessage = "Manually closed")
+    public async Task DisconnectAsync()
     {
-        await DisconnectClientAsync(closeMessage);
+        await DisconnectClientAsync();
         OnDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
-    internal async Task ReconnectAsync(ReadOnlyMemory<string> channels)
+    internal async Task ReconnectAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> channels)
     {
         await DisconnectAsync();
         await ConnectAsync(channels);
     }
-
-    /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask SendRawAsync(string rawMessage) => SendAsync(rawMessage.AsMemory());
 
     /// <summary>
     /// Asynchronously sends a raw message to the Twitch IRC server.
     /// </summary>
     /// <param name="rawMessage">The IRC message.</param>
     // ReSharper disable once InconsistentNaming
-    public ValueTask SendRawAsync(ReadOnlyMemory<char> rawMessage) => SendAsync(rawMessage);
-
-    /// <inheritdoc cref="SendMessageAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask SendMessageAsync(string channel, string message)
-        => SendMessageAsync(channel.AsMemory(), message.AsMemory());
-
-    /// <summary>
-    /// Asynchronously sends a chat message to a channel.
-    /// </summary>
-    /// <param name="channel">The channel the message will be sent to.</param>
-    /// <param name="builder">The builder that contains the message that will be sent.</param>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, PooledStringBuilder builder)
-        => SendMessageAsync(channel, builder.WrittenMemory);
+    public ValueTask SendRawAsync(ReadOnlyMemory<byte> rawMessage) => SendAsync(rawMessage);
 
     /// <summary>
     /// Asynchronously sends a chat message to a channel.
     /// </summary>
     /// <param name="channel">The channel the message will be sent to.</param>
     /// <param name="message">The message that will be sent to the channel.</param>
-    public async ValueTask SendMessageAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
+    public async ValueTask SendMessageAsync(ReadOnlyMemory<byte> channel, ReadOnlyMemory<byte> message)
     {
-        using PooledStringBuilder messageBuilder = new(PrivMsgPrefix.Length + MaximumChannelNameLength + 2 + MaximumMessageLength);
-        messageBuilder.Append(PrivMsgPrefix, channel.Span, " :", message.Span);
+        using PooledBufferWriter<byte> messageBuilder = new(PrivMsgPrefix.Length + MaximumChannelNameLength + " :"u8.Length + MaximumMessageLength);
+        messageBuilder.Write(PrivMsgPrefix);
+        messageBuilder.Write(channel.Span);
+        messageBuilder.Write(" :"u8);
+        messageBuilder.Write(message.Span);
+
         await SendAsync(messageBuilder.WrittenMemory);
     }
-
-    /// <inheritdoc cref="JoinChannelAsync(ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask JoinChannelAsync(string channel) => JoinChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// Asynchronously joins one channel.
     /// </summary>
     /// <param name="channel">The channel the client will join.</param>
-    public async ValueTask JoinChannelAsync(ReadOnlyMemory<char> channel)
+    public async ValueTask JoinChannelAsync(ReadOnlyMemory<byte> channel)
     {
-        using PooledStringBuilder messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
-        messageBuilder.Append(JoinPrefix, channel.Span);
+        using PooledBufferWriter<byte> messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
+        messageBuilder.Write(JoinPrefix);
+        messageBuilder.Write(channel.Span);
+
         await SendAsync(messageBuilder.WrittenMemory);
     }
-
-    /// <inheritdoc cref="LeaveChannelAsync(ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask LeaveChannelAsync(string channel) => LeaveChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// Asynchronously leaves one channel.
     /// </summary>
     /// <param name="channel">The channel the client will leave.</param>
-    public async ValueTask LeaveChannelAsync(ReadOnlyMemory<char> channel)
+    public async ValueTask LeaveChannelAsync(ReadOnlyMemory<byte> channel)
     {
-        using PooledStringBuilder messageBuilder = new(PartPrefix.Length + MaximumChannelNameLength);
-        messageBuilder.Append(PartPrefix, channel.Span);
+        using PooledBufferWriter<byte> messageBuilder = new(PartPrefix.Length + MaximumChannelNameLength);
+        messageBuilder.Write(PartPrefix);
+        messageBuilder.Write(channel.Span);
+
         await SendAsync(messageBuilder.WrittenMemory);
     }
 
-    private async Task JoinChannelsThrottledAsync(ReadOnlyMemory<string> channels)
+    private async Task JoinChannelsThrottledAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> channels)
     {
         if (channels.Length == 0)
         {
             return;
         }
 
-        int isVerifiedBotFactor = _isVerifiedBot ? 1 : 0;
-        int maximumJoinsInPeriod = 20 + 180 * isVerifiedBotFactor;
+        int maximumJoinsInPeriod = _isVerifiedBot ? 200 : 20;
         TimeSpan period = TimeSpan.FromSeconds(10);
 
         CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
-        using PooledStringBuilder messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
+        using PooledBufferWriter<byte> messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
+
         DateTimeOffset start = DateTimeOffset.UtcNow;
         for (int i = 0; i < channels.Length && !cancellationTokenSource.IsCancellationRequested; i++)
         {
@@ -386,21 +362,17 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
                 start = now + waitTime;
             }
 
-            messageBuilder.Append(JoinPrefix, channels.Span[i]);
+            messageBuilder.Write(JoinPrefix);
+            messageBuilder.Write(channels.Span[i].Span);
             await SendAsync(messageBuilder.WrittenMemory);
             messageBuilder.Clear();
         }
     }
 
-    private void InvokeDataReceived(WebSocketIrcClient sender, ref ReceivedData data)
+    private void InvokeBytesReceived(ref Bytes bytes)
     {
-        if (OnDataReceived is null)
-        {
-            data.Dispose();
-            return;
-        }
-
-        OnDataReceived.Invoke(sender, data);
+        Debug.Assert(OnBytesReceived is not null);
+        OnBytesReceived.Invoke(this, bytes);
     }
 
     internal void CancelTasks()

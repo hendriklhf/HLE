@@ -3,7 +3,7 @@ using HLE.Collections;
 
 namespace HLE.Marshalling;
 
-public static class ValueQueueMarshal<T>
+public static class ValueQueueMarshal
 {
-    public static Span<T> GetBuffer(ValueQueue<T> queue) => queue._queue;
+    public static Span<T> GetBuffer<T>(ValueQueue<T> queue) => queue._queue;
 }

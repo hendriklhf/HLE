@@ -2,24 +2,28 @@ using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using HLE.Memory;
+using JetBrains.Annotations;
 using Microsoft.Win32.SafeHandles;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
+[method: MustDisposeResource]
 [DebuggerDisplay("\"{FilePath}\"")]
 public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<BufferedFileReader>
 {
     public string FilePath { get; } = filePath;
 
     private SafeFileHandle? _fileHandle;
+    private long _size = UninitializedSize;
 
+    private const long UninitializedSize = -1;
     private const FileMode HandleMode = FileMode.Open;
     private const FileAccess HandleAccess = FileAccess.Read;
     private const FileShare HandleShare = FileShare.Read;
@@ -28,7 +32,36 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     public void Dispose()
     {
         _fileHandle?.Dispose();
+
         _fileHandle = null;
+        _size = UninitializedSize;
+    }
+
+    [Pure]
+    public long GetFileSize()
+    {
+        OpenHandleIfNotOpen();
+        if (_size != UninitializedSize)
+        {
+            return _size;
+        }
+
+        _size = RandomAccess.GetLength(_fileHandle);
+        return _size;
+    }
+
+    public int ReadBytes(Span<byte> buffer)
+    {
+        OpenHandleIfNotOpen();
+
+        return RandomAccess.Read(_fileHandle, buffer, 0);
+    }
+
+    // ReSharper disable once InconsistentNaming
+    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer)
+    {
+        OpenHandleIfNotOpen();
+        return RandomAccess.ReadAsync(_fileHandle, buffer, 0);
     }
 
     public void ReadBytes<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
@@ -37,8 +70,8 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
 
         SafeFileHandle fileHandle = _fileHandle;
         int fileSize = GetFileSize(fileHandle);
-        RandomAccess.Read(fileHandle, byteWriter.GetSpan(fileSize), 0);
-        byteWriter.Advance(fileSize);
+        int bytesRead = RandomAccess.Read(fileHandle, byteWriter.GetSpan(fileSize), 0);
+        byteWriter.Advance(bytesRead);
     }
 
     public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
@@ -47,8 +80,8 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
 
         SafeFileHandle handle = _fileHandle;
         int fileSize = GetFileSize(handle);
-        await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0);
-        byteWriter.Advance(fileSize);
+        int bytesRead = await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0);
+        byteWriter.Advance(bytesRead);
     }
 
     public void ReadChars<TWriter>(TWriter charWriter, Encoding fileEncoding) where TWriter : IBufferWriter<char>

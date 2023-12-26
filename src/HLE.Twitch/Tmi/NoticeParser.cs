@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Text;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
@@ -12,52 +13,52 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
 {
     [Pure]
     [SkipLocalsInit]
-    public Notice Parse(ReadOnlySpan<char> ircMessage)
+    public Notice Parse(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
         if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
-            whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespacesBuffer.AsSpan());
+            whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
             return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
-        whitespaceCount = ircMessage.IndicesOf(' ', indicesOfWhitespaces);
+        whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespaces);
         return Parse(ircMessage, indicesOfWhitespaces[..whitespaceCount]);
     }
 
     [Pure]
     [SkipLocalsInit]
-    public Notice Parse(ReadOnlySpan<char> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public Notice Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         NoticeType type = NoticeType.Unknown;
         bool hasTag = ircMessage[0] == '@';
         if (hasTag)
         {
-            ReadOnlySpan<char> msgId = ircMessage[8..indicesOfWhitespaces[0]];
+            ReadOnlySpan<byte> msgId = ircMessage[8..indicesOfWhitespaces[0]];
 
-            Span<char> msgIdWithoutUnderscores = stackalloc char[msgId.Length];
+            Span<byte> msgIdWithoutUnderscores = stackalloc byte[msgId.Length];
             msgId.CopyTo(msgIdWithoutUnderscores);
-            RemoveChar(ref msgIdWithoutUnderscores, '_');
+            RemoveChar(ref msgIdWithoutUnderscores, (byte)'_');
 
-            type = Enum.Parse<NoticeType>(msgIdWithoutUnderscores, true);
+            type = ParseNoticeType(msgIdWithoutUnderscores);
         }
 
         byte hasTagAsByte = Unsafe.As<bool, byte>(ref hasTag);
-        ReadOnlySpan<char> message = ircMessage[(indicesOfWhitespaces[2 + hasTagAsByte] + 2)..];
+        ReadOnlySpan<byte> message = ircMessage[(indicesOfWhitespaces[2 + hasTagAsByte] + 2)..];
 
-        ReadOnlySpan<char> channel = ircMessage[(indicesOfWhitespaces[1 + hasTagAsByte] + 1)..indicesOfWhitespaces[2 + hasTagAsByte]];
+        ReadOnlySpan<byte> channel = ircMessage[(indicesOfWhitespaces[1 + hasTagAsByte] + 1)..indicesOfWhitespaces[2 + hasTagAsByte]];
         if (channel[0] == '#')
         {
             channel = channel[1..];
         }
 
-        return new(type, StringPool.Shared.GetOrAdd(message), StringPool.Shared.GetOrAdd(channel));
+        Encoding utf8 = Encoding.UTF8;
+        return new(type, StringPool.Shared.GetOrAdd(message, utf8), StringPool.Shared.GetOrAdd(channel, utf8));
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void RemoveChar(ref Span<char> span, char charToRemove)
+    private static void RemoveChar(ref Span<byte> span, byte charToRemove)
     {
         int indexOfChar = span.IndexOf(charToRemove);
         while (indexOfChar >= 0)
@@ -71,6 +72,13 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
                 indexOfChar += lastIndex;
             }
         }
+    }
+
+    private static NoticeType ParseNoticeType(ReadOnlySpan<byte> bytes)
+    {
+        Span<char> chars = stackalloc char[bytes.Length];
+        int charCount = Encoding.UTF8.GetChars(bytes, chars);
+        return Enum.Parse<NoticeType>(chars[..charCount], true);
     }
 
     [Pure]

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-internal readonly ref struct Slicer<T>
+public readonly ref struct Slicer<T>
 {
     private readonly ref T _buffer;
     private readonly int _length;
@@ -74,11 +75,19 @@ internal readonly ref struct Slicer<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [SuppressMessage("ReSharper", "RedundantCast")]
+    [SuppressMessage("Style", "IDE0004:Remove Unnecessary Cast")]
     private ref T GetStartReferenceAndValidate(int start, int length)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)start, (uint)_length);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)length, (uint)_length);
-        ArgumentOutOfRangeException.ThrowIfNegative((uint)_length - (uint)start - (uint)length);
+        if (Environment.Is64BitProcess)
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)(uint)start + (ulong)(uint)length, (ulong)(uint)_length);
+        }
+        else
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)start, (uint)_length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)length, (uint)(_length - start));
+        }
 
         return ref Unsafe.Add(ref _buffer, start);
     }

@@ -7,6 +7,7 @@ namespace HLE.Strings;
 /// <summary>
 /// Used to quickly hash a string, as this algorithm executes in constant time, because it doesn't depend on the string's length.
 /// </summary>
+/// <param name="chars">The chars of which the hashcode will be created from.</param>
 internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
 {
     private readonly ReadOnlySpan<char> _chars = chars;

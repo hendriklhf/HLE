@@ -47,7 +47,7 @@ public sealed class PooledStringBuilderMethodBuilder(StringBuilder builder) : St
         _builder.Append(Indentation + Indentation).Append(EnsureCapacityMethodName).Append('(');
         _builder.Append(LengthPropertyName).Append(" + ");
         _builder.Append(charCount);
-        _builder.Append(");").AppendLine();
+        _builder.AppendLine(");");
     }
 
     private void BuildEnsureCapacityReadOnlySpanCall(ReadOnlySpan<string> argumentNames)
@@ -55,6 +55,6 @@ public sealed class PooledStringBuilderMethodBuilder(StringBuilder builder) : St
         _builder.Append(Indentation + Indentation).Append(EnsureCapacityMethodName).Append('(');
         _builder.Append(LengthPropertyName).Append(" + ");
         BuildSpanLengthSum(argumentNames);
-        _builder.Append(");").AppendLine();
+        _builder.AppendLine(");");
     }
 }

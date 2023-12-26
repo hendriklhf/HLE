@@ -5,6 +5,7 @@ namespace HLE.Twitch.Tmi.Models;
 [Flags]
 public enum ChangedRoomStates
 {
+    None = 0,
     EmoteOnly = 1 << 0,
     FollowersOnly = 1 << 1,
     R9K = 1 << 2,

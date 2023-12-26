@@ -308,6 +308,7 @@ public static partial class CollectionHelpers
     /// Moves an item in the collection from the source to the destination index
     /// and moves the items between the indices to fill the now empty source index.
     /// </summary>
+    /// <typeparam name="T">The element type of the <see cref="Span{T}"/>.</typeparam>
     /// <param name="span">The collection the items will be moved in.</param>
     /// <param name="sourceIndex">The source index of the item that will be moved.</param>
     /// <param name="destinationIndex">The destination index of the moved item.</param>
@@ -377,14 +378,12 @@ public static partial class CollectionHelpers
                     writtenElements = elementCount;
                     return true;
                 case IIndexAccessible<T> indexAccessible:
-                {
                     for (int i = 0; i < elementCount; i++)
                     {
                         destination[i] = indexAccessible[i];
                     }
 
                     break;
-                }
             }
         }
 

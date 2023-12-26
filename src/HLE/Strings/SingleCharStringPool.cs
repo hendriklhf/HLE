@@ -18,7 +18,6 @@ public static partial class SingleCharStringPool
     /// <remarks>The field is used in the source generator for the static cache. Don't rename.</remarks>
     internal const int AmountOfCachedSingleCharStrings = 2048;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGet(char c, [MaybeNullWhen(false)] out string str)
     {
         if (c >= AmountOfCachedSingleCharStrings)
@@ -33,7 +32,6 @@ public static partial class SingleCharStringPool
     }
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetOrAdd(char c)
     {
         if (TryGet(c, out string? str))
@@ -46,7 +44,6 @@ public static partial class SingleCharStringPool
         return str;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Add(string str)
     {
         if (str.Length != 1)
@@ -63,6 +60,7 @@ public static partial class SingleCharStringPool
         s_customSingleCharStringCache.AddOrSet(c, str);
     }
 
+    [Pure]
     public static bool Contains(char c) => c < AmountOfCachedSingleCharStrings || s_customSingleCharStringCache.ContainsKey(c);
 
     internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings();

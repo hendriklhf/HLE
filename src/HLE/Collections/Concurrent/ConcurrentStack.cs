@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using HLE.Memory;
 
@@ -13,8 +15,13 @@ namespace HLE.Collections.Concurrent;
 /// A concurrent stack that doesn't allocate on pushing items onto the stack, in comparision to <see cref="System.Collections.Concurrent.ConcurrentStack{T}"/>.
 /// </summary>
 /// <typeparam name="T">The type of stored items.</typeparam>
-public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOnlyCollection<T>, ICopyable<T>, IReadOnlySpanProvider<T>,
+public sealed class ConcurrentStack<T> :
+    IEquatable<ConcurrentStack<T>>,
+    IReadOnlyCollection<T>,
+    ICopyable<T>,
+    IReadOnlySpanProvider<T>,
     IIndexAccessible<T>
+// TODO: IMemoryProvider, ICollectionProvider
 {
     T IIndexAccessible<T>.this[int index] => AsSpan()[index];
 
@@ -22,8 +29,9 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
 
     public int Capacity => _buffer.Length;
 
+    public object SyncRoot { get; } = new();
+
     internal T[] _buffer;
-    private readonly object _syncRoot = new();
 
     private const int DefaultCapacity = 8;
 
@@ -45,26 +53,24 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
 
     public void Push(T item)
     {
-        Monitor.Enter(_syncRoot);
-        try
+        lock (SyncRoot)
         {
-            if (Count == _buffer.Length)
+            T[] buffer = _buffer;
+            int count = Count;
+            if (count == buffer.Length)
             {
                 GrowBuffer();
             }
 
-            _buffer[Count++] = item;
-        }
-        finally
-        {
-            Monitor.Exit(_syncRoot);
+            ref T bufferReference = ref MemoryMarshal.GetArrayDataReference(buffer);
+            ref T destination = ref Unsafe.Add(ref bufferReference, count);
+            destination = item;
         }
     }
 
     public T Pop()
     {
-        Monitor.Enter(_syncRoot);
-        try
+        lock (SyncRoot)
         {
             if (Count == 0)
             {
@@ -72,7 +78,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
             }
 
             int index = --Count;
-            ref T itemReference = ref _buffer[index];
+            ref T itemReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), index);
             T item = itemReference;
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             {
@@ -80,10 +86,6 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
             }
 
             return item;
-        }
-        finally
-        {
-            Monitor.Exit(_syncRoot);
         }
     }
 
@@ -93,8 +95,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
 
     public bool TryPop([MaybeNullWhen(false)] out T item)
     {
-        Monitor.Enter(_syncRoot);
-        try
+        lock (SyncRoot)
         {
             if (Count == 0)
             {
@@ -103,7 +104,7 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
             }
 
             int index = --Count;
-            ref T itemReference = ref _buffer[index];
+            ref T itemReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), index);
             item = itemReference;
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             {
@@ -112,16 +113,11 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
 
             return true;
         }
-        finally
-        {
-            Monitor.Exit(_syncRoot);
-        }
     }
 
     public void Clear()
     {
-        Monitor.Enter(_syncRoot);
-        try
+        lock (SyncRoot)
         {
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             {
@@ -130,19 +126,17 @@ public sealed class ConcurrentStack<T> : IEquatable<ConcurrentStack<T>>, IReadOn
 
             Count = 0;
         }
-        finally
-        {
-            Monitor.Exit(_syncRoot);
-        }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.NoInlining)] // slow path
     private void GrowBuffer()
     {
-        int newBufferLength = BufferHelpers.GrowArray(_buffer.Length, 1);
+        Debug.Assert(Monitor.IsEntered(SyncRoot));
+
+        int newBufferLength = BufferHelpers.GrowArray((uint)_buffer.Length, 1);
         T[] newBuffer = GC.AllocateUninitializedArray<T>(newBufferLength);
-        CopyWorker<T> copyWorker = new(_buffer.AsSpan(0, Count));
-        copyWorker.CopyTo(newBuffer);
+        CopyWorker<T>.Copy(_buffer.AsSpan(0, Count), newBuffer);
+
         _buffer = newBuffer;
     }
 

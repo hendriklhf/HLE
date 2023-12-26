@@ -9,8 +9,11 @@ namespace HLE.Collections.Concurrent;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> : IReadOnlyCollection<TValue>, ICountable,
-    IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
+public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
+    IReadOnlyCollection<TValue>,
+    ICountable,
+    IEquatable<ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>,
+    ICollectionProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey>
     where TSecondaryKey : IEquatable<TSecondaryKey>
 {
@@ -40,13 +43,17 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public ConcurrentDoubleDictionary() => _dictionary = [];
 
-    public ConcurrentDoubleDictionary(int capacity,
+    public ConcurrentDoubleDictionary(
+        int capacity,
         IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null
+    )
         => _dictionary = new(capacity, primaryKeyComparer, secondaryKeyComparer);
 
-    public ConcurrentDoubleDictionary(IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null)
+    public ConcurrentDoubleDictionary(
+        IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null
+    )
         => _dictionary = new(primaryKeyComparer, secondaryKeyComparer);
 
     public bool TryAdd(TPrimaryKey primaryKey, TSecondaryKey secondaryKey, TValue value)

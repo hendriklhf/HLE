@@ -8,6 +8,7 @@ namespace HLE.Twitch.Tmi.Models;
 /// Arguments used when the state of a chat room changed.
 /// For example, if emote-only mode has been turned on.<br/>
 /// </summary>
+/// <param name="changedRoomStates">Flags of states that have changed.</param>
 public readonly struct Roomstate(ChangedRoomStates changedRoomStates) : IEquatable<Roomstate>
 {
     /// <summary>

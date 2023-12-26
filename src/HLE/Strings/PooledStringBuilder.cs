@@ -3,18 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public sealed partial class PooledStringBuilder(int capacity)
-    : IDisposable, ICollection<char>, IEquatable<PooledStringBuilder>, ICopyable<char>, IIndexAccessible<char>, IReadOnlyCollection<char>,
-        ISpanProvider<char>, IMemoryProvider<char>
+[method: MustDisposeResource]
+public sealed partial class PooledStringBuilder(int capacity) :
+    IDisposable,
+    ICollection<char>,
+    IEquatable<PooledStringBuilder>,
+    ICopyable<char>,
+    IIndexAccessible<char>,
+    IReadOnlyCollection<char>,
+    ISpanProvider<char>,
+    IMemoryProvider<char>
 {
     public ref char this[int index] => ref WrittenSpan[index];
 
@@ -49,10 +57,12 @@ public sealed partial class PooledStringBuilder(int capacity)
     [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "is disposed in Disposed()")]
     internal RentedArray<char> _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
 
+    [MustDisposeResource]
     public PooledStringBuilder() : this(0)
     {
     }
 
+    [MustDisposeResource]
     public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
     {
         CopyWorker<char>.Copy(str, _buffer.AsSpan());
@@ -74,7 +84,7 @@ public sealed partial class PooledStringBuilder(int capacity)
         Debug.Assert(sizeHint > 0);
 
         using RentedArray<char> oldBuffer = _buffer;
-        int newSize = BufferHelpers.GrowArray(oldBuffer.Length, sizeHint);
+        int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)sizeHint);
         RentedArray<char> newBuffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
         if (Length != 0)
         {
@@ -242,6 +252,7 @@ public sealed partial class PooledStringBuilder(int capacity)
         copyWorker.CopyTo(destination, offset);
     }
 
+    [SuppressMessage("Roslynator", "RCS1168:Parameter name differs from base name")]
     public void CopyTo(char[] destination, int offset = 0)
     {
         CopyWorker<char> copyWorker = new(WrittenSpan);
@@ -272,11 +283,11 @@ public sealed partial class PooledStringBuilder(int capacity)
         copyWorker.CopyTo(destination);
     }
 
-    void ICollection<char>.Add(char c) => Append(c);
+    void ICollection<char>.Add(char item) => Append(item);
 
-    bool ICollection<char>.Contains(char c) => WrittenSpan.Contains(c);
+    bool ICollection<char>.Contains(char item) => WrittenSpan.Contains(item);
 
-    bool ICollection<char>.Remove(char c) => throw new NotSupportedException();
+    bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 
     public ArrayEnumerator<char> GetEnumerator() => new(_buffer.Array, 0, Length);
 

@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Xunit;
 
 namespace HLE.Tests;
 
+[SuppressMessage("Roslynator", "RCS1154:Sort enum members")]
 public enum TestEnum
 {
     A = 50,

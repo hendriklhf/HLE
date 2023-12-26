@@ -32,18 +32,9 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
     public static StringNumberFormat Create(char minimumCharValue, char maximumCharValue)
     {
         int charLength = maximumCharValue - minimumCharValue + 1;
-        Span<char> chars;
-        if (!MemoryHelpers.UseStackAlloc<char>(charLength))
-        {
-            using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(charLength);
-            chars = rentedBuffer.AsSpan(..charLength);
-            SpanHelpers.FillAscending(chars, minimumCharValue);
-            return new(StringPool.Shared.GetOrAdd(chars));
-        }
-
-        chars = SpanMarshal.ReturnStackAlloced(stackalloc char[charLength]);
+        string format = StringMarshal.FastAllocateString(charLength, out Span<char> chars);
         SpanHelpers.FillAscending(chars, minimumCharValue);
-        return new(StringPool.Shared.GetOrAdd(chars));
+        return new(format);
     }
 
     public static StringNumberFormat Create(ReadOnlySpan<char> chars)

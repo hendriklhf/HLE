@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Strings;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -19,8 +20,17 @@ namespace HLE.Memory;
 /// <typeparam name="T">The type the rented array contains.</typeparam>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Length = {Length}")]
-public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquatable<RentedArray<T>>, IEquatable<T[]>, IIndexAccessible<T>,
-    IReadOnlyCollection<T>, ISpanProvider<T>, ICollectionProvider<T>, IMemoryProvider<T>
+public struct RentedArray<T> :
+    IDisposable,
+    ICollection<T>,
+    ICopyable<T>,
+    IEquatable<RentedArray<T>>,
+    IEquatable<T[]>,
+    IIndexAccessible<T>,
+    IReadOnlyCollection<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>,
+    IMemoryProvider<T>
 {
     public readonly ref T this[int index]
     {
@@ -72,6 +82,7 @@ public struct RentedArray<T> : IDisposable, ICollection<T>, ICopyable<T>, IEquat
     {
     }
 
+    [MustDisposeResource]
     public RentedArray(T[] array, ArrayPool<T> pool)
     {
         _array = array;

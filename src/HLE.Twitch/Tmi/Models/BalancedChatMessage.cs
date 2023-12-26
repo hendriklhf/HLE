@@ -20,6 +20,9 @@ public sealed class BalancedChatMessage : ChatMessage, IEquatable<BalancedChatMe
     /// <summary>
     /// The default constructor of <see cref="BalancedChatMessage"/>.
     /// </summary>
+    /// <param name="badgeInfos">The badge infos.</param>
+    /// <param name="badges">The badges.</param>
+    /// <param name="flags">The chat message flags.</param>
     public BalancedChatMessage(Badge[] badgeInfos, Badge[] badges, ChatMessageFlags flags)
     {
         _badgeInfos = badgeInfos;

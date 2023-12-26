@@ -15,6 +15,7 @@ public sealed class RawDataMarshalTest
     [
         [string.Empty],
         [new int[1]],
+        // ReSharper disable once NotDisposedResource
         [new PooledList<int>()],
         [typeof(Assembly).Assembly]
     ];

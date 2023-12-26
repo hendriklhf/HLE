@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Timers;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Time;
 
@@ -48,12 +49,7 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
         get
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            if (_end == default || now >= _end)
-            {
-                return TimeSpan.Zero;
-            }
-
-            return _end - now;
+            return _end == default || now >= _end ? TimeSpan.Zero : _end - now;
         }
     }
 
@@ -62,6 +58,7 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
     private Timer? _timer;
     private DateTimeOffset _end;
 
+    [MustDisposeResource]
     public HTimer(TimeSpan interval)
     {
         _timer = new(interval);

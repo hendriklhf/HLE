@@ -13,13 +13,13 @@ public sealed class ArrayPoolTest
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
-        => Assert.Equal(ArrayPool<int>.s_indexOffset, BitOperations.TrailingZeroCount(ArrayPool<int>.MinimumArrayLength));
+        => Assert.Equal(ArrayPool.IndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
 
     [Fact]
     public void MinimumAndMaximumLengthArePow2()
     {
-        Assert.True(BitOperations.IsPow2(ArrayPool<int>.MinimumArrayLength));
-        Assert.True(BitOperations.IsPow2(ArrayPool<int>.MaximumArrayLength));
+        Assert.True(BitOperations.IsPow2(ArrayPool.MinimumArrayLength));
+        Assert.True(BitOperations.IsPow2(ArrayPool.MaximumArrayLength));
     }
 
     [Fact]
@@ -38,15 +38,15 @@ public sealed class ArrayPoolTest
 
     [Theory]
     [InlineData(1)]
-    [InlineData(ArrayPool<int>.MinimumArrayLength - 1)]
+    [InlineData(ArrayPool.MinimumArrayLength - 1)]
     public void RentArrayShorterThanMinimumLength(int minimumLength)
     {
         int[] array = _integerArrayPool.Rent(minimumLength);
-        Assert.Equal(ArrayPool<int>.MinimumArrayLength, array.Length);
+        Assert.Equal(ArrayPool.MinimumArrayLength, array.Length);
     }
 
     [Theory]
-    [InlineData(ArrayPool<int>.MinimumArrayLength)]
+    [InlineData(ArrayPool.MinimumArrayLength)]
     [InlineData(256)]
     [InlineData(2048)]
     public void RentArrayOfPow2Length(int arrayLength)
@@ -65,7 +65,7 @@ public sealed class ArrayPoolTest
     }
 
     [Theory]
-    [InlineData(ArrayPool<int>.MinimumArrayLength)]
+    [InlineData(ArrayPool.MinimumArrayLength)]
     [InlineData(256)]
     [InlineData(2048)]
     public void RentAsRentedArrayTest(int minimumLength)
@@ -136,8 +136,8 @@ public sealed class ArrayPoolTest
     {
         for (int i = 0; i < 8; i++)
         {
-            int[] array = _integerArrayPool.Rent(ArrayPool<int>.MinimumArrayLength << i);
-            int[] array2 = _integerArrayPool.Rent(ArrayPool<int>.MinimumArrayLength << i);
+            int[] array = _integerArrayPool.Rent(ArrayPool.MinimumArrayLength << i);
+            int[] array2 = _integerArrayPool.Rent(ArrayPool.MinimumArrayLength << i);
             _integerArrayPool.Return(array);
             _integerArrayPool.Return(array2);
         }

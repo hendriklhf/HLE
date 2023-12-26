@@ -11,9 +11,12 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
-public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
-    : IReadOnlyCollection<TValue>, IReadOnlyDictionary<TPrimaryKey, TValue>, ICountable,
-        IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>, ICollectionProvider<TValue>
+public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
+    IReadOnlyCollection<TValue>,
+    IReadOnlyDictionary<TPrimaryKey, TValue>,
+    ICountable,
+    IEquatable<DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>>,
+    ICollectionProvider<TValue>
     where TPrimaryKey : IEquatable<TPrimaryKey>
     where TSecondaryKey : IEquatable<TSecondaryKey>
 {
@@ -245,11 +248,15 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>
     [Pure]
     public override int GetHashCode() => HashCode.Combine(_values, _secondaryKeyTranslations);
 
-    public static bool operator ==(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left,
-        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+    public static bool operator ==(
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left,
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right
+    )
         => Equals(left, right);
 
-    public static bool operator !=(DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left,
-        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right)
+    public static bool operator !=(
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? left,
+        DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? right
+    )
         => !(left == right);
 }

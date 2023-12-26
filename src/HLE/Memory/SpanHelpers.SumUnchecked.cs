@@ -17,6 +17,7 @@ public static partial class SpanHelpers
     /// <summary>
     /// Computes the sum of all elements without checking for arithmetic overflow.
     /// </summary>
+    /// <typeparam name="T">The type of items that will be summed up.</typeparam>
     /// <param name="items">The elements that will be summed up.</param>
     /// <returns>The sum of all elements.</returns>
     [Pure]
@@ -49,6 +50,7 @@ public static partial class SpanHelpers
     /// <summary>
     /// Computes the sum of all elements without checking for arithmetic overflow.
     /// </summary>
+    /// <typeparam name="T">The type of items that will be summed up.</typeparam>
     /// <param name="items">The address of elements that will be summed up.</param>
     /// <param name="length">The amount of elements at the address.</param>
     /// <returns>The sum of all elements.</returns>
