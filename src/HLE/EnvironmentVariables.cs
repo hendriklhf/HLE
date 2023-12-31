@@ -11,14 +11,7 @@ namespace HLE;
 
 public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string>, ICountable, IEquatable<EnvironmentVariables>
 {
-    public string? this[string name]
-    {
-        get
-        {
-            _environmentVariables.TryGetValue(name, out string? value);
-            return value;
-        }
-    }
+    public string? this[string name] => _environmentVariables.GetValueOrDefault(name);
 
     string IReadOnlyDictionary<string, string>.this[string key] => _environmentVariables[key];
 

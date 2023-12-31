@@ -239,6 +239,15 @@ public unsafe partial struct NativeMemory<T> :
     }
 
     [Pure]
+    public readonly T[] ToArray(int start) => AsSpan().ToArray(start);
+
+    [Pure]
+    public readonly T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    [Pure]
+    public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
+
+    [Pure]
     public readonly List<T> ToList()
     {
         int length = Length;

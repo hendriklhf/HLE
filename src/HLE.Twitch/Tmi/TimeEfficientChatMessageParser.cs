@@ -80,7 +80,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         }
 
         chatMessageFlags |= GetIsAction(ircMessage, indicesOfWhitespaces);
-        ReadOnlySpan<byte> username = GetUsername(ircMessage, indicesOfWhitespaces, displayName.Length);
+        ReadOnlySpan<byte> username = GetUsername(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 

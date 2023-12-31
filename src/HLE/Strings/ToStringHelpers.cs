@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -17,6 +18,10 @@ internal static class ToStringHelpers
         => FormatCollection(typeof(TCountable), countable.Count);
 
     [Pure]
+    public static string FormatCollection<TCollection, TElement>(TCollection collection) where TCollection : ICollection<TElement>
+        => FormatCollection(typeof(TCollection), collection.Count);
+
+    [Pure]
     public static string FormatCollection<TCollection>(int elementCount)
         => FormatCollection(typeof(TCollection), elementCount);
 
@@ -26,6 +31,11 @@ internal static class ToStringHelpers
         using PooledStringBuilder builder = new(64);
 
         AppendTypeAndGenericParameters(collectionType, builder);
+
+        if (builder.WrittenSpan.EndsWith("[]"))
+        {
+            builder.Advance(-2);
+        }
 
         builder.Append('[');
         builder.Append(elementCount);

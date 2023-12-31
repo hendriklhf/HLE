@@ -120,7 +120,7 @@ public sealed partial class TwitchApi
     {
         using RentedArray<Stream> buffer = ArrayPool<Stream>.Shared.RentAsRentedArray(usernames.Length + channelIds.Length);
         int streamCount = await GetStreamsAsync(usernames, channelIds, RentedArrayMarshal.GetArray(buffer));
-        return streamCount == 0 ? [] : buffer[..streamCount].ToArray();
+        return streamCount == 0 ? [] : buffer.ToArray(..streamCount);
     }
 
     public async ValueTask<int> GetStreamsAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Stream[] destination)

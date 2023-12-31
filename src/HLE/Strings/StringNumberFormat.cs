@@ -14,6 +14,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     public static StringNumberFormat Binary { get; } = Create("01");
 
+    [SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "not the type name")]
     public static StringNumberFormat Decimal { get; } = Create(StringConstants.Numbers);
 
     public static StringNumberFormat HexadecimalUpperCase { get; } = Create("0123456789ABCDEF");

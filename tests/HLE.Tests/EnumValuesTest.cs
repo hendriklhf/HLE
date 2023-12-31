@@ -36,16 +36,16 @@ public sealed class EnumValuesTest
     {
         int[] actualValues = (int[])Enum.GetValuesAsUnderlyingType<TestEnum>();
 
-        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAs<int>();
+        ReadOnlySpan<int> values = EnumValues<TestEnum>.AsSpan<int>();
         Assert.True(values.SequenceEqual(actualValues));
 
-        values = EnumValues<TestEnum>.GetValuesAs<int>();
+        values = EnumValues<TestEnum>.AsSpan<int>();
         Assert.True(values.SequenceEqual(actualValues));
     }
 
     [Fact]
     public void GetValuesAsInvalidUnderlyingType()
-        => Assert.Throws<InvalidOperationException>(static () => _ = EnumValues<TestEnum>.GetValuesAs<long>());
+        => Assert.Throws<InvalidOperationException>(static () => _ = EnumValues<TestEnum>.AsSpan<long>());
 
     [Fact]
     public void ValuesAreSortedTest()
@@ -61,7 +61,7 @@ public sealed class EnumValuesTest
     [Fact]
     public void ValuesAsUnderlyingTypeAreSortedTest()
     {
-        ReadOnlySpan<int> values = EnumValues<TestEnum>.GetValuesAs<int>();
+        ReadOnlySpan<int> values = EnumValues<TestEnum>.AsSpan<int>();
         Span<int> sortedValues = stackalloc int[values.Length];
         values.CopyTo(sortedValues);
         sortedValues.Sort();

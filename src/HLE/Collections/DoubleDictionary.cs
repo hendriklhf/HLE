@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -211,6 +212,19 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         _values.Values.TryEnumerateInto(result, out int writtenElementCount);
         Debug.Assert(writtenElementCount == Count);
         return result;
+    }
+
+    [Pure]
+    public TValue[] ToArray(int start) => ToArray(start..Count);
+
+    [Pure]
+    public TValue[] ToArray(int start, int length) => _values.Values.Skip(start).Take(length).ToArray();
+
+    [Pure]
+    public TValue[] ToArray(Range range)
+    {
+        (int start, int length) = range.GetOffsetAndLength(Count);
+        return ToArray(start, length);
     }
 
     [Pure]

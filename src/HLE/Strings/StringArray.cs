@@ -119,6 +119,15 @@ public sealed class StringArray :
     }
 
     [Pure]
+    public string[] ToArray(int start) => AsSpan().ToArray(start);
+
+    [Pure]
+    public string[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    [Pure]
+    public string[] ToArray(Range range) => AsSpan().ToArray(range);
+
+    [Pure]
     public List<string> ToList()
     {
         int length = Length;

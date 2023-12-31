@@ -26,12 +26,16 @@ internal static class ArrayPool
 
     public const int MinimumArrayLength = 0x10; // has to be pow of 2
     public const int MaximumArrayLength = 0x800000; // has to be pow of 2
-    // ReSharper disable once StaticMemberInGenericType
-    public static int IndexOffset { get; } = BitOperations.TrailingZeroCount(MinimumArrayLength);
+
+    public static int IndexOffset
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => BitOperations.TrailingZeroCount(MinimumArrayLength);
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsCommonlyPooledTypeCore<T>() =>
+    public static bool IsCommonlyPooledType<T>() =>
         typeof(T) == typeof(byte) ||
         typeof(T) == typeof(sbyte) ||
         typeof(T) == typeof(short) ||

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 
 namespace HLE.Numerics;
 
@@ -19,7 +20,7 @@ public static class NumberHelpers
     {
         Span<byte> digits = stackalloc byte[50];
         int length = GetDigits(number, digits);
-        return digits[..length].ToArray();
+        return digits.ToArray(..length);
     }
 
     public static int GetDigits<T>(T number, Span<byte> digits) where T : INumber<T>

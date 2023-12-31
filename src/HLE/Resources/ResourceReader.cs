@@ -85,8 +85,9 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     [SkipLocalsInit]
     private string BuildResourcePath(ReadOnlySpan<char> resourceName)
     {
-        UnsafeBufferWriter<char> bufferWriter = new(stackalloc char[_assemblyName.Length + resourceName.Length]);
-        bufferWriter.Write(_assemblyName); // _assemblyName ends with a '.'
+        string assemblyName = _assemblyName;
+        UnsafeBufferWriter<char> bufferWriter = new(stackalloc char[assemblyName.Length + resourceName.Length]);
+        bufferWriter.Write(assemblyName); // _assemblyName ends with a '.'
         bufferWriter.Write(resourceName);
 
         return StringPool.Shared.GetOrAdd(bufferWriter.WrittenSpan);
@@ -123,9 +124,14 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
 
         Debug.Fail($"The implementation of {nameof(Assembly.GetManifestResourceStream)} has changed.");
 
+        if (stream.Length > Array.MaxLength)
+        {
+            ThrowStreamLengthExceedsMaxArrayLength();
+        }
+
         // fallback for the case that the implementation of GetManifestResourceStream has changed
         byte[] buffer = GC.AllocateUninitializedArray<byte>(streamLength, true);
-        GCHandle handle = GCHandle.Alloc(buffer, GCHandleType.Normal);
+        GCHandle handle = GCHandle.Alloc(buffer);
         StoreHandle(handle);
 
         int bytesRead = 0;
@@ -133,7 +139,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
         {
             bytesRead += stream.Read(buffer);
         }
-        while (bytesRead != streamLength);
+        while (bytesRead != buffer.Length);
 
         byte* bufferPointer = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(buffer));
         resource = new(bufferPointer, streamLength);
@@ -151,7 +157,12 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowStreamLengthExceedsInt32()
-        => throw new NotSupportedException($"The stream length exceeds the the maximum {typeof(int)} value.");
+        => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowStreamLengthExceedsMaxArrayLength()
+        => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
 
     [Pure]
     public bool Equals([NotNullWhen(true)] ResourceReader? other) => ReferenceEquals(this, other);

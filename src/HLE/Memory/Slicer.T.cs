@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-public readonly ref struct Slicer<T>
+public readonly ref partial struct Slicer<T>
 {
     private readonly ref T _buffer;
     private readonly int _length;
@@ -41,8 +40,7 @@ public readonly ref struct Slicer<T>
     [Pure]
     public Span<T> SliceSpan(Range range)
     {
-        int start = range.Start.GetOffset(_length);
-        int length = range.End.GetOffset(_length) - start;
+        (int start, int length) = range.GetOffsetAndLength(_length);
         return SliceSpan(start, length);
     }
 
@@ -52,15 +50,14 @@ public readonly ref struct Slicer<T>
     [Pure]
     public Span<T> SliceSpan(int start, int length)
     {
-        ref T startReference = ref GetStartReferenceAndValidate(start, length);
+        ref T startReference = ref GetStart(ref _buffer, _length, start, length);
         return MemoryMarshal.CreateSpan(ref startReference, length);
     }
 
     [Pure]
     public ReadOnlySpan<T> SliceReadOnlySpan(Range range)
     {
-        int start = range.Start.GetOffset(_length);
-        int length = range.End.GetOffset(_length) - start;
+        (int start, int length) = range.GetOffsetAndLength(_length);
         return SliceReadOnlySpan(start, length);
     }
 
@@ -70,25 +67,7 @@ public readonly ref struct Slicer<T>
     [Pure]
     public ReadOnlySpan<T> SliceReadOnlySpan(int start, int length)
     {
-        ref T startReference = ref GetStartReferenceAndValidate(start, length);
+        ref T startReference = ref GetStart(ref _buffer, _length, start, length);
         return MemoryMarshal.CreateReadOnlySpan(ref startReference, length);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [SuppressMessage("ReSharper", "RedundantCast")]
-    [SuppressMessage("Style", "IDE0004:Remove Unnecessary Cast")]
-    private ref T GetStartReferenceAndValidate(int start, int length)
-    {
-        if (Environment.Is64BitProcess)
-        {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)(uint)start + (ulong)(uint)length, (ulong)(uint)_length);
-        }
-        else
-        {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)start, (uint)_length);
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)length, (uint)(_length - start));
-        }
-
-        return ref Unsafe.Add(ref _buffer, start);
     }
 }

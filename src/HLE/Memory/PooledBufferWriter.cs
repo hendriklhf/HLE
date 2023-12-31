@@ -176,6 +176,15 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     }
 
     [Pure]
+    public T[] ToArray(int start) => WrittenSpan.ToArray(start);
+
+    [Pure]
+    public T[] ToArray(int start, int length) => WrittenSpan.ToArray(start, length);
+
+    [Pure]
+    public T[] ToArray(Range range) => WrittenSpan.ToArray(range);
+
+    [Pure]
     public List<T> ToList()
     {
         Span<T> writtenSpan = WrittenSpan;

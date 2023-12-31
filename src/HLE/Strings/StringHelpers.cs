@@ -213,12 +213,12 @@ public static class StringHelpers
         {
             using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
+            return indicesBuffer.ToArray(..length);
         }
 
         Span<int> indices = stackalloc int[span.Length];
         length = IndicesOf(span, s, indices);
-        return indices[..length].ToArray();
+        return indices.ToArray(..length);
     }
 
     public static int IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s, Span<int> destination)

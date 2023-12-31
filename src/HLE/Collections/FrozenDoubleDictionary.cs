@@ -83,6 +83,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     ReadOnlyMemory<TValue> IReadOnlyMemoryProvider<TValue>.GetReadOnlyMemory() => Values.AsMemory();
 
+    [Pure]
     public TValue[] ToArray()
     {
         int count = Count;
@@ -96,6 +97,20 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         return result;
     }
 
+    [Pure]
+    public TValue[] ToArray(int start) => ToArray(start..Count);
+
+    [Pure]
+    public TValue[] ToArray(int start, int length) => _values.Values.AsSpan().ToArray(start, length);
+
+    [Pure]
+    public TValue[] ToArray(Range range)
+    {
+        (int start, int length) = range.GetOffsetAndLength(Count);
+        return ToArray(start, length);
+    }
+
+    [Pure]
     public List<TValue> ToList()
     {
         int count = Count;

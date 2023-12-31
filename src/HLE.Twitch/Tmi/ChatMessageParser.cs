@@ -75,11 +75,11 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         return (ChatMessageFlags)(asByte << 4);
     }
 
-    private protected static ReadOnlySpan<byte> GetUsername(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces,
-        int displayNameLength)
+    private protected static ReadOnlySpan<byte> GetUsername(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
-        Debug.Assert(displayNameLength != 0);
-        return ircMessage[(indicesOfWhitespaces[0] + 2)..][..displayNameLength];
+        ReadOnlySpan<byte> username = ircMessage[(indicesOfWhitespaces[0] + 2)..];
+        int indexOfExclamationMark = username.IndexOf((byte)'!');
+        return username[..indexOfExclamationMark];
     }
 
     private protected static ReadOnlySpan<byte> GetMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, bool isAction)
@@ -93,7 +93,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         // skipping chars to speed up .IndexOf
         const int MaximumAmountOfCharsThatCanBeIgnored = 242;
         ircMessage = ircMessage[MaximumAmountOfCharsThatCanBeIgnored..];
-        return ircMessage[(ircMessage.IndexOf((byte)1) + 8)..^1];
+        return ircMessage[(ircMessage.IndexOf((byte)1) + ActionPrefix.Length)..^1];
     }
 
     private protected static Badge[] GetBadges(ReadOnlySpan<byte> value)

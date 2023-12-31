@@ -47,14 +47,22 @@ public unsafe struct NativeString :
 
     readonly int IReadOnlyCollection<char>.Count => Length;
 
-    private NativeMemory<byte> _buffer = [];
+    private byte* _buffer;
 
     public static NativeString Empty => new();
 
     // object header + method table pointer + string length
-    private static readonly int s_firstCharByteOffset = sizeof(nuint) + sizeof(nuint) + sizeof(int);
+    internal static uint FirstCharByteOffset
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => RawDataMarshal.BaseObjectSize + sizeof(int);
+    }
 
-    public static int MaximumLength { get; } = (int.MaxValue - sizeof(nuint) * 2 - sizeof(int)) / 2;
+    public static uint MaximumLength
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (int.MaxValue - RawDataMarshal.BaseObjectSize - sizeof(int) - sizeof(char)) / 2;
+    }
 
     public NativeString()
     {
@@ -65,7 +73,7 @@ public unsafe struct NativeString :
     {
         if (length == 0)
         {
-            _buffer = [];
+            _buffer = null;
             Length = 0;
             return;
         }
@@ -77,9 +85,10 @@ public unsafe struct NativeString :
         }
 
         nuint neededBufferSize = RawDataMarshal.GetRawStringSize(length);
-        NativeMemory<byte> buffer = new((int)neededBufferSize, false);
+        byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
 
-        RawStringData* rawStringData = (RawStringData*)(buffer._memory + sizeof(nuint));
+        *(nuint*)buffer = 0;
+        RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
         rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
         rawStringData->Length = length;
         Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
@@ -93,7 +102,7 @@ public unsafe struct NativeString :
     {
         if (chars.Length == 0)
         {
-            _buffer = [];
+            _buffer = null;
             Length = 0;
             return;
         }
@@ -104,12 +113,10 @@ public unsafe struct NativeString :
         }
 
         nuint neededBufferSize = RawDataMarshal.GetRawStringSize(chars.Length);
-        NativeMemory<byte> buffer = new((int)neededBufferSize, false);
+        byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
 
-        byte* bufferPointer = buffer._memory;
-        *(nuint*)bufferPointer = 0;
-
-        RawStringData* rawStringData = (RawStringData*)(bufferPointer + sizeof(nuint));
+        *(nuint*)buffer = 0;
+        RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
         rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
         rawStringData->Length = chars.Length;
         CopyWorker<char>.Copy(chars, &rawStringData->FirstChar);
@@ -123,7 +130,16 @@ public unsafe struct NativeString :
     private static void ThrowLengthExceedsMaximumLength(int length, [CallerArgumentExpression(nameof(length))] string? paramName = null)
         => throw new ArgumentOutOfRangeException(paramName, length, $"The provided length exceeds the maximum {nameof(NativeString)} length.");
 
-    public void Dispose() => _buffer.Dispose();
+    public void Dispose()
+    {
+        if (_buffer == null)
+        {
+            return;
+        }
+
+        NativeMemory.AlignedFree(_buffer);
+        _buffer = null;
+    }
 
     [Pure]
     public readonly string AsString()
@@ -133,9 +149,8 @@ public unsafe struct NativeString :
             return string.Empty;
         }
 
-        byte* buffer = _buffer.Pointer;
-        byte* methodTablePointer = buffer + sizeof(nuint);
-        return RawDataMarshal.ReadObject<string>(methodTablePointer)!;
+        byte* methodTablePointer = _buffer + sizeof(nuint);
+        return RawDataMarshal.ReadObject<string>(methodTablePointer);
     }
 
     [Pure]
@@ -164,8 +179,7 @@ public unsafe struct NativeString :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly ref char GetCharsReference()
     {
-        byte* buffer = _buffer.Pointer;
-        char* firstChar = (char*)(buffer + s_firstCharByteOffset);
+        char* firstChar = (char*)(_buffer + FirstCharByteOffset);
         return ref Unsafe.AsRef<char>(firstChar);
     }
 
@@ -185,7 +199,7 @@ public unsafe struct NativeString :
         }
 
         nuint* ptr = *(nuint**)&str;
-        NativeMemory.AlignedFree(--ptr);
+        NativeMemory.AlignedFree(ptr - 1);
     }
 
     [Pure]

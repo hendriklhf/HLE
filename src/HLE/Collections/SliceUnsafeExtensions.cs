@@ -23,8 +23,7 @@ public static class SliceUnsafeExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> SliceUnsafe<T>(this Span<T> span, Range range)
     {
-        int start = range.Start.GetOffset(span.Length);
-        int length = range.End.GetOffset(span.Length) - start;
+        (int start, int length) = range.GetOffsetAndLength(span.Length);
         return span.SliceUnsafe(start, length);
     }
 
@@ -45,8 +44,7 @@ public static class SliceUnsafeExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> span, Range range)
     {
-        int start = range.Start.GetOffset(span.Length);
-        int length = range.End.GetOffset(span.Length) - start;
+        (int start, int length) = range.GetOffsetAndLength(span.Length);
         return span.SliceUnsafe(start, length);
     }
 }

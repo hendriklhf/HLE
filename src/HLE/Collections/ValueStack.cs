@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 
 namespace HLE.Collections;
 
@@ -116,5 +117,5 @@ public ref struct ValueStack<T>
     }
 
     [Pure]
-    public readonly T[] ToArray() => _stack[..Count].ToArray();
+    public readonly T[] ToArray() => _stack.ToArray(..Count);
 }

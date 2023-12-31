@@ -60,6 +60,15 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     }
 
     [Pure]
+    public readonly byte[] ToArray(int start) => AsSpan().ToArray(start);
+
+    [Pure]
+    public readonly byte[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    [Pure]
+    public readonly byte[] ToArray(Range range) => AsSpan().ToArray(range);
+
+    [Pure]
     public readonly List<byte> ToList()
     {
         int length = Length;

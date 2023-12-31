@@ -82,6 +82,15 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     }
 
     [Pure]
+    public byte[] ToArray(int start) => AsSpan().ToArray(start);
+
+    [Pure]
+    public byte[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    [Pure]
+    public byte[] ToArray(Range range) => AsSpan().ToArray(range);
+
+    [Pure]
     public List<byte> ToList()
     {
         if (Length == 0)

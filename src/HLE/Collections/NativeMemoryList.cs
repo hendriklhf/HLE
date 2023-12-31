@@ -94,6 +94,15 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) :
     }
 
     [Pure]
+    public T[] ToArray(int start) => AsSpan().ToArray(start);
+
+    [Pure]
+    public T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    [Pure]
+    public T[] ToArray(Range range) => AsSpan().ToArray(range);
+
+    [Pure]
     public List<T> ToList()
     {
         int count = Count;

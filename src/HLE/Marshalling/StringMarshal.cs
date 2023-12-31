@@ -9,7 +9,7 @@ namespace HLE.Marshalling;
 
 public static class StringMarshal
 {
-    private static readonly unsafe delegate*<int, string> s_fastAllocateString = (delegate*<int, string>)typeof(string)
+    internal static readonly unsafe delegate*<int, string> s_fastAllocateString = (delegate*<int, string>)typeof(string)
         .GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!
         .MethodHandle
         .GetFunctionPointer();
@@ -136,7 +136,7 @@ public static class StringMarshal
 
         ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
         charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));
-        return RawDataMarshal.ReadObject<string, byte>(ref charsReference)!;
+        return RawDataMarshal.ReadObject<string, byte>(ref charsReference);
     }
 
     [Pure]

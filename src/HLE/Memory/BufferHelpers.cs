@@ -31,6 +31,7 @@ public static class BufferHelpers
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="currentLength"/> or <paramref name="neededSize"/> are negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the maximum capacity, <see cref="Array.MaxLength"/>, will be exceeded.</exception>
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GrowArray(uint currentLength, uint neededSize)
     {
         if (neededSize != 0 && currentLength >= MaximumArrayLength)
@@ -60,6 +61,7 @@ public static class BufferHelpers
     /// <exception cref="ArgumentOutOfRangeException">Thrown if <paramref name="currentLength"/> or <paramref name="neededSize"/> are negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the maximum capacity, <see cref="int.MaxValue"/>, will be exceeded.</exception>
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GrowBuffer(uint currentLength, uint neededSize)
     {
         if (neededSize != 0 && currentLength >= int.MaxValue)
@@ -88,6 +90,7 @@ public static class BufferHelpers
     /// <returns>Returns the new buffer size that satisfies the needed length.</returns>
     /// <exception cref="OverflowException">Thrown if the maximum capacity, <see cref="nuint.MaxValue"/>, will be exceeded.</exception>
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint GrowNativeBuffer(nuint currentLength, nuint neededSize)
     {
         nuint newLength = checked(currentLength + neededSize);

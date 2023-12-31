@@ -32,7 +32,7 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
     public static IEnumerable<TEnum> AsEnumerable() => s_values;
 
     [Pure]
-    public static unsafe ReadOnlySpan<TUnderlyingType> GetValuesAs<TUnderlyingType>()
+    public static unsafe ReadOnlySpan<TUnderlyingType> AsSpan<TUnderlyingType>()
         where TUnderlyingType : unmanaged
     {
         if (sizeof(TEnum) != sizeof(TUnderlyingType))
@@ -50,5 +50,6 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
         => throw new InvalidOperationException(
-            $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type.");
+            $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type of {enumType}."
+        );
 }

@@ -14,7 +14,7 @@ namespace HLE.Numerics;
 /// <param name="value">The value of the prefix.</param>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("{Name}")]
-public readonly struct UnitPrefix(string name, string symbol, double value) : IEquatable<UnitPrefix>
+public readonly struct UnitPrefix(string name, string symbol, double value) : IEquatable<UnitPrefix>, IComparable<UnitPrefix>, IComparable
 {
     /// <summary>
     /// The name of the prefix.
@@ -188,9 +188,45 @@ public readonly struct UnitPrefix(string name, string symbol, double value) : IE
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is UnitPrefix other && Equals(other);
 
     [Pure]
+    public int CompareTo(UnitPrefix other)
+    {
+        if (Value > other.Value)
+        {
+            return 1;
+        }
+
+        if (Value < other.Value)
+        {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    [Pure]
+    public int CompareTo(object? obj) => obj switch
+    {
+        null => 1,
+        UnitPrefix other => CompareTo(other),
+        _ => ThrowInvalidArgumentType(nameof(obj))
+    };
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int ThrowInvalidArgumentType(string paramName) => throw new ArgumentException("Invalid argument type.", paramName);
+
+    [Pure]
     public override int GetHashCode() => HashCode.Combine(Name, Symbol, Value);
 
     public static bool operator ==(UnitPrefix left, UnitPrefix right) => Equals(left, right);
 
     public static bool operator !=(UnitPrefix left, UnitPrefix right) => !(left == right);
+
+    public static bool operator <(UnitPrefix left, UnitPrefix right) => left.CompareTo(right) < 0;
+
+    public static bool operator <=(UnitPrefix left, UnitPrefix right) => left.CompareTo(right) <= 0;
+
+    public static bool operator >(UnitPrefix left, UnitPrefix right) => left.CompareTo(right) > 0;
+
+    public static bool operator >=(UnitPrefix left, UnitPrefix right) => left.CompareTo(right) >= 0;
 }

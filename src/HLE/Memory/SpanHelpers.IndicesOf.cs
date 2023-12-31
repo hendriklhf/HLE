@@ -39,12 +39,12 @@ public static partial class SpanHelpers
         {
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, item, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
+            return indicesBuffer.ToArray(..length);
         }
 
         Span<int> indices = stackalloc int[span.Length];
         length = IndicesOf(span, item, indices);
-        return indices[..length].ToArray();
+        return indices.ToArray(..length);
     }
 
     public static int IndicesOf<T>(this Span<T> span, T item, Span<int> destination) where T : IEquatable<T>
@@ -174,7 +174,8 @@ public static partial class SpanHelpers
         return IndicesOfNonOptimizedFallback(MemoryMarshal.CreateReadOnlySpan(ref items, length), item, destination);
     }
 
-    private static int IndicesOfNonOptimizedFallback<T>(ReadOnlySpan<T> span, T item, Span<int> destination) where T : IEquatable<T>
+    // TODO: make private
+    internal static int IndicesOfNonOptimizedFallback<T>(ReadOnlySpan<T> span, T item, Span<int> destination) where T : IEquatable<T>
     {
         int indicesLength = 0;
         int indexOfItem = span.IndexOf(item);

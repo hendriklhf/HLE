@@ -15,9 +15,7 @@ public static class AsSpanUnsafeExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<T> AsSpanUnsafe<T>(this T[] array, Range range)
     {
-        int arrayLength = array.Length;
-        int start = range.Start.GetOffset(arrayLength);
-        int length = range.End.GetOffset(arrayLength) - start;
+        (int start, int length) = range.GetOffsetAndLength(array.Length);
         return array.AsSpanUnsafe(start, length);
     }
 

@@ -23,10 +23,10 @@ public sealed class RawDataMarshalTest
     [Fact]
     public unsafe void GetRawDataSizeTest()
     {
-        nuint size = RawDataMarshal.GetRawDataSize("hello");
+        nuint size = RawDataMarshal.GetRawObjectSize("hello");
         Assert.Equal((nuint)(sizeof(int) + ("hello".Length + 1) * sizeof(char)), size);
 
-        size = RawDataMarshal.GetRawDataSize(new int[5]);
+        size = RawDataMarshal.GetRawObjectSize(new int[5]);
         Assert.Equal((nuint)(sizeof(nuint) + sizeof(int) * 5), size);
     }
 

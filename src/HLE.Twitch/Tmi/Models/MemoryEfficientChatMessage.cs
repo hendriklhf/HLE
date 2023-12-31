@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using HLE.Memory;
 using HLE.Strings;
 
@@ -30,7 +32,6 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
 
     public override required string DisplayName
     {
-        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
             string? displayName = _displayName;
@@ -45,20 +46,24 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
             }
 
-            ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
-            displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.UTF8);
+#pragma warning disable CA2002
+            lock (displayNameBuffer)
+#pragma warning restore CA2002
+            {
+                ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
+                displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.UTF8);
 
-            ArrayPool<byte>.Shared.Return(displayNameBuffer);
-            _displayNameBuffer = null;
-            _displayName = displayName;
-            return displayName;
+                ArrayPool<byte>.Shared.Return(displayNameBuffer);
+                _displayNameBuffer = null;
+                _displayName = displayName;
+                return displayName;
+            }
         }
         init { }
     }
 
     public override required string Username
     {
-        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
             string? username = _username;
@@ -67,36 +72,55 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 return username;
             }
 
-            string? displayName = _displayName;
-            if (displayName is not null)
+            bool lockTaken = false;
+            byte[]? usernameBuffer = _usernameBuffer;
+            if (usernameBuffer is not null)
             {
-                username = displayName.ToLowerInvariant();
-                ArrayPool<byte>.Shared.Return(_usernameBuffer);
+                Monitor.Enter(usernameBuffer);
+                lockTaken = true;
+            }
+
+            try
+            {
+                string? displayName = _displayName;
+                if (displayName is not null)
+                {
+                    username = displayName.ToLowerInvariant();
+                    ArrayPool<byte>.Shared.Return(usernameBuffer);
+                    _usernameBuffer = null;
+                    _username = username;
+                    return username;
+                }
+
+                if (usernameBuffer is null)
+                {
+                    ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+                }
+
+                Debug.Assert(Monitor.IsEntered(usernameBuffer));
+
+                ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
+                username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.UTF8);
+
+                ArrayPool<byte>.Shared.Return(usernameBuffer);
                 _usernameBuffer = null;
                 _username = username;
                 return username;
             }
-
-            byte[]? usernameBuffer = _usernameBuffer;
-            if (usernameBuffer is null)
+            finally
             {
-                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+                if (lockTaken)
+                {
+                    Debug.Assert(usernameBuffer is not null);
+                    Monitor.Exit(usernameBuffer);
+                }
             }
-
-            ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
-            username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.UTF8);
-
-            ArrayPool<byte>.Shared.Return(usernameBuffer);
-            _usernameBuffer = null;
-            _username = username;
-            return username;
         }
         init { }
     }
 
     public override required string Message
     {
-        [MethodImpl(MethodImplOptions.Synchronized)]
         get
         {
             string? message = _message;
@@ -111,16 +135,19 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
             }
 
-            Encoding utf8 = Encoding.UTF8;
-            ReadOnlySpan<byte> messageBufferSpan = messageBuffer.AsSpan(0, _messageLength);
-            message = messageBufferSpan.Length <= MaxMessagePoolingLength
-                ? StringPool.Shared.GetOrAdd(messageBufferSpan, utf8)
-                : utf8.GetString(messageBufferSpan);
+            lock (messageBuffer)
+            {
+                Encoding utf8 = Encoding.UTF8;
+                ReadOnlySpan<byte> messageBufferSpan = messageBuffer.AsSpan(0, _messageLength);
+                message = messageBufferSpan.Length <= MaxMessagePoolingLength
+                    ? StringPool.Shared.GetOrAdd(messageBufferSpan, utf8)
+                    : utf8.GetString(messageBufferSpan);
 
-            ArrayPool<byte>.Shared.Return(messageBuffer);
-            _messageBuffer = null;
-            _message = message;
-            return message;
+                ArrayPool<byte>.Shared.Return(messageBuffer);
+                _messageBuffer = null;
+                _message = message;
+                return message;
+            }
         }
         init { }
     }
@@ -136,11 +163,11 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
     private string? _message;
 
     private byte[]? _displayNameBuffer;
-    private byte[]? _usernameBuffer;
-    private readonly int _nameLength;
+    internal byte[]? _usernameBuffer;
+    internal readonly int _nameLength;
 
-    private byte[]? _messageBuffer;
-    private readonly int _messageLength;
+    internal byte[]? _messageBuffer;
+    internal readonly int _messageLength;
 
     private const int MaxMessagePoolingLength = 10;
 

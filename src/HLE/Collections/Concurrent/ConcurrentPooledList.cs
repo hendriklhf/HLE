@@ -101,6 +101,33 @@ public sealed class ConcurrentPooledList<T> :
     }
 
     [Pure]
+    public T[] ToArray(int start)
+    {
+        lock (_list)
+        {
+            return _list.ToArray(start..);
+        }
+    }
+
+    [Pure]
+    public T[] ToArray(int start, int length)
+    {
+        lock (_list)
+        {
+            return _list.ToArray(start, length);
+        }
+    }
+
+    [Pure]
+    public T[] ToArray(Range range)
+    {
+        lock (_list)
+        {
+            return _list.ToArray(range);
+        }
+    }
+
+    [Pure]
     public List<T> ToList()
     {
         lock (_list)

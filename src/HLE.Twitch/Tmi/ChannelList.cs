@@ -92,6 +92,15 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     public Channel[] ToArray() => _channels.ToArray();
 
     [Pure]
+    public Channel[] ToArray(int start) => _channels.ToArray(start..);
+
+    [Pure]
+    public Channel[] ToArray(int start, int length) => _channels.ToArray(start, length);
+
+    [Pure]
+    public Channel[] ToArray(Range range) => _channels.ToArray(range);
+
+    [Pure]
     public List<Channel> ToList() => _channels.ToList();
 
     [Pure]

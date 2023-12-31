@@ -98,12 +98,12 @@ public static partial class CollectionHelpers
         {
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
+            return indicesBuffer.ToArray(..length);
         }
 
         Span<int> indices = stackalloc int[span.Length];
         length = IndicesOf(span, predicate, indices);
-        return indices[..length].ToArray();
+        return indices.ToArray(..length);
     }
 
     public static int IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate, Span<int> destination)
@@ -216,12 +216,12 @@ public static partial class CollectionHelpers
         {
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
-            return indicesBuffer[..length].ToArray();
+            return indicesBuffer.ToArray(..length);
         }
 
         Span<int> indices = stackalloc int[span.Length];
         length = IndicesOf(span, predicate, indices);
-        return indices[..length].ToArray();
+        return indices.ToArray(..length);
     }
 
     public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate, Span<int> destination)

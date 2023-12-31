@@ -75,11 +75,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private static ReadOnlySpan<byte> PartPrefix => "PART "u8;
 
+    private static ReadOnlySpan<byte> NewLine => "\r\n"u8;
+
     private static readonly Uri s_sslConnectionUri = new("wss://irc-ws.chat.twitch.tv:443");
     private static readonly Uri s_nonSslConnectionUri = new("ws://irc-ws.chat.twitch.tv:80");
 
-    private const byte CarriageReturn = (byte)'\r';
-    private const int NewLineLength = 2;
     private const int MaximumChannelNameLength = 26; // 25 for the name + 1 for the '#'
     private const int MaximumMessageLength = 500;
 
@@ -164,14 +164,14 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private void PassAllLinesExceptLast(ref ReadOnlyMemory<byte> receivedBytes)
     {
-        int indexOfLineEnding = receivedBytes.Span.IndexOf(CarriageReturn);
+        int indexOfLineEnding = receivedBytes.Span.IndexOf(NewLine);
         while (indexOfLineEnding >= 0)
         {
             ReadOnlyMemory<byte> line = receivedBytes[..indexOfLineEnding];
             Bytes bytes = new(line.Span);
             InvokeBytesReceived(ref bytes);
-            receivedBytes = receivedBytes[(indexOfLineEnding + NewLineLength)..];
-            indexOfLineEnding = receivedBytes.Span.IndexOf(CarriageReturn);
+            receivedBytes = receivedBytes[(indexOfLineEnding + NewLine.Length)..];
+            indexOfLineEnding = receivedBytes.Span.IndexOf(NewLine);
         }
     }
 
@@ -179,11 +179,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         do
         {
-            int indexOfLineEnding = receivedBytes.IndexOf(CarriageReturn);
+            int indexOfLineEnding = receivedBytes.IndexOf(NewLine);
             ReadOnlySpan<byte> line = receivedBytes[..indexOfLineEnding];
             Bytes data = new(line);
             InvokeBytesReceived(ref data);
-            receivedBytes = receivedBytes[(indexOfLineEnding + NewLineLength)..];
+            receivedBytes = receivedBytes[(indexOfLineEnding + NewLine.Length)..];
         }
         while (receivedBytes.Length != 0);
     }

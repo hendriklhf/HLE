@@ -179,7 +179,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     {
         Debug.Assert(options != 0);
 
-        if (typeof(T).IsAssignableTo(typeof(IDisposable)) && options.HasFlag(ArrayReturnOptions.DisposeElements))
+        if (typeof(T).IsAssignableTo(typeof(IDisposable)) && (options & ArrayReturnOptions.DisposeElements) != 0)
         {
             for (int i = 0; i < array.Length; i++)
             {
@@ -189,8 +189,8 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             }
         }
 
-        if (options.HasFlag(ArrayReturnOptions.Clear) ||
-            (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && options.HasFlag(ArrayReturnOptions.ClearOnlyIfManagedType)))
+        if (((options & ArrayReturnOptions.Clear) != 0) ||
+            (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && (options & ArrayReturnOptions.ClearOnlyIfManagedType) != 0))
         {
             Array.Clear(array);
         }

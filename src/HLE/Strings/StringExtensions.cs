@@ -50,8 +50,7 @@ public static class StringExtensions
             return;
         }
 
-        CopyWorker<char> copyWorker = new(span);
-        copyWorker.CopyTo(ref destination);
+        CopyWorker<char>.Copy(span, ref destination);
     }
 
     public static unsafe void CopyTo(this string? str, char* destination)
@@ -62,7 +61,6 @@ public static class StringExtensions
             return;
         }
 
-        CopyWorker<char> copyWorker = new(span);
-        copyWorker.CopyTo(destination);
+        CopyWorker<char>.Copy(span, destination);
     }
 }

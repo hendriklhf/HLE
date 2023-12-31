@@ -63,6 +63,7 @@ public static unsafe class StructMarshal
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsBitwiseEquatable<T>() // where T : unmanaged
         => typeof(T) == typeof(byte) ||
            typeof(T) == typeof(sbyte) ||

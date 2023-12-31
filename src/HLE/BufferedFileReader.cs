@@ -181,7 +181,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowFileSizeExceedsMaxArrayLength()
-        => throw new NotSupportedException($"The file size exceeds the the maximum array length ({Array.MaxLength}).");
+        => throw new NotSupportedException($"The file size exceeds the maximum array length ({Array.MaxLength}).");
 
     [Pure]
     public readonly bool Equals(BufferedFileReader other) => FilePath == other.FilePath && _fileHandle?.Equals(other._fileHandle) == true;

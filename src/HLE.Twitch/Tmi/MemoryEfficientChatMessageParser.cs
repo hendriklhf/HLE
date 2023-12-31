@@ -82,16 +82,17 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         }
 
         chatMessageFlags |= GetIsAction(ircMessage, indicesOfWhitespaces);
-        ReadOnlySpan<byte> username = GetUsername(ircMessage, indicesOfWhitespaces, displayName.Length);
+        ReadOnlySpan<byte> username = GetUsername(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
-        byte[] usernameBuffer = ArrayPool<byte>.Shared.Rent(25);
-        byte[] displayNameBuffer = ArrayPool<byte>.Shared.Rent(25);
-        byte[] messageBuffer = ArrayPool<byte>.Shared.Rent(512);
-
+        byte[] usernameBuffer = ArrayPool<byte>.Shared.Rent(32);
         username.CopyTo(usernameBuffer);
+
+        byte[] displayNameBuffer = ArrayPool<byte>.Shared.Rent(64);
         displayName.CopyTo(displayNameBuffer);
+
+        byte[] messageBuffer = ArrayPool<byte>.Shared.Rent(2048);
         message.CopyTo(messageBuffer);
 
         return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags, displayNameBuffer, usernameBuffer, username.Length, messageBuffer, message.Length)
