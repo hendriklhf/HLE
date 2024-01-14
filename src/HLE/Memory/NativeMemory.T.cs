@@ -17,7 +17,7 @@ public unsafe partial struct NativeMemory<T> :
     IDisposable,
     ICollection<T>,
     ICopyable<T>,
-    IEquatable<NativeMemory<T>>,
+    IBitwiseEquatable<NativeMemory<T>>,
     IIndexAccessible<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,

@@ -40,9 +40,23 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public required string Channel { get; init; }
 
-    public virtual required string Message { get; init; }
+    public required LazyString Message { get; init; }
 
     private protected ChatMessageFlags _flags;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Message.Dispose();
+        }
+    }
 
     /// <summary>
     /// Returns the message in the following format: "&lt;#Channel&gt; Username: Message".

@@ -14,7 +14,7 @@ namespace HLE.Resources;
 
 [DebuggerDisplay("{ToString()}")]
 public readonly unsafe struct Resource(byte* resource, int length) :
-    IEquatable<Resource>,
+    IBitwiseEquatable<Resource>,
     ICollection<byte>,
     IReadOnlySpanProvider<byte>,
     ICopyable<byte>,

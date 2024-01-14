@@ -34,10 +34,13 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
     public void Reset() => _current = _start;
 
     [Pure]
-    public readonly bool Equals(ArrayEnumerator<T> other) => _array == other._array && _current == other._current && _end == other._end;
+    public readonly bool Equals(ArrayEnumerator<T> other)
+        => _array == other._array && _start == other._start &&
+           _current == other._current && _end == other._end;
 
     [Pure]
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ArrayEnumerator<T> other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj)
+        => obj is ArrayEnumerator<T> other && Equals(other);
 
     [Pure]
     public override readonly int GetHashCode() => HashCode.Combine(_array, _start, _end);

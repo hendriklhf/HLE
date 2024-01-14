@@ -1,10 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
 using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Twitch.Tmi;
 
@@ -12,6 +13,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
 {
     [Pure]
     [SkipLocalsInit]
+    [MustDisposeResource]
     public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
@@ -55,7 +57,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
                     chatMessageFlags |= GetIsFirstMsg(value);
                     break;
                 case (byte)'i' when key.SequenceEqual(IdTag):
-                    id = GetId(value);
+                    GetId(value, out id);
                     break;
                 case (byte)'m' when key.SequenceEqual(ModTag):
                     chatMessageFlags |= GetIsModerator(value);
@@ -83,18 +85,17 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
         ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
-        Encoding utf8 = Encoding.UTF8;
         return new BalancedChatMessage(badgeInfos, badges, chatMessageFlags)
         {
-            Channel = StringPool.Shared.GetOrAdd(channel, utf8),
+            Channel = StringPool.Shared.GetOrAdd(channel, Encoding.ASCII),
             ChannelId = channelId,
             Color = color,
-            DisplayName = utf8.GetString(displayName),
+            DisplayName = Encoding.UTF8.GetString(displayName),
             Id = id,
-            Message = utf8.GetString(message),
+            Message = BytesToLazyString(message, Encoding.UTF8),
             TmiSentTs = tmiSentTs,
             UserId = userId,
-            Username = utf8.GetString(username)
+            Username = Encoding.ASCII.GetString(username)
         };
     }
 

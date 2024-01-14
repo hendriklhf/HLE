@@ -173,14 +173,21 @@ public static class NumberHelpers
         => throw new NotSupportedException($"The type {typeof(T)} is not supported.");
 
     [Pure]
-    public static T Align<T>(T number, T alignment, AlignmentMethod method = AlignmentMethod.Add) where T : INumber<T>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T Align<T>(T value, T alignment, AlignmentMethod method = AlignmentMethod.Add) where T : IBinaryNumber<T>
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(alignment);
 
+        if (alignment == T.One)
+        {
+            return value;
+        }
+
         return method switch
         {
-            AlignmentMethod.Add => number + alignment - (number % alignment),
-            AlignmentMethod.Subtract => number - (number % alignment),
+            AlignmentMethod.Add => value + alignment - (value % alignment),
+            AlignmentMethod.Subtract when T.IsPow2(alignment) => value & ~(alignment - T.One),
+            AlignmentMethod.Subtract => value - (value % alignment),
             _ => ThrowInvalidEnumArgumentException<T>(method)
         };
     }

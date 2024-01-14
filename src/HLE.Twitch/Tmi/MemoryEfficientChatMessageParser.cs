@@ -1,11 +1,12 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Twitch.Tmi;
 
@@ -13,6 +14,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
 {
     [Pure]
     [SkipLocalsInit]
+    [MustDisposeResource]
     public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
@@ -58,7 +60,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
                     chatMessageFlags |= GetIsFirstMsg(value);
                     break;
                 case (byte)'i' when key.SequenceEqual(IdTag):
-                    id = GetId(value);
+                    GetId(value, out id);
                     break;
                 case (byte)'m' when key.SequenceEqual(ModTag):
                     chatMessageFlags |= GetIsModerator(value);
@@ -92,19 +94,16 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         byte[] displayNameBuffer = ArrayPool<byte>.Shared.Rent(64);
         displayName.CopyTo(displayNameBuffer);
 
-        byte[] messageBuffer = ArrayPool<byte>.Shared.Rent(2048);
-        message.CopyTo(messageBuffer);
-
-        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags, displayNameBuffer, usernameBuffer, username.Length, messageBuffer, message.Length)
+        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags, displayNameBuffer, usernameBuffer, username.Length)
         {
-            Channel = StringPool.Shared.GetOrAdd(channel, Encoding.UTF8),
+            Channel = StringPool.Shared.GetOrAdd(channel, Encoding.ASCII),
             ChannelId = channelId,
             Color = color,
             Id = id,
             TmiSentTs = tmiSentTs,
             UserId = userId,
             DisplayName = string.Empty,
-            Message = string.Empty,
+            Message = BytesToLazyString(message, Encoding.UTF8),
             Username = string.Empty
         };
     }

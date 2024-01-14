@@ -30,13 +30,15 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
         Debug.Assert(ArrayPool.BucketCapacities.Length == bucketCount);
 
-        _buckets = new Bucket[bucketCount];
+        Bucket[] buckets = new Bucket[bucketCount];
         int arrayLength = ArrayPool.MinimumArrayLength;
-        for (int i = 0; i < _buckets.Length; i++)
+        for (int i = 0; i < buckets.Length; i++)
         {
-            _buckets[i] = new(arrayLength, ArrayPool.BucketCapacities[i]);
+            buckets[i] = new(arrayLength, ArrayPool.BucketCapacities[i]);
             arrayLength <<= 1;
         }
+
+        _buckets = buckets;
 
         Debug.Assert(arrayLength >> 1 == ArrayPool.MaximumArrayLength);
     }

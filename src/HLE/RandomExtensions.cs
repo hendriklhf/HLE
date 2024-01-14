@@ -55,40 +55,82 @@ public static class RandomExtensions
     ];
 
     [Pure]
-    public static char NextChar(this Random random, char min = char.MinValue, char max = char.MaxValue)
-        => (char)random.NextUInt16(min, max);
+    public static char NextChar(this Random random) => (char)random.NextUInt16();
 
     [Pure]
-    public static byte NextUInt8(this Random random, byte min = byte.MinValue, byte max = byte.MaxValue)
-        => (byte)random.Next(min, max);
-
-    [Pure]
-    public static sbyte NextInt8(this Random random, sbyte min = sbyte.MinValue, sbyte max = sbyte.MaxValue)
-        => (sbyte)random.Next(min, max);
-
-    [Pure]
-    public static short NextInt16(this Random random, short min = short.MinValue, short max = short.MaxValue)
-        => (short)random.Next(min, max);
-
-    [Pure]
-    public static ushort NextUInt16(this Random random, ushort min = ushort.MinValue, ushort max = ushort.MaxValue)
-        => (ushort)random.Next(min, max);
-
-    [Pure]
-    public static int NextInt32(this Random random, int min = int.MinValue, int max = int.MaxValue)
-        => random.Next(min, max);
-
-    [Pure]
-    public static uint NextUInt32(this Random random, uint min = uint.MinValue, uint max = uint.MaxValue)
+    public static char NextChar(this Random random, char min, char max)
     {
-        uint result = random.NextStruct<uint>();
+        char result = random.NextChar();
         return NumberHelpers.BringIntoRange(result, min, max);
     }
 
     [Pure]
-    public static ulong NextUInt64(this Random random, ulong min = ulong.MinValue, ulong max = ulong.MaxValue)
+    public static byte NextUInt8(this Random random) => random.NextStruct<byte>();
+
+    [Pure]
+    public static byte NextUInt8(this Random random, byte min, byte max)
     {
-        random.NextStruct(out ulong result);
+        byte result = random.NextUInt8();
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static sbyte NextInt8(this Random random) => random.NextStruct<sbyte>();
+
+    [Pure]
+    public static sbyte NextInt8(this Random random, sbyte min, sbyte max)
+    {
+        sbyte result = random.NextInt8();
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static short NextInt16(this Random random) => random.NextStruct<short>();
+
+    [Pure]
+    public static short NextInt16(this Random random, short min, short max)
+    {
+        short result = random.NextInt16();
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static ushort NextUInt16(this Random random) => random.NextStruct<ushort>();
+
+    [Pure]
+    public static ushort NextUInt16(this Random random, ushort min, ushort max)
+    {
+        ushort result = random.NextUInt16();
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static int NextInt32(this Random random) => random.NextStruct<int>();
+
+    [Pure]
+    public static int NextInt32(this Random random, int min, int max)
+    {
+        int result = random.NextInt32();
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static uint NextUInt32(this Random random) => random.NextStruct<uint>();
+
+    [Pure]
+    public static uint NextUInt32(this Random random, uint min, uint max)
+    {
+        uint result = random.NextUInt32();
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static ulong NextUInt64(this Random random) => random.NextStruct<ulong>();
+
+    [Pure]
+    public static ulong NextUInt64(this Random random, ulong min, ulong max)
+    {
+        ulong result = random.NextUInt64();
         return NumberHelpers.BringIntoRange(result, min, max);
     }
 
@@ -100,10 +142,31 @@ public static class RandomExtensions
     }
 
     [Pure]
+    public static Int128 NextInt128(this Random random, Int128 min, Int128 max)
+    {
+        random.NextStruct(out Int128 result);
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
     public static UInt128 NextUInt128(this Random random)
     {
         random.NextStruct(out UInt128 result);
         return result;
+    }
+
+    [Pure]
+    public static UInt128 NextUInt128(this Random random, UInt128 min, UInt128 max)
+    {
+        random.NextStruct(out UInt128 result);
+        return NumberHelpers.BringIntoRange(result, min, max);
+    }
+
+    [Pure]
+    public static Guid NextGuid(this Random random)
+    {
+        random.NextStruct(out Guid guid);
+        return guid;
     }
 
     [Pure]
@@ -241,11 +304,12 @@ public static class RandomExtensions
     [Pure]
     public static bool NextBool(this Random random)
     {
-        byte randomByte = (byte)(random.NextUInt8() & 1); // only return "valid" bools
-        return Unsafe.As<byte, bool>(ref randomByte);
+        byte result = (byte)(random.NextUInt8() & 1);
+        return Unsafe.As<byte, bool>(ref result);
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static T NextStruct<T>(this Random random) where T : unmanaged
     {
         Unsafe.SkipInit(out T result);
@@ -255,6 +319,7 @@ public static class RandomExtensions
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static void NextStruct<T>(this Random random, out T result) where T : unmanaged
     {
         Unsafe.SkipInit(out result);
@@ -273,7 +338,7 @@ public static class RandomExtensions
     [Pure]
     internal static unsafe TEnum NextEnumFlags<TEnum>(this Random random) where TEnum : struct, Enum
     {
-        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null, $"{typeof(Enum)} is not attributed with {typeof(FlagsAttribute)}.");
+        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null, $"{typeof(Enum)} is not annotated with {typeof(FlagsAttribute)}.");
 
         TEnum maximumEnumValue = EnumValues<TEnum>.MaximumValue;
         switch (sizeof(TEnum))

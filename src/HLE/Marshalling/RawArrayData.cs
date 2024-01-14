@@ -5,9 +5,9 @@ namespace HLE.Marshalling;
 
 [StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
-public struct RawArrayData
+public unsafe struct RawArrayData
 {
-    public nuint MethodTablePointer;
+    public MethodTable* MethodTable;
 
     public nuint Length;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -36,6 +37,8 @@ public static partial class SpanHelpers
 
     public static void Add<T>(ref T numbers, int length, T addition) where T : unmanaged, INumber<T>
     {
+        Debug.Assert(Vector<T>.IsSupported, "Support has to be ensured before calling this method.");
+
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
             Vector512<T> additionVector = Vector512.Create(addition);

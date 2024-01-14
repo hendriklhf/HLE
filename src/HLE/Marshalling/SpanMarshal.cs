@@ -113,4 +113,15 @@ public static unsafe class SpanMarshal
 #pragma warning disable CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
     public static Span<T> ReturnStackAlloced<T>(scoped Span<T> span) => span;
 #pragma warning restore CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
+
+    [Pure]
+    public static T[] AsArray<T>(Span<T> span) => AsArray((ReadOnlySpan<T>)span);
+
+    [Pure]
+    public static T[] AsArray<T>(ReadOnlySpan<T> span)
+    {
+        ref byte reference = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
+        reference = Unsafe.Subtract(ref reference, sizeof(nuint) + sizeof(nuint));
+        return RawDataMarshal.ReadObject<T[], byte>(ref reference);
+    }
 }

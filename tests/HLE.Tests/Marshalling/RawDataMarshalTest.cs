@@ -24,33 +24,40 @@ public sealed class RawDataMarshalTest
     public unsafe void GetRawDataSizeTest()
     {
         nuint size = RawDataMarshal.GetRawObjectSize("hello");
-        Assert.Equal((nuint)(sizeof(int) + ("hello".Length + 1) * sizeof(char)), size);
+        int expectedSize = sizeof(nuint) + sizeof(nuint) + sizeof(int) + sizeof(char) * 6;
+        Assert.Equal((nuint)expectedSize, size);
 
         size = RawDataMarshal.GetRawObjectSize(new int[5]);
-        Assert.Equal((nuint)(sizeof(nuint) + sizeof(int) * 5), size);
+        expectedSize = sizeof(nuint) + sizeof(nuint) + sizeof(nuint) + sizeof(int) * 5;
+        Assert.Equal((nuint)expectedSize, size);
     }
 
     [Theory]
     [MemberData(nameof(MethodTableReferenceTestObjects))]
-    public void GetMethodTablePointerTest(object obj)
-        => Assert.Equal((nuint)obj.GetType().TypeHandle.Value, RawDataMarshal.GetMethodTableReference(obj));
+    public unsafe void GetMethodTableTest(object obj)
+        => Assert.True((MethodTable*)obj.GetType().TypeHandle.Value == RawDataMarshal.GetMethodTable(obj));
+
+    [Theory]
+    [MemberData(nameof(MethodTableReferenceTestObjects))]
+    public unsafe void GetMethodTablePointerTest(object obj)
+        => Assert.True((nuint)obj.GetType().TypeHandle.Value == *RawDataMarshal.GetMethodTablePointer(obj));
 
     [Fact]
     public void ReadObjectTest()
     {
         ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTableReference("hello");
-        string? hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
+        string hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
         Assert.Equal("hello", hello);
         Assert.Same("hello", hello);
     }
 
     [Fact]
-    public void GetRawStringDataTest()
+    public unsafe void GetRawStringDataTest()
     {
         const string Hello = "hello";
         ref RawStringData rawData = ref RawDataMarshal.GetRawStringData(Hello);
 
-        Assert.Equal((nuint)typeof(string).TypeHandle.Value, rawData.MethodTablePointer);
+        Assert.Equal(typeof(string).TypeHandle.Value, (nint)rawData.MethodTable);
         Assert.Equal(Hello.Length, rawData.Length);
         Assert.Equal(Hello[0], rawData.FirstChar);
         Assert.True(Hello.AsSpan().SequenceEqual(MemoryMarshal.CreateReadOnlySpan(ref rawData.FirstChar, Hello.Length)));

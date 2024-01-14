@@ -36,8 +36,9 @@ public struct RentedArray<T> :
     {
         get
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Array.Length);
-            return ref Unsafe.Add(ref Reference, index);
+            T[] array = Array;
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)array.Length);
+            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index);
         }
     }
 
@@ -66,9 +67,14 @@ public struct RentedArray<T> :
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     internal readonly T[] Array
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            ObjectDisposedException.ThrowIf(_array is null, typeof(RentedArray<T>));
+            if (_array is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<RentedArray<T>>();
+            }
+
             return _array;
         }
     }

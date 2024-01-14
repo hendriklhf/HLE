@@ -459,8 +459,12 @@ public static class StringHelpers
     [Pure]
     public static ReadOnlySpan<byte> AsByteSpan(this string? str)
     {
-        ReadOnlySpan<char> chars = str.AsSpan();
-        ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, byte>(ref charsReference), chars.Length << 1);
+        if (str is null)
+        {
+            return [];
+        }
+
+        ref char reference = ref StringMarshal.GetReference(str);
+        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, byte>(ref reference), str.Length << 1);
     }
 }

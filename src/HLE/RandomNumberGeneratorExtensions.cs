@@ -16,7 +16,7 @@ public static class RandomNumberGeneratorExtensions
     [Pure]
     public static bool GetBool(this RandomNumberGenerator random)
     {
-        byte result = (byte)(random.GetUInt8() & 1); // only return "valid" bools
+        byte result = (byte)(random.GetUInt8() & 1);
         return Unsafe.As<byte, bool>(ref result);
     }
 
@@ -91,18 +91,19 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    public static float GetSingle(this RandomNumberGenerator random)
+    public static Guid GetGuid(this RandomNumberGenerator random)
     {
-        random.GetStruct(out float result);
-        return result;
+        random.GetStruct(out Guid guid);
+        return guid;
     }
 
     [Pure]
+    public static float GetSingle(this RandomNumberGenerator random)
+        => random.GetStruct<float>();
+
+    [Pure]
     public static double GetDouble(this RandomNumberGenerator random)
-    {
-        random.GetStruct(out double result);
-        return result;
-    }
+        => random.GetStruct<double>();
 
     [Pure]
     public static decimal GetDecimal(this RandomNumberGenerator random)
@@ -247,13 +248,17 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static T GetStruct<T>(this RandomNumberGenerator random) where T : unmanaged
     {
-        random.GetStruct(out T result);
+        Unsafe.SkipInit(out T result);
+        Span<byte> bytes = StructMarshal.GetBytes(ref result);
+        random.Fill(bytes);
         return result;
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static void GetStruct<T>(this RandomNumberGenerator random, out T result) where T : unmanaged
     {
         Unsafe.SkipInit(out result);

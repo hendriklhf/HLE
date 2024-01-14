@@ -89,7 +89,7 @@ public unsafe struct NativeString :
 
         *(nuint*)buffer = 0;
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
-        rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
+        rawStringData->MethodTable = (MethodTable*)typeof(string).TypeHandle.Value;
         rawStringData->Length = length;
         Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
 
@@ -117,7 +117,7 @@ public unsafe struct NativeString :
 
         *(nuint*)buffer = 0;
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
-        rawStringData->MethodTablePointer = (nuint)typeof(string).TypeHandle.Value;
+        rawStringData->MethodTable = (MethodTable*)typeof(string).TypeHandle.Value;
         rawStringData->Length = chars.Length;
         CopyWorker<char>.Copy(chars, &rawStringData->FirstChar);
 

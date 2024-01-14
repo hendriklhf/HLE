@@ -1,9 +1,10 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
 using HLE.Twitch.Tmi.Models;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Twitch.Tmi;
 
@@ -11,6 +12,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
 {
     [Pure]
     [SkipLocalsInit]
+    [MustDisposeResource]
     public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
@@ -56,7 +58,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
                     chatMessageFlags |= GetIsFirstMsg(value);
                     break;
                 case (byte)'i' when key.SequenceEqual(IdTag):
-                    id = GetId(value);
+                    GetId(value, out id);
                     break;
                 case (byte)'m' when key.SequenceEqual(ModTag):
                     chatMessageFlags |= GetIsModerator(value);
@@ -91,7 +93,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
             Color = color,
             DisplayName = BytesToString(displayName, Encoding.ASCII),
             Id = id,
-            Message = BytesToString(message, Encoding.UTF8),
+            Message = BytesToLazyString(message, Encoding.UTF8),
             TmiSentTs = tmiSentTs,
             UserId = userId,
             Username = BytesToString(username, Encoding.ASCII)

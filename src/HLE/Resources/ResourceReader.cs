@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Memory;
 using HLE.Strings;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -86,11 +85,11 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     private string BuildResourcePath(ReadOnlySpan<char> resourceName)
     {
         string assemblyName = _assemblyName;
-        UnsafeBufferWriter<char> bufferWriter = new(stackalloc char[assemblyName.Length + resourceName.Length]);
-        bufferWriter.Write(assemblyName); // _assemblyName ends with a '.'
-        bufferWriter.Write(resourceName);
+        Span<char> buffer = stackalloc char[assemblyName.Length + resourceName.Length];
+        assemblyName.CopyTo(buffer);
+        resourceName.CopyTo(buffer[assemblyName.Length..]);
 
-        return StringPool.Shared.GetOrAdd(bufferWriter.WrittenSpan);
+        return StringPool.Shared.GetOrAdd(buffer);
     }
 
     private bool TryReadCore(string resourcePath, out Resource resource)

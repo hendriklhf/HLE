@@ -1,13 +1,15 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using HLE.Memory;
 using HLE.Numerics;
 using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Twitch.Tmi;
 
@@ -16,8 +18,11 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 {
     private protected const string EscapedWhitespace = "\\s";
 
-    private protected const char UpperCaseAMinus10 = (char)('A' - 10);
-    private protected const char CharZero = '0';
+    private protected const int UpperCaseAMinus10 = 'A' - 10;
+    private protected const int CharZero = '0';
+
+    private protected const byte Semicolon = (byte)';';
+    private protected const byte EqualsSign = (byte)'=';
 
     private protected static ReadOnlySpan<byte> BadgeInfoTag => "badge-info"u8;
 
@@ -49,6 +54,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 
     [Pure]
     [SkipLocalsInit]
+    [MustDisposeResource]
     public IChatMessage Parse(ReadOnlySpan<byte> ircMessage)
     {
         Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
@@ -57,7 +63,17 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     }
 
     [Pure]
+    [MustDisposeResource]
     public abstract IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
+
+    [MustDisposeResource]
+    private protected static LazyString BytesToLazyString(ReadOnlySpan<byte> bytes, Encoding encoding)
+    {
+        int maximumCharCount = encoding.GetMaxCharCount(bytes.Length);
+        RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(maximumCharCount);
+        int charCount = encoding.GetChars(bytes, chars.AsSpan());
+        return new(chars, charCount);
+    }
 
     private protected static ReadOnlySpan<byte> GetChannel(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
         => ircMessage[(indicesOfWhitespaces[2] + 1)..indicesOfWhitespaces[3]][1..];
@@ -141,11 +157,11 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         return (ChatMessageFlags)asByte;
     }
 
-    private protected static Guid GetId(ReadOnlySpan<byte> value)
+    private protected static void GetId(ReadOnlySpan<byte> value, out Guid id)
     {
         Span<char> chars = stackalloc char[value.Length];
-        int charCount = Encoding.UTF8.GetChars(value, chars);
-        return Guid.ParseExact(chars[..charCount], "D");
+        int charCount = Encoding.ASCII.GetChars(value, chars);
+        id = Guid.ParseExact(chars[..charCount], "D");
     }
 
     private protected static ChatMessageFlags GetIsModerator(ReadOnlySpan<byte> value)

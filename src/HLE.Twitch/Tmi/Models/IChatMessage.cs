@@ -1,8 +1,9 @@
 using System;
+using HLE.Strings;
 
 namespace HLE.Twitch.Tmi.Models;
 
-public interface IChatMessage : IEquatable<IChatMessage>
+public interface IChatMessage : IDisposable, IEquatable<IChatMessage>
 {
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
@@ -84,5 +85,5 @@ public interface IChatMessage : IEquatable<IChatMessage>
     /// <summary>
     /// The message content.
     /// </summary>
-    string Message { get; }
+    LazyString Message { get; }
 }

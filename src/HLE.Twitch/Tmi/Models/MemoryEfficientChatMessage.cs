@@ -1,16 +1,13 @@
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using HLE.Memory;
 using HLE.Strings;
 
 namespace HLE.Twitch.Tmi.Models;
 
-public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEquatable<MemoryEfficientChatMessage>
+public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryEfficientChatMessage>
 {
     public override ReadOnlySpan<Badge> BadgeInfos
     {
@@ -46,18 +43,13 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
             }
 
-#pragma warning disable CA2002
-            lock (displayNameBuffer)
-#pragma warning restore CA2002
-            {
-                ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
-                displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.UTF8);
+            ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
+            displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.ASCII);
 
-                ArrayPool<byte>.Shared.Return(displayNameBuffer);
-                _displayNameBuffer = null;
-                _displayName = displayName;
-                return displayName;
-            }
+            ArrayPool<byte>.Shared.Return(displayNameBuffer);
+            _displayNameBuffer = null;
+            _displayName = displayName;
+            return displayName;
         }
         init { }
     }
@@ -72,82 +64,30 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
                 return username;
             }
 
-            bool lockTaken = false;
             byte[]? usernameBuffer = _usernameBuffer;
-            if (usernameBuffer is not null)
+
+            string? displayName = _displayName;
+            if (displayName is not null)
             {
-                Monitor.Enter(usernameBuffer);
-                lockTaken = true;
-            }
-
-            try
-            {
-                string? displayName = _displayName;
-                if (displayName is not null)
-                {
-                    username = displayName.ToLowerInvariant();
-                    ArrayPool<byte>.Shared.Return(usernameBuffer);
-                    _usernameBuffer = null;
-                    _username = username;
-                    return username;
-                }
-
-                if (usernameBuffer is null)
-                {
-                    ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
-                }
-
-                Debug.Assert(Monitor.IsEntered(usernameBuffer));
-
-                ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
-                username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.UTF8);
-
+                username = displayName.ToLowerInvariant();
                 ArrayPool<byte>.Shared.Return(usernameBuffer);
                 _usernameBuffer = null;
                 _username = username;
                 return username;
             }
-            finally
-            {
-                if (lockTaken)
-                {
-                    Debug.Assert(usernameBuffer is not null);
-                    Monitor.Exit(usernameBuffer);
-                }
-            }
-        }
-        init { }
-    }
 
-    public override required string Message
-    {
-        get
-        {
-            string? message = _message;
-            if (message is not null)
-            {
-                return message;
-            }
-
-            byte[]? messageBuffer = _messageBuffer;
-            if (messageBuffer is null)
+            if (usernameBuffer is null)
             {
                 ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
             }
 
-            lock (messageBuffer)
-            {
-                Encoding utf8 = Encoding.UTF8;
-                ReadOnlySpan<byte> messageBufferSpan = messageBuffer.AsSpan(0, _messageLength);
-                message = messageBufferSpan.Length <= MaxMessagePoolingLength
-                    ? StringPool.Shared.GetOrAdd(messageBufferSpan, utf8)
-                    : utf8.GetString(messageBufferSpan);
+            ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
+            username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.ASCII);
 
-                ArrayPool<byte>.Shared.Return(messageBuffer);
-                _messageBuffer = null;
-                _message = message;
-                return message;
-            }
+            ArrayPool<byte>.Shared.Return(usernameBuffer);
+            _usernameBuffer = null;
+            _username = username;
+            return username;
         }
         init { }
     }
@@ -160,16 +100,10 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
 
     private string? _displayName;
     private string? _username;
-    private string? _message;
 
     private byte[]? _displayNameBuffer;
     internal byte[]? _usernameBuffer;
     internal readonly int _nameLength;
-
-    internal byte[]? _messageBuffer;
-    internal readonly int _messageLength;
-
-    private const int MaxMessagePoolingLength = 10;
 
     /// <summary>
     /// The default constructor of <see cref="MemoryEfficientChatMessage"/>.
@@ -182,10 +116,8 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
     /// <param name="displayName">The user's display name.</param>
     /// <param name="username">The user's username buffer.</param>
     /// <param name="nameLength">The length of the user's username.</param>
-    /// <param name="message">The message buffer.</param>
-    /// <param name="messageLength">The length of the message.</param>
     public MemoryEfficientChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags,
-        byte[] displayName, byte[] username, int nameLength, byte[] message, int messageLength)
+        byte[] displayName, byte[] username, int nameLength)
     {
         _badgeInfos = badgeInfos;
         _badgeInfoCount = badgeInfoCount;
@@ -196,13 +128,12 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
         _displayNameBuffer = displayName;
         _usernameBuffer = username;
         _nameLength = nameLength;
-
-        _messageBuffer = message;
-        _messageLength = messageLength;
     }
 
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
+        base.Dispose(disposing);
+
         ArrayPool<Badge>.Shared.Return(_badgeInfos);
         _badgeInfos = null;
 
@@ -215,17 +146,7 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IDisposable, IEqua
         ArrayPool<byte>.Shared.Return(_usernameBuffer);
         _usernameBuffer = null;
 
-        ArrayPool<byte>.Shared.Return(_messageBuffer);
-        _messageBuffer = null;
-    }
-
-    [Pure]
-    [SkipLocalsInit]
-    public override string ToString()
-    {
-        ValueStringBuilder builder = new(stackalloc char[Channel.Length + _nameLength + _messageLength + 6]);
-        builder.Append("<#", Channel, "> ", Username, ": ", Message);
-        return builder.ToString();
+        Message.Dispose();
     }
 
     [Pure]
