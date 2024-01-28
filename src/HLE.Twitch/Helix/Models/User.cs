@@ -43,7 +43,7 @@ public sealed class User : CachedModel, IEquatable<User>
 
     public override bool Equals(object? obj) => obj is User other && Equals(other);
 
-    public bool Equals(User? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals(User? other) => ReferenceEquals(this, other);
 
     public override int GetHashCode() => Id.GetHashCode();
 

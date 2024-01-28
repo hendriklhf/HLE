@@ -8,7 +8,7 @@ using Xunit;
 
 namespace HLE.Tests.Marshalling;
 
-public sealed class RawDataMarshalTest
+public sealed class ObjectMarshalTest
 {
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public static object[][] MethodTableReferenceTestObjects { get; } =
@@ -23,11 +23,11 @@ public sealed class RawDataMarshalTest
     [Fact]
     public unsafe void GetRawDataSizeTest()
     {
-        nuint size = RawDataMarshal.GetRawObjectSize("hello");
+        nuint size = ObjectMarshal.GetRawObjectSize("hello");
         int expectedSize = sizeof(nuint) + sizeof(nuint) + sizeof(int) + sizeof(char) * 6;
         Assert.Equal((nuint)expectedSize, size);
 
-        size = RawDataMarshal.GetRawObjectSize(new int[5]);
+        size = ObjectMarshal.GetRawObjectSize(new int[5]);
         expectedSize = sizeof(nuint) + sizeof(nuint) + sizeof(nuint) + sizeof(int) * 5;
         Assert.Equal((nuint)expectedSize, size);
     }
@@ -35,18 +35,18 @@ public sealed class RawDataMarshalTest
     [Theory]
     [MemberData(nameof(MethodTableReferenceTestObjects))]
     public unsafe void GetMethodTableTest(object obj)
-        => Assert.True((MethodTable*)obj.GetType().TypeHandle.Value == RawDataMarshal.GetMethodTable(obj));
+        => Assert.True((MethodTable*)obj.GetType().TypeHandle.Value == ObjectMarshal.GetMethodTable(obj));
 
     [Theory]
     [MemberData(nameof(MethodTableReferenceTestObjects))]
     public unsafe void GetMethodTablePointerTest(object obj)
-        => Assert.True((nuint)obj.GetType().TypeHandle.Value == *RawDataMarshal.GetMethodTablePointer(obj));
+        => Assert.True((nuint)obj.GetType().TypeHandle.Value == *ObjectMarshal.GetMethodTablePointer(obj));
 
     [Fact]
     public void ReadObjectTest()
     {
-        ref nuint methodTablePointer = ref RawDataMarshal.GetMethodTableReference("hello");
-        string hello = RawDataMarshal.ReadObject<string, nuint>(ref methodTablePointer);
+        ref nuint methodTablePointer = ref ObjectMarshal.GetMethodTableReference("hello");
+        string hello = ObjectMarshal.ReadObject<string, nuint>(ref methodTablePointer);
         Assert.Equal("hello", hello);
         Assert.Same("hello", hello);
     }
@@ -55,7 +55,7 @@ public sealed class RawDataMarshalTest
     public unsafe void GetRawStringDataTest()
     {
         const string Hello = "hello";
-        ref RawStringData rawData = ref RawDataMarshal.GetRawStringData(Hello);
+        ref RawStringData rawData = ref ObjectMarshal.GetRawStringData(Hello);
 
         Assert.Equal(typeof(string).TypeHandle.Value, (nint)rawData.MethodTable);
         Assert.Equal(Hello.Length, rawData.Length);

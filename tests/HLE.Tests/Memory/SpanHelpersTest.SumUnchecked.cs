@@ -6,7 +6,7 @@ using System.Reflection;
 using HLE.Memory;
 using Xunit;
 
-namespace HLE.Tests.Collections;
+namespace HLE.Tests.Memory;
 
 public sealed partial class SpanHelpersTest
 {

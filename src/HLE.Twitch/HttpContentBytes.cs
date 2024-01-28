@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using HLE.Marshalling;
 using HLE.Memory;
+using JetBrains.Annotations;
 
 namespace HLE.Twitch;
 
@@ -19,31 +21,33 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
     {
     }
 
-    private HttpContentBytes(RentedArray<byte> bytes, int length)
+    private HttpContentBytes([HandlesResourceDisposal] RentedArray<byte> bytes, int length)
     {
         _bytes = bytes;
         Length = length;
     }
 
-    public readonly ReadOnlySpan<byte> AsSpan() => _bytes.AsSpan(..Length);
+    public readonly ReadOnlySpan<byte> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref _bytes.Reference, Length);
 
     public readonly ReadOnlyMemory<byte> AsMemory() => _bytes.AsMemory(..Length);
 
     public static async ValueTask<HttpContentBytes> CreateAsync(HttpResponseMessage httpResponse)
     {
-        int contentLength = (int)(httpResponse.Content.Headers.ContentLength ?? 0);
+        long contentLength = httpResponse.Content.Headers.ContentLength.GetValueOrDefault();
         if (contentLength == 0)
         {
             return Empty;
         }
 
-        using RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(contentLength);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(contentLength, Array.MaxLength);
+
+        RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray((int)contentLength);
         byte[] underlyingArray = RentedArrayMarshal.GetArray(buffer);
         await using MemoryStream copyDestination = new(underlyingArray);
 
         await httpResponse.Content.LoadIntoBufferAsync();
         await httpResponse.Content.CopyToAsync(copyDestination);
-        return new(buffer, contentLength);
+        return new(buffer, (int)contentLength);
     }
 
     public readonly bool Equals(HttpContentBytes other) => Length == other.Length && _bytes == other._bytes;

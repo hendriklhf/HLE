@@ -149,7 +149,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     [MethodImpl(MethodImplOptions.Synchronized)]
     private void StoreHandle(GCHandle handle)
     {
-        _handles ??= new(2);
+        _handles ??= new(8);
         _handles.Add(handle);
     }
 

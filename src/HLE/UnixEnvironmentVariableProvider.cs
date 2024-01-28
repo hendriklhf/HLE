@@ -7,13 +7,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using HLE.Marshalling;
+using HLE.Marshalling.Unix;
 
 namespace HLE;
 
 [SupportedOSPlatform("linux")]
 [SupportedOSPlatform("macos")]
-[SupportedOSPlatform("freebsd")]
 public sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<UnixEnvironmentVariableProvider>
 {
     [Pure]
@@ -21,7 +20,7 @@ public sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvid
     {
         Dictionary<string, string> result = new(64);
 
-        nint environment = Interop.Unix.GetEnvironment();
+        nint environment = Interop.GetEnvironment();
         if (environment == 0)
         {
             return EnvironmentVariables.Empty;
@@ -58,7 +57,7 @@ public sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvid
         }
         finally
         {
-            Interop.Unix.FreeEnvironment(environment);
+            Interop.FreeEnvironment(environment);
         }
 
         return new(result.ToFrozenDictionary());

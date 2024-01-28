@@ -40,22 +40,21 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     int IReadOnlyCollection<char>.Count => Length;
 
-    public int Capacity => _buffer.Length;
+    public int Capacity => GetBuffer().Length;
 
-    public Span<char> WrittenSpan => _buffer.AsSpan(..Length);
+    public Span<char> WrittenSpan => GetBuffer().AsSpanUnsafe(..Length);
 
-    public Memory<char> WrittenMemory => _buffer.AsMemory(..Length);
+    public Memory<char> WrittenMemory => GetBuffer().AsMemory(..Length);
 
-    public Span<char> FreeBufferSpan => _buffer.AsSpan(Length..);
+    public Span<char> FreeBufferSpan => GetBuffer().AsSpanUnsafe(Length..);
 
-    public Memory<char> FreeBufferMemory => _buffer.AsMemory(Length..);
+    public Memory<char> FreeBufferMemory => GetBuffer().AsMemory(Length..);
 
     public int FreeBufferSize => Capacity - Length;
 
     bool ICollection<char>.IsReadOnly => false;
 
-    [SuppressMessage("ReSharper", "NotDisposedResource", Justification = "is disposed in Disposed()")]
-    internal RentedArray<char> _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.RentAsRentedArray(capacity);
+    internal char[]? _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.Rent(capacity);
 
     [MustDisposeResource]
     public PooledStringBuilder() : this(0)
@@ -65,11 +64,21 @@ public sealed partial class PooledStringBuilder(int capacity) :
     [MustDisposeResource]
     public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
     {
-        CopyWorker<char>.Copy(str, _buffer.AsSpan());
+        CopyWorker<char>.Copy(str, _buffer);
         Length = str.Length;
     }
 
-    public void Dispose() => _buffer.Dispose();
+    public void Dispose()
+    {
+        char[]? buffer = _buffer;
+        if (buffer is null)
+        {
+            return;
+        }
+
+        ArrayPool<char>.Shared.Return(buffer);
+        _buffer = null;
+    }
 
     Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
 
@@ -79,30 +88,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => WrittenMemory;
 
-    private void GrowBuffer(int sizeHint)
-    {
-        Debug.Assert(sizeHint > 0);
-
-        using RentedArray<char> oldBuffer = _buffer;
-        int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)sizeHint);
-        RentedArray<char> newBuffer = ArrayPool<char>.Shared.RentAsRentedArray(newSize);
-        if (Length != 0)
-        {
-            CopyWorker<char>.Copy(ref oldBuffer.Reference, ref newBuffer.Reference, (uint)Length);
-        }
-
-        _buffer = newBuffer;
-    }
-
-    public void EnsureCapacity(int capacity)
-    {
-        if (capacity <= Capacity)
-        {
-            return;
-        }
-
-        GrowBuffer(capacity - Capacity);
-    }
+    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
     public void Advance(int length) => Length += length;
 
@@ -117,13 +103,11 @@ public sealed partial class PooledStringBuilder(int capacity) :
                 return;
         }
 
-        int freeBufferSize = FreeBufferSize;
-        if (freeBufferSize < chars.Length)
-        {
-            GrowBuffer(chars.Length - freeBufferSize);
-        }
+        GrowIfNeeded(chars.Length);
 
-        ref char destination = ref Unsafe.Add(ref _buffer.Reference, Length);
+        Debug.Assert(_buffer is not null, "If _buffer is null, some exception should have been thrown before");
+
+        ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
         ref char source = ref MemoryMarshal.GetReference(chars);
         CopyWorker<char>.Copy(ref source, ref destination, (uint)chars.Length);
         Length += chars.Length;
@@ -131,12 +115,8 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public void Append(char c)
     {
-        if (Length == Capacity)
-        {
-            GrowBuffer(1);
-        }
-
-        Unsafe.Add(ref _buffer.Reference, Length++) = c;
+        GrowIfNeeded(1);
+        Unsafe.Add(ref GetBufferReference(), Length++) = c;
     }
 
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
@@ -209,18 +189,17 @@ public sealed partial class PooledStringBuilder(int capacity) :
             if (countOfFailedTries == MaximumFormattingTries)
             {
                 ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
+                break;
             }
 
-            ValueStringBuilder builder = new(FreeBufferSpan);
-            if (!builder.TryAppend(formattable, format))
+            if (formattable.TryFormat(FreeBufferSpan, out int writtenChars, format, null))
             {
-                countOfFailedTries++;
-                GrowBuffer(128);
-                continue;
+                Advance(writtenChars);
+                return;
             }
 
-            Advance(builder.Length);
-            break;
+            Grow(128);
+            countOfFailedTries++;
         }
     }
 
@@ -233,6 +212,52 @@ public sealed partial class PooledStringBuilder(int capacity) :
     public void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
     public void Clear() => Length = 0;
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
+    private void Grow(int neededSize)
+    {
+        Debug.Assert(neededSize > 0);
+
+        char[] oldBuffer = GetBuffer();
+        int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
+        char[] newBuffer = ArrayPool<char>.Shared.Rent(newSize);
+        if (Length != 0)
+        {
+            ref char source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
+            ref char destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
+            CopyWorker<char>.Copy(ref source, ref destination, (uint)Length);
+        }
+
+        ArrayPool<char>.Shared.Return(oldBuffer);
+        _buffer = newBuffer;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    private void GrowIfNeeded(int sizeHint)
+    {
+        int freeBufferSize = FreeBufferSize;
+        if (freeBufferSize >= sizeHint)
+        {
+            return;
+        }
+
+        Grow(sizeHint - freeBufferSize);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private char[] GetBuffer()
+    {
+        char[]? buffer = _buffer;
+        if (buffer is null)
+        {
+            ThrowHelper.ThrowObjectDisposedException<PooledStringBuilder>();
+        }
+
+        return buffer;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private ref char GetBufferReference() => ref MemoryMarshal.GetArrayDataReference(GetBuffer());
 
     [Pure]
     public override string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
@@ -289,7 +314,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 
-    public ArrayEnumerator<char> GetEnumerator() => new(_buffer.Array, 0, Length);
+    public ArrayEnumerator<char> GetEnumerator() => new(GetBuffer(), 0, Length);
 
     IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
 
@@ -302,7 +327,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => Length == other?.Length && _buffer.Equals(other._buffer);
+    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => Length == other?.Length && GetBuffer().Equals(other.GetBuffer());
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is PooledStringBuilder other && Equals(other);

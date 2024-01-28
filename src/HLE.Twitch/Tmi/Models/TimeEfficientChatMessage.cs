@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+#pragma warning disable CS0660, CS0661, CS0659 // Justification: base class overrides GetHashCode
+
 namespace HLE.Twitch.Tmi.Models;
 
 public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEfficientChatMessage>
@@ -31,11 +33,9 @@ public sealed class TimeEfficientChatMessage : ChatMessage, IEquatable<TimeEffic
         _flags = flags;
     }
 
-    public bool Equals([NotNullWhen(true)] TimeEfficientChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] TimeEfficientChatMessage? other) => ReferenceEquals(this, other);
 
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is TimeEfficientChatMessage other && Equals(other);
-
-    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     public static bool operator ==(TimeEfficientChatMessage? left, TimeEfficientChatMessage? right) => Equals(left, right);
 

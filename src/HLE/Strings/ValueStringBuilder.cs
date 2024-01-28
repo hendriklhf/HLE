@@ -1,11 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Strings;
 
@@ -18,25 +20,88 @@ public ref partial struct ValueStringBuilder
 
     public readonly Span<char> this[Range range] => WrittenSpan[range];
 
-    public int Length { get; private set; }
+    [SuppressMessage("ReSharper", "StructMemberCanBeMadeReadOnly", Justification = "setter is mutating the instance, so Length is not readonly")]
+    public int Length
+    {
+        readonly get => _lengthAndIsStackalloced.Integer;
+        private set
+        {
+            Debug.Assert(value >= 0);
+            _lengthAndIsStackalloced.SetIntegerUnsafe(value);
+        }
+    }
 
-    public readonly int Capacity => _buffer.Length;
+    private bool IsStackalloced
+    {
+        readonly get => _lengthAndIsStackalloced.Bool;
+        set => _lengthAndIsStackalloced.Bool = value;
+    }
 
-    public readonly Span<char> WrittenSpan => _buffer[..Length];
+    private int BufferLength
+    {
+        readonly get => _bufferLengthAndIsDisposed.Integer;
+        set
+        {
+            Debug.Assert(value >= 0);
+            _bufferLengthAndIsDisposed.SetIntegerUnsafe(value);
+        }
+    }
 
-    public readonly Span<char> FreeBufferSpan => _buffer[Length..];
+    private bool IsDisposed
+    {
+        readonly get => _bufferLengthAndIsDisposed.Bool;
+        set => _bufferLengthAndIsDisposed.Bool = value;
+    }
+
+    public readonly int Capacity => BufferLength;
+
+    public readonly Span<char> WrittenSpan => MemoryMarshal.CreateSpan(ref GetBufferReference(), Length);
+
+    public readonly Span<char> FreeBufferSpan => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref GetBufferReference(), Length), FreeBufferSize);
 
     public readonly int FreeBufferSize => Capacity - Length;
 
-    public static ValueStringBuilder Empty => new();
+    private ref char _buffer;
+    private IntBoolUnion<int> _bufferLengthAndIsDisposed;
+    private IntBoolUnion<int> _lengthAndIsStackalloced;
 
-    internal readonly Span<char> _buffer = [];
-
+    [MustDisposeResource]
     public ValueStringBuilder()
     {
+        _buffer = ref Unsafe.NullRef<char>();
+        IsStackalloced = true;
     }
 
-    public ValueStringBuilder(Span<char> buffer) => _buffer = buffer;
+    [MustDisposeResource]
+    public ValueStringBuilder(Span<char> buffer)
+    {
+        _buffer = ref MemoryMarshal.GetReference(buffer);
+        BufferLength = buffer.Length;
+        IsStackalloced = true;
+    }
+
+    public void Dispose()
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        if (IsStackalloced)
+        {
+            _buffer = ref Unsafe.NullRef<char>();
+            BufferLength = 0;
+            IsDisposed = true;
+            return;
+        }
+
+        char[] array = SpanMarshal.AsArray(ref _buffer);
+        ArrayPool<char>.Shared.Return(array);
+
+        _buffer = ref Unsafe.NullRef<char>();
+        BufferLength = 0;
+        IsDisposed = true;
+    }
 
     public void Advance(int length) => Length += length;
 
@@ -51,12 +116,9 @@ public ref partial struct ValueStringBuilder
                 return;
         }
 
-        if (FreeBufferSize < span.Length)
-        {
-            ThrowNotEnoughSpaceException();
-        }
+        GrowIfNeeded(span.Length);
 
-        ref char destination = ref Unsafe.Add(ref MemoryMarshal.GetReference(_buffer), Length);
+        ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
         ref char source = ref MemoryMarshal.GetReference(span);
         CopyWorker<char>.Copy(ref source, ref destination, (uint)span.Length);
         Length += span.Length;
@@ -64,12 +126,8 @@ public ref partial struct ValueStringBuilder
 
     public void Append(char c)
     {
-        if (Length == Capacity)
-        {
-            ThrowNotEnoughSpaceException();
-        }
-
-        Unsafe.Add(ref MemoryMarshal.GetReference(_buffer), Length++) = c;
+        GrowIfNeeded(1);
+        Unsafe.Add(ref GetBufferReference(), Length++) = c;
     }
 
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
@@ -132,28 +190,93 @@ public ref partial struct ValueStringBuilder
     public void Append(Guid guid, [StringSyntax(StringSyntaxAttribute.GuidFormat)] ReadOnlySpan<char> format = default)
         => Append<Guid>(guid, format);
 
-    public void Append<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
+    public void Append<TSpanFormattable>(TSpanFormattable formattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
     {
-        if (!spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, null))
+        const int MaximumFormattingTries = 5;
+        int countOfFailedTries = 0;
+        while (true)
         {
-            ThrowNotEnoughSpaceException();
+            if (countOfFailedTries == MaximumFormattingTries)
+            {
+                ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
+                break;
+            }
+
+            if (formattable.TryFormat(FreeBufferSpan, out int writtenChars, format, null))
+            {
+                Advance(writtenChars);
+                return;
+            }
+
+            Grow(128);
+            countOfFailedTries++;
         }
-
-        Advance(charsWritten);
     }
 
-    internal bool TryAppend<TSpanFormattable>(TSpanFormattable spanFormattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
-    {
-        bool success = spanFormattable.TryFormat(FreeBufferSpan, out int charsWritten, format, null);
-        Advance(charsWritten);
-        return success;
-    }
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
+        => throw new InvalidOperationException(
+            $"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
 
     public readonly void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
     public void Clear() => Length = 0;
 
-    public readonly MemoryEnumerator<char> GetEnumerator() => new(ref MemoryMarshal.GetReference(_buffer), Length);
+    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    private void GrowIfNeeded(int sizeHint)
+    {
+        int freeBufferSize = FreeBufferSize;
+        if (freeBufferSize >= sizeHint)
+        {
+            return;
+        }
+
+        Grow(sizeHint - freeBufferSize);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
+    private void Grow(int neededSize)
+    {
+        Debug.Assert(neededSize >= 0);
+
+        int length = Length;
+        Span<char> oldBuffer = GetBuffer();
+        int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
+        Span<char> newBuffer = ArrayPool<char>.Shared.Rent(newSize);
+        if (length != 0)
+        {
+            CopyWorker<char>.Copy(oldBuffer[..length], newBuffer);
+        }
+
+        _buffer = MemoryMarshal.GetReference(newBuffer);
+        BufferLength = newBuffer.Length;
+
+        if (IsStackalloced)
+        {
+            IsStackalloced = false;
+            return;
+        }
+
+        char[] array = SpanMarshal.AsArray(oldBuffer);
+        ArrayPool<char>.Shared.Return(array);
+    }
+
+    private readonly ref char GetBufferReference()
+    {
+        if (IsDisposed)
+        {
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueStringBuilder));
+        }
+
+        return ref _buffer;
+    }
+
+    internal readonly Span<char> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
+
+    public readonly MemoryEnumerator<char> GetEnumerator() => new(ref GetBufferReference(), Length);
 
     [Pure]
     public override readonly string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
@@ -172,12 +295,7 @@ public ref partial struct ValueStringBuilder
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public readonly bool Equals(ValueStringBuilder other)
-    {
-        ref char bufferReference = ref MemoryMarshal.GetReference(_buffer);
-        ref char otherBufferReference = ref MemoryMarshal.GetReference(other._buffer);
-        return Unsafe.AreSame(ref bufferReference, ref otherBufferReference) && Length == other.Length;
-    }
+    public readonly bool Equals(ValueStringBuilder other) => Length == other.Length && GetBuffer() == other.GetBuffer();
 
     [Pure]
     public readonly bool Equals(ValueStringBuilder other, StringComparison comparisonType)
@@ -192,11 +310,6 @@ public ref partial struct ValueStringBuilder
 
     [Pure]
     public readonly int GetHashCode(StringComparison comparisonType) => string.GetHashCode(WrittenSpan, comparisonType);
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNotEnoughSpaceException()
-        => throw new InvalidOperationException("There is not enough space left in the buffer to write to.");
 
     public static bool operator ==(ValueStringBuilder left, ValueStringBuilder right) => left.Equals(right);
 

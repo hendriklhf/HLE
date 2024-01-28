@@ -43,7 +43,7 @@ public sealed class PooledList
     public static PooledList<T> Create<T>(T item)
     {
         PooledList<T> list = new(1);
-        list._buffer.Reference = item;
+        MemoryMarshal.GetArrayDataReference(list._buffer!) = item;
         list.Count = 1;
         return list;
     }
@@ -54,7 +54,7 @@ public sealed class PooledList
     {
         PooledList<T> list = new(2);
 
-        ref T reference = ref list._buffer.Reference;
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(list._buffer!);
         Unsafe.Add(ref reference, 0) = item0;
         Unsafe.Add(ref reference, 1) = item1;
 
@@ -68,7 +68,7 @@ public sealed class PooledList
     {
         PooledList<T> list = new(3);
 
-        ref T reference = ref list._buffer.Reference;
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(list._buffer!);
         Unsafe.Add(ref reference, 0) = item0;
         Unsafe.Add(ref reference, 1) = item1;
         Unsafe.Add(ref reference, 2) = item2;
@@ -83,7 +83,7 @@ public sealed class PooledList
     {
         PooledList<T> list = new(4);
 
-        ref T reference = ref list._buffer.Reference;
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(list._buffer!);
         Unsafe.Add(ref reference, 0) = item0;
         Unsafe.Add(ref reference, 1) = item1;
         Unsafe.Add(ref reference, 2) = item2;
@@ -99,7 +99,7 @@ public sealed class PooledList
     {
         PooledList<T> list = new(5);
 
-        ref T reference = ref list._buffer.Reference;
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(list._buffer!);
         Unsafe.Add(ref reference, 0) = item0;
         Unsafe.Add(ref reference, 1) = item1;
         Unsafe.Add(ref reference, 2) = item2;
@@ -116,7 +116,7 @@ public sealed class PooledList
     {
         PooledList<T> list = new(6);
 
-        ref T reference = ref list._buffer.Reference;
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(list._buffer!);
         Unsafe.Add(ref reference, 0) = item0;
         Unsafe.Add(ref reference, 1) = item1;
         Unsafe.Add(ref reference, 2) = item2;

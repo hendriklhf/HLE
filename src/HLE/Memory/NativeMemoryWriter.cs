@@ -38,7 +38,7 @@ public sealed unsafe class NativeBufferWriter<T>(int capacity) :
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
-    public Span<T> WrittenSpan => _buffer.AsSpan(..Count);
+    public Span<T> WrittenSpan => MemoryMarshal.CreateSpan(ref _buffer.Reference, Count);
 
     /// <summary>
     /// A <see cref="Memory{T}"/> view over the written elements.
@@ -82,11 +82,7 @@ public sealed unsafe class NativeBufferWriter<T>(int capacity) :
     }
 
     /// <inheritdoc/>
-    public Span<T> GetSpan(int sizeHint = 0)
-    {
-        GrowIfNeeded(sizeHint);
-        return _buffer.AsSpan(Count..);
-    }
+    public Span<T> GetSpan(int sizeHint = 0) => MemoryMarshal.CreateSpan(ref GetReference(sizeHint), Capacity - Count);
 
     /// <summary>
     /// Returns a reference to the buffer to write the requested size (specified by sizeHint) to.

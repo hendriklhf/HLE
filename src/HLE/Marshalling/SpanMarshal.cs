@@ -57,7 +57,6 @@ public static unsafe class SpanMarshal
         return result;
     }
 
-    [SkipLocalsInit]
     private static ref byte GetMethodTableOfStringOrArray<TSpanElement>(ref byte firstElement)
     {
         if (typeof(TSpanElement) == typeof(char))
@@ -72,9 +71,12 @@ public static unsafe class SpanMarshal
 
         int arrayBytesToSubtract = sizeof(nuint) << 1;
         ref byte arrayMethodTable = ref Unsafe.Subtract(ref firstElement, arrayBytesToSubtract);
-        return ref Unsafe.As<byte, nint>(ref arrayMethodTable) == typeof(TSpanElement[]).TypeHandle.Value
-            ? ref arrayMethodTable
-            : ref ThrowCantGetMethodTableOfUnknownType<TSpanElement>(); // finding the MemoryManager is impossible
+        if (Unsafe.As<byte, nint>(ref arrayMethodTable) == typeof(TSpanElement[]).TypeHandle.Value)
+        {
+            return ref arrayMethodTable;
+        }
+
+        return ref ThrowCantGetMethodTableOfUnknownType<TSpanElement>(); // finding the MemoryManager is impossible
     }
 
     [DoesNotReturn]
@@ -115,13 +117,17 @@ public static unsafe class SpanMarshal
 #pragma warning restore CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
 
     [Pure]
-    public static T[] AsArray<T>(Span<T> span) => AsArray((ReadOnlySpan<T>)span);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] AsArray<T>(Span<T> span) => AsArray(ref MemoryMarshal.GetReference(span));
 
     [Pure]
-    public static T[] AsArray<T>(ReadOnlySpan<T> span)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] AsArray<T>(ReadOnlySpan<T> span) => AsArray(ref MemoryMarshal.GetReference(span));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] AsArray<T>(ref T firstElement)
     {
-        ref byte reference = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
-        reference = Unsafe.Subtract(ref reference, sizeof(nuint) + sizeof(nuint));
-        return RawDataMarshal.ReadObject<T[], byte>(ref reference);
+        ref byte byteRef = ref Unsafe.As<T, byte>(ref firstElement);
+        return ObjectMarshal.ReadObject<T[], byte>(ref Unsafe.Subtract(ref byteRef, sizeof(nuint) + sizeof(nuint)));
     }
 }

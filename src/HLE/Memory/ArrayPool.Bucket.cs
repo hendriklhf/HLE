@@ -41,6 +41,37 @@ public sealed partial class ArrayPool<T>
             }
         }
 
+        public bool TryRentExact(int length, [MaybeNullWhen(false)] out T[] array)
+        {
+            lock (_stack)
+            {
+                int count = _count;
+                if (count == 0)
+                {
+                    array = null;
+                    return false;
+                }
+
+                ref T[] reference = ref MemoryMarshal.GetArrayDataReference(_stack);
+                for (uint i = 0; i < count; i++)
+                {
+                    ref T[] currentRef = ref Unsafe.Add(ref reference, i);
+                    if (currentRef.Length != length)
+                    {
+                        continue;
+                    }
+
+                    array = currentRef;
+                    CopyWorker<T[]>.Copy(ref Unsafe.Add(ref currentRef, 1), ref currentRef, (uint)count - i - 1);
+                    _count = --count;
+                    return true;
+                }
+
+                array = null;
+                return false;
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Return(T[] array, ArrayReturnOptions returnOptions)
         {

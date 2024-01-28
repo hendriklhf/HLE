@@ -1,10 +1,11 @@
+using System;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Marshalling;
 
-public static unsafe class RawDataMarshal
+public static unsafe class ObjectMarshal
 {
     public static uint BaseObjectSize
     {
@@ -115,4 +116,12 @@ public static unsafe class RawDataMarshal
         BaseObjectSize +
         (nuint)sizeof(nuint) /* array length */ +
         (uint)arrayLength * (uint)sizeof(T); /* items */
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static MethodTable* GetMethodTable<T>() => GetMethodTable(typeof(T));
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static MethodTable* GetMethodTable(Type type) => (MethodTable*)type.TypeHandle.Value;
 }

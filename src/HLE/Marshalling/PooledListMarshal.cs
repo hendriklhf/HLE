@@ -7,12 +7,11 @@ namespace HLE.Marshalling;
 public static class PooledListMarshal
 {
     [Pure]
-    public static T[] GetBuffer<T>(PooledList<T> list) => list._buffer.Array;
+    public static T[] GetBuffer<T>(PooledList<T> list) => list.GetBuffer();
 
     public static void SetCount<T>(PooledList<T> list, int count)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(count);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(count, Array.MaxLength);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)count, (uint)Array.MaxLength);
         list.Count = count;
     }
 }

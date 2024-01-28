@@ -64,24 +64,24 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     /// <returns>The message in a readable format.</returns>
     [Pure]
     [SkipLocalsInit]
-    public override string ToString()
+    public sealed override string ToString()
     {
-        ValueStringBuilder builder = new(stackalloc char[Channel.Length + Username.Length + Message.Length + 6]);
+        using ValueStringBuilder builder = new(stackalloc char[Channel.Length + Username.Length + Message.Length + 6]);
         builder.Append("<#", Channel, "> ", Username, ": ", Message);
         return builder.ToString();
     }
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] ChatMessage? other) => Equals((IChatMessage?)other);
+    public bool Equals([NotNullWhen(true)] ChatMessage? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] IChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] IChatMessage? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is IChatMessage other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
+    public sealed override int GetHashCode() => Id.GetHashCode();
 
     public static bool operator ==(ChatMessage? left, ChatMessage? right) => Equals(left, right);
 

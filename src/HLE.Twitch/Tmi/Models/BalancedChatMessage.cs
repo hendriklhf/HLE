@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
+#pragma warning disable CS0660, CS0661, CS0659 // Justification: base class overrides GetHashCode
+
 namespace HLE.Twitch.Tmi.Models;
 
 /// <summary>
@@ -30,11 +32,9 @@ public sealed class BalancedChatMessage : ChatMessage, IEquatable<BalancedChatMe
         _flags = flags;
     }
 
-    public bool Equals([NotNullWhen(true)] BalancedChatMessage? other) => ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    public bool Equals([NotNullWhen(true)] BalancedChatMessage? other) => ReferenceEquals(this, other);
 
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is BalancedChatMessage other && Equals(other);
-
-    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
 
     public static bool operator ==(BalancedChatMessage? left, BalancedChatMessage? right) => Equals(left, right);
 

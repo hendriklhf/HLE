@@ -27,7 +27,8 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
     public ArrayPool()
     {
-        int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
+        int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) -
+            BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
         Debug.Assert(ArrayPool.BucketCapacities.Length == bucketCount);
 
         Bucket[] buckets = new Bucket[bucketCount];
@@ -58,8 +59,37 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
                 break;
         }
 
-        int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPool.IndexOffset;
+        int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPool.BucketIndexOffset;
         return TryRentFromThreadLocalBucket(length, bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
+    }
+
+    [Pure]
+    public T[] RentExact(int length)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+        int roundedLength = length >= 1 << 30 ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)length);
+        switch (roundedLength)
+        {
+            case > ArrayPool.MaximumArrayLength:
+                return GC.AllocateUninitializedArray<T>(length);
+            case < ArrayPool.MinimumArrayLength:
+                return length == 0 ? [] : new T[length];
+        }
+
+        int bucketIndex = BitOperations.TrailingZeroCount(roundedLength) - ArrayPool.BucketIndexOffset;
+        if (TryRentFromThreadLocalBucket(length, bucketIndex, out T[]? array))
+        {
+            return array;
+        }
+
+        if (!BitOperations.IsPow2(length))
+        {
+            bucketIndex--;
+        }
+
+        Bucket bucket = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        return bucket.TryRentExact(length, out array) ? array : GC.AllocateUninitializedArray<T>(length);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
@@ -88,6 +118,12 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
+        if (!BitOperations.IsPow2(arrayLength))
+        {
+            array = null;
+            return false;
+        }
+
         ref ThreadLocalBucket threadLocalBucket = ref s_threadLocalBucket;
         if (!threadLocalBucket.IsInitialized)
         {
@@ -145,6 +181,11 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryReturnToThreadLocalBucket(T[] array, ArrayReturnOptions returnOptions, int pow2Length, int bucketIndex)
     {
+        if (!BitOperations.IsPow2(array.Length))
+        {
+            return false;
+        }
+
         ref ThreadLocalBucket threadLocalBucket = ref s_threadLocalBucket;
         if (!threadLocalBucket.IsInitialized)
         {
@@ -208,13 +249,13 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             return false;
         }
 
-        pow2Length = array.Length;
-        if (!BitOperations.IsPow2(pow2Length))
+        pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)array.Length);
+        if (!BitOperations.IsPow2(array.Length))
         {
-            pow2Length = (int)(BitOperations.RoundUpToPowerOf2((uint)pow2Length) >> 1);
+            pow2Length >>= 1;
         }
 
-        bucketIndex = BitOperations.TrailingZeroCount(pow2Length) - ArrayPool.IndexOffset;
+        bucketIndex = BitOperations.TrailingZeroCount(pow2Length) - ArrayPool.BucketIndexOffset;
         return true;
     }
 

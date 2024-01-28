@@ -5,13 +5,13 @@ namespace HLE.Twitch.Helix;
 
 public sealed class CacheOptions : IEquatable<CacheOptions>
 {
-    public TimeSpan UserCacheTime { get; set; } = TimeSpan.FromDays(1);
+    public TimeSpan UserCacheDuration { get; set; } = TimeSpan.FromDays(1);
 
-    public TimeSpan StreamCacheTime { get; set; } = TimeSpan.FromMinutes(10);
+    public TimeSpan StreamCacheDuration { get; set; } = TimeSpan.FromMinutes(10);
 
-    public TimeSpan GlobalEmotesCacheTime { get; set; } = TimeSpan.FromDays(1);
+    public TimeSpan GlobalEmotesCacheDuration { get; set; } = TimeSpan.FromDays(1);
 
-    public TimeSpan ChannelEmotesCacheTime { get; set; } = TimeSpan.FromDays(1);
+    public TimeSpan ChannelEmotesCacheDuration { get; set; } = TimeSpan.FromDays(1);
 
     public bool Equals(CacheOptions? other) => ReferenceEquals(this, other);
 

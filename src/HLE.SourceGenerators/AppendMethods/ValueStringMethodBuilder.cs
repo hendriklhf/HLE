@@ -5,8 +5,7 @@ namespace HLE.SourceGenerators.AppendMethods;
 
 public sealed class ValueStringMethodBuilder(StringBuilder builder) : StringBuilderMethodBuilder(builder)
 {
-    private static readonly string s_sumVariable = "sum" + new Random().Next(100_000, int.MaxValue);
-
+    private const string SumVariable = "sum";
     private const string ThrowExceptionMethod = "ThrowNotEnoughSpaceException";
     private const string FreeBufferSizePropertyName = "FreeBufferSize";
 
@@ -48,10 +47,10 @@ public sealed class ValueStringMethodBuilder(StringBuilder builder) : StringBuil
     private void BuildAppendReadOnlySpanCapacityCheck(ReadOnlySpan<string> arguments)
     {
         _builder.Append(Indentation + Indentation);
-        _builder.Append("int ").Append(s_sumVariable).Append(" = ");
+        _builder.Append("int ").Append(SumVariable).Append(" = ");
         BuildSpanLengthSum(arguments);
         _builder.Append(';').AppendLine();
-        BuildCapacityCheck(s_sumVariable);
+        BuildCapacityCheck(SumVariable);
     }
 
     private void BuildCapacityCheck(string checkValue)

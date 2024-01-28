@@ -1,9 +1,13 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Strings;
+
+#pragma warning disable CS0660, CS0661, CS0659 // Justification: base class overrides GetHashCode
 
 namespace HLE.Twitch.Tmi.Models;
 
@@ -13,8 +17,12 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
     {
         get
         {
-            ObjectDisposedException.ThrowIf(_badgeInfos is null, typeof(MemoryEfficientChatMessage));
-            return _badgeInfos.AsSpan(.._badgeInfoCount);
+            if (_badgeInfos is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+            }
+
+            return _badgeInfos.AsSpanUnsafe(.._badgeInfoCount);
         }
     }
 
@@ -22,73 +30,26 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
     {
         get
         {
-            ObjectDisposedException.ThrowIf(_badges is null, typeof(MemoryEfficientChatMessage));
-            return _badges.AsSpan(.._badgeCount);
+            if (_badges is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+            }
+
+            return _badges.AsSpanUnsafe(.._badgeCount);
         }
     }
 
     public override required string DisplayName
     {
-        get
-        {
-            string? displayName = _displayName;
-            if (displayName is not null)
-            {
-                return displayName;
-            }
-
-            byte[]? displayNameBuffer = _displayNameBuffer;
-            if (displayNameBuffer is null)
-            {
-                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
-            }
-
-            ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
-            displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.ASCII);
-
-            ArrayPool<byte>.Shared.Return(displayNameBuffer);
-            _displayNameBuffer = null;
-            _displayName = displayName;
-            return displayName;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _displayName ??= GetDisplayNameFromBuffer();
         init { }
     }
 
     public override required string Username
     {
-        get
-        {
-            string? username = _username;
-            if (username is not null)
-            {
-                return username;
-            }
-
-            byte[]? usernameBuffer = _usernameBuffer;
-
-            string? displayName = _displayName;
-            if (displayName is not null)
-            {
-                username = displayName.ToLowerInvariant();
-                ArrayPool<byte>.Shared.Return(usernameBuffer);
-                _usernameBuffer = null;
-                _username = username;
-                return username;
-            }
-
-            if (usernameBuffer is null)
-            {
-                ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
-            }
-
-            ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
-            username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.ASCII);
-
-            ArrayPool<byte>.Shared.Return(usernameBuffer);
-            _usernameBuffer = null;
-            _username = username;
-            return username;
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _username ??= GetUsernameFromBuffer();
         init { }
     }
 
@@ -149,15 +110,45 @@ public sealed class MemoryEfficientChatMessage : ChatMessage, IEquatable<MemoryE
         Message.Dispose();
     }
 
-    [Pure]
-    public bool Equals([NotNullWhen(true)] MemoryEfficientChatMessage? other) =>
-        ReferenceEquals(this, other) || (Id == other?.Id && TmiSentTs == other.TmiSentTs);
+    [MethodImpl(MethodImplOptions.Synchronized | MethodImplOptions.NoInlining)]
+    private string GetDisplayNameFromBuffer()
+    {
+        byte[]? displayNameBuffer = _displayNameBuffer;
+        if (displayNameBuffer is null)
+        {
+            ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+        }
+
+        ReadOnlySpan<byte> displayNameBufferSpan = displayNameBuffer.AsSpan(0, _nameLength);
+        string displayName = StringPool.Shared.GetOrAdd(displayNameBufferSpan, Encoding.ASCII);
+
+        ArrayPool<byte>.Shared.Return(displayNameBuffer);
+        _displayNameBuffer = null;
+        return displayName;
+    }
+
+    [MethodImpl(MethodImplOptions.Synchronized | MethodImplOptions.NoInlining)]
+    private string GetUsernameFromBuffer()
+    {
+        byte[]? usernameBuffer = _usernameBuffer;
+        if (usernameBuffer is null)
+        {
+            ThrowHelper.ThrowObjectDisposedException<MemoryEfficientChatMessage>();
+        }
+
+        ReadOnlySpan<byte> usernameBufferSpan = usernameBuffer.AsSpan(0, _nameLength);
+        string username = StringPool.Shared.GetOrAdd(usernameBufferSpan, Encoding.ASCII);
+
+        ArrayPool<byte>.Shared.Return(usernameBuffer);
+        _usernameBuffer = null;
+        return username;
+    }
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is MemoryEfficientChatMessage other && Equals(other);
+    public bool Equals([NotNullWhen(true)] MemoryEfficientChatMessage? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override int GetHashCode() => HashCode.Combine(Id, TmiSentTs);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     public static bool operator ==(MemoryEfficientChatMessage? left, MemoryEfficientChatMessage? right) => Equals(left, right);
 

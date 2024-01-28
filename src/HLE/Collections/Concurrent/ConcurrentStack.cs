@@ -49,7 +49,7 @@ public sealed class ConcurrentStack<T> :
     {
     }
 
-    public ReadOnlySpan<T> AsSpan() => _buffer.AsSpan(..Count);
+    public ReadOnlySpan<T> AsSpan() => _buffer.AsSpanUnsafe(..Count);
 
     public void Push(T item)
     {

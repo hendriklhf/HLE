@@ -20,7 +20,7 @@ public sealed class SevenTvApiCache(CacheOptions options) : IEquatable<SevenTvAp
 
     public bool TryGetGlobalEmotes(out ImmutableArray<Emote> emotes)
     {
-        if (_globalEmotesCache.IsValid(Options.GlobalEmotesCacheTime))
+        if (_globalEmotesCache.IsValid(Options.GlobalEmotesCacheDuration))
         {
             emotes = _globalEmotesCache.Value;
             return true;
@@ -32,7 +32,7 @@ public sealed class SevenTvApiCache(CacheOptions options) : IEquatable<SevenTvAp
 
     public bool TryGetChannelEmotes(long channelId, out ImmutableArray<Emote> emotes)
     {
-        if (_channelEmotesCache.TryGetValue(channelId, out CacheEntry<ImmutableArray<Emote>> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheTime))
+        if (_channelEmotesCache.TryGetValue(channelId, out CacheEntry<ImmutableArray<Emote>> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheDuration))
         {
             emotes = emoteEntry.Value;
             return true;

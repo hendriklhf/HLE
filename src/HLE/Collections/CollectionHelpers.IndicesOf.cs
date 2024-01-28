@@ -17,7 +17,7 @@ public static partial class CollectionHelpers
             return IndicesOf(span, predicate);
         }
 
-        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        using ValueList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         switch (collection)
         {
             case IList<T> iList:
@@ -135,7 +135,7 @@ public static partial class CollectionHelpers
             return IndicesOf(span, predicate);
         }
 
-        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        using ValueList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         switch (collection)
         {
             case IList<T> iList:
@@ -253,7 +253,7 @@ public static partial class CollectionHelpers
             return span.IndicesOf(item);
         }
 
-        using PooledList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        using ValueList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
         switch (collection)
         {
             case IList<T> iList:

@@ -62,13 +62,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
                 return str;
         }
 
-        Bucket bucket = GetBucket(str);
-        if (!bucket.Contains(str))
-        {
-            bucket.Add(str);
-        }
-
-        return str;
+        return GetBucket(str).GetOrAdd(str);
     }
 
     [Pure]

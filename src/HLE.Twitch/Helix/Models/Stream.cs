@@ -51,7 +51,7 @@ public sealed class Stream : CachedModel, IEquatable<Stream>
     [JsonPropertyName("is_mature")]
     public required bool IsMature { get; init; }
 
-    public bool Equals(Stream? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals(Stream? other) => ReferenceEquals(this, other);
 
     public override bool Equals(object? obj) => obj is Stream other && Equals(other);
 

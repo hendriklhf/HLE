@@ -19,9 +19,11 @@ public static class DisposeHelpers
         }
     }
 
-    public static void DisposeAll<T>(T[] disposables) where T : IDisposable => DisposeAll(disposables.AsSpan());
+    public static void DisposeAll<T>(T[] disposables) where T : IDisposable
+        => DisposeAll(disposables.AsSpan());
 
-    public static void DisposeAll<T>(Span<T> disposables) where T : IDisposable => DisposeAll((ReadOnlySpan<T>)disposables);
+    public static void DisposeAll<T>(Span<T> disposables) where T : IDisposable
+        => DisposeAll((ReadOnlySpan<T>)disposables);
 
     public static void DisposeAll<T>(ReadOnlySpan<T> disposables) where T : IDisposable
     {

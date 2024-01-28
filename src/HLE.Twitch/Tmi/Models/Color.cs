@@ -72,7 +72,7 @@ public readonly struct Color : IBitwiseEquatable<Color>
             return string.Empty;
         }
 
-        ValueStringBuilder builder = new(stackalloc char[7]);
+        using ValueStringBuilder builder = new(stackalloc char[7]);
         builder.Append('#');
         builder.Append(Red, "X2");
         builder.Append(Green, "X2");

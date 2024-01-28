@@ -15,7 +15,7 @@ public static class EnvironmentVariableProvider
             return new WindowsEnvironmentVariableProvider();
         }
 
-        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsFreeBSD())
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
         {
             return new UnixEnvironmentVariableProvider();
         }

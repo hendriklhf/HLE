@@ -27,7 +27,7 @@ internal static class ArrayPool
     public const int MinimumArrayLength = 0x10; // has to be pow of 2
     public const int MaximumArrayLength = 0x800000; // has to be pow of 2
 
-    public static int IndexOffset
+    public static int BucketIndexOffset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => BitOperations.TrailingZeroCount(MinimumArrayLength);
@@ -51,5 +51,8 @@ internal static class ArrayPool
         typeof(T) == typeof(char) ||
         typeof(T) == typeof(Int128) ||
         typeof(T) == typeof(UInt128) ||
+        typeof(T) == typeof(float) ||
+        typeof(T) == typeof(double) ||
+        typeof(T) == typeof(decimal) ||
         typeof(T).IsEnum;
 }

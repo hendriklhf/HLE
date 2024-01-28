@@ -27,7 +27,7 @@ public static class StringMarshal
         ArgumentOutOfRangeException.ThrowIfNegative(length); // otherwise an OutOfMemoryException will be thrown
 
         string str = s_fastAllocateString(length);
-        chars = AsMutableSpan(str);
+        chars = MemoryMarshal.CreateSpan(ref GetReference(str), length);
         return str;
     }
 
@@ -38,13 +38,8 @@ public static class StringMarshal
     /// <returns>A <see cref="Span{Char}"/> representation of the passed-in <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe Span<char> AsMutableSpan(string str)
-    {
-        byte* ptr = *(byte**)&str + sizeof(nuint);
-        int length = *(int*)ptr;
-        ref char chars = ref Unsafe.AsRef<char>(ptr + sizeof(int));
-        return MemoryMarshal.CreateSpan(ref chars, length);
-    }
+    public static Span<char> AsMutableSpan(string str)
+        => MemoryMarshal.CreateSpan(ref GetReference(str), str.Length);
 
     public static void Replace(string? str, char oldChar, char newChar) => Replace(str.AsSpan(), oldChar, newChar);
 
@@ -113,6 +108,17 @@ public static class StringMarshal
         MemoryExtensions.ToUpperInvariant(copyBuffer, span);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Clear(string? str)
+    {
+        if (str is null)
+        {
+            return;
+        }
+
+        Unsafe.InitBlock(ref Unsafe.As<char, byte>(ref GetReference(str)), 0, (uint)(str.Length << 1));
+    }
+
     /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -136,7 +142,7 @@ public static class StringMarshal
 
         ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
         charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));
-        return RawDataMarshal.ReadObject<string, byte>(ref charsReference);
+        return ObjectMarshal.ReadObject<string, byte>(ref charsReference);
     }
 
     [Pure]

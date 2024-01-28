@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -14,6 +15,7 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
 
     private readonly string _clientId;
     private AccessToken _accessToken = AccessToken.Empty;
+    private string? _bearer;
     private readonly FormUrlEncodedContent _accessTokenRequestContent;
 
     private const string ApiBaseUrl = "https://api.twitch.tv/helix";
@@ -40,8 +42,8 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
     {
         await EnsureValidAccessTokenAsync();
         HttpClient httpClient = new();
-        httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_accessToken}");
         httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
+        httpClient.DefaultRequestHeaders.Add("Authorization", _bearer);
         return httpClient;
     }
 
@@ -60,12 +62,16 @@ public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
 
     private async ValueTask EnsureValidAccessTokenAsync()
     {
-        if (_accessToken != AccessToken.Empty && _accessToken.IsValid)
+        AccessToken accessToken = _accessToken;
+        if (accessToken != AccessToken.Empty && accessToken.IsValid)
         {
+            Debug.Assert(_bearer is not null);
             return;
         }
 
-        _accessToken = await GetAccessTokenAsync();
+        accessToken = await GetAccessTokenAsync();
+        _bearer = $"Bearer {accessToken}";
+        _accessToken = accessToken;
     }
 
     private async ValueTask<HttpContentBytes> ExecuteRequestAsync(string url)

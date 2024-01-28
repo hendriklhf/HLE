@@ -22,7 +22,7 @@ public sealed class ChannelEmote : Emote, IEquatable<ChannelEmote>
     public required EmoteTier Tier { get; init; }
 
     [Pure]
-    public bool Equals(ChannelEmote? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals(ChannelEmote? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals(object? obj) => obj is ChannelEmote other && Equals(other);

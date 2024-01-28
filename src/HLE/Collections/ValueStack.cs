@@ -110,7 +110,7 @@ public ref struct ValueStack<T>
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            _stack[..Count].Clear();
+            _stack.SliceUnsafe(..Count).Clear();
         }
 
         Count = 0;

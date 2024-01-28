@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using HLE.Strings;
 using HLE.Twitch.JsonConverters;
@@ -31,31 +33,32 @@ public class Emote : IEquatable<Emote>
     [JsonConverter(typeof(EmoteThemeJsonConverter))]
     public required EmoteThemes Themes { get; init; }
 
-    internal static readonly Dictionary<EmoteImageFormats, string> s_imageFormatValues = new()
+    internal static readonly FrozenDictionary<EmoteImageFormats, string> s_imageFormatValues = new Dictionary<EmoteImageFormats, string>(2)
     {
         { EmoteImageFormats.Static, "static" },
         { EmoteImageFormats.Animated, "animated" }
-    };
+    }.ToFrozenDictionary();
 
-    internal static readonly Dictionary<EmoteScales, string> s_scaleValues = new()
+    internal static readonly FrozenDictionary<EmoteScales, string> s_scaleValues = new Dictionary<EmoteScales, string>(3)
     {
         { EmoteScales.One, "1.0" },
         { EmoteScales.Two, "2.0" },
         { EmoteScales.Three, "3.0" }
-    };
+    }.ToFrozenDictionary();
 
-    internal static readonly Dictionary<EmoteThemes, string> s_themeValues = new()
+    internal static readonly FrozenDictionary<EmoteThemes, string> s_themeValues = new Dictionary<EmoteThemes, string>(2)
     {
         { EmoteThemes.Light, "light" },
         { EmoteThemes.Dark, "dark" }
-    };
+    }.ToFrozenDictionary();
 
+    [SkipLocalsInit]
     public bool TryGetImageUrl(EmoteImageFormats format, EmoteThemes theme, EmoteScales scale, [MaybeNullWhen(false)] out string url)
     {
         url = null;
-        ValueStringBuilder urlBuilder = new(stackalloc char[250]);
+        using ValueStringBuilder urlBuilder = new(stackalloc char[256]);
         urlBuilder.Append("https://static-cdn.jtvnw.net/emoticons/v2/");
-        if ((Formats & format) != format || !BitOperations.IsPow2((int)format))
+        if ((Formats & format) == 0 || !BitOperations.IsPow2((int)format))
         {
             return false;
         }
@@ -64,7 +67,7 @@ public class Emote : IEquatable<Emote>
         urlBuilder.Append('/');
         urlBuilder.Append(s_imageFormatValues[format]);
 
-        if ((Themes & theme) != theme || !BitOperations.IsPow2((int)theme))
+        if ((Themes & theme) == 0 || !BitOperations.IsPow2((int)theme))
         {
             return false;
         }
@@ -72,7 +75,7 @@ public class Emote : IEquatable<Emote>
         urlBuilder.Append('/');
         urlBuilder.Append(s_themeValues[theme]);
 
-        if ((Scales & scale) != scale || !BitOperations.IsPow2((int)scale))
+        if ((Scales & scale) == 0 || !BitOperations.IsPow2((int)scale))
         {
             return false;
         }
@@ -85,7 +88,7 @@ public class Emote : IEquatable<Emote>
 
     public override string ToString() => Name;
 
-    public bool Equals(Emote? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals(Emote? other) => ReferenceEquals(this, other);
 
     public override bool Equals(object? obj) => obj is Emote other && Equals(other);
 

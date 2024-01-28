@@ -5,9 +5,9 @@ namespace HLE.Twitch.SevenTv;
 
 public sealed class CacheOptions : IEquatable<CacheOptions>
 {
-    public TimeSpan GlobalEmotesCacheTime { get; set; } = TimeSpan.FromDays(1);
+    public TimeSpan GlobalEmotesCacheDuration { get; set; } = TimeSpan.FromDays(1);
 
-    public TimeSpan ChannelEmotesCacheTime { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan ChannelEmotesCacheDuration { get; set; } = TimeSpan.FromHours(1);
 
     public bool Equals(CacheOptions? other) => ReferenceEquals(this, other);
 

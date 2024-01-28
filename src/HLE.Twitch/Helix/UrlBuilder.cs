@@ -16,7 +16,7 @@ public struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
 
     private readonly PooledStringBuilder _builder;
 
-    public UrlBuilder(ReadOnlySpan<char> baseUrl, ReadOnlySpan<char> endpoint, int capacity = 100)
+    public UrlBuilder(ReadOnlySpan<char> baseUrl, ReadOnlySpan<char> endpoint, int capacity = 128)
     {
         _builder = new(capacity);
         _builder.Append(baseUrl);
@@ -32,26 +32,24 @@ public struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
 
     public void AppendParameter(ReadOnlySpan<char> key, ReadOnlySpan<char> value)
     {
-        _builder.Append(ParameterCount == 0 ? '?' : '&');
+        _builder.Append(ParameterCount++ == 0 ? '?' : '&');
         _builder.Append(key);
         _builder.Append('=');
         _builder.Append(value);
-        ParameterCount++;
     }
 
     public void AppendParameter<T>(ReadOnlySpan<char> key, T value) where T : ISpanFormattable
     {
-        _builder.Append(ParameterCount == 0 ? '?' : '&');
+        _builder.Append(ParameterCount++ == 0 ? '?' : '&');
         _builder.Append(key);
         _builder.Append('=');
         _builder.Append(value);
-        ParameterCount++;
     }
 
     [Pure]
     public override readonly string ToString() => _builder.ToString();
 
-    public readonly bool Equals(UrlBuilder other) => _builder.Equals(other._builder) && ParameterCount == other.ParameterCount;
+    public readonly bool Equals(UrlBuilder other) => ParameterCount == other.ParameterCount && _builder.Equals(other._builder);
 
     public override readonly bool Equals(object? obj) => obj is UrlBuilder other && Equals(other);
 

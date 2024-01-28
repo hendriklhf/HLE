@@ -55,13 +55,13 @@ public unsafe struct NativeString :
     internal static uint FirstCharByteOffset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => RawDataMarshal.BaseObjectSize + sizeof(int);
+        get => ObjectMarshal.BaseObjectSize + sizeof(int);
     }
 
     public static uint MaximumLength
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int.MaxValue - RawDataMarshal.BaseObjectSize - sizeof(int) - sizeof(char)) / 2;
+        get => (int.MaxValue - ObjectMarshal.BaseObjectSize - sizeof(int) - sizeof(char)) / 2;
     }
 
     public NativeString()
@@ -84,12 +84,12 @@ public unsafe struct NativeString :
             ThrowLengthExceedsMaximumLength(length);
         }
 
-        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(length);
+        nuint neededBufferSize = ObjectMarshal.GetRawStringSize(length);
         byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
 
         *(nuint*)buffer = 0;
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
-        rawStringData->MethodTable = (MethodTable*)typeof(string).TypeHandle.Value;
+        rawStringData->MethodTable = ObjectMarshal.GetMethodTable<string>();
         rawStringData->Length = length;
         Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
 
@@ -112,7 +112,7 @@ public unsafe struct NativeString :
             ThrowLengthExceedsMaximumLength(chars.Length);
         }
 
-        nuint neededBufferSize = RawDataMarshal.GetRawStringSize(chars.Length);
+        nuint neededBufferSize = ObjectMarshal.GetRawStringSize(chars.Length);
         byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
 
         *(nuint*)buffer = 0;
@@ -150,7 +150,7 @@ public unsafe struct NativeString :
         }
 
         byte* methodTablePointer = _buffer + sizeof(nuint);
-        return RawDataMarshal.ReadObject<string>(methodTablePointer);
+        return ObjectMarshal.ReadObject<string>(methodTablePointer);
     }
 
     [Pure]

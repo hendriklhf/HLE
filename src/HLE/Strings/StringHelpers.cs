@@ -298,8 +298,8 @@ public static class StringHelpers
             return 0;
         }
 
-        ValueStringBuilder builder = new(destination);
         SearchValues<char> regexMetaCharsSearchValues = s_regexMetaCharsSearchValues;
+        int resultLength = 0;
         do
         {
             char metaChar = input[indexOfMetaChar];
@@ -312,142 +312,155 @@ public static class StringHelpers
                 _ => metaChar
             };
 
-            builder.Append(input.SliceUnsafe(0, indexOfMetaChar));
-            builder.Append('\\', metaChar);
+            ReadOnlySpan<char> start = input.SliceUnsafe(0, indexOfMetaChar);
+            start.CopyTo(destination[resultLength..]);
+            resultLength += start.Length;
+
+            destination[resultLength++] = '\\';
+            destination[resultLength++] = metaChar;
+
             input = input.SliceUnsafe(indexOfMetaChar + 1);
             indexOfMetaChar = input.IndexOfAny(regexMetaCharsSearchValues);
         }
         while (indexOfMetaChar >= 0);
 
-        builder.Append(input);
-        return builder.Length;
+        input.CopyTo(destination[resultLength..]);
+        return resultLength + input.Length;
     }
 
     public static int Join(char separator, ReadOnlySpan<string> strings, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
+        int resultLength = 0;
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
             string str = Unsafe.Add(ref stringsReference, i);
-            builder.Append(str);
-            builder.Append(separator);
+            str.CopyTo(destination[resultLength..]);
+            resultLength += str.Length;
+            destination[resultLength++] = separator;
         }
 
         string lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
-        builder.Append(lastString);
-        return builder.Length;
+        lastString.CopyTo(destination[resultLength..]);
+        return resultLength + lastString.Length;
     }
 
     public static int Join(char separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
+        int resultLength = 0;
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
             ReadOnlyMemory<char> str = Unsafe.Add(ref stringsReference, i);
-            builder.Append(str.Span);
-            builder.Append(separator);
+            str.Span.CopyTo(destination[resultLength..]);
+            resultLength += str.Length;
+            destination[resultLength++] = separator;
         }
 
         ReadOnlyMemory<char> lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
-        builder.Append(lastString.Span);
-        return builder.Length;
+        lastString.Span.CopyTo(destination[resultLength..]);
+        return resultLength + lastString.Length;
     }
 
     public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<string> strings, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
+        int resultLength = 0;
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
             string str = Unsafe.Add(ref stringsReference, i);
-            builder.Append(str, separator);
+            str.CopyTo(destination[resultLength..]);
+            resultLength += str.Length;
+            separator.CopyTo(destination[resultLength..]);
+            resultLength += separator.Length;
         }
 
         string lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
-        builder.Append(lastString);
-        return builder.Length;
+        lastString.CopyTo(destination[resultLength..]);
+        return resultLength + lastString.Length;
     }
 
     public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int stringsLengthMinus1 = strings.Length - 1;
         ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
+        int resultLength = 0;
         for (int i = 0; i < stringsLengthMinus1; i++)
         {
             ReadOnlyMemory<char> str = Unsafe.Add(ref stringsReference, i);
-            builder.Append(str.Span, separator);
+            str.Span.CopyTo(destination[resultLength..]);
+            resultLength += str.Length;
+            separator.CopyTo(destination[resultLength..]);
+            resultLength += separator.Length;
         }
 
         ReadOnlyMemory<char> lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
-        builder.Append(lastString.Span);
-        return builder.Length;
+        lastString.Span.CopyTo(destination[resultLength..]);
+        return resultLength + lastString.Length;
     }
 
     public static int Join(char separator, ReadOnlySpan<char> chars, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int charsLengthMinus1 = chars.Length - 1;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
+        int resultLength = 0;
         for (int i = 0; i < charsLengthMinus1; i++)
         {
-            char c = Unsafe.Add(ref charsReference, i);
-            builder.Append(c, separator);
+            destination[resultLength++] = Unsafe.Add(ref charsReference, i);
+            destination[resultLength++] = separator;
         }
 
-        char lastChar = Unsafe.Add(ref charsReference, charsLengthMinus1);
-        builder.Append(lastChar);
-        return builder.Length;
+        destination[resultLength++] = Unsafe.Add(ref charsReference, charsLengthMinus1);
+        return resultLength;
     }
 
     public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<char> chars, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int charsLengthMinus1 = chars.Length - 1;
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
+        int resultLength = 0;
         for (int i = 0; i < charsLengthMinus1; i++)
         {
-            char c = Unsafe.Add(ref charsReference, i);
-            builder.Append(c);
-            builder.Append(separator);
+            destination[resultLength++] = Unsafe.Add(ref charsReference, i);
+            separator.CopyTo(destination[resultLength..]);
+            resultLength += separator.Length;
         }
 
-        char lastChar = Unsafe.Add(ref charsReference, charsLengthMinus1);
-        builder.Append(lastChar);
-        return builder.Length;
+        destination[resultLength++] = Unsafe.Add(ref charsReference, charsLengthMinus1);
+        return resultLength;
     }
 
     public static int Concat(ReadOnlySpan<string> strings, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int stringsLength = strings.Length;
         ref string stringsReference = ref MemoryMarshal.GetReference(strings);
+        int resultLength = 0;
         for (int i = 0; i < stringsLength; i++)
         {
             string str = Unsafe.Add(ref stringsReference, i);
-            builder.Append(str);
+            str.CopyTo(destination[resultLength..]);
+            resultLength += str.Length;
         }
 
-        return builder.Length;
+        return resultLength;
     }
 
     public static int Concat(ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
-        ValueStringBuilder builder = new(destination);
         int stringsLength = strings.Length;
         ref ReadOnlyMemory<char> stringsReference = ref MemoryMarshal.GetReference(strings);
+        int resultLength = 0;
         for (int i = 0; i < stringsLength; i++)
         {
             ReadOnlyMemory<char> str = Unsafe.Add(ref stringsReference, i);
-            builder.Append(str.Span);
+            str.Span.CopyTo(destination[resultLength..]);
+            resultLength += str.Length;
         }
 
-        return builder.Length;
+        return resultLength;
     }
 
     /// <summary>
@@ -457,7 +470,7 @@ public static class StringHelpers
     /// <param name="str">The string of which the bytes will be read from.</param>
     /// <returns>A span of UTF-16 bytes of the string.</returns>
     [Pure]
-    public static ReadOnlySpan<byte> AsByteSpan(this string? str)
+    public static ReadOnlySpan<byte> AsUtf16Bytes(this string? str)
     {
         if (str is null)
         {

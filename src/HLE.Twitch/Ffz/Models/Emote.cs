@@ -14,7 +14,7 @@ public sealed class Emote : IEquatable<Emote>
     [JsonPropertyName("name")]
     public required string Name { get; init; }
 
-    public bool Equals(Emote? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals(Emote? other) => ReferenceEquals(this, other);
 
     public override bool Equals(object? obj) => obj is Emote other && Equals(other);
 

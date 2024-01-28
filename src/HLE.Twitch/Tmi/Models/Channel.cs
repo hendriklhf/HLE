@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -95,19 +93,14 @@ public sealed class Channel : IEquatable<Channel>
                     SubsOnly = args.SubsOnly;
                     break;
                 default:
-                    ThrowInvalidChangedRoomstates(roomState);
+                    ThrowHelper.ThrowInvalidEnumValue(roomState);
                     break;
             }
         }
     }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowInvalidChangedRoomstates(ChangedRoomStates roomState)
-        => throw new InvalidEnumArgumentException(nameof(roomState), (int)roomState, typeof(ChangedRoomStates));
-
     [Pure]
-    public bool Equals([NotNullWhen(true)] Channel? other) => ReferenceEquals(this, other) || Id == other?.Id;
+    public bool Equals([NotNullWhen(true)] Channel? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is Channel other && Equals(other);

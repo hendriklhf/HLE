@@ -26,25 +26,33 @@ internal static class ToStringHelpers
         => FormatCollection(typeof(TCollection), elementCount);
 
     [Pure]
+    [SkipLocalsInit]
     public static string FormatCollection(Type collectionType, int elementCount)
     {
-        using PooledStringBuilder builder = new(64);
-
-        AppendTypeAndGenericParameters(collectionType, builder);
-
-        if (builder.WrittenSpan.EndsWith("[]"))
+        // ReSharper disable once NotDisposedResource
+        ValueStringBuilder builder = new(stackalloc char[256]);
+        try
         {
-            builder.Advance(-2);
+            AppendTypeAndGenericParameters(collectionType, ref builder);
+
+            if (builder.WrittenSpan.EndsWith("[]"))
+            {
+                builder.Advance(-2);
+            }
+
+            builder.Append('[');
+            builder.Append(elementCount);
+            builder.Append(']');
+
+            return builder.ToString();
         }
-
-        builder.Append('[');
-        builder.Append(elementCount);
-        builder.Append(']');
-
-        return builder.ToString();
+        finally
+        {
+            builder.Dispose();
+        }
     }
 
-    private static void AppendTypeAndGenericParameters(Type type, PooledStringBuilder builder)
+    private static void AppendTypeAndGenericParameters(Type type, ref ValueStringBuilder builder)
     {
         builder.Append(type.Namespace);
         builder.Append('.');
@@ -59,12 +67,12 @@ internal static class ToStringHelpers
 
         ReadOnlySpan<Type> genericArguments = GetGenericTypeArguments(type);
         ref Type genericArgumentsReference = ref MemoryMarshal.GetReference(genericArguments);
-        AppendTypeAndGenericParameters(genericArgumentsReference, builder);
+        AppendTypeAndGenericParameters(genericArgumentsReference, ref builder);
 
         for (int i = 1; i < genericArguments.Length; i++)
         {
             builder.Append(", ");
-            AppendTypeAndGenericParameters(Unsafe.Add(ref genericArgumentsReference, i), builder);
+            AppendTypeAndGenericParameters(Unsafe.Add(ref genericArgumentsReference, i), ref builder);
         }
 
         builder.Append('>');

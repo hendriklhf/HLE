@@ -37,7 +37,7 @@ public readonly partial struct OAuthToken : IEquatable<OAuthToken>
             ThrowInvalidOAuthTokenFormat();
         }
 
-        ValueStringBuilder builder = new(stackalloc char[TokenLength]);
+        using ValueStringBuilder builder = new(stackalloc char[TokenLength]);
         if (!token.StartsWith(TokenPrefix))
         {
             builder.Append(TokenPrefix);

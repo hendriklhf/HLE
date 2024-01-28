@@ -15,7 +15,7 @@ public sealed class Emote : IEquatable<Emote>
 
     public override string ToString() => Name;
 
-    public bool Equals(Emote? other) => ReferenceEquals(this, other) || Id == other?.Id && Name == other.Name;
+    public bool Equals(Emote? other) => ReferenceEquals(this, other);
 
     public override bool Equals(object? obj) => obj is Emote other && Equals(other);
 

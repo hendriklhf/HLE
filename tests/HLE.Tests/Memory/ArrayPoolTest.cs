@@ -13,7 +13,7 @@ public sealed class ArrayPoolTest
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
-        => Assert.Equal(ArrayPool.IndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
+        => Assert.Equal(ArrayPool.BucketIndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
 
     [Fact]
     public void MinimumAndMaximumLengthArePow2()

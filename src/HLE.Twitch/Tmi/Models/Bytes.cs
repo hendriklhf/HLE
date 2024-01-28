@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Collections;
 using HLE.Memory;
@@ -40,7 +41,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     public void Dispose() => _buffer.Dispose();
 
     [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan() => _buffer[..Length];
+    public readonly ReadOnlySpan<byte> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref _buffer.Reference, Length);
 
     [Pure]
     public readonly ReadOnlyMemory<byte> AsMemory() => _buffer.AsMemory(..Length);
@@ -55,7 +56,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
         }
 
         byte[] result = GC.AllocateUninitializedArray<byte>(length);
-        CopyWorker<byte>.Copy(_buffer[..length], result);
+        CopyWorker<byte>.Copy(AsSpan(), result);
         return result;
     }
 
@@ -78,7 +79,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
         }
 
         List<byte> result = new(length);
-        CopyWorker<byte> copyWorker = new(_buffer[..length]);
+        CopyWorker<byte> copyWorker = new(AsSpan());
         copyWorker.CopyTo(result);
         return result;
     }

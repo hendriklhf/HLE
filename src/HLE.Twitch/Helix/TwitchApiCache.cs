@@ -33,12 +33,12 @@ public sealed class TwitchApiCache(CacheOptions options)
     }
 
     public bool TryGetUser(long userId, [MaybeNullWhen(false)] out User user)
-        => _userCache.TryGetByPrimaryKey(userId, out user) && user.IsValid(Options.UserCacheTime);
+        => _userCache.TryGetByPrimaryKey(userId, out user) && user.IsValid(Options.UserCacheDuration);
 
     public bool TryGetUser(ReadOnlySpan<char> username, [MaybeNullWhen(false)] out User user)
     {
         int usernameHash = string.GetHashCode(username, StringComparison.OrdinalIgnoreCase);
-        return _userCache.TryGetBySecondaryKey(usernameHash, out user) && user.IsValid(Options.UserCacheTime);
+        return _userCache.TryGetBySecondaryKey(usernameHash, out user) && user.IsValid(Options.UserCacheDuration);
     }
 
     public void AddStream(Stream stream)
@@ -56,19 +56,19 @@ public sealed class TwitchApiCache(CacheOptions options)
     }
 
     public bool TryGetStream(long channelId, [MaybeNullWhen(false)] out Stream stream)
-        => _streamCache.TryGetByPrimaryKey(channelId, out stream) && stream.IsValid(Options.StreamCacheTime);
+        => _streamCache.TryGetByPrimaryKey(channelId, out stream) && stream.IsValid(Options.StreamCacheDuration);
 
     public bool TryGetStream(ReadOnlySpan<char> username, [MaybeNullWhen(false)] out Stream stream)
     {
         int usernameHash = string.GetHashCode(username, StringComparison.OrdinalIgnoreCase);
-        return _streamCache.TryGetBySecondaryKey(usernameHash, out stream) && stream.IsValid(Options.StreamCacheTime);
+        return _streamCache.TryGetBySecondaryKey(usernameHash, out stream) && stream.IsValid(Options.StreamCacheDuration);
     }
 
     public void AddGlobalEmotes(ImmutableArray<Emote> emotes) => _globalEmoteCache = new(emotes);
 
     public bool TryGetGlobalEmotes(out ImmutableArray<Emote> emotes)
     {
-        if (_globalEmoteCache.IsValid(Options.GlobalEmotesCacheTime))
+        if (_globalEmoteCache.IsValid(Options.GlobalEmotesCacheDuration))
         {
             emotes = _globalEmoteCache.Value;
             return true;
@@ -82,7 +82,7 @@ public sealed class TwitchApiCache(CacheOptions options)
 
     public bool TryGetChannelEmotes(long channelId, out ImmutableArray<ChannelEmote> emotes)
     {
-        if (_channelEmoteCache.TryGetValue(channelId, out CacheEntry<ImmutableArray<ChannelEmote>> entry) && entry.IsValid(Options.ChannelEmotesCacheTime))
+        if (_channelEmoteCache.TryGetValue(channelId, out CacheEntry<ImmutableArray<ChannelEmote>> entry) && entry.IsValid(Options.ChannelEmotesCacheDuration))
         {
             emotes = entry.Value;
             return true;

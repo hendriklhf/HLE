@@ -64,7 +64,7 @@ public sealed unsafe class NativeMemoryList<T>(int capacity) :
     public void Dispose() => _buffer.Dispose();
 
     [Pure]
-    public Span<T> AsSpan() => _buffer.AsSpan(..Count);
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref _buffer.Reference, Count);
 
     [Pure]
     public Span<T> AsSpan(int start) => new Slicer<T>(_buffer.Pointer, Count).SliceSpan(start);

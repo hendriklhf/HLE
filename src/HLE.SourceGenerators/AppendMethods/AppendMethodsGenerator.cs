@@ -12,7 +12,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private readonly List<ImmutableArray<string>> _readOnlySpanArguments = [];
     private readonly List<ImmutableArray<string>> _charArguments = [];
 
-    private const int DefaultStringBuilderCapacity = 4096;
+    private const int DefaultStringBuilderCapacity = 8096;
     private const int MinimumAmountOfArguments = 2;
     private const int MaximumAmountOfArguments = 8;
     private const string ReadOnlySpanArgumentNamePrefix = "s";
@@ -53,7 +53,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         sourceBuilder.AppendLine($"public ref partial struct {ValueStringBuilderClassName}");
         sourceBuilder.AppendLine("{");
 
-        ValueStringMethodBuilder methodBuilder = new(sourceBuilder);
+        PooledStringBuilderMethodBuilder methodBuilder = new(sourceBuilder);
 
         foreach (ImmutableArray<string> arguments in _readOnlySpanArguments)
         {

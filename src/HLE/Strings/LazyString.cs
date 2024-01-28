@@ -37,7 +37,7 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
 
     int ICountable.Count => Length;
 
-    private RentedArray<char> _chars;
+    private char[]? _chars;
     private string? _string;
 
     public static LazyString Empty { get; } = new();
@@ -53,11 +53,13 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
     {
         if (chars.Length == 0)
         {
+            _chars = [];
+            _string = string.Empty;
             return;
         }
 
-        RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(chars.Length);
-        CopyWorker<char>.Copy(chars, buffer.AsSpan());
+        char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length);
+        CopyWorker<char>.Copy(chars, buffer);
         _chars = buffer;
         Length = chars.Length;
     }
@@ -65,27 +67,42 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
     [MustDisposeResource]
     public LazyString([HandlesResourceDisposal] RentedArray<char> chars, int length)
     {
-        _chars = chars;
+        _chars = chars.Array;
         Length = length;
     }
 
-    public void Dispose() => _chars.Dispose();
-
-    [Pure]
-    internal ref char GetReference() => ref _string is null ? ref _chars.Reference : ref StringMarshal.GetReference(_string);
-
-    [Pure]
-    public ReadOnlySpan<char> AsSpan()
+    public void Dispose()
     {
-        if (Length == 0)
+        char[]? chars = _chars;
+        if (chars is null)
         {
-            return [];
+            return;
         }
 
-#pragma warning disable RCS1084 // use "??", which can't be used here
-        return _string is null ? _chars.AsSpan(..Length) : _string;
-#pragma warning restore RCS1084
+        ArrayPool<char>.Shared.Return(chars);
+        _chars = null;
     }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref char GetReference()
+    {
+        if (_chars is not null)
+        {
+            return ref MemoryMarshal.GetArrayDataReference(_chars);
+        }
+
+        if (_string is not null)
+        {
+            return ref StringMarshal.GetReference(_string);
+        }
+
+        ThrowHelper.ThrowUnreachableException();
+        return ref Unsafe.NullRef<char>();
+    }
+
+    [Pure]
+    public ReadOnlySpan<char> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref GetReference(), Length);
 
     [Pure]
     public ReadOnlyMemory<char> AsMemory()
@@ -95,7 +112,18 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
             return ReadOnlyMemory<char>.Empty;
         }
 
-        return _string?.AsMemory() ?? _chars.AsMemory(..Length);
+        if (_chars is not null)
+        {
+            return _chars.AsMemory();
+        }
+
+        if (_string is not null)
+        {
+            return _string.AsMemory();
+        }
+
+        ThrowHelper.ThrowUnreachableException();
+        return ReadOnlyMemory<char>.Empty;
     }
 
     [Pure]
@@ -151,9 +179,15 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
             return string.Empty;
         }
 
-        ReadOnlySpan<char> chars = _chars.AsSpan(..Length);
+        char[]? charBuffer = _chars;
+        _chars = null;
+
+        Debug.Assert(charBuffer is not null);
+
+        ReadOnlySpan<char> chars = charBuffer.AsSpanUnsafe(..Length);
         string str = Length <= maximumPoolingLength ? StringPool.Shared.GetOrAdd(chars) : new(chars);
-        _chars.Dispose();
+        ArrayPool<char>.Shared.Return(charBuffer);
+
         _string = str;
         return str;
     }

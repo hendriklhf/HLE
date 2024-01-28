@@ -17,21 +17,29 @@ internal readonly ref struct ResponseDeserializer(ReadOnlySpan<byte> response)
     {
         ReadOnlySpan<byte> emotesProperty = "emoticons"u8;
 
-        using PooledList<Emote> emotes = new(50);
-        Utf8JsonReader reader = new(_response);
-        while (reader.Read())
+        // ReSharper disable once NotDisposedResource
+        ValueList<Emote> emotes = new(50);
+        try
         {
-            if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(emotesProperty))
+            Utf8JsonReader reader = new(_response);
+            while (reader.Read())
             {
-                DeserializeEmotes(ref reader, emotes);
-                break;
+                if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(emotesProperty))
+                {
+                    DeserializeEmotes(ref reader, ref emotes);
+                    break;
+                }
             }
-        }
 
-        return ImmutableCollectionsMarshal.AsImmutableArray(emotes.ToArray());
+            return ImmutableCollectionsMarshal.AsImmutableArray(emotes.ToArray());
+        }
+        finally
+        {
+            emotes.Dispose();
+        }
     }
 
-    private static void DeserializeEmotes(ref Utf8JsonReader reader, PooledList<Emote> emotes)
+    private static void DeserializeEmotes(ref Utf8JsonReader reader, ref ValueList<Emote> emotes)
     {
         ReadOnlySpan<byte> emoteIdProperty = "id"u8;
         ReadOnlySpan<byte> emoteNameProperty = "name"u8;

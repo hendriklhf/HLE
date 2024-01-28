@@ -400,4 +400,22 @@ public static partial class CollectionHelpers
 
         return true;
     }
+
+    [Pure]
+    [MustDisposeResource]
+    public static PooledList<T> ToPooledList<T>(this IEnumerable<T> enumerable)
+    {
+        PooledList<T> list = [];
+        list.AddRange(enumerable);
+        return list;
+    }
+
+    [Pure]
+    [MustDisposeResource]
+    public static PooledBufferWriter<T> ToPooledBufferWriter<T>(this IEnumerable<T> enumerable)
+    {
+        PooledBufferWriter<T> writer = new();
+        writer.Write(enumerable);
+        return writer;
+    }
 }

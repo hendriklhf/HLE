@@ -181,7 +181,7 @@ public sealed class StringArray :
         {
             // TODO: maybe partition it, so not every index of the right length has to be found,
             // slow if the index is at the beginning and the whole array will be scanned
-            int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(stringLengths), stringLengths.Length, chars.Length, indices);
+            int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(stringLengths), stringLengths.Length, chars.Length, ref MemoryMarshal.GetReference(indices));
             if (indicesLength == 0)
             {
                 return -1;

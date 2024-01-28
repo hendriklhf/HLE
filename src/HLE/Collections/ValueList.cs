@@ -1,99 +1,240 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 using HLE.Memory;
+using JetBrains.Annotations;
+using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
-public ref struct ValueList<T> where T : IEquatable<T>
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("Count = {Count}")]
+public ref struct ValueList<T>
 {
     public readonly ref T this[int index]
     {
         get
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)_buffer.Length);
-            return ref Unsafe.Add(ref MemoryMarshal.GetReference(_buffer), index);
+            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Count);
+            return ref Unsafe.Add(ref GetBufferReference(), index);
         }
     }
 
-    public readonly ref T this[Index index] => ref this[index.GetOffset(_buffer.Length)];
+    public readonly ref T this[Index index] => ref this[index.GetOffset(Count)];
 
-    public readonly Span<T> this[Range range] => _buffer[range];
+    public readonly Span<T> this[Range range] => AsSpan(range);
 
-    public int Count { get; private set; }
-
-    public readonly int Capacity => _buffer.Length;
-
-    private readonly Span<T> _buffer = [];
-
-    public static ValueList<T> Empty => new();
-
-    public ValueList()
+    [SuppressMessage("ReSharper", "StructMemberCanBeMadeReadOnly", Justification = "setter mutates")]
+    public int Count
     {
+        readonly get => _countAndIsStackalloced.Integer;
+        private set
+        {
+            Debug.Assert(value >= 0);
+            _countAndIsStackalloced.SetIntegerUnsafe(value);
+        }
     }
 
-    public ValueList(Span<T> buffer) => _buffer = buffer;
+    private bool IsStackalloced
+    {
+        readonly get => _countAndIsStackalloced.Bool;
+        set => _countAndIsStackalloced.Bool = value;
+    }
+
+    private int BufferLength
+    {
+        readonly get => _bufferLengthAndIsDisposed.Integer;
+        set
+        {
+            Debug.Assert(value >= 0);
+            _bufferLengthAndIsDisposed.SetIntegerUnsafe(value);
+        }
+    }
+
+    private bool IsDisposed
+    {
+        readonly get => _bufferLengthAndIsDisposed.Bool;
+        set => _bufferLengthAndIsDisposed.Bool = value;
+    }
+
+    public readonly int Capacity => BufferLength;
+
+    internal ref T _buffer;
+    private IntBoolUnion<int> _bufferLengthAndIsDisposed;
+    private IntBoolUnion<int> _countAndIsStackalloced;
+
+    [MustDisposeResource]
+    public ValueList()
+    {
+        _buffer = ref Unsafe.NullRef<T>();
+        IsStackalloced = true;
+    }
+
+    [MustDisposeResource]
+    public ValueList(int capacity)
+    {
+        T[] buffer = ArrayPool<T>.Shared.Rent(capacity);
+        _buffer = ref MemoryMarshal.GetArrayDataReference(buffer);
+        BufferLength = buffer.Length;
+    }
+
+    [MustDisposeResource]
+    public ValueList(Span<T> buffer)
+    {
+        _buffer = ref MemoryMarshal.GetReference(buffer);
+        BufferLength = buffer.Length;
+        IsStackalloced = true;
+    }
+
+    public void Dispose()
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        if (IsStackalloced)
+        {
+            _buffer = ref Unsafe.NullRef<T>();
+            BufferLength = 0;
+            IsDisposed = true;
+            return;
+        }
+
+        T[] array = SpanMarshal.AsArray(ref _buffer);
+        ArrayPool<T>.Shared.Return(array);
+
+        _buffer = ref Unsafe.NullRef<T>();
+        BufferLength = 0;
+        IsDisposed = true;
+    }
 
     [Pure]
-    public readonly Span<T> AsSpan() => _buffer[..Count];
+    public readonly Span<T> AsSpan() => GetBuffer().SliceUnsafe(..Count);
+
+    [Pure]
+    public readonly Span<T> AsSpan(int start) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(start);
+
+    [Pure]
+    public readonly Span<T> AsSpan(int start, int length) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(start, length);
+
+    [Pure]
+    public readonly Span<T> AsSpan(Range range) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(range);
+
+    [Pure]
+    public readonly Memory<T> AsMemory() => SpanMarshal.AsArray(GetBuffer()).AsMemory(..Count);
 
     [Pure]
     public readonly T[] ToArray()
     {
-        int count = Count;
-        if (count == 0)
+        Span<T> source = AsSpan();
+        if (source.Length == 0)
         {
             return [];
         }
 
-        T[] result = GC.AllocateUninitializedArray<T>(count);
-        CopyWorker<T>.Copy(_buffer[..count], result);
+        T[] result = GC.AllocateUninitializedArray<T>(source.Length);
+        CopyWorker<T>.Copy(source, result);
         return result;
     }
 
     [Pure]
+    public readonly T[] ToArray(int start) => AsSpan().ToArray(start);
+
+    [Pure]
+    public readonly T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    [Pure]
+    public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
+
+    [Pure]
     public readonly List<T> ToList()
     {
-        int count = Count;
-        if (count == 0)
+        Span<T> source = AsSpan();
+        if (source.Length == 0)
         {
             return [];
         }
 
-        List<T> result = new(count);
-        CopyWorker<T> copyWorker = new(AsSpan());
+        List<T> result = new(source.Length);
+        CopyWorker<T> copyWorker = new(source);
         copyWorker.CopyTo(result);
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    private void GrowIfNeeded(int sizeHint)
+    {
+        int freeSpace = Capacity - Count;
+        if (freeSpace >= sizeHint)
+        {
+            return;
+        }
+
+        Grow(sizeHint - freeSpace);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
+    private void Grow(int neededSize)
+    {
+        Debug.Assert(neededSize >= 0);
+
+        int count = Count;
+        Span<T> oldBuffer = GetBuffer();
+        int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
+        Span<T> newBuffer = ArrayPool<T>.Shared.Rent(newSize);
+        if (count != 0)
+        {
+            CopyWorker<T>.Copy(oldBuffer[..count], newBuffer);
+        }
+
+        _buffer = ref MemoryMarshal.GetReference(newBuffer);
+        BufferLength = newBuffer.Length;
+
+        if (IsStackalloced)
+        {
+            IsStackalloced = false;
+            return;
+        }
+
+        T[] array = SpanMarshal.AsArray(oldBuffer);
+        ArrayPool<T>.Shared.Return(array);
+    }
+
     public void Add(T item)
     {
-        ThrowIfNotEnoughSpace(1);
-        _buffer[Count++] = item;
+        GrowIfNeeded(1);
+        Unsafe.Add(ref GetBufferReference(), Count++) = item;
     }
 
     public void AddRange(IEnumerable<T> items)
     {
-        int count = Count;
-        if (items.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+        if (items.TryGetNonEnumeratedCount(out int itemsCount))
         {
-            ThrowIfNotEnoughSpace(span.Length);
-            Span<T> destination = _buffer[count..];
-            CopyWorker<T>.Copy(span, destination);
-            Count = count + span.Length;
-            return;
-        }
+            if (itemsCount == 0)
+            {
+                return;
+            }
 
-        if (items.TryGetNonEnumeratedCount(out int itemCount))
-        {
-            ThrowIfNotEnoughSpace(itemCount);
-            ref T destinationReference = ref MemoryMarshal.GetReference(_buffer);
+            GrowIfNeeded(itemsCount);
+
+            ref T buffer = ref GetBufferReference();
+            int count = Count;
+            ref T destination = ref Unsafe.Add(ref buffer, count);
+            if (items.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+            {
+                CopyWorker<T>.Copy(span, ref destination);
+                Count = count + itemsCount;
+                return;
+            }
+
             foreach (T item in items)
             {
-                Unsafe.Add(ref destinationReference, count++) = item;
+                Unsafe.Add(ref destination, count++) = item;
             }
 
             Count = count;
@@ -106,66 +247,101 @@ public ref struct ValueList<T> where T : IEquatable<T>
         }
     }
 
-    public void AddRange(List<T> items) => AddRange(CollectionsMarshal.AsSpan(items));
+    public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
 
-    public void AddRange(params T[] items) => AddRange(items.AsSpan());
+    public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
 
     public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
     public void AddRange(ReadOnlySpan<T> items)
     {
-        ThrowIfNotEnoughSpace(items.Length);
-        Span<T> destination = _buffer[Count..];
-        CopyWorker<T>.Copy(items, destination);
-        Count += items.Length;
+        if (items.Length == 0)
+        {
+            return;
+        }
+
+        GrowIfNeeded(items.Length);
+
+        int count = Count;
+        ref T destination = ref Unsafe.Add(ref GetBufferReference(), count);
+        CopyWorker<T>.Copy(items, ref destination);
+        Count = count + items.Length;
+    }
+
+    /// <summary>
+    /// Trims unused buffer size.<br/>
+    /// This method should ideally be called, when <see cref="Capacity"/> of the <see cref="ValueList{T}"/> is much larger than <see cref="Count"/>.
+    /// </summary>
+    /// <example>
+    /// After having removed a lot of items from the <see cref="ValueList{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.
+    /// If there are 32 items remaining and the <see cref="Capacity"/> is 1024, the buffer of 1024 items will be returned to the <see cref="ArrayPool{T}"/>
+    /// and a new buffer that has at least the size of the remaining items will be rented and the remaining 32 items are copied into it.
+    /// </example>
+    public void TrimBuffer()
+    {
+        int count = Count;
+        int trimmedBufferSize = BufferHelpers.GrowArray((uint)count, 0);
+        if (trimmedBufferSize == Capacity)
+        {
+            return;
+        }
+
+        Span<T> oldBuffer = GetBuffer();
+        if (trimmedBufferSize == 0)
+        {
+            if (!IsStackalloced)
+            {
+                T[] array = SpanMarshal.AsArray(oldBuffer);
+                ArrayPool<T>.Shared.Return(array);
+            }
+
+            _buffer = ref Unsafe.NullRef<T>();
+            BufferLength = 0;
+            IsStackalloced = false;
+            return;
+        }
+
+        T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
+        ref T source = ref MemoryMarshal.GetReference(oldBuffer);
+        ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
+        CopyWorker<T>.Copy(ref source, ref destination, (uint)count);
+
+        if (!IsStackalloced)
+        {
+            T[] array = SpanMarshal.AsArray(oldBuffer);
+            ArrayPool<T>.Shared.Return(array);
+        }
+
+        _buffer = ref MemoryMarshal.GetArrayDataReference(newBuffer);
+        BufferLength = newBuffer.Length;
+        IsStackalloced = false;
     }
 
     public void Clear()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            _buffer[..Count].Clear();
+            AsSpan().Clear();
         }
 
         Count = 0;
     }
 
-    [Pure]
-    public readonly bool Contains(T item) => IndexOf(item) >= 0;
-
-    public bool Remove(T item)
-    {
-        int index = IndexOf(item);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        int count = Count;
-        Span<T> buffer = _buffer[..count];
-        buffer[(index + 1)..].CopyTo(buffer[index..]);
-        Count = count - 1;
-        return true;
-    }
-
-    [Pure]
-    public readonly int IndexOf(T item) => _buffer[..Count].IndexOf(item);
+    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
     public void Insert(int index, T item)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Count);
-        ThrowIfNotEnoughSpace(1);
-
-        _buffer[index..^1].CopyTo(_buffer[(index + 1)..]);
-        _buffer[index] = item;
+        GrowIfNeeded(1);
         Count++;
+        Span<T> buffer = AsSpan();
+        buffer[index..^1].CopyTo(buffer[(index + 1)..]);
+        buffer[index] = item;
     }
 
     public void RemoveAt(int index)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Count);
-
-        _buffer[(index + 1)..].CopyTo(_buffer[index..]);
+        Span<T> buffer = AsSpan();
+        buffer[(index + 1)..].CopyTo(buffer[index..]);
         Count--;
     }
 
@@ -205,31 +381,29 @@ public ref struct ValueList<T> where T : IEquatable<T>
         copyWorker.CopyTo(destination);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly void ThrowIfNotEnoughSpace(int itemsToAdd)
+    private readonly ref T GetBufferReference()
     {
-        if (itemsToAdd > Capacity - Count)
+        if (IsDisposed)
         {
-            ThrowNotEnoughSpace();
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueList<T>));
         }
+
+        return ref _buffer;
     }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNotEnoughSpace() => throw new InvalidOperationException("Maximum buffer capacity reached.");
+    internal readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
 
     [Pure]
-    public readonly MemoryEnumerator<T> GetEnumerator() => new(ref MemoryMarshal.GetReference(_buffer), Count);
+    public readonly MemoryEnumerator<T> GetEnumerator() => new(ref GetBufferReference(), Count);
 
     [Pure]
-    public readonly bool Equals(ValueList<T> other)
-        => _buffer == other._buffer && Count == other.Count;
+    public readonly bool Equals(ValueList<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public override readonly int GetHashCode() => _buffer.Length;
+    public override readonly int GetHashCode() => Count.GetHashCode();
 
     public static bool operator ==(ValueList<T> left, ValueList<T> right) => left.Equals(right);
 

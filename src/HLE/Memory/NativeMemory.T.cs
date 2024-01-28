@@ -51,22 +51,18 @@ public unsafe partial struct NativeMemory<T> :
 
     public readonly int Length
     {
-        get => (int)(_lengthAndDisposed & 0x7FFFFFFF);
+        get => _lengthAndIsDisposed.Integer;
         private init
         {
             Debug.Assert(value >= 0, "value needs to be >= 0 and should be validated by the ctor");
-            _lengthAndDisposed = (_lengthAndDisposed & 0x80000000) | (uint)value;
+            _lengthAndIsDisposed.SetIntegerUnsafe(value);
         }
     }
 
     private bool IsDisposed
     {
-        readonly get => (_lengthAndDisposed & 0x80000000) == 0x80000000;
-        set
-        {
-            uint valueAsUInt = (uint)(value ? 1 : 0); // value has to be a "valid" bool
-            _lengthAndDisposed = (_lengthAndDisposed & 0x7FFFFFFF) | (valueAsUInt << 31);
-        }
+        readonly get => _lengthAndIsDisposed.Bool;
+        set => _lengthAndIsDisposed.Bool = value;
     }
 
     public readonly ref T Reference => ref Unsafe.AsRef<T>(Pointer);
@@ -81,10 +77,7 @@ public unsafe partial struct NativeMemory<T> :
 
     internal readonly T* _memory;
 
-    // | 0 | 000 0000 0000 0000 0000 0000 0000 |
-    // most significant bit is the disposed state
-    // the other bits are the length
-    private uint _lengthAndDisposed;
+    private IntBoolUnion<int> _lengthAndIsDisposed;
 
     public static NativeMemory<T> Empty => new();
 

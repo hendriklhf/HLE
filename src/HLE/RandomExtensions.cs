@@ -179,11 +179,12 @@ public static class RandomExtensions
     [Pure]
     public static string NextString(this Random random, int length)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
         random.Fill(chars);
@@ -193,11 +194,12 @@ public static class RandomExtensions
     [Pure]
     public static string NextString(this Random random, int length, char max)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         if (max == char.MaxValue)
         {
@@ -219,11 +221,12 @@ public static class RandomExtensions
     [Pure]
     public static string NextString(this Random random, int length, char min, char max)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         if (min == 0)
         {
@@ -264,13 +267,14 @@ public static class RandomExtensions
     [SkipLocalsInit]
     public static string NextString(this Random random, int length, ReadOnlySpan<char> choices)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
         if (length == 0)
         {
             return string.Empty;
         }
 
-        string result = StringMarshal.FastAllocateString(length, out Span<char> resultSpan);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+        string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
         if (choices.Length == 0)
         {
             return result;
@@ -284,7 +288,7 @@ public static class RandomExtensions
             for (int i = 0; i < length; i++)
             {
                 int randomIndex = (int)(randomIndicesBuffer[i] % choicesLength);
-                resultSpan[i] = choices[randomIndex];
+                chars[i] = choices[randomIndex];
             }
 
             return result;
@@ -295,7 +299,7 @@ public static class RandomExtensions
         for (int i = 0; i < length; i++)
         {
             int randomIndex = (int)(randomIndices[i] % choicesLength);
-            resultSpan[i] = choices[randomIndex];
+            chars[i] = choices[randomIndex];
         }
 
         return result;

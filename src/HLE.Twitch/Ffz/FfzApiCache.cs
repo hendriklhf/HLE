@@ -23,7 +23,7 @@ public sealed class FfzApiCache(CacheOptions options) : IEquatable<FfzApiCache>
 
     public bool TryGetGlobalEmotes(out ImmutableArray<Emote> emotes)
     {
-        if (_globalEmotesCache.IsValid(Options.GlobalEmotesCacheTime))
+        if (_globalEmotesCache.IsValid(Options.GlobalEmotesCacheDuration))
         {
             emotes = _globalEmotesCache.Value;
             return true;
@@ -35,7 +35,7 @@ public sealed class FfzApiCache(CacheOptions options) : IEquatable<FfzApiCache>
 
     public bool TryGetChannelEmotes(long channelId, out ImmutableArray<Emote> emotes)
     {
-        if (_channelEmotesCache.TryGetByPrimaryKey(channelId, out CacheEntry<ImmutableArray<Emote>> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheTime))
+        if (_channelEmotesCache.TryGetByPrimaryKey(channelId, out CacheEntry<ImmutableArray<Emote>> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheDuration))
         {
             emotes = emoteEntry.Value;
             return true;
@@ -48,7 +48,7 @@ public sealed class FfzApiCache(CacheOptions options) : IEquatable<FfzApiCache>
     public bool TryGetChannelEmotes(ReadOnlySpan<char> channelName, out ImmutableArray<Emote> emotes)
     {
         int channelNameHash = string.GetHashCode(channelName, StringComparison.OrdinalIgnoreCase);
-        if (_channelEmotesCache.TryGetBySecondaryKey(channelNameHash, out CacheEntry<ImmutableArray<Emote>> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheTime))
+        if (_channelEmotesCache.TryGetBySecondaryKey(channelNameHash, out CacheEntry<ImmutableArray<Emote>> emoteEntry) && emoteEntry.IsValid(Options.ChannelEmotesCacheDuration))
         {
             emotes = emoteEntry.Value;
             return true;
