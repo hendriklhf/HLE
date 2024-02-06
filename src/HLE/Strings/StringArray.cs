@@ -210,7 +210,10 @@ public sealed class StringArray :
         }
         finally
         {
-            ArrayPool<int>.Shared.Return(rentedIndices);
+            if (rentedIndices is not null)
+            {
+                ArrayPool<int>.Shared.Return(rentedIndices);
+            }
         }
     }
 
@@ -250,7 +253,7 @@ public sealed class StringArray :
         _freeBufferSize = _chars?.Length ?? 0;
     }
 
-    public ArrayEnumerator<string> GetEnumerator() => new(_strings, 0, _strings.Length);
+    public ArrayEnumerator<string> GetEnumerator() => new(_strings);
 
     IEnumerator<string> IEnumerable<string>.GetEnumerator() => GetEnumerator();
 
@@ -294,7 +297,7 @@ public sealed class StringArray :
 
     private void SetString(int index, string str)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length, nameof(index));
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)Length);
 
         Span<string> strings = _strings;
         Span<int> starts = _starts;
@@ -337,6 +340,7 @@ public sealed class StringArray :
         _freeBufferSize -= lengthDifference;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowBufferIfNeeded(int sizeHint)
     {
         int freeBufferSize = _freeBufferSize;
@@ -345,6 +349,12 @@ public sealed class StringArray :
             return;
         }
 
+        GrowBuffer(sizeHint, freeBufferSize);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
+    private void GrowBuffer(int sizeHint, int freeBufferSize)
+    {
         char[]? chars = _chars;
         int currentBufferSize = chars?.Length ?? 8;
         uint neededSize = (uint)(sizeHint - freeBufferSize);

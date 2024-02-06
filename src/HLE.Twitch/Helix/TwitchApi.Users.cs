@@ -86,15 +86,15 @@ public sealed partial class TwitchApi
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(List<string> usernames)
-        => GetUsersAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(usernames)), ReadOnlyMemory<long>.Empty);
+        => GetUsersAsync(ListMarshal.AsMemory(usernames), ReadOnlyMemory<long>.Empty);
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(List<long> userIds)
-        => GetUsersAsync(ReadOnlyMemory<string>.Empty, SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(userIds)));
+        => GetUsersAsync(ReadOnlyMemory<string>.Empty, ListMarshal.AsMemory(userIds));
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(List<string> usernames, List<long> userIds)
-        => GetUsersAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(usernames)), SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(userIds)));
+        => GetUsersAsync(ListMarshal.AsMemory(usernames), ListMarshal.AsMemory(userIds));
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(params string[] usernames)

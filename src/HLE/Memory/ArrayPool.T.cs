@@ -226,8 +226,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         {
             for (int i = 0; i < array.Length; i++)
             {
-                object? item = array[i];
-                IDisposable? disposable = Unsafe.As<object?, IDisposable?>(ref item);
+                IDisposable? disposable = Unsafe.As<IDisposable?>(array[i]);
                 disposable?.Dispose();
             }
         }

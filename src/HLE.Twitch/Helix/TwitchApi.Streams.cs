@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Collections;
@@ -86,15 +85,15 @@ public sealed partial class TwitchApi
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(List<string> usernames)
-        => GetStreamsAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(usernames)), ReadOnlyMemory<long>.Empty);
+        => GetStreamsAsync(ListMarshal.AsMemory(usernames), ReadOnlyMemory<long>.Empty);
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(List<long> channelIds)
-        => GetStreamsAsync(ReadOnlyMemory<string>.Empty, SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channelIds)));
+        => GetStreamsAsync(ReadOnlyMemory<string>.Empty, ListMarshal.AsMemory(channelIds));
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(List<string> usernames, List<long> channelIds)
-        => GetStreamsAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(usernames)), SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channelIds)));
+        => GetStreamsAsync(ListMarshal.AsMemory(usernames), ListMarshal.AsMemory(channelIds));
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(params string[] usernames)

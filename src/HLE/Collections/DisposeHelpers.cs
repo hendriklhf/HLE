@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace HLE.Collections;
 
@@ -18,6 +19,9 @@ public static class DisposeHelpers
             disposable.Dispose();
         }
     }
+
+    public static void DisposeAll<T>(List<T> disposables) where T : IDisposable
+        => DisposeAll(CollectionsMarshal.AsSpan(disposables));
 
     public static void DisposeAll<T>(T[] disposables) where T : IDisposable
         => DisposeAll(disposables.AsSpan());

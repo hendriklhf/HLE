@@ -238,7 +238,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
     // ReSharper disable once InconsistentNaming
     public Task ConnectAsync(List<ReadOnlyMemory<byte>> channels)
-        => ConnectAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
+        => ConnectAsync(ListMarshal.AsMemory(channels));
 
     /// <summary>
     /// Asynchronously connects the client to the Twitch IRC server.

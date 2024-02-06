@@ -6,5 +6,7 @@ namespace HLE.Threading;
 public static class TaskHelpers
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Ignore(this Task task) => _ = task;
+    public static void Ignore(this Task _)
+    {
+    }
 }

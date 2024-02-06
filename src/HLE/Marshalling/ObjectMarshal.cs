@@ -19,38 +19,38 @@ public static unsafe class ObjectMarshal
         .GetFunctionPointer();
 
     /// <summary>
-    /// Gets the amount of bytes allocated for every instance of the object.
+    /// Gets the amount of bytes allocated for the instance of the object.
     /// </summary>
     /// <param name="obj">The object whose instance size will be returned.</param>
     /// <returns>The amount of bytes allocated for the object.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint GetRawObjectSize(object obj)
+    public static nuint GetObjectSize(object obj)
         => BaseObjectSize + (nuint)s_getRawObjectSize(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref TRef GetMethodTableReference<TObject, TRef>(TObject obj) where TObject : class
+    public static ref TRef GetMethodTableReference<TRef>(object obj)
         => ref Unsafe.AsRef<TRef>(GetMethodTablePointer(obj));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref nuint GetMethodTableReference<T>(T obj) where T : class
+    public static ref nuint GetMethodTableReference(object obj)
         => ref Unsafe.AsRef<nuint>(GetMethodTablePointer(obj));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TPointer* GetMethodTablePointer<TObject, TPointer>(TObject obj) where TObject : class
+    public static TPointer* GetMethodTablePointer<TPointer>(object obj)
         => *(TPointer**)&obj;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint* GetMethodTablePointer<T>(T obj) where T : class
+    public static nuint* GetMethodTablePointer(object obj)
         => *(nuint**)&obj;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable<T>(T obj) where T : class
+    public static MethodTable* GetMethodTable(object obj)
         => **(MethodTable***)&obj;
 
     [Pure]
@@ -83,6 +83,14 @@ public static unsafe class ObjectMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T ReadObject<T>(nuint methodTablePointer) where T : class
         => *(T*)&methodTablePointer;
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref T ReadField<T>(object obj, nuint byteOffset)
+    {
+        ref byte firstField = ref Unsafe.Add(ref GetMethodTableReference<byte>(obj), sizeof(nuint));
+        return ref Unsafe.As<byte, T>(ref Unsafe.Add(ref firstField, byteOffset));
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

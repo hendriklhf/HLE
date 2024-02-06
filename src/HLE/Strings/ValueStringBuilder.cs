@@ -73,6 +73,14 @@ public ref partial struct ValueStringBuilder
     }
 
     [MustDisposeResource]
+    public ValueStringBuilder(int capacity)
+    {
+        char[] buffer = ArrayPool<char>.Shared.Rent(capacity);
+        _buffer = ref MemoryMarshal.GetArrayDataReference(buffer);
+        BufferLength = buffer.Length;
+    }
+
+    [MustDisposeResource]
     public ValueStringBuilder(Span<char> buffer)
     {
         _buffer = ref MemoryMarshal.GetReference(buffer);
@@ -244,14 +252,15 @@ public ref partial struct ValueStringBuilder
 
         int length = Length;
         Span<char> oldBuffer = GetBuffer();
+
         int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         Span<char> newBuffer = ArrayPool<char>.Shared.Rent(newSize);
         if (length != 0)
         {
-            CopyWorker<char>.Copy(oldBuffer[..length], newBuffer);
+            CopyWorker<char>.Copy(oldBuffer.SliceUnsafe(..length), newBuffer);
         }
 
-        _buffer = MemoryMarshal.GetReference(newBuffer);
+        _buffer = ref MemoryMarshal.GetReference(newBuffer);
         BufferLength = newBuffer.Length;
 
         if (IsStackalloced)

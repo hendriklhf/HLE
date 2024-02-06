@@ -53,7 +53,6 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     public int ReadBytes(Span<byte> buffer)
     {
         OpenHandleIfNotOpen();
-
         return RandomAccess.Read(_fileHandle, buffer, 0);
     }
 

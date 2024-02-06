@@ -14,7 +14,7 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Memory;
 
 /// <summary>
-/// Wraps an <see cref="Array"/> rented from an <see cref="ArrayPool{T}"/>
+/// Wraps an <see cref="System.Array"/> rented from an <see cref="ArrayPool{T}"/>
 /// to allow declaration with a <see langword="using"/> statement and to remove the need of nesting in a <see langword="try"/>-<see langword="finally"/> block.
 /// </summary>
 /// <typeparam name="T">The type the rented array contains.</typeparam>
@@ -25,7 +25,6 @@ public struct RentedArray<T> :
     ICollection<T>,
     ICopyable<T>,
     IEquatable<RentedArray<T>>,
-    IEquatable<T[]>,
     IIndexAccessible<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
@@ -216,22 +215,13 @@ public struct RentedArray<T> :
     readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     [Pure]
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) =>
-        obj switch
-        {
-            RentedArray<T> rentedArray => Equals(rentedArray.Array),
-            T[] array => Equals(array),
-            _ => false
-        };
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is RentedArray<T> other && Equals(other);
 
     [Pure]
-    public readonly bool Equals(RentedArray<T> other) => ReferenceEquals(Array, other.Array);
+    public readonly bool Equals(RentedArray<T> other) => ReferenceEquals(Array, other.Array) && _pool == other._pool;
 
     [Pure]
-    public readonly bool Equals([NotNullWhen(true)] T[]? other) => ReferenceEquals(Array, other);
-
-    [Pure]
-    public override readonly int GetHashCode() => Array.GetHashCode();
+    public override readonly int GetHashCode() => HashCode.Combine(Array, _pool);
 
     /// <inheritdoc/>
     [Pure]
@@ -243,7 +233,7 @@ public struct RentedArray<T> :
         }
 
         T[] array = Array;
-        ReadOnlySpan<char> chars = Unsafe.As<T[], char[]>(ref array);
+        ReadOnlySpan<char> chars = Unsafe.As<char[]>(array);
         return new(chars);
     }
 

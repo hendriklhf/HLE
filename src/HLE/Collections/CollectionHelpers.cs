@@ -130,7 +130,7 @@ public static partial class CollectionHelpers
     {
         if (collection.GetType() == typeof(T[]))
         {
-            span = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
+            span = Unsafe.As<T[]>(collection);
             return true;
         }
 
@@ -183,14 +183,14 @@ public static partial class CollectionHelpers
     {
         if (collection.GetType() == typeof(T[]))
         {
-            memory = Unsafe.As<IEnumerable<T>, T[]>(ref collection);
+            memory = Unsafe.As<T[]>(collection);
             return true;
         }
 
         switch (collection)
         {
             case List<T> list:
-                memory = SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(list));
+                memory = ListMarshal.AsMemory(list);
                 return true;
             case IMemoryProvider<T> memoryProvider:
                 memory = memoryProvider.GetMemory();
@@ -202,20 +202,20 @@ public static partial class CollectionHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> collection, out int elementCount)
+    public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
     {
-        if (Enumerable.TryGetNonEnumeratedCount(collection, out elementCount))
+        if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
         {
             return true;
         }
 
-        if (collection.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+        if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             elementCount = span.Length;
             return true;
         }
 
-        switch (collection)
+        switch (enumerable)
         {
             case ICountable countable:
                 elementCount = countable.Count;
@@ -233,15 +233,15 @@ public static partial class CollectionHelpers
     /// Tries to copy the elements of the <see cref="IEnumerable{T}"/> to the <paramref name="destination"/> at a given offset,
     /// while not enumerating the enumerable.
     /// </summary>
-    /// <param name="collection">The collection of items that will be tried to be copied to the destination.</param>
+    /// <param name="enumerable">The collection of items that will be tried to be copied to the destination.</param>
     /// <param name="destination">The destination of the copied items.</param>
     /// <param name="offset">The offset to the destination start.</param>
     /// <typeparam name="T">The type of items that will be tried to be copied.</typeparam>
     /// <returns>True, if copying was possible, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> collection, T[] destination, int offset = 0)
+    public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> enumerable, T[] destination, int offset = 0)
     {
-        if (collection.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+        if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             if (span.Length == 0)
             {
@@ -252,15 +252,15 @@ public static partial class CollectionHelpers
             return true;
         }
 
-        switch (collection)
+        switch (enumerable)
         {
-            case ICollection<T> iCollection:
-                if (iCollection.Count == 0)
+            case ICollection<T> collection:
+                if (collection.Count == 0)
                 {
                     return true;
                 }
 
-                iCollection.CopyTo(destination, offset);
+                collection.CopyTo(destination, offset);
                 return true;
             case ICopyable<T> copyable:
                 copyable.CopyTo(destination, offset);
@@ -403,12 +403,7 @@ public static partial class CollectionHelpers
 
     [Pure]
     [MustDisposeResource]
-    public static PooledList<T> ToPooledList<T>(this IEnumerable<T> enumerable)
-    {
-        PooledList<T> list = [];
-        list.AddRange(enumerable);
-        return list;
-    }
+    public static PooledList<T> ToPooledList<T>(this IEnumerable<T> enumerable) => [.. enumerable];
 
     [Pure]
     [MustDisposeResource]
@@ -417,5 +412,35 @@ public static partial class CollectionHelpers
         PooledBufferWriter<T> writer = new();
         writer.Write(enumerable);
         return writer;
+    }
+
+    [Pure]
+    [MustDisposeResource]
+    public static RentedArray<T> ToRentedArray<T>(this IEnumerable<T> enumerable)
+    {
+        T[] array;
+        if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+        {
+            array = ArrayPool<T>.Shared.RentExact(span.Length);
+            CopyWorker<T>.Copy(span, array);
+            return new(array, ArrayPool<T>.Shared);
+        }
+
+        switch (enumerable)
+        {
+            case ICopyable<T> copyable:
+                array = ArrayPool<T>.Shared.RentExact(copyable.Count);
+                copyable.CopyTo(array);
+                return new(array, ArrayPool<T>.Shared);
+            case ICollection<T> collection:
+                array = ArrayPool<T>.Shared.RentExact(collection.Count);
+                collection.CopyTo(array, 0);
+                return new(array, ArrayPool<T>.Shared);
+        }
+
+        using PooledList<T> list = enumerable.ToPooledList();
+        array = ArrayPool<T>.Shared.RentExact(list.Count);
+        CopyWorker<T>.Copy(list.AsSpan(), array);
+        return new(array, ArrayPool<T>.Shared);
     }
 }

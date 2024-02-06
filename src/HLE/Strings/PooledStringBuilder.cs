@@ -245,7 +245,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private char[] GetBuffer()
+    internal char[] GetBuffer()
     {
         char[]? buffer = _buffer;
         if (buffer is null)

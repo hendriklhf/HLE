@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Memory;
 using HLE.Strings;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -86,8 +87,8 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     {
         string assemblyName = _assemblyName;
         Span<char> buffer = stackalloc char[assemblyName.Length + resourceName.Length];
-        assemblyName.CopyTo(buffer);
-        resourceName.CopyTo(buffer[assemblyName.Length..]);
+        CopyWorker<char>.Copy(assemblyName, buffer);
+        CopyWorker<char>.Copy(resourceName, buffer.SliceUnsafe(assemblyName.Length));
 
         return StringPool.Shared.GetOrAdd(buffer);
     }
@@ -96,13 +97,13 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     {
         if (_resources.TryGetValue(resourcePath, out resource))
         {
-            return resource != Resource.Empty;
+            return resource != default;
         }
 
         using Stream? stream = Assembly.GetManifestResourceStream(resourcePath);
         if (stream is null)
         {
-            _resources.AddOrSet(resourcePath, Resource.Empty);
+            _resources.AddOrSet(resourcePath, default);
             return false;
         }
 
@@ -130,8 +131,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
 
         // fallback for the case that the implementation of GetManifestResourceStream has changed
         byte[] buffer = GC.AllocateUninitializedArray<byte>(streamLength, true);
-        GCHandle handle = GCHandle.Alloc(buffer);
-        StoreHandle(handle);
+        StoreHandle(GCHandle.Alloc(buffer));
 
         int bytesRead = 0;
         do

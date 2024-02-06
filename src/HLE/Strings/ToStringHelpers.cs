@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -11,7 +10,7 @@ namespace HLE.Strings;
 
 internal static class ToStringHelpers
 {
-    private static readonly ConcurrentDictionary<Type, Type[]> s_genericTypeArgumentsCache = new();
+    private static readonly ConcurrentDictionary<Type, string> s_cache = new();
 
     [Pure]
     public static string FormatCollection<TCountable>(TCountable countable) where TCountable : ICountable
@@ -27,10 +26,27 @@ internal static class ToStringHelpers
 
     [Pure]
     [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string FormatCollection(Type collectionType, int elementCount)
     {
+        if (!s_cache.TryGetValue(collectionType, out string? formattedCollection))
+        {
+            return FormatCollectionCore(collectionType, elementCount);
+        }
+
+        using ValueStringBuilder builder = new(stackalloc char[512]);
+        builder.Append(formattedCollection);
+        builder.Append(elementCount);
+        builder.Append(']');
+        return builder.ToString();
+    }
+
+    [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static string FormatCollectionCore(Type collectionType, int elementCount)
+    {
         // ReSharper disable once NotDisposedResource
-        ValueStringBuilder builder = new(stackalloc char[256]);
+        ValueStringBuilder builder = new(stackalloc char[512]);
         try
         {
             AppendTypeAndGenericParameters(collectionType, ref builder);
@@ -41,6 +57,7 @@ internal static class ToStringHelpers
             }
 
             builder.Append('[');
+            s_cache.TryAdd(collectionType, builder.ToString());
             builder.Append(elementCount);
             builder.Append(']');
 
@@ -65,7 +82,7 @@ internal static class ToStringHelpers
 
         builder.Append('<');
 
-        ReadOnlySpan<Type> genericArguments = GetGenericTypeArguments(type);
+        ReadOnlySpan<Type> genericArguments = type.GenericTypeArguments;
         ref Type genericArgumentsReference = ref MemoryMarshal.GetReference(genericArguments);
         AppendTypeAndGenericParameters(genericArgumentsReference, ref builder);
 
@@ -82,19 +99,5 @@ internal static class ToStringHelpers
     {
         int indexOfBacktick = typeName.LastIndexOf('`');
         return indexOfBacktick >= 0 ? typeName[..indexOfBacktick] : typeName;
-    }
-
-    private static ReadOnlySpan<Type> GetGenericTypeArguments(Type type)
-    {
-        Debug.Assert(type.IsGenericType);
-
-        if (s_genericTypeArgumentsCache.TryGetValue(type, out Type[]? genericTypeArguments))
-        {
-            return genericTypeArguments;
-        }
-
-        genericTypeArguments = type.GenericTypeArguments;
-        s_genericTypeArgumentsCache.AddOrSet(type, genericTypeArguments);
-        return genericTypeArguments;
     }
 }

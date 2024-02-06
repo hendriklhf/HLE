@@ -79,8 +79,14 @@ public sealed class CollectionHelperTest
     [Fact]
     public void TryGetReadOnlySpanTest()
     {
+#pragma warning disable IDE0300 // Simplify collection initialization
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
+#pragma warning restore IDE0300 // Simplify collection initialization
+
+#pragma warning disable IDE0028 // Simplify collection initialization
         IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
+#pragma warning restore IDE0028 // Simplify collection initialization
+
         IEnumerable<char> str = "hello";
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 
@@ -100,8 +106,14 @@ public sealed class CollectionHelperTest
     [Fact]
     public void TryGetReadOnlyMemoryTest()
     {
+#pragma warning disable IDE0300 // Simplify collection initialization
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
+#pragma warning restore IDE0300 // Simplify collection initialization
+
+#pragma warning disable IDE0028 // Simplify collection initialization
         IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
+#pragma warning restore IDE0028 // Simplify collection initialization
+
         IEnumerable<char> str = "hello";
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);
 

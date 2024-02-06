@@ -33,7 +33,7 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
 
     public static async ValueTask<HttpContentBytes> CreateAsync(HttpResponseMessage httpResponse)
     {
-        long contentLength = httpResponse.Content.Headers.ContentLength.GetValueOrDefault();
+        long contentLength = httpResponse.Content.Headers.ContentLength ?? 0;
         if (contentLength == 0)
         {
             return Empty;

@@ -1,12 +1,10 @@
 using System;
-using System.Buffers;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Strings;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -17,79 +15,103 @@ namespace HLE.Memory;
 /// Represents an output sink consisting of a buffer from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
-/// <param name="capacity">The starting capacity of the buffer.</param>
-[method: MustDisposeResource]
 [DebuggerDisplay("{ToString()}")]
-public sealed class PooledBufferWriter<T>(int capacity) :
-    IBufferWriter<T>,
-    ICollection<T>,
-    IDisposable,
-    ICopyable<T>,
-    IEquatable<PooledBufferWriter<T>>,
-    IIndexAccessible<T>,
-    IReadOnlyCollection<T>,
-    ISpanProvider<T>,
-    ICollectionProvider<T>,
-    IMemoryProvider<T>
+public ref struct ValueBufferWriter<T>
 {
-    T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
-
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
-    public Span<T> WrittenSpan => GetBuffer().AsSpanUnsafe(..Count);
-
-    /// <summary>
-    /// A <see cref="Memory{T}"/> view over the written elements.
-    /// </summary>
-    public Memory<T> WrittenMemory => _buffer.AsMemory(..Count);
+    public readonly Span<T> WrittenSpan => GetBuffer().SliceUnsafe(..Count);
 
     /// <summary>
     /// The amount of written elements.
     /// </summary>
-    public int Count { get; internal set; }
+    public int Count
+    {
+        readonly get => _countAndIsDisposed.Integer;
+        internal set
+        {
+            Debug.Assert(value >= 0);
+            _countAndIsDisposed.SetIntegerUnsafe(value);
+        }
+    }
 
-    public int Capacity => GetBuffer().Length;
+    private bool IsDisposed
+    {
+        readonly get => _countAndIsDisposed.Bool;
+        set => _countAndIsDisposed.Bool = value;
+    }
 
-    bool ICollection<T>.IsReadOnly => false;
+    private int BufferLength
+    {
+        readonly get => _bufferLengthAndIsStackalloced.Integer;
+        set
+        {
+            Debug.Assert(value >= 0);
+            _bufferLengthAndIsStackalloced.SetIntegerUnsafe(value);
+        }
+    }
 
-    private T[]? _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
+    private bool IsStackalloced
+    {
+        readonly get => _bufferLengthAndIsStackalloced.Bool;
+        set => _bufferLengthAndIsStackalloced.Bool = value;
+    }
+
+    public readonly int Capacity => GetBuffer().Length;
+
+    private ref T _buffer;
+    private IntBoolUnion<int> _bufferLengthAndIsStackalloced;
+    private IntBoolUnion<int> _countAndIsDisposed;
 
     [MustDisposeResource]
-    public PooledBufferWriter() : this(0)
+    public ValueBufferWriter()
     {
+        _buffer = ref Unsafe.NullRef<T>();
+        IsStackalloced = true;
     }
 
     [MustDisposeResource]
-    public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
+    public ValueBufferWriter(Span<T> buffer)
     {
-        CopyWorker<T>.Copy(data, _buffer);
-        Count = data.Length;
+        _buffer = ref MemoryMarshal.GetReference(buffer);
+        BufferLength = buffer.Length;
+        IsStackalloced = true;
+    }
+
+    [MustDisposeResource]
+    public ValueBufferWriter(int capacity)
+    {
+        T[] buffer = ArrayPool<T>.Shared.Rent(capacity);
+        _buffer = ref MemoryMarshal.GetArrayDataReference(buffer);
+        BufferLength = buffer.Length;
     }
 
     public void Dispose()
     {
-        T[]? buffer = _buffer;
-        if (buffer is null)
+        if (IsDisposed)
         {
             return;
         }
 
-        ArrayPool<T>.Shared.Return(buffer);
-        _buffer = null;
+        if (IsStackalloced)
+        {
+            _buffer = ref Unsafe.NullRef<T>();
+            BufferLength = 0;
+            IsDisposed = true;
+            return;
+        }
+
+        T[] array = SpanMarshal.AsArray(ref _buffer);
+        ArrayPool<T>.Shared.Return(array);
+
+        _buffer = ref Unsafe.NullRef<T>();
+        BufferLength = 0;
+        IsDisposed = true;
     }
 
-    /// <inheritdoc/>
     public void Advance(int count) => Count += count;
 
-    /// <inheritdoc/>
-    public Memory<T> GetMemory(int sizeHint = 0)
-    {
-        GrowIfNeeded(sizeHint);
-        return _buffer.AsMemory(Count..);
-    }
-
-    /// <inheritdoc/>
     public Span<T> GetSpan(int sizeHint = 0) => MemoryMarshal.CreateSpan(ref GetReference(sizeHint), Capacity - Count);
 
     /// <summary>
@@ -100,7 +122,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public ref T GetReference(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Count);
+        return ref Unsafe.Add(ref GetBufferReference(), Count);
     }
 
     public void Write(T item)
@@ -117,18 +139,12 @@ public sealed class PooledBufferWriter<T>(int capacity) :
             return;
         }
 
-        switch (data)
+        if (data is ICopyable<T> copyable)
         {
-            case ICopyable<T> copyable:
-                ref T destination = ref GetReference(copyable.Count);
-                copyable.CopyTo(ref destination);
-                Count += copyable.Count;
-                return;
-            case ICollection<T> collection:
-                EnsureCapacity(Count + collection.Count);
-                collection.CopyTo(GetBuffer(), Count);
-                Count += collection.Count;
-                return;
+            ref T destination = ref GetReference(copyable.Count);
+            copyable.CopyTo(ref destination);
+            Count += copyable.Count;
+            return;
         }
 
         foreach (T item in data)
@@ -167,7 +183,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
     [Pure]
-    public T[] ToArray()
+    public readonly T[] ToArray()
     {
         Span<T> writtenSpan = WrittenSpan;
         if (writtenSpan.Length == 0)
@@ -181,16 +197,16 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     }
 
     [Pure]
-    public T[] ToArray(int start) => WrittenSpan.ToArray(start);
+    public readonly T[] ToArray(int start) => WrittenSpan.ToArray(start);
 
     [Pure]
-    public T[] ToArray(int start, int length) => WrittenSpan.ToArray(start, length);
+    public readonly T[] ToArray(int start, int length) => WrittenSpan.ToArray(start, length);
 
     [Pure]
-    public T[] ToArray(Range range) => WrittenSpan.ToArray(range);
+    public readonly T[] ToArray(Range range) => WrittenSpan.ToArray(range);
 
     [Pure]
-    public List<T> ToList()
+    public readonly List<T> ToList()
     {
         Span<T> writtenSpan = WrittenSpan;
         if (writtenSpan.Length == 0)
@@ -209,7 +225,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     /// This method should ideally be called, when <see cref="Capacity"/> is much larger than <see cref="Count"/>.
     /// </summary>
     /// <example>
-    /// After having removed a lot of items from the <see cref="PooledBufferWriter{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.
+    /// After having removed a lot of items from the <see cref="ValueBufferWriter{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.
     /// If there are 32 items remaining and the <see cref="Capacity"/> is 1024, the buffer of 1024 items will be returned to the <see cref="ArrayPool{T}"/>
     /// and a new buffer that has at least the size of the remaining items will be rented and the remaining 32 items are copied into it.
     /// </example>
@@ -222,23 +238,28 @@ public sealed class PooledBufferWriter<T>(int capacity) :
             return;
         }
 
-        T[] oldBuffer = GetBuffer();
-        try
+        if (trimmedBufferSize == 0)
         {
-            if (trimmedBufferSize == 0)
-            {
-                _buffer = [];
-                return;
-            }
+            _buffer = ref Unsafe.NullRef<T>();
+            BufferLength = 0;
+            IsStackalloced = true;
+            return;
+        }
 
-            T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
-            CopyWorker<T>.Copy(oldBuffer, newBuffer);
-            _buffer = newBuffer;
-        }
-        finally
+        Span<T> oldBuffer = GetBuffer();
+        Span<T> newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
+        CopyWorker<T>.Copy(oldBuffer[..count], newBuffer);
+        _buffer = ref MemoryMarshal.GetReference(newBuffer);
+        BufferLength = newBuffer.Length;
+
+        if (IsStackalloced)
         {
-            ArrayPool<T>.Shared.Return(oldBuffer);
+            IsStackalloced = false;
+            return;
         }
+
+        T[] array = SpanMarshal.AsArray(oldBuffer);
+        ArrayPool<T>.Shared.Return(array);
     }
 
     /// <summary>
@@ -267,101 +288,102 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     {
         Debug.Assert(neededSize >= 0);
 
-        T[] oldBuffer = GetBuffer();
-        int newBufferSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
-        T[] newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
         int count = Count;
+        Span<T> oldBuffer = GetBuffer();
+        int newBufferSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
+        Span<T> newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
         if (count != 0)
         {
-            CopyWorker<T>.Copy(oldBuffer, newBuffer);
+            CopyWorker<T>.Copy(oldBuffer[..count], newBuffer);
         }
 
-        _buffer = newBuffer;
+        _buffer = ref MemoryMarshal.GetReference(newBuffer);
+        BufferLength = newBuffer.Length;
+
+        if (IsStackalloced)
+        {
+            IsStackalloced = false;
+            return;
+        }
+
+        T[] array = SpanMarshal.AsArray(oldBuffer);
+        ArrayPool<T>.Shared.Return(array);
     }
 
-    public void CopyTo(List<T> destination, int offset = 0)
+    public readonly void CopyTo(List<T> destination, int offset = 0)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(destination, offset);
     }
 
-    public void CopyTo(T[] destination, int offset = 0)
+    public readonly void CopyTo(T[] destination, int offset = 0)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(destination, offset);
     }
 
-    public void CopyTo(Memory<T> destination)
+    public readonly void CopyTo(Memory<T> destination)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(destination);
     }
 
-    public void CopyTo(Span<T> destination)
+    public readonly void CopyTo(Span<T> destination)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(destination);
     }
 
-    public void CopyTo(ref T destination)
+    public readonly void CopyTo(ref T destination)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(ref destination);
     }
 
-    public unsafe void CopyTo(T* destination)
+    public readonly unsafe void CopyTo(T* destination)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(destination);
     }
 
-    Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
-
-    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => WrittenSpan;
-
-    Memory<T> IMemoryProvider<T>.GetMemory() => WrittenMemory;
-
-    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => WrittenMemory;
-
-    void ICollection<T>.Add(T item) => Write(item);
-
-    bool ICollection<T>.Contains(T item) => throw new NotSupportedException();
-
-    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal T[] GetBuffer()
+    private readonly ref T GetBufferReference()
     {
-        T[]? buffer = _buffer;
-        if (buffer is null)
+        if (IsDisposed)
         {
-            ThrowHelper.ThrowObjectDisposedException<PooledBufferWriter<T>>();
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueBufferWriter<T>));
         }
 
-        return buffer;
+        return ref _buffer;
     }
 
-    [Pure]
-    public override string ToString() => typeof(char) == typeof(T)
-        ? new(Unsafe.As<char[]>(GetBuffer()).AsSpan(..Count))
-        : ToStringHelpers.FormatCollection(this);
-
-    public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);
-
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] PooledBufferWriter<T>? other) => ReferenceEquals(this, other);
+    public override readonly string ToString()
+    {
+        if (typeof(char) != typeof(T))
+        {
+            return ToStringHelpers.FormatCollection(typeof(ValueBufferWriter<T>), Count);
+        }
+
+        ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());
+        return new(MemoryMarshal.CreateReadOnlySpan(ref reference, Count));
+    }
+
+    public readonly MemoryEnumerator<T> GetEnumerator() => new(ref GetBufferReference(), Count);
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
+    public readonly bool Equals(ValueBufferWriter<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();
 
     [Pure]
-    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+    public override readonly bool Equals(object? obj) => false;
 
-    public static bool operator ==(PooledBufferWriter<T>? left, PooledBufferWriter<T>? right) => Equals(left, right);
+    [Pure]
+    public override readonly int GetHashCode() => Count.GetHashCode();
 
-    public static bool operator !=(PooledBufferWriter<T>? left, PooledBufferWriter<T>? right) => !(left == right);
+    public static bool operator ==(ValueBufferWriter<T> left, ValueBufferWriter<T> right) => left.Equals(right);
+
+    public static bool operator !=(ValueBufferWriter<T> left, ValueBufferWriter<T> right) => !(left == right);
 }

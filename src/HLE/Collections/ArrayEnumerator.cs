@@ -19,6 +19,14 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
     private int _current;
     private readonly int _end;
 
+    public ArrayEnumerator(T[] array)
+    {
+        _array = array;
+        _start = 0;
+        _current = -1;
+        _end = array.Length;
+    }
+
     public ArrayEnumerator(T[] array, int start, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative((uint)array.Length - (uint)start - (uint)length);

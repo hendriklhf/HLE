@@ -34,6 +34,7 @@ public static unsafe class StructMarshal
     /// <typeparam name="TRight">The type of the right struct.</typeparam>
     /// <returns>True, if the structs have the same size and bitwise memory values, otherwise false.</returns>
     [Pure]
+    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBitwise<TLeft, TRight>(ref TLeft left, ref TRight right)
         where TLeft : struct
@@ -64,17 +65,17 @@ public static unsafe class StructMarshal
         ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
         ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
 
-        if (sizeof(TLeft) == Vector512<byte>.Count)
+        if (Vector512.IsHardwareAccelerated && sizeof(TLeft) == Vector512<byte>.Count)
         {
             return Vector512.Create(leftBytes) == Vector512.Create(rightBytes);
         }
 
-        if (sizeof(TLeft) == Vector256<byte>.Count)
+        if (Vector256.IsHardwareAccelerated && sizeof(TLeft) == Vector256<byte>.Count)
         {
             return Vector256.Create(leftBytes) == Vector256.Create(rightBytes);
         }
 
-        if (sizeof(TLeft) == Vector128<byte>.Count)
+        if (Vector128.IsHardwareAccelerated && sizeof(TLeft) == Vector128<byte>.Count)
         {
             return Vector128.Create(leftBytes) == Vector128.Create(rightBytes);
         }

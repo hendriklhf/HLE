@@ -45,14 +45,14 @@ public static unsafe class SpanMarshal
 
         Unsafe.SkipInit(out ReadOnlyMemory<T> result);
 
-        RawMemoryData* rawMemoryData = (RawMemoryData*)&result;
+        ref RawMemoryData rawMemoryData = ref Unsafe.As<ReadOnlyMemory<T>, RawMemoryData>(ref result);
 
         ref byte firstElement = ref Unsafe.As<T, byte>(ref MemoryMarshal.GetReference(span));
         ref byte methodTable = ref GetMethodTableOfStringOrArray<T>(ref firstElement);
 
-        rawMemoryData->Object = (nuint)Unsafe.AsPointer(ref methodTable);
-        rawMemoryData->Index = 0;
-        rawMemoryData->Length = span.Length;
+        rawMemoryData.Object = (MethodTable**)Unsafe.AsPointer(ref methodTable);
+        rawMemoryData.Index = 0;
+        rawMemoryData.Length = span.Length;
 
         return result;
     }
@@ -124,6 +124,7 @@ public static unsafe class SpanMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[] AsArray<T>(ReadOnlySpan<T> span) => AsArray(ref MemoryMarshal.GetReference(span));
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[] AsArray<T>(ref T firstElement)
     {

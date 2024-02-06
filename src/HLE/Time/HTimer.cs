@@ -65,7 +65,7 @@ public sealed class HTimer : IEquatable<HTimer>, IDisposable
         _timer.Elapsed += (sender, _) =>
         {
             OnElapsed?.Invoke(this, EventArgs.Empty);
-            Timer timer = Unsafe.As<object?, Timer>(ref sender);
+            Timer timer = Unsafe.As<Timer>(sender)!;
             if (timer.AutoReset)
             {
                 Start();

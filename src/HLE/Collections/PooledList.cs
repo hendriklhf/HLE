@@ -20,23 +20,19 @@ public sealed class PooledList
 
     [Pure]
     [MustDisposeResource]
-    public static PooledList<T> Create<T>(List<T> items)
-        => new(CollectionsMarshal.AsSpan(items));
+    public static PooledList<T> Create<T>(List<T> items) => new(CollectionsMarshal.AsSpan(items));
 
     [Pure]
     [MustDisposeResource]
-    public static PooledList<T> Create<T>(params T[] items)
-        => new((ReadOnlySpan<T>)items);
+    public static PooledList<T> Create<T>(params T[] items) => new((ReadOnlySpan<T>)items);
 
     [Pure]
     [MustDisposeResource]
-    public static PooledList<T> Create<T>(Span<T> items)
-        => new(items);
+    public static PooledList<T> Create<T>(Span<T> items) => new(items);
 
     [Pure]
     [MustDisposeResource]
-    public static PooledList<T> Create<T>(ReadOnlySpan<T> items)
-        => new(items);
+    public static PooledList<T> Create<T>(ReadOnlySpan<T> items) => new(items);
 
     [Pure]
     [MustDisposeResource]

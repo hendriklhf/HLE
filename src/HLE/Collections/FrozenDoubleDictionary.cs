@@ -171,7 +171,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     {
         TValue[]? array = ImmutableCollectionsMarshal.AsArray(Values);
         Debug.Assert(array is not null);
-        return new(array, 0, Count);
+        return new(array);
     }
 
     IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();

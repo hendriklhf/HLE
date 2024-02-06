@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -276,7 +275,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     // ReSharper disable once InconsistentNaming
     public ValueTask JoinChannelsAsync(List<string> channels)
-        => JoinChannelsAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
+        => JoinChannelsAsync(ListMarshal.AsMemory(channels));
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
     // ReSharper disable once InconsistentNaming
@@ -350,7 +349,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     // ReSharper disable once InconsistentNaming
     public ValueTask LeaveChannelsAsync(List<string> channels)
-        => LeaveChannelsAsync(SpanMarshal.AsMemory(CollectionsMarshal.AsSpan(channels)));
+        => LeaveChannelsAsync(ListMarshal.AsMemory(channels));
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
     // ReSharper disable once InconsistentNaming

@@ -26,7 +26,7 @@ public static class ChatterinoSettingsReader
         ReadWindowLayoutFile(windowLayoutFileContentWriter);
 
         Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
-        using PooledList<string> channels = new(20);
+        using ValueList<string> channels = new(20);
 
         ReadOnlySpan<byte> dataProperty = "data"u8;
         ReadOnlySpan<byte> nameProperty = "name"u8;
@@ -62,7 +62,7 @@ public static class ChatterinoSettingsReader
             }
 
             string channel = StringPool.Shared.GetOrAdd(channelNameAsBytes, Encoding.UTF8);
-            if (!channels.Contains(channel))
+            if (!channels.AsSpan().Contains(channel))
             {
                 channels.Add(channel);
             }
