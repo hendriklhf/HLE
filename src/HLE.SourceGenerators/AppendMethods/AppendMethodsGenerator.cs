@@ -12,7 +12,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private readonly List<ImmutableArray<string>> _readOnlySpanArguments = [];
     private readonly List<ImmutableArray<string>> _charArguments = [];
 
-    private const int DefaultStringBuilderCapacity = 8096;
+    private const int DefaultStringBuilderCapacity = 32384;
     private const int MinimumAmountOfArguments = 2;
     private const int MaximumAmountOfArguments = 8;
     private const string ReadOnlySpanArgumentNamePrefix = "s";

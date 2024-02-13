@@ -3,7 +3,7 @@ using HLE.Strings;
 
 namespace HLE.Twitch.Tmi.Models;
 
-public interface IChatMessage : IDisposable, IEquatable<IChatMessage>
+public interface IChatMessage : IDisposable, IEquatable<IChatMessage>, ISpanFormattable
 {
     /// <summary>
     /// Holds information about a badge, that can be obtained by its name found in <see cref="Badges"/>.
@@ -24,7 +24,7 @@ public interface IChatMessage : IDisposable, IEquatable<IChatMessage>
     /// <summary>
     /// The display name of the user with the preferred casing.
     /// </summary>
-    string DisplayName { get; }
+    LazyString DisplayName { get; }
 
     /// <summary>
     /// Indicates whether the message is the first message the user has sent in the channel or not.
@@ -75,7 +75,7 @@ public interface IChatMessage : IDisposable, IEquatable<IChatMessage>
     /// <summary>
     /// The username of the user who sent the message. All lower case.
     /// </summary>
-    string Username { get; }
+    LazyString Username { get; }
 
     /// <summary>
     /// The username of the channel owner. All lower case, without '#'.

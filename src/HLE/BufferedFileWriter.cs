@@ -46,9 +46,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
 
     public void WriteBytes(ReadOnlySpan<byte> bytes)
     {
-        OpenHandleIfNotOpen();
-
-        SafeFileHandle fileHandle = _fileHandle;
+        SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long size = GetFileSize(fileHandle, false);
 
         RandomAccess.Write(fileHandle, bytes, size);
@@ -57,9 +55,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
 
     public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> bytes)
     {
-        OpenHandleIfNotOpen();
-
-        SafeFileHandle fileHandle = _fileHandle;
+        SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long size = GetFileSize(fileHandle, false);
 
         await RandomAccess.WriteAsync(fileHandle, bytes, size);
@@ -68,9 +64,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
 
     public void AppendBytes(ReadOnlySpan<byte> bytes)
     {
-        OpenHandleIfNotOpen();
-
-        SafeFileHandle fileHandle = _fileHandle;
+        SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long size = GetFileSize(fileHandle, true);
 
         RandomAccess.Write(fileHandle, bytes, size);
@@ -79,9 +73,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
 
     public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> bytes)
     {
-        OpenHandleIfNotOpen();
-
-        SafeFileHandle fileHandle = _fileHandle;
+        SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long size = GetFileSize(fileHandle, true);
 
         await RandomAccess.WriteAsync(fileHandle, bytes, size);
@@ -137,17 +129,19 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         return size;
     }
 
-    [MemberNotNull(nameof(_fileHandle))]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void OpenHandleIfNotOpen()
+    private SafeFileHandle OpenHandleIfNotOpen()
     {
-        if (_fileHandle is { IsClosed: false })
+        SafeFileHandle? fileHandle = _fileHandle;
+        if (fileHandle is { IsClosed: false })
         {
-            return;
+            return fileHandle;
         }
 
-        _fileHandle?.Dispose();
-        _fileHandle = File.OpenHandle(FilePath, HandleMode, HandleAccess, HandleShare);
+        fileHandle?.Dispose();
+        fileHandle = File.OpenHandle(FilePath, HandleMode, HandleAccess, HandleShare);
+        _fileHandle = fileHandle;
+        return fileHandle;
     }
 
     [Pure]

@@ -16,7 +16,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
     public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
-        if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
@@ -37,7 +37,7 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
     public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
-        if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());

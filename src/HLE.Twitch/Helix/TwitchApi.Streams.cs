@@ -60,8 +60,8 @@ public sealed partial class TwitchApi
     }
 
     // ReSharper disable once InconsistentNaming
-    public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames)
-        => GetStreamsAsync(usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
+    public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames) =>
+        GetStreamsAsync(usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
 
     // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<long> channelIds)

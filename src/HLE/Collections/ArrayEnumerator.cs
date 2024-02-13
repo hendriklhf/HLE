@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -8,6 +9,8 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Collections;
 
+// ReSharper disable once UseNameofExpressionForPartOfTheString
+[DebuggerDisplay("Current: {Current}")]
 public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>>
 {
     public readonly T Current => Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_array), _current);
@@ -29,7 +32,7 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
 
     public ArrayEnumerator(T[] array, int start, int length)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative((uint)array.Length - (uint)start - (uint)length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)(uint)start + (uint)length, (uint)array.Length);
 
         _array = array;
         _start = start;
@@ -47,11 +50,10 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
            _current == other._current && _end == other._end;
 
     [Pure]
-    public override readonly bool Equals([NotNullWhen(true)] object? obj)
-        => obj is ArrayEnumerator<T> other && Equals(other);
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public override readonly int GetHashCode() => HashCode.Combine(_array, _start, _end);
+    public override readonly int GetHashCode() => HashCode.Combine(_start, _end);
 
     public static bool operator ==(ArrayEnumerator<T> left, ArrayEnumerator<T> right) => left.Equals(right);
 

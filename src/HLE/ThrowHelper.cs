@@ -27,4 +27,13 @@ internal static class ThrowHelper
         Debug.Assert(sizeof(TEnum) == sizeof(int));
         throw new InvalidEnumArgumentException(paramName, Unsafe.As<TEnum, int>(ref value), typeof(TEnum));
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowCalledCollectionBuilderConstructor()
+        => throw new NotSupportedException("This class should not be instantiated. It only has static method that are used for building collections.");
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowPlatformNotSupportedException() => throw new PlatformNotSupportedException();
 }

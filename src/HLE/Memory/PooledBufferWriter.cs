@@ -270,12 +270,12 @@ public sealed class PooledBufferWriter<T>(int capacity) :
         T[] oldBuffer = GetBuffer();
         int newBufferSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         T[] newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
-        int count = Count;
-        if (count != 0)
+        if (Count != 0)
         {
             CopyWorker<T>.Copy(oldBuffer, newBuffer);
         }
 
+        ArrayPool<T>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
     }
 

@@ -85,7 +85,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
-        if (!MemoryHelpers.UseStackAlloc<char>(maxCharCount))
+        if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
         {
             using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
@@ -140,7 +140,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
-        if (!MemoryHelpers.UseStackAlloc<char>(maxCharCount))
+        if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
         {
             using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
@@ -169,7 +169,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
         int charsWritten;
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
-        if (!MemoryHelpers.UseStackAlloc<char>(maxCharCount))
+        if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
         {
             using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());

@@ -31,7 +31,7 @@ public sealed class ListMarshalTest
     public void AsArray_Int_Test()
     {
         List<int> intList = [0, 1, 2, 3, 4, 5];
-        int[] intArray = ListMarshal.AsArray(intList);
+        int[] intArray = ListMarshal.GetArray(intList);
 
         Assert.Equal(intList.Capacity, intArray.Length);
         Assert.True(intArray.AsSpan(..6) is [0, 1, 2, 3, 4, 5]);
@@ -41,7 +41,7 @@ public sealed class ListMarshalTest
     public void AsArray_String_Test()
     {
         List<string> stringList = ["a", "b", "c"];
-        string[] stringArray = ListMarshal.AsArray(stringList);
+        string[] stringArray = ListMarshal.GetArray(stringList);
 
         Assert.Equal(stringList.Capacity, stringArray.Length);
         Assert.True(stringArray.AsSpan(..3) is ["a", "b", "c"]);

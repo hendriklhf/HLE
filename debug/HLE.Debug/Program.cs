@@ -5,7 +5,7 @@ using BenchmarkDotNet.Configs;
 namespace HLE.Debug;
 
 [SuppressMessage("Style", "IDE0022:Use expression body for method")]
-public static class Program
+internal static class Program
 {
     private static void Main()
     {

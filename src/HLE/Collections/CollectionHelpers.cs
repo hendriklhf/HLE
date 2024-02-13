@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -103,26 +104,27 @@ public static partial class CollectionHelpers
             return true;
         }
 
-        if (collection is ImmutableArray<T> immutableArray)
-        {
-            span = immutableArray.AsSpan();
-            return true;
-        }
-
         if (TryGetSpan(collection, out Span<T> mutableSpan))
         {
             span = mutableSpan;
             return true;
         }
 
-        if (collection is IReadOnlySpanProvider<T> spanProvider)
+        switch (collection)
         {
-            span = spanProvider.GetReadOnlySpan();
-            return true;
+            case ImmutableArray<T> immutableArray:
+                span = immutableArray.AsSpan();
+                return true;
+            case IReadOnlySpanProvider<T> spanProvider:
+                span = spanProvider.GetReadOnlySpan();
+                return true;
+            case FrozenSet<T> frozenSet:
+                span = frozenSet.Items.AsSpan();
+                return true;
+            default:
+                span = [];
+                return false;
         }
-
-        span = [];
-        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

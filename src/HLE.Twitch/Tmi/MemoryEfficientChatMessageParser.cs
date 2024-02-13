@@ -15,7 +15,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
     [Pure]
     [SkipLocalsInit]
     [MustDisposeResource]
-    public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public override MemoryEfficientChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
         int badgeInfoCount = 0;
@@ -88,13 +88,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
-        byte[] usernameBuffer = ArrayPool<byte>.Shared.Rent(32);
-        username.CopyTo(usernameBuffer);
-
-        byte[] displayNameBuffer = ArrayPool<byte>.Shared.Rent(64);
-        displayName.CopyTo(displayNameBuffer);
-
-        return new MemoryEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags, displayNameBuffer, usernameBuffer, username.Length)
+        return new(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags)
         {
             Channel = StringPool.Shared.GetOrAdd(channel, Encoding.ASCII),
             ChannelId = channelId,
@@ -102,9 +96,9 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
             Id = id,
             TmiSentTs = tmiSentTs,
             UserId = userId,
-            DisplayName = string.Empty,
+            DisplayName = BytesToLazyString(displayName, Encoding.UTF8),
             Message = BytesToLazyString(message, Encoding.UTF8),
-            Username = string.Empty
+            Username = BytesToLazyString(username, Encoding.ASCII)
         };
     }
 

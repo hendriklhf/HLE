@@ -14,7 +14,7 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
     [Pure]
     [SkipLocalsInit]
     [MustDisposeResource]
-    public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public override BalancedChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
         Badge[] badges = [];
@@ -85,17 +85,17 @@ public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<Ba
         ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
-        return new BalancedChatMessage(badgeInfos, badges, chatMessageFlags)
+        return new(badgeInfos, badges, chatMessageFlags)
         {
             Channel = StringPool.Shared.GetOrAdd(channel, Encoding.ASCII),
             ChannelId = channelId,
             Color = color,
-            DisplayName = Encoding.UTF8.GetString(displayName),
+            DisplayName = BytesToLazyString(displayName, Encoding.UTF8),
             Id = id,
             Message = BytesToLazyString(message, Encoding.UTF8),
             TmiSentTs = tmiSentTs,
             UserId = userId,
-            Username = Encoding.ASCII.GetString(username)
+            Username = BytesToLazyString(username, Encoding.ASCII)
         };
     }
 

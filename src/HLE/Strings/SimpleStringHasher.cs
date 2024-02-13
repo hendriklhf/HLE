@@ -10,24 +10,26 @@ namespace HLE.Strings;
 /// <param name="chars">The chars of which the hashcode will be created from.</param>
 internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
 {
-    private readonly ReadOnlySpan<char> _chars = chars;
+    private readonly ref char _chars = ref MemoryMarshal.GetReference(chars);
+    private readonly int _length = chars.Length;
 
-    public uint Hash() => Hash(_chars);
+    public uint Hash() => Hash(ref _chars, _length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint Hash(ReadOnlySpan<char> chars)
+    public static uint Hash(ReadOnlySpan<char> chars) => Hash(ref MemoryMarshal.GetReference(chars), chars.Length);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint Hash(ref char chars, int length)
     {
-        if (chars.Length == 0)
+        if (length == 0)
         {
             return 0;
         }
 
-        int length = chars.Length;
-        ref char firstChar = ref MemoryMarshal.GetReference(chars);
-        char middleChar = Unsafe.Add(ref firstChar, length >> 1);
-        char lastChar = Unsafe.Add(ref firstChar, length - 1);
+        char middleChar = Unsafe.Add(ref chars, length >> 1);
+        char lastChar = Unsafe.Add(ref chars, length - 1);
 
-        int hash = ~(firstChar | (firstChar << 16)) ^ ~(middleChar | (middleChar << 16)) ^ ~(lastChar | (lastChar << 16));
+        int hash = ~(chars | (chars << 16)) ^ ~(middleChar | (middleChar << 16)) ^ ~(lastChar | (lastChar << 16));
         return (uint)(hash ^ (length | (length << 16)));
     }
 }

@@ -40,34 +40,23 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     [Pure]
     public long GetFileSize()
     {
-        OpenHandleIfNotOpen();
         if (_size != UninitializedSize)
         {
             return _size;
         }
 
-        _size = RandomAccess.GetLength(_fileHandle);
+        _size = RandomAccess.GetLength(OpenHandleIfNotOpen());
         return _size;
     }
 
-    public int ReadBytes(Span<byte> buffer)
-    {
-        OpenHandleIfNotOpen();
-        return RandomAccess.Read(_fileHandle, buffer, 0);
-    }
+    public int ReadBytes(Span<byte> buffer) => RandomAccess.Read(OpenHandleIfNotOpen(), buffer, 0);
 
     // ReSharper disable once InconsistentNaming
-    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer)
-    {
-        OpenHandleIfNotOpen();
-        return RandomAccess.ReadAsync(_fileHandle, buffer, 0);
-    }
+    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, 0);
 
     public void ReadBytes<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
-        OpenHandleIfNotOpen();
-
-        SafeFileHandle fileHandle = _fileHandle;
+        SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         int fileSize = GetFileSize(fileHandle);
         int bytesRead = RandomAccess.Read(fileHandle, byteWriter.GetSpan(fileSize), 0);
         byteWriter.Advance(bytesRead);
@@ -75,9 +64,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
 
     public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
-        OpenHandleIfNotOpen();
-
-        SafeFileHandle handle = _fileHandle;
+        SafeFileHandle handle = OpenHandleIfNotOpen();
         int fileSize = GetFileSize(handle);
         int bytesRead = await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0);
         byteWriter.Advance(bytesRead);
@@ -128,7 +115,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
             string line = new(chars[..indexOfNewLine]);
             if (typeof(TWriter) == typeof(PooledBufferWriter<string>))
             {
-                Unsafe.As<TWriter, PooledBufferWriter<string>>(ref lines).Write(line);
+                Unsafe.As<PooledBufferWriter<string>>(lines).Write(line);
             }
             else
             {
@@ -147,17 +134,19 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         }
     }
 
-    [MemberNotNull(nameof(_fileHandle))]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void OpenHandleIfNotOpen()
+    private SafeFileHandle OpenHandleIfNotOpen()
     {
-        if (_fileHandle is { IsClosed: false })
+        SafeFileHandle? fileHandle = _fileHandle;
+        if (fileHandle is { IsClosed: false })
         {
-            return;
+            return fileHandle;
         }
 
-        _fileHandle?.Dispose();
-        _fileHandle = File.OpenHandle(FilePath, HandleMode, HandleAccess, HandleShare, HandleOptions);
+        fileHandle?.Dispose();
+        fileHandle = File.OpenHandle(FilePath, HandleMode, HandleAccess, HandleShare, HandleOptions);
+        _fileHandle = fileHandle;
+        return fileHandle;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

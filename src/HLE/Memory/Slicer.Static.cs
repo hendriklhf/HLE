@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -28,13 +27,11 @@ public readonly ref partial struct Slicer<T>
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [SuppressMessage("ReSharper", "RedundantCast")]
-    [SuppressMessage("Style", "IDE0004:Remove Unnecessary Cast")]
     public static ref T GetStart(ref T buffer, int bufferLength, int start, int length)
     {
         if (Environment.Is64BitProcess)
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)(uint)start + (ulong)(uint)length, (ulong)(uint)bufferLength);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)(uint)start + (uint)length, (uint)bufferLength);
         }
         else
         {

@@ -36,7 +36,7 @@ public static partial class SpanHelpers
         }
 
         int length;
-        if (!MemoryHelpers.UseStackAlloc<int>(span.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, item, indicesBuffer.AsSpan());

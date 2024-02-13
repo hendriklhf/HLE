@@ -10,7 +10,9 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Strings;
 
-internal sealed class LazyStringJsonConverter : JsonConverter<LazyString>, IEquatable<LazyStringJsonConverter>
+internal sealed class LazyStringJsonConverter :
+    JsonConverter<LazyString>,
+    IEquatable<LazyStringJsonConverter>
 {
     [MustDisposeResource]
     public override LazyString? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

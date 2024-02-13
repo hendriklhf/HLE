@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 using HLE.Strings;
 
 namespace HLE.Twitch.Tmi.Models;
@@ -16,7 +17,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public required Color Color { get; init; }
 
-    public virtual required string DisplayName { get; init; }
+    public required LazyString DisplayName { get; init; }
 
     public bool IsFirstMessage => (_flags & ChatMessageFlags.IsFirstMessage) != 0;
 
@@ -36,7 +37,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public bool IsAction => (_flags & ChatMessageFlags.IsAction) != 0;
 
-    public virtual required string Username { get; init; }
+    public required LazyString Username { get; init; }
 
     public required string Channel { get; init; }
 
@@ -52,10 +53,14 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing)
+        if (!disposing)
         {
-            Message.Dispose();
+            return;
         }
+
+        Message.Dispose();
+        Username.Dispose();
+        DisplayName.Dispose();
     }
 
     /// <summary>
@@ -67,8 +72,31 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     public sealed override string ToString()
     {
         using ValueStringBuilder builder = new(stackalloc char[Channel.Length + Username.Length + Message.Length + 6]);
-        builder.Append("<#", Channel, "> ", Username, ": ", Message);
+        builder.Append("<#", Channel, "> ", Username.AsSpan(), ": ", Message.AsSpan());
         return builder.ToString();
+    }
+
+    string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
+
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        int requiredDestinationSize = Channel.Length + Username.Length + Message.Length + 6;
+        if (destination.Length < requiredDestinationSize)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        UnsafeBufferWriter<char> writer = new(destination);
+        writer.Write("<#");
+        writer.Write(Channel);
+        writer.Write("> ");
+        writer.Write(Username.AsSpan());
+        writer.Write(": ");
+        writer.Write(Message.AsSpan());
+
+        charsWritten = writer.Count;
+        return true;
     }
 
     [Pure]

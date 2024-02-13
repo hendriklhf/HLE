@@ -48,6 +48,14 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// </summary>
     public event EventHandler<Notice>? OnNoticeReceived;
 
+    internal bool IsOnJoinReceivedSubscribed => OnJoinReceived is not null;
+
+    internal bool IsOnPartReceivedSubscribed => OnPartReceived is not null;
+
+    internal bool IsOnNoticeReceivedSubscribed => OnNoticeReceived is not null;
+
+    internal bool IsOnChatMessageReceivedSubscribed => OnChatMessageReceived is not null;
+
     private readonly ChatMessageParser _chatMessageParser = parsingMode switch
     {
         ParsingMode.TimeEfficient => new TimeEfficientChatMessageParser(),

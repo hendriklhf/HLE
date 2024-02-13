@@ -69,7 +69,7 @@ public static class StringMarshal
             return;
         }
 
-        if (!MemoryHelpers.UseStackAlloc<char>(span.Length))
+        if (!MemoryHelpers.UseStackalloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
             span.CopyTo(rentedCopyBuffer.AsSpan());
@@ -95,7 +95,7 @@ public static class StringMarshal
             return;
         }
 
-        if (!MemoryHelpers.UseStackAlloc<char>(span.Length))
+        if (!MemoryHelpers.UseStackalloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
             span.CopyTo(rentedCopyBuffer.AsSpan());
@@ -126,7 +126,7 @@ public static class StringMarshal
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{Char}"/> back to a <see cref="string"/>.
-    /// ⚠️ The caller has to be sure that the <see cref="ReadOnlySpan{Char}"/> was definitely a <see cref="string"/>,
+    /// ⚠️ The caller has to ensure that the <see cref="ReadOnlySpan{Char}"/> was definitely a <see cref="string"/>,
     /// otherwise this method is potentially dangerous. ⚠️
     /// </summary>
     /// <param name="span">The <see cref="ReadOnlySpan{Char}"/> that will be converted to a <see cref="string"/>.</param>

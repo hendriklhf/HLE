@@ -18,6 +18,7 @@ namespace HLE.Twitch.Tmi;
 /// <summary>
 /// Represents a Twitch chat client.
 /// </summary>
+[SuppressMessage("Design", "CA1030:Use events where appropriate")]
 public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 {
     /// <summary>
@@ -59,12 +60,52 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Is invoked if a user joins a channel.
     /// </summary>
-    public event EventHandler<JoinChannelMessage>? OnJoinedChannel;
+    public event EventHandler<JoinChannelMessage>? OnJoinedChannel
+    {
+        add
+        {
+            if (!_ircHandler.IsOnJoinReceivedSubscribed)
+            {
+                _ircHandler.OnJoinReceived += IrcHandler_OnJoinReceived;
+            }
+
+            _onJoinedChannel += value;
+        }
+        remove
+        {
+            if (_ircHandler.IsOnJoinReceivedSubscribed)
+            {
+                _ircHandler.OnJoinReceived -= IrcHandler_OnJoinReceived;
+            }
+
+            _onJoinedChannel -= value;
+        }
+    }
 
     /// <summary>
     /// Is invoked if a user leaves a channel.
     /// </summary>
-    public event EventHandler<LeftChannelMessage>? OnLeftChannel;
+    public event EventHandler<LeftChannelMessage>? OnLeftChannel
+    {
+        add
+        {
+            if (!_ircHandler.IsOnPartReceivedSubscribed)
+            {
+                _ircHandler.OnPartReceived += IrcHandler_OnPartReceived;
+            }
+
+            _onLeftChannel += value;
+        }
+        remove
+        {
+            if (_ircHandler.IsOnPartReceivedSubscribed)
+            {
+                _ircHandler.OnPartReceived -= IrcHandler_OnPartReceived;
+            }
+
+            _onLeftChannel -= value;
+        }
+    }
 
     /// <summary>
     /// Is invoked if a room state has been received.
@@ -74,17 +115,65 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Is invoked if a chat message has been received.
     /// </summary>
-    public event EventHandler<IChatMessage>? OnChatMessageReceived;
+    public event EventHandler<IChatMessage>? OnChatMessageReceived
+    {
+        add
+        {
+            if (!_ircHandler.IsOnChatMessageReceivedSubscribed)
+            {
+                _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceived;
+            }
+
+            _onChatMessageReceived += value;
+        }
+        remove
+        {
+            if (_ircHandler.IsOnChatMessageReceivedSubscribed)
+            {
+                _ircHandler.OnChatMessageReceived -= IrcHandler_OnChatMessageReceived;
+            }
+
+            _onChatMessageReceived -= value;
+        }
+    }
 
     /// <summary>
     /// Is invoked if a notice has been received.
     /// </summary>
-    public event EventHandler<Notice>? OnNoticeReceived;
+    public event EventHandler<Notice>? OnNoticeReceived
+    {
+        add
+        {
+            if (!_ircHandler.IsOnNoticeReceivedSubscribed)
+            {
+                _ircHandler.OnNoticeReceived += IrcHandler_OnNoticeReceived;
+            }
+
+            _onNoticeReceived += value;
+        }
+        remove
+        {
+            if (_ircHandler.IsOnNoticeReceivedSubscribed)
+            {
+                _ircHandler.OnNoticeReceived -= IrcHandler_OnNoticeReceived;
+            }
+
+            _onNoticeReceived -= value;
+        }
+    }
 
     /// <summary>
     /// Is invoked if data is received from the chat server. If this event is subscribed to, the <see cref="Bytes"/> instance has to be manually disposed.
     /// </summary>
     public event EventHandler<Bytes>? OnBytesReceived;
+
+    private event EventHandler<JoinChannelMessage>? _onJoinedChannel;
+
+    private event EventHandler<LeftChannelMessage>? _onLeftChannel;
+
+    private event EventHandler<IChatMessage>? _onChatMessageReceived;
+
+    private event EventHandler<Notice>? _onNoticeReceived;
 
     internal readonly WebSocketIrcClient _client;
     internal readonly IrcHandler _ircHandler;
@@ -131,13 +220,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client.OnBytesReceived += IrcClient_OnBytesReceived;
         _client.OnConnectionException += async (_, _) => await ReconnectAfterConnectionExceptionAsync();
 
-        _ircHandler.OnJoinReceived += (_, e) => OnJoinedChannel?.Invoke(this, e);
-        _ircHandler.OnPartReceived += (_, e) => OnLeftChannel?.Invoke(this, e);
-        _ircHandler.OnRoomstateReceived += IrcHandlerOnRoomstateReceived;
-        _ircHandler.OnChatMessageReceived += IrcHandlerOnChatMessageReceived;
-        _ircHandler.OnPingReceived += async (_, e) => await IrcHandler_OnPingReceivedAsync(e);
-        _ircHandler.OnReconnectReceived += async (_, _) => await _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
-        _ircHandler.OnNoticeReceived += (_, e) => OnNoticeReceived?.Invoke(this, e);
+        _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
+        _ircHandler.OnPingReceived += IrcHandler_OnPingReceivedAsync;
+        _ircHandler.OnReconnectReceived += IrcHandler_OnReconnectReceivedAsync;
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -411,30 +496,44 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         OnBytesReceived.Invoke(this, data);
     }
 
-    private void IrcHandlerOnChatMessageReceived(object? sender, IChatMessage msg)
-        => OnChatMessageReceived?.Invoke(this, msg);
+    private void IrcHandler_OnChatMessageReceived(object? sender, IChatMessage msg)
+        => _onChatMessageReceived?.Invoke(this, msg);
 
-    private void IrcHandlerOnRoomstateReceived(object? sender, Roomstate roomstate)
+    private void IrcHandler_OnRoomstateReceived(object? sender, Roomstate roomstate)
     {
         Channels.Update(in roomstate);
         OnRoomstateReceived?.Invoke(this, roomstate);
     }
 
-    private async ValueTask IrcHandler_OnPingReceivedAsync(Bytes data)
+    private void IrcHandler_OnNoticeReceived(object? _, Notice e)
+        => _onNoticeReceived?.Invoke(this, e);
+
+    // ReSharper disable once AsyncVoidMethod
+    private async void IrcHandler_OnReconnectReceivedAsync(object? o, EventArgs eventArgs)
+        => await _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
+
+    // ReSharper disable once AsyncVoidMethod
+    private async void IrcHandler_OnPingReceivedAsync(object? _, Bytes e)
     {
         try
         {
-            using PooledBufferWriter<byte> builder = new(PongPrefix.Length + data.Length);
+            using PooledBufferWriter<byte> builder = new(PongPrefix.Length + e.Length);
             builder.Write(PongPrefix);
-            builder.Write(data.AsSpan());
+            builder.Write(e.AsSpan());
 
             await _client.SendRawAsync(builder.WrittenMemory);
         }
         finally
         {
-            data.Dispose();
+            e.Dispose();
         }
     }
+
+    private void IrcHandler_OnJoinReceived(object? _, JoinChannelMessage e)
+        => _onJoinedChannel?.Invoke(this, e);
+
+    private void IrcHandler_OnPartReceived(object? _, LeftChannelMessage e)
+        => _onLeftChannel?.Invoke(this, e);
 
     private async Task ReconnectAfterConnectionExceptionAsync()
     {

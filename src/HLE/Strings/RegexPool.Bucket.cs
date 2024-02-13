@@ -14,7 +14,7 @@ public sealed partial class RegexPool
 {
     private readonly struct Bucket : IEnumerable<Regex>, IEquatable<Bucket>
     {
-        private readonly Regex?[] _regexes = new Regex[DefaultBucketCapacity];
+        private readonly Regex?[] _regexes = GC.AllocateArray<Regex>(DefaultBucketCapacity, true);
 
         public Bucket()
         {

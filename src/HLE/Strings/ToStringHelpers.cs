@@ -31,7 +31,7 @@ internal static class ToStringHelpers
     {
         if (!s_cache.TryGetValue(collectionType, out string? formattedCollection))
         {
-            return FormatCollectionCore(collectionType, elementCount);
+            return FormatCollectionSlow(collectionType, elementCount);
         }
 
         using ValueStringBuilder builder = new(stackalloc char[512]);
@@ -43,7 +43,7 @@ internal static class ToStringHelpers
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static string FormatCollectionCore(Type collectionType, int elementCount)
+    private static string FormatCollectionSlow(Type collectionType, int elementCount)
     {
         // ReSharper disable once NotDisposedResource
         ValueStringBuilder builder = new(stackalloc char[512]);

@@ -15,7 +15,7 @@ public sealed partial class StringPool
         IEnumerable<string>,
         IEquatable<Bucket>
     {
-        internal readonly string?[] _strings = new string[bucketCapacity];
+        internal readonly string?[] _strings = GC.AllocateArray<string>(bucketCapacity, true);
 
         private const int MoveItemThreshold = 6;
 
@@ -90,7 +90,7 @@ public sealed partial class StringPool
                 if (str is null)
                 {
                     // a null reference can only be followed by more null references,
-                    // so we can exit early because the regex can definitely not be found
+                    // so we can exit early because the string can definitely not be found
                     value = null;
                     return false;
                 }
@@ -118,11 +118,12 @@ public sealed partial class StringPool
             // ReSharper disable once InconsistentlySynchronizedField
             foreach (string? str in _strings)
             {
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                if (str is not null)
+                if (str is null)
                 {
-                    yield return str;
+                    break;
                 }
+
+                yield return str;
             }
         }
 

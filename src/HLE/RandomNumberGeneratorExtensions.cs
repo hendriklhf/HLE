@@ -223,7 +223,7 @@ public static class RandomNumberGeneratorExtensions
             return result;
         }
 
-        if (!MemoryHelpers.UseStackAlloc<uint>(length))
+        if (!MemoryHelpers.UseStackalloc<uint>(length))
         {
             using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(length);
             random.Fill(randomIndicesBuffer.AsSpan(..length));

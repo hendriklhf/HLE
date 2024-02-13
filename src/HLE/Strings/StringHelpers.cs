@@ -76,7 +76,7 @@ public static class StringHelpers
         }
 
         // TODO: remove allocation in case stackalloc can not be used
-        Span<Range> ranges = MemoryHelpers.UseStackAlloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
+        Span<Range> ranges = MemoryHelpers.UseStackalloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
         int rangesLength = span.Span.Split(ranges, separator);
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[rangesLength];
@@ -137,7 +137,7 @@ public static class StringHelpers
         }
 
         int resultLength;
-        if (!MemoryHelpers.UseStackAlloc<char>(str.Length))
+        if (!MemoryHelpers.UseStackalloc<char>(str.Length))
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
@@ -209,7 +209,7 @@ public static class StringHelpers
         }
 
         int length;
-        if (!MemoryHelpers.UseStackAlloc<int>(span.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(span.Length))
         {
             using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
@@ -265,7 +265,7 @@ public static class StringHelpers
 
         int resultLength;
         int maximumResultLength = input.Length << 1;
-        if (!MemoryHelpers.UseStackAlloc<char>(maximumResultLength))
+        if (!MemoryHelpers.UseStackalloc<char>(maximumResultLength))
         {
             using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);

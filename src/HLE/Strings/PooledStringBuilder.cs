@@ -105,7 +105,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
         GrowIfNeeded(chars.Length);
 
-        Debug.Assert(_buffer is not null, "If _buffer is null, some exception should have been thrown before");
+        Debug.Assert(_buffer is not null, $"If {nameof(_buffer)} is null, some exception should have been thrown before.");
 
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
         ref char source = ref MemoryMarshal.GetReference(chars);
@@ -184,23 +184,23 @@ public sealed partial class PooledStringBuilder(int capacity) :
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
-        while (true)
+        do
         {
-            if (countOfFailedTries == MaximumFormattingTries)
-            {
-                ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
-                break;
-            }
-
             if (formattable.TryFormat(FreeBufferSpan, out int writtenChars, format, null))
             {
                 Advance(writtenChars);
                 return;
             }
 
-            Grow(128);
-            countOfFailedTries++;
+            if (++countOfFailedTries == MaximumFormattingTries)
+            {
+                ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
+                break;
+            }
+
+            Grow(256);
         }
+        while (true);
     }
 
     [DoesNotReturn]

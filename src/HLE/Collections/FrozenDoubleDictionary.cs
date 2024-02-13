@@ -169,14 +169,13 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public ArrayEnumerator<TValue> GetEnumerator()
     {
-        TValue[]? array = ImmutableCollectionsMarshal.AsArray(Values);
-        Debug.Assert(array is not null);
+        TValue[] array = ImmutableCollectionsMarshal.AsArray(Values)!;
         return new(array);
     }
 
-    IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();
+    IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();
 
     [Pure]
     public bool Equals([NotNullWhen(true)] FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);

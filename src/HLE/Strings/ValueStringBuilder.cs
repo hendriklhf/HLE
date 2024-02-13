@@ -198,27 +198,28 @@ public ref partial struct ValueStringBuilder
     public void Append(Guid guid, [StringSyntax(StringSyntaxAttribute.GuidFormat)] ReadOnlySpan<char> format = default)
         => Append<Guid>(guid, format);
 
-    public void Append<TSpanFormattable>(TSpanFormattable formattable, ReadOnlySpan<char> format = default) where TSpanFormattable : ISpanFormattable
+    public void Append<TSpanFormattable>(TSpanFormattable formattable, ReadOnlySpan<char> format = default)
+        where TSpanFormattable : ISpanFormattable
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
-        while (true)
+        do
         {
-            if (countOfFailedTries == MaximumFormattingTries)
-            {
-                ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
-                break;
-            }
-
             if (formattable.TryFormat(FreeBufferSpan, out int writtenChars, format, null))
             {
                 Advance(writtenChars);
                 return;
             }
 
-            Grow(128);
-            countOfFailedTries++;
+            if (++countOfFailedTries == MaximumFormattingTries)
+            {
+                ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
+                break;
+            }
+
+            Grow(256);
         }
+        while (true);
     }
 
     [DoesNotReturn]

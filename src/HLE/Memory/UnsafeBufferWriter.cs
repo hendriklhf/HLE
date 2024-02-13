@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 using HLE.Strings;
 
 namespace HLE.Memory;
@@ -14,13 +16,19 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
 
     private readonly ref T _buffer = ref buffer;
 
-    public UnsafeBufferWriter(Span<T> buffer) : this(ref MemoryMarshal.GetReference(buffer))
+    public UnsafeBufferWriter(List<T> list) : this(ref ListMarshal.GetReference(list))
     {
     }
 
     public UnsafeBufferWriter(T[] buffer) : this(ref MemoryMarshal.GetArrayDataReference(buffer))
     {
     }
+
+    public UnsafeBufferWriter(Span<T> buffer) : this(ref MemoryMarshal.GetReference(buffer))
+    {
+    }
+
+    public void Advance(int count) => Count += count;
 
     public void Write(T item) => Unsafe.Add(ref _buffer, Count++) = item;
 

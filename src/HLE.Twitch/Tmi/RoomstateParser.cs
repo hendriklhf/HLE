@@ -29,7 +29,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     public void Parse(ReadOnlySpan<byte> ircMessage, out Roomstate roomstate)
     {
         int whitespaceCount;
-        if (!MemoryHelpers.UseStackAlloc<int>(ircMessage.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
             using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());

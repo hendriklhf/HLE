@@ -22,7 +22,7 @@ public static unsafe class MemoryHelpers
     /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool UseStackAlloc<T>(int elementCount)
+    public static bool UseStackalloc<T>(int elementCount)
     {
         int totalByteSize = sizeof(T) * elementCount;
         return totalByteSize <= s_maximumStackallocSize;

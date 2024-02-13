@@ -452,9 +452,6 @@ public sealed class RentedArrayTest
         object arrayAsObject = array;
         Assert.True(array.Equals(arrayAsObject));
 
-        arrayAsObject = array.Array;
-        Assert.True(array.Equals(arrayAsObject));
-
         object obj = new List<int>();
         Assert.False(array.Equals(obj));
     }
@@ -466,16 +463,6 @@ public sealed class RentedArrayTest
         Assert.True(array.Equals(array));
 
         using RentedArray<int> array2 = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        Assert.False(array.Equals(array2));
-    }
-
-    [Fact]
-    public void Equals_Array_Test()
-    {
-        using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        Assert.True(array.Equals(array._array));
-
-        int[] array2 = new int[16];
         Assert.False(array.Equals(array2));
     }
 

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -13,7 +14,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
     [Pure]
     [SkipLocalsInit]
     [MustDisposeResource]
-    public override IChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+    public override TimeEfficientChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
         int badgeInfoCount = 0;
@@ -86,17 +87,17 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
         ReadOnlySpan<byte> channel = GetChannel(ircMessage, indicesOfWhitespaces);
         ReadOnlySpan<byte> message = GetMessage(ircMessage, indicesOfWhitespaces, (chatMessageFlags & ChatMessageFlags.IsAction) != 0);
 
-        return new TimeEfficientChatMessage(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags)
+        return new(badgeInfos, badgeInfoCount, badges, badgeCount, chatMessageFlags)
         {
-            Channel = BytesToString(channel, Encoding.ASCII),
+            Channel = StringPool.Shared.GetOrAdd(channel, Encoding.ASCII),
             ChannelId = channelId,
             Color = color,
-            DisplayName = BytesToString(displayName, Encoding.ASCII),
+            DisplayName = BytesToLazyString(displayName, Encoding.UTF8),
             Id = id,
             Message = BytesToLazyString(message, Encoding.UTF8),
             TmiSentTs = tmiSentTs,
             UserId = userId,
-            Username = BytesToString(username, Encoding.ASCII)
+            Username = BytesToLazyString(username, Encoding.ASCII)
         };
     }
 

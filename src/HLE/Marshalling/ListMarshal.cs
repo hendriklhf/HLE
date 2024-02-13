@@ -10,17 +10,17 @@ public static class ListMarshal
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Memory<T> AsMemory<T>(List<T> list) => ObjectMarshal.ReadField<T[]>(list, 0).AsMemory(0, list.Count);
+    public static Memory<T> AsMemory<T>(List<T> list) => GetArray(list).AsMemory(0, list.Count);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] AsArray<T>(List<T> list) => ObjectMarshal.ReadField<T[]>(list, 0);
+    public static T[] GetArray<T>(List<T> list) => ObjectMarshal.ReadField<T[]>(list, 0);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetReference<T>(List<T> list)
     {
-        T[] array = AsArray(list);
+        T[] array = GetArray(list);
         return ref MemoryMarshal.GetArrayDataReference(array);
     }
 

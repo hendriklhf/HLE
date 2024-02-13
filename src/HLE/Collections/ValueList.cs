@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
+using HLE.Strings;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
@@ -392,6 +393,17 @@ public ref struct ValueList<T>
     }
 
     internal readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
+
+    public override readonly string ToString()
+    {
+        if (typeof(T) != typeof(char))
+        {
+            return ToStringHelpers.FormatCollection(typeof(ValueList<T>), Count);
+        }
+
+        ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());
+        return new(MemoryMarshal.CreateReadOnlySpan(ref reference, Count));
+    }
 
     [Pure]
     public readonly MemoryEnumerator<T> GetEnumerator() => new(ref GetBufferReference(), Count);

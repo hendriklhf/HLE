@@ -14,7 +14,9 @@ using HLE.Memory;
 namespace HLE.Strings;
 
 /// <summary>
-/// An array that is specialized in storing strings by optimizing data locality, which makes search operations faster, but comes at the cost of higher memory usage and initialization time.
+/// An array that is specialized in storing strings by optimizing data locality,
+/// which makes search operations faster,
+/// but comes at the cost of higher memory usage and initialization time.
 /// </summary>
 public sealed class StringArray :
     ICollection<string>,
@@ -23,6 +25,7 @@ public sealed class StringArray :
     IIndexAccessible<string>,
     IEquatable<StringArray>,
     IReadOnlySpanProvider<string>,
+    IReadOnlyMemoryProvider<string>,
     ICollectionProvider<string>
 {
     public string this[int index]
@@ -105,6 +108,9 @@ public sealed class StringArray :
     public ReadOnlySpan<string> AsSpan() => _strings;
 
     [Pure]
+    public ReadOnlyMemory<string> AsMemory() => _strings;
+
+    [Pure]
     public string[] ToArray()
     {
         int length = Length;
@@ -144,6 +150,8 @@ public sealed class StringArray :
 
     ReadOnlySpan<string> IReadOnlySpanProvider<string>.GetReadOnlySpan() => AsSpan();
 
+    ReadOnlyMemory<string> IReadOnlyMemoryProvider<string>.GetReadOnlyMemory() => AsMemory();
+
     [Pure]
     public int IndexOf(string str, int startIndex = 0) => IndexOf(str.AsSpan(), StringComparison.Ordinal, startIndex);
 
@@ -167,7 +175,7 @@ public sealed class StringArray :
 
         Span<int> indices;
         int[]? rentedIndices = null;
-        if (!MemoryHelpers.UseStackAlloc<int>(lengths.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(lengths.Length))
         {
             rentedIndices = ArrayPool<int>.Shared.Rent(lengths.Length);
             indices = rentedIndices.AsSpan(..lengths.Length);

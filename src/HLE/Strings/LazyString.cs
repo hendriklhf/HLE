@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -15,8 +16,16 @@ namespace HLE.Strings;
 
 [DebuggerDisplay("{AsSpan()}")]
 [JsonConverter(typeof(LazyStringJsonConverter))]
-public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlySpanProvider<char>, IReadOnlyMemoryProvider<char>, ICopyable<char>,
-    IIndexAccessible<char>, ICollectionProvider<char>
+public sealed class LazyString :
+    IDisposable,
+    IEquatable<LazyString>,
+    IReadOnlySpanProvider<char>,
+    IReadOnlyMemoryProvider<char>,
+    ICopyable<char>,
+    IIndexAccessible<char>,
+    ICollectionProvider<char>,
+    IReadOnlyCollection<char>,
+    ICollection<char>
 {
     public ref readonly char this[int index]
     {
@@ -35,6 +44,12 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
 
     public int Length { get; }
 
+    int ICollection<char>.Count => Length;
+
+    bool ICollection<char>.IsReadOnly => true;
+
+    int IReadOnlyCollection<char>.Count => Length;
+
     int ICountable.Count => Length;
 
     private char[]? _chars;
@@ -46,6 +61,12 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
     {
         _chars = [];
         _string = string.Empty;
+    }
+
+    private LazyString(string str)
+    {
+        _chars = null;
+        _string = str;
     }
 
     [MustDisposeResource]
@@ -65,11 +86,16 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
     }
 
     [MustDisposeResource]
-    public LazyString([HandlesResourceDisposal] RentedArray<char> chars, int length)
+    internal LazyString([HandlesResourceDisposal] RentedArray<char> chars, int length)
     {
+        Debug.Assert(chars._pool == ArrayPool<char>.Shared);
+
         _chars = chars.Array;
         Length = length;
     }
+
+    [Pure]
+    public static LazyString FromString(string str) => str.Length == 0 ? Empty : new(str);
 
     public void Dispose()
     {
@@ -228,11 +254,39 @@ public sealed class LazyString : IDisposable, IEquatable<LazyString>, IReadOnlyS
         copyWorker.CopyTo(destination);
     }
 
+    public void Add(char item) => throw new NotSupportedException();
+
+    public void Clear() => throw new NotSupportedException();
+
+    public bool Contains(char item) => AsSpan().Contains(item);
+
+    public bool Remove(char item) => throw new NotSupportedException();
+
     ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => AsSpan();
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
     public MemoryEnumerator<char> GetEnumerator() => new(ref GetReference(), Length);
+
+    IEnumerator<char> IEnumerable<char>.GetEnumerator()
+    {
+        string? str = _string;
+        if (str is not null)
+        {
+            return str.GetEnumerator();
+        }
+
+        char[]? chars = _chars;
+        if (chars is not null)
+        {
+            return new ArrayEnumerator<char>(chars, 0, Length);
+        }
+
+        ThrowHelper.ThrowUnreachableException();
+        return null!;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<char>)this).GetEnumerator();
 
     [Pure]
     public bool Equals(LazyString? other) => Length == other?.Length && AsSpan().SequenceEqual(other.AsSpan());
