@@ -20,8 +20,9 @@ public sealed class ConcurrentStack<T> :
     IReadOnlyCollection<T>,
     ICopyable<T>,
     IReadOnlySpanProvider<T>,
-    IIndexAccessible<T>
-// TODO: IMemoryProvider, ICollectionProvider
+    IIndexAccessible<T>,
+    IMemoryProvider<T>,
+    ICollectionProvider<T>
 {
     T IIndexAccessible<T>.this[int index] => AsSpan()[index];
 
@@ -140,6 +141,39 @@ public sealed class ConcurrentStack<T> :
         _buffer = newBuffer;
     }
 
+    public List<T> ToList()
+    {
+        ReadOnlySpan<T> source = AsSpan();
+        if (source.Length == 0)
+        {
+            return [];
+        }
+
+        List<T> result = new(source.Length);
+        CopyWorker<T> copyWorker = new(source);
+        copyWorker.CopyTo(result);
+        return result;
+    }
+
+    public T[] ToArray()
+    {
+        ReadOnlySpan<T> source = AsSpan();
+        if (source.Length == 0)
+        {
+            return [];
+        }
+
+        T[] result = GC.AllocateUninitializedArray<T>(source.Length);
+        CopyWorker<T>.Copy(source, result);
+        return result;
+    }
+
+    public T[] ToArray(int start) => AsSpan().ToArray(start);
+
+    public T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+
+    public T[] ToArray(Range range) => AsSpan().ToArray(range);
+
     public void CopyTo(List<T> destination, int offset = 0)
     {
         CopyWorker<T> copyWorker = new(AsSpan());
@@ -177,6 +211,10 @@ public sealed class ConcurrentStack<T> :
     }
 
     ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => _buffer.AsMemory(..Count);
+
+    Memory<T> IMemoryProvider<T>.GetMemory() => _buffer.AsMemory(..Count);
 
     public ArrayEnumerator<T> GetEnumerator() => new(_buffer, 0, Count);
 

@@ -123,7 +123,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         Badge[] badges = new Badge[value.Count((byte)',') + 1];
         int badgeCount = 0;
         Encoding utf8 = Encoding.UTF8;
-        while (value.Length != 0)
+        do
         {
             int indexOfComma = value.IndexOf((byte)',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
@@ -134,6 +134,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..], utf8);
             badges[badgeCount++] = new(name, level);
         }
+        while (value.Length != 0);
 
         return badges;
     }

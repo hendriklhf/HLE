@@ -12,7 +12,7 @@ using HLE.Twitch.Bttv.Models.Responses;
 
 namespace HLE.Twitch.Bttv;
 
-public sealed class BttvApi : IEquatable<BttvApi>
+public sealed class BttvApi : IBttvApi, IEquatable<BttvApi>
 {
     public BttvApiCache? Cache { get; set; }
 

@@ -10,7 +10,7 @@ namespace HLE.Strings;
 
 public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
 {
-    private readonly Bucket[] _buckets = new Bucket[DefaultPoolCapacity];
+    private readonly Bucket[] _buckets;
 
     public static RegexPool Shared { get; } = [];
 
@@ -19,11 +19,13 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
 
     public RegexPool()
     {
-        Span<Bucket> buckets = _buckets;
+        Bucket[] buckets = GC.AllocateArray<Bucket>(DefaultPoolCapacity, true);
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
         }
+
+        _buckets = buckets;
     }
 
     public void Clear()

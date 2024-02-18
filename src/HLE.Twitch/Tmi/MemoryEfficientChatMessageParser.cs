@@ -113,7 +113,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
 
         Badge[] badges = ArrayPool<Badge>.Shared.Rent(5);
         Encoding utf8 = Encoding.UTF8;
-        while (value.Length != 0)
+        do
         {
             int indexOfComma = value.IndexOf((byte)',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
@@ -124,6 +124,7 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
             string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..], utf8);
             badges[badgeCount++] = new(name, level);
         }
+        while (value.Length != 0);
 
         return badges;
     }

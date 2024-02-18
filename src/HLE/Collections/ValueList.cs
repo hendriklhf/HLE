@@ -252,9 +252,9 @@ public ref struct ValueList<T>
 
     public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(scoped Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(ReadOnlySpan<T> items)
+    public void AddRange(scoped ReadOnlySpan<T> items)
     {
         if (items.Length == 0)
         {
@@ -364,13 +364,13 @@ public ref struct ValueList<T>
         copyWorker.CopyTo(destination);
     }
 
-    public readonly void CopyTo(Span<T> destination)
+    public readonly void CopyTo(scoped Span<T> destination)
     {
         CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(destination);
     }
 
-    public readonly void CopyTo(ref T destination)
+    public readonly void CopyTo(scoped ref T destination)
     {
         CopyWorker<T> copyWorker = new(AsSpan());
         copyWorker.CopyTo(ref destination);
@@ -409,7 +409,7 @@ public ref struct ValueList<T>
     public readonly MemoryEnumerator<T> GetEnumerator() => new(ref GetBufferReference(), Count);
 
     [Pure]
-    public readonly bool Equals(ValueList<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();
+    public readonly bool Equals(scoped ValueList<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;

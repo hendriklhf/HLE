@@ -92,7 +92,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public void Advance(int length) => Length += length;
 
-    public void Append(scoped ReadOnlySpan<char> chars)
+    public void Append(ReadOnlySpan<char> chars)
     {
         switch (chars.Length)
         {

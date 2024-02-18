@@ -104,7 +104,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
     public void CopyTo(Memory<T> destination) => CopyTo(destination.Span);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void CopyTo(Span<T> destination)
+    public void CopyTo(scoped Span<T> destination)
     {
         if ((nuint)destination.Length < _length)
         {
@@ -114,7 +114,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
         CopyTo(ref MemoryMarshal.GetReference(destination));
     }
 
-    public void CopyTo(ref T destination) => s_memmove(ref destination, ref _source, _length);
+    public void CopyTo(scoped ref T destination) => s_memmove(ref destination, ref _source, _length);
 
     public void CopyTo(T* destination) => CopyTo(ref Unsafe.AsRef<T>(destination));
 

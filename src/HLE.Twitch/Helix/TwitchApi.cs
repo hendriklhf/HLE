@@ -8,7 +8,7 @@ using HLE.Twitch.Helix.Models;
 
 namespace HLE.Twitch.Helix;
 
-public sealed partial class TwitchApi : IEquatable<TwitchApi>, IDisposable
+public sealed partial class TwitchApi : ITwitchApi, IEquatable<TwitchApi>, IDisposable
 {
     public TwitchApiCache? Cache { get; set; }
 

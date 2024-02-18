@@ -42,11 +42,11 @@ public static partial class SpanHelpers
 
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
-            Vector512<T> maksVector = Vector512.Create(mask);
+            Vector512<T> maskVector = Vector512.Create(mask);
             while (length >= Vector512<T>.Count)
             {
                 Vector512<T> vector = Vector512.LoadUnsafe(ref values);
-                vector &= maksVector;
+                vector &= maskVector;
                 vector.StoreUnsafe(ref values);
 
                 values = ref Unsafe.Add(ref values, Vector512<T>.Count);
@@ -55,13 +55,13 @@ public static partial class SpanHelpers
 
             if (length < Vector512<T>.Count >> 1)
             {
-                goto Loop;
+                goto RemainderLoop;
             }
 
             int remainingStart = Vector512<T>.Count - length;
             values = ref Unsafe.Subtract(ref values, remainingStart);
             Vector512<T> remainder = Vector512.LoadUnsafe(ref values);
-            remainder &= maksVector;
+            remainder &= maskVector;
             remainder.StoreUnsafe(ref values);
             return;
         }
@@ -81,7 +81,7 @@ public static partial class SpanHelpers
 
             if (length < Vector256<T>.Count >> 1)
             {
-                goto Loop;
+                goto RemainderLoop;
             }
 
             int remainingStart = Vector256<T>.Count - length;
@@ -107,7 +107,7 @@ public static partial class SpanHelpers
 
             if (length < Vector128<T>.Count >> 1)
             {
-                goto Loop;
+                goto RemainderLoop;
             }
 
             int remainingStart = Vector128<T>.Count - length;
@@ -118,7 +118,7 @@ public static partial class SpanHelpers
             return;
         }
 
-        Loop:
+        RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) &= mask;

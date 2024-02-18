@@ -31,7 +31,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
         Debug.Assert(ArrayPool.BucketCapacities.Length == bucketCount);
 
-        Bucket[] buckets = new Bucket[bucketCount];
+        Bucket[] buckets = GC.AllocateArray<Bucket>(bucketCount, true);
         int arrayLength = ArrayPool.MinimumArrayLength;
         for (int i = 0; i < buckets.Length; i++)
         {
@@ -100,7 +100,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         int bucketsLength = _buckets.Length;
         int tryCount = 0;
         const int MaximumTryCount = 3;
-        while (bucketIndex < bucketsLength && tryCount < MaximumTryCount)
+        do
         {
             if (bucket.TryRent(out T[]? array))
             {
@@ -111,6 +111,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             bucketIndex++;
             tryCount++;
         }
+        while (bucketIndex < bucketsLength && tryCount < MaximumTryCount);
 
         return initialBucket.Rent();
     }

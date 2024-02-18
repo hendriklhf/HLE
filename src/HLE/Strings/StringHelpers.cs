@@ -69,15 +69,15 @@ public static class StringHelpers
             return [];
         }
 
-        ReadOnlyMemory<char> span = str.AsMemory();
-        if (span.Length <= charCount)
+        ReadOnlyMemory<char> inputSpan = str.AsMemory();
+        if (inputSpan.Length <= charCount)
         {
             return [str.AsMemory()];
         }
 
         // TODO: remove allocation in case stackalloc can not be used
-        Span<Range> ranges = MemoryHelpers.UseStackalloc<Range>(span.Length) ? stackalloc Range[span.Length] : new Range[span.Length];
-        int rangesLength = span.Span.Split(ranges, separator);
+        Span<Range> ranges = MemoryHelpers.UseStackalloc<Range>(inputSpan.Length) ? stackalloc Range[inputSpan.Length] : new Range[inputSpan.Length];
+        int rangesLength = inputSpan.Span.Split(ranges, separator);
 
         ReadOnlyMemory<char>[] result = new ReadOnlyMemory<char>[rangesLength];
         ref ReadOnlyMemory<char> resultReference = ref MemoryMarshal.GetArrayDataReference(result);
@@ -86,7 +86,7 @@ public static class StringHelpers
         int bufferLength = 0;
         for (int i = 0; i < rangesLength; i++)
         {
-            ReadOnlyMemory<char> part = span[ranges[i]];
+            ReadOnlyMemory<char> part = inputSpan[ranges[i]];
             if (part.Length >= charCount) // part doesn't fit into buffer, even if buffer is empty
             {
                 if (bufferLength != 0) // buffer isn't empty, write buffer into result
@@ -184,6 +184,11 @@ public static class StringHelpers
 
             result = result.SliceUnsafe(..^(endOfWhitespaces - 1));
             indexOfWhitespaces = result.IndexOf("  ");
+        }
+
+        if (result[^1] == ' ')
+        {
+            result = result[..^1];
         }
 
         return result.Length;

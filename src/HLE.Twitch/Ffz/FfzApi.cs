@@ -10,7 +10,7 @@ using HLE.Twitch.Ffz.Models;
 
 namespace HLE.Twitch.Ffz;
 
-public sealed class FfzApi : IEquatable<FfzApi>
+public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
 {
     public FfzApiCache? Cache { get; set; }
 

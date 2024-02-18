@@ -348,7 +348,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         using PooledBufferWriter<byte> messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
 
         DateTimeOffset start = DateTimeOffset.UtcNow;
-        for (int i = 0; i < channels.Length && !cancellationTokenSource.IsCancellationRequested; i++)
+        for (int i = 0; i < channels.Length; i++)
         {
             if (i != 0 && i % maximumJoinsInPeriod == 0)
             {
@@ -360,6 +360,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
                 }
 
                 start = now + waitTime;
+            }
+
+            if (cancellationTokenSource.IsCancellationRequested)
+            {
+                ThrowHelper.ThrowTaskCancelledException();
             }
 
             messageBuilder.Write(JoinPrefix);

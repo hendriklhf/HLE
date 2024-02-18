@@ -14,20 +14,20 @@ public static class ListMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(List<T> list) => ObjectMarshal.ReadField<T[]>(list, 0);
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetReference<T>(List<T> list)
     {
         T[] array = GetArray(list);
         return ref MemoryMarshal.GetArrayDataReference(array);
     }
 
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] GetArray<T>(List<T> list) => ObjectMarshal.GetField<T[]>(list, 0);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetArray<T>(List<T> list, T[] array)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(list.Count, array.Length);
-        ObjectMarshal.ReadField<T[]>(list, 0) = array;
+        ObjectMarshal.GetField<T[]>(list, 0) = array;
     }
 }

@@ -35,14 +35,14 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
     public void Write(T[] items)
         => Write(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
 
-    public void Write(Span<T> items)
+    public void Write(scoped Span<T> items)
         => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
-    public void Write(ReadOnlySpan<T> items)
+    public void Write(scoped ReadOnlySpan<T> items)
         => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Write(ref T source, int count)
+    public void Write(scoped ref T source, int count)
     {
         ref T destination = ref Unsafe.Add(ref _buffer, Count);
         CopyWorker<T>.Copy(ref source, ref destination, (uint)count);

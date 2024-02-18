@@ -6,7 +6,7 @@ using HLE.Twitch.JsonConverters;
 
 namespace HLE.Twitch.Helix.Models;
 
-[DebuggerDisplay("Token = \"{Token}\" TimeOfExpiration = {TimeOfExpiration}")]
+[DebuggerDisplay("Token = \"{Token}\", TimeOfExpiration = {TimeOfExpiration}")]
 public readonly struct AccessToken : IEquatable<AccessToken>
 {
     [JsonPropertyName("access_token")]
@@ -24,6 +24,12 @@ public readonly struct AccessToken : IEquatable<AccessToken>
 
     public AccessToken()
     {
+    }
+
+    public AccessToken(string token, DateTime timeOfExpiration)
+    {
+        Token = token;
+        TimeOfExpiration = timeOfExpiration;
     }
 
     public bool Equals(AccessToken other) => TimeOfExpiration == other.TimeOfExpiration && Token == other.Token;

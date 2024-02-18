@@ -12,9 +12,7 @@ public sealed partial class ArrayPool<T>
     {
         public readonly bool CanReturn => _count != _stack.Length;
 
-        public readonly object SyncRoot => _stack;
-
-        internal readonly T[][] _stack = new T[capacity][];
+        internal readonly T[][] _stack = GC.AllocateArray<T[]>(capacity, true);
         private readonly int _arrayLength = arrayLength;
         private int _count;
 
@@ -33,10 +31,10 @@ public sealed partial class ArrayPool<T>
                     return false;
                 }
 
-                ref T[] arrayReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --count);
+                ref T[] reference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --count);
                 _count = count;
-                array = arrayReference;
-                arrayReference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
+                array = reference;
+                reference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
                 return true;
             }
         }
@@ -63,7 +61,7 @@ public sealed partial class ArrayPool<T>
 
                     array = currentRef;
                     CopyWorker<T[]>.Copy(ref Unsafe.Add(ref currentRef, 1), ref currentRef, (uint)count - i - 1);
-                    _count = --count;
+                    _count = count - 1;
                     return true;
                 }
 

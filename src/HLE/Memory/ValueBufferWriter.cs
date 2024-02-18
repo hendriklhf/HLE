@@ -157,11 +157,11 @@ public ref struct ValueBufferWriter<T>
 
     public void Write(T[] data) => Write(ref MemoryMarshal.GetArrayDataReference(data), data.Length);
 
-    public void Write(Span<T> data) => Write(ref MemoryMarshal.GetReference(data), data.Length);
+    public void Write(scoped Span<T> data) => Write(ref MemoryMarshal.GetReference(data), data.Length);
 
-    public void Write(ReadOnlySpan<T> data) => Write(ref MemoryMarshal.GetReference(data), data.Length);
+    public void Write(scoped ReadOnlySpan<T> data) => Write(ref MemoryMarshal.GetReference(data), data.Length);
 
-    public void Write(ref T data, int length)
+    public void Write(scoped ref T data, int length)
     {
         ref T destination = ref GetReference(length);
         CopyWorker<T>.Copy(ref data, ref destination, (uint)length);
@@ -328,13 +328,13 @@ public ref struct ValueBufferWriter<T>
         copyWorker.CopyTo(destination);
     }
 
-    public readonly void CopyTo(Span<T> destination)
+    public readonly void CopyTo(scoped Span<T> destination)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(destination);
     }
 
-    public readonly void CopyTo(ref T destination)
+    public readonly void CopyTo(scoped ref T destination)
     {
         CopyWorker<T> copyWorker = new(WrittenSpan);
         copyWorker.CopyTo(ref destination);

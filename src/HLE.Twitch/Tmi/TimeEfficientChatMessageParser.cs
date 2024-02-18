@@ -120,7 +120,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
 
         Badge[] badges = new Badge[5];
         Encoding utf8 = Encoding.UTF8;
-        while (value.Length != 0)
+        do
         {
             int indexOfComma = value.IndexOf((byte)',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
@@ -131,6 +131,7 @@ public sealed class TimeEfficientChatMessageParser : ChatMessageParser, IEquatab
             string level = BytesToString(info[(slashIndex + 1)..], utf8);
             badges[badgeCount++] = new(name, level);
         }
+        while (value.Length != 0);
 
         return badges;
     }

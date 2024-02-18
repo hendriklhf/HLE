@@ -104,7 +104,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
 
     private static void ReadLinesCore<TWriter>(TWriter lines, ReadOnlySpan<char> chars) where TWriter : IBufferWriter<string>
     {
-        while (true)
+        do
         {
             int indexOfNewLine = chars.IndexOfAny('\r', '\n');
             if (indexOfNewLine < 0)
@@ -132,6 +132,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
 
             chars = chars[skipCount..];
         }
+        while (true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

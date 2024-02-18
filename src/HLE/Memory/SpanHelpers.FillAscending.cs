@@ -44,8 +44,13 @@ public static partial class SpanHelpers
 
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
+#if VECTOR_INDICES
+            Vector512<T> ascendingValueAdditions = Vector512<T>.Indices;
+#else
             Vector512<T> ascendingValueAdditions = Vector512<T>.Zero;
             CreateAscendingValueVector(ref Unsafe.As<Vector512<T>, T>(ref ascendingValueAdditions), Vector512<T>.Count);
+#endif
+
             while (length >= Vector512<T>.Count)
             {
                 Vector512<T> startValues = Vector512.Create(start);
@@ -57,13 +62,18 @@ public static partial class SpanHelpers
                 length -= Vector512<T>.Count;
             }
 
-            goto Loop;
+            goto RemainderLoop;
         }
 
         if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
         {
+#if VECTOR_INDICES
+            Vector256<T> ascendingValueAdditions = Vector256<T>.Indices;
+#else
             Vector256<T> ascendingValueAdditions = Vector256<T>.Zero;
             CreateAscendingValueVector(ref Unsafe.As<Vector256<T>, T>(ref ascendingValueAdditions), Vector256<T>.Count);
+#endif
+
             while (length >= Vector256<T>.Count)
             {
                 Vector256<T> startValues = Vector256.Create(start);
@@ -75,13 +85,18 @@ public static partial class SpanHelpers
                 length -= Vector256<T>.Count;
             }
 
-            goto Loop;
+            goto RemainderLoop;
         }
 
         if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
         {
+#if VECTOR_INDICES
+            Vector128<T> ascendingValueAdditions = Vector128<T>.Indices;
+#else
             Vector128<T> ascendingValueAdditions = Vector128<T>.Zero;
             CreateAscendingValueVector(ref Unsafe.As<Vector128<T>, T>(ref ascendingValueAdditions), Vector128<T>.Count);
+#endif
+
             while (length >= Vector128<T>.Count)
             {
                 Vector128<T> startValues = Vector128.Create(start);
@@ -94,13 +109,15 @@ public static partial class SpanHelpers
             }
         }
 
-        Loop:
+        RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref destination, i) = start + T.CreateTruncating(i);
         }
     }
 
+#if !VECTOR_INDICES
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe void CreateAscendingValueVector<T>(ref T vector, int vectorSize)
     {
         switch (sizeof(T))
@@ -147,4 +164,5 @@ public static partial class SpanHelpers
             }
         }
     }
+#endif
 }

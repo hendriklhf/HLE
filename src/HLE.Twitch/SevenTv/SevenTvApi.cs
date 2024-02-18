@@ -11,7 +11,7 @@ using HLE.Twitch.SevenTv.Models.Responses;
 
 namespace HLE.Twitch.SevenTv;
 
-public sealed class SevenTvApi : IEquatable<SevenTvApi>
+public sealed class SevenTvApi : ISevenTvApi, IEquatable<SevenTvApi>
 {
     private const string ApiBaseUrl = "https://7tv.io/v3";
 

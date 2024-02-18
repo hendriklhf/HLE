@@ -32,8 +32,8 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     /// <param name="bucketCapacity">The amount of strings per bucket in the pool.</param>
     public StringPool(int poolCapacity = DefaultPoolCapacity, int bucketCapacity = DefaultBucketCapacity)
     {
-        Bucket[] buckets = new Bucket[poolCapacity];
-        for (int i = 0; i < poolCapacity; i++)
+        Bucket[] buckets = GC.AllocateArray<Bucket>(poolCapacity, true);
+        for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new(bucketCapacity);
         }
