@@ -64,7 +64,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     [MustDisposeResource]
     public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
     {
-        CopyWorker<char>.Copy(str, _buffer);
+        CopyWorker<char>.Copy(str, _buffer!);
         Length = str.Length;
     }
 

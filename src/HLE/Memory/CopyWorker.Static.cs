@@ -26,13 +26,24 @@ public readonly unsafe ref partial struct CopyWorker<T>
     public static void Copy(T[] source, T* destination)
         => s_memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
 
+    public static void Copy(T[] source, ref T destination)
+        => s_memmove(ref destination, ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
+
     /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
     public static void Copy(T[] source, T[] destination)
         => s_memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
 
     /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
+    public static void Copy(Span<T> source, T[] destination)
+        => s_memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+
+    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
     public static void Copy(Span<T> source, Span<T> destination)
         => s_memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+
+    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
+    public static void Copy(ReadOnlySpan<T> source, T[] destination)
+        => s_memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
     /// <summary>
     /// Copies all elements from the source into the destination without checking if enough space is available.

@@ -21,14 +21,8 @@ public static class ArrayExtensions
     // public static void CopyTo<T>(this T[] source, Span<T> destination)
 
     public static void CopyTo<T>(this T[] source, ref T destination)
-    {
-        CopyWorker<T> copyWorker = new(source);
-        copyWorker.CopyTo(ref destination);
-    }
+        => CopyWorker<T>.Copy(source, ref destination);
 
     public static unsafe void CopyTo<T>(this T[] source, T* destination)
-    {
-        CopyWorker<T> copyWorker = new(source);
-        copyWorker.CopyTo(destination);
-    }
+        => CopyWorker<T>.Copy(source, destination);
 }

@@ -16,8 +16,8 @@
         <FileVersion>2.1.8</FileVersion>
         <Description>A library containing useful methods and data lists.</Description>
         <Authors>Hendrik</Authors>
-        <RepositoryUrl>https://github.com/Sterbehilfe/HLE</RepositoryUrl>
         <PackageTags>library c# csharp .net8 dotnet</PackageTags>
+        <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
@@ -39,19 +39,19 @@
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
-        <PackageReference Include="Roslynator.Analyzers" Version="4.10.0">
+        <PackageReference Include="Roslynator.Analyzers" Version="4.11.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.10.0">
+        <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.11.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.CodeFixes" Version="4.10.0">
+        <PackageReference Include="Roslynator.CodeFixes" Version="4.11.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.10.0">
+        <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.11.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

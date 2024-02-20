@@ -108,7 +108,7 @@ public static partial class SpanHelpers
                 startIndex += Vector512<T>.Count;
             }
 
-            goto RemainingItemsLoop;
+            goto RemainderLoop;
         }
 
         if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
@@ -128,7 +128,7 @@ public static partial class SpanHelpers
                 startIndex += Vector256<T>.Count;
             }
 
-            goto RemainingItemsLoop;
+            goto RemainderLoop;
         }
 
         if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
@@ -148,12 +148,12 @@ public static partial class SpanHelpers
                 startIndex += Vector128<T>.Count;
             }
 
-            goto RemainingItemsLoop;
+            goto RemainderLoop;
         }
 
         return IndicesOfNonOptimizedFallback(MemoryMarshal.CreateReadOnlySpan(ref items, length), item, MemoryMarshal.CreateSpan(ref destination, length));
 
-        RemainingItemsLoop:
+        RemainderLoop:
         ref T remainingItemsReference = ref Unsafe.Add(ref items, startIndex);
         int remainingLength = length - startIndex;
         for (int i = 0; i < remainingLength; i++)

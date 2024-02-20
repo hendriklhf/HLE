@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 namespace HLE.Memory;
 
 [DebuggerDisplay("Integer = {Integer}, Bool = {Bool}")]
-public struct IntBoolUnion<T> : IEquatable<IntBoolUnion<T>>
+public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
     where T : unmanaged, IBinaryInteger<T>, ISignedNumber<T>
 {
     public T Integer

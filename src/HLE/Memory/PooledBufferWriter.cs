@@ -63,7 +63,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     [MustDisposeResource]
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
-        CopyWorker<T>.Copy(data, _buffer);
+        CopyWorker<T>.Copy(data, _buffer!);
         Count = data.Length;
     }
 

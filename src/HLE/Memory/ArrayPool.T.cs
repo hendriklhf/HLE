@@ -96,7 +96,6 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     private T[] RentFromSharedBuckets(int bucketIndex)
     {
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
-        ref Bucket initialBucket = ref bucket;
         int bucketsLength = _buckets.Length;
         int tryCount = 0;
         const int MaximumTryCount = 3;
@@ -113,7 +112,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         }
         while (bucketIndex < bucketsLength && tryCount < MaximumTryCount);
 
-        return initialBucket.Rent();
+        return Unsafe.Subtract(ref bucket, MaximumTryCount).Rent();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path

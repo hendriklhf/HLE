@@ -92,6 +92,7 @@ public static unsafe class StructMarshal
            typeof(T) == typeof(sbyte) ||
            typeof(T) == typeof(short) ||
            typeof(T) == typeof(ushort) ||
+           typeof(T) == typeof(char) ||
            typeof(T) == typeof(int) ||
            typeof(T) == typeof(uint) ||
            typeof(T) == typeof(long) ||

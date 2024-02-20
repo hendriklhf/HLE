@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Xunit;
 
+#pragma warning disable RCS1060 // Declare each type in separate file
+
 namespace HLE.Tests;
 
 [SuppressMessage("Roslynator", "RCS1154:Sort enum members")]

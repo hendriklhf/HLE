@@ -87,7 +87,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
 
         if (_length + (uint)offset >= (uint)Array.MaxLength)
         {
-            ThrowItemsToCopyExceedsMaxArrayLength();
+            ThrowCopiedItemsWouldExceedMaxArrayLength();
         }
 
         if (destination.Count < (int)_length + offset)
@@ -125,7 +125,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowItemsToCopyExceedsMaxArrayLength()
-        => throw new InvalidOperationException("The amount of items needed to be copied is greater than " +
-                                               "the maximum value of a 32-bit signed integer, thus can't be copied to the destination.");
+    private static void ThrowCopiedItemsWouldExceedMaxArrayLength()
+        => throw new InvalidOperationException("The amount of items to be copied into the List<T> would exceed " +
+                                               "the maximum array length, thus can't be copied to the destination.");
 }
