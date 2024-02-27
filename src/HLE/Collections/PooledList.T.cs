@@ -14,13 +14,13 @@ namespace HLE.Collections;
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [method: MustDisposeResource]
 [DebuggerDisplay("Count = {Count}")]
-[CollectionBuilder(typeof(PooledList), nameof(PooledList.Create))]
+[CollectionBuilder(typeof(PooledListBuilder), nameof(PooledListBuilder.Create))]
 public sealed class PooledList<T>(int capacity) :
     IList<T>,
     ICopyable<T>,
     IEquatable<PooledList<T>>,
     IDisposable,
-    IIndexAccessible<T>,
+    IIndexable<T>,
     IReadOnlyList<T>,
     ISpanProvider<T>,
     ICollectionProvider<T>,
@@ -35,7 +35,7 @@ public sealed class PooledList<T>(int capacity) :
         }
     }
 
-    T IIndexAccessible<T>.this[int index] => this[index];
+    T IIndexable<T>.this[int index] => this[index];
 
     T IReadOnlyList<T>.this[int index] => this[index];
 
@@ -65,7 +65,7 @@ public sealed class PooledList<T>(int capacity) :
     [MustDisposeResource]
     public PooledList(ReadOnlySpan<T> items) : this(items.Length)
     {
-        CopyWorker<T>.Copy(items, _buffer.AsSpan());
+        SpanHelpers<T>.Copy(items, _buffer.AsSpan());
         Count = items.Length;
     }
 
@@ -106,7 +106,7 @@ public sealed class PooledList<T>(int capacity) :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(source.Length);
-        CopyWorker<T>.Copy(source, result);
+        SpanHelpers<T>.Copy(source, result);
         return result;
     }
 
@@ -165,7 +165,7 @@ public sealed class PooledList<T>(int capacity) :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(newSize);
         if (count != 0)
         {
-            CopyWorker<T>.Copy(oldBuffer.AsSpan(..count), newBuffer);
+            SpanHelpers<T>.Copy(oldBuffer.AsSpan(..count), newBuffer);
         }
 
         ArrayPool<T>.Shared.Return(oldBuffer);
@@ -228,7 +228,7 @@ public sealed class PooledList<T>(int capacity) :
         GrowIfNeeded(items.Length);
         int count = Count;
         ref T destination = ref Unsafe.Add(ref GetBufferReference(), count);
-        CopyWorker<T>.Copy(items, ref destination);
+        SpanHelpers<T>.Copy(items, ref destination);
         Count = count + items.Length;
     }
 
@@ -261,7 +261,7 @@ public sealed class PooledList<T>(int capacity) :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
         ref T source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-        CopyWorker<T>.Copy(ref source, ref destination, (uint)count);
+        SpanHelpers<T>.Memmove(ref destination, ref source, (uint)count);
         _buffer = newBuffer;
     }
 

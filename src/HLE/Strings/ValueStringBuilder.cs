@@ -128,7 +128,7 @@ public ref partial struct ValueStringBuilder
 
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
         ref char source = ref MemoryMarshal.GetReference(span);
-        CopyWorker<char>.Copy(ref source, ref destination, (uint)span.Length);
+        SpanHelpers<char>.Memmove(ref destination, ref source, (uint)span.Length);
         Length += span.Length;
     }
 
@@ -258,7 +258,7 @@ public ref partial struct ValueStringBuilder
         Span<char> newBuffer = ArrayPool<char>.Shared.Rent(newSize);
         if (length != 0)
         {
-            CopyWorker<char>.Copy(oldBuffer.SliceUnsafe(..length), newBuffer);
+            SpanHelpers<char>.Copy(oldBuffer.SliceUnsafe(..length), newBuffer);
         }
 
         _buffer = ref MemoryMarshal.GetReference(newBuffer);

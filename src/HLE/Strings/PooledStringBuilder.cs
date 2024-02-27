@@ -19,14 +19,14 @@ public sealed partial class PooledStringBuilder(int capacity) :
     ICollection<char>,
     IEquatable<PooledStringBuilder>,
     ICopyable<char>,
-    IIndexAccessible<char>,
+    IIndexable<char>,
     IReadOnlyCollection<char>,
     ISpanProvider<char>,
     IMemoryProvider<char>
 {
     public ref char this[int index] => ref WrittenSpan[index];
 
-    char IIndexAccessible<char>.this[int index] => WrittenSpan[index];
+    char IIndexable<char>.this[int index] => WrittenSpan[index];
 
     public ref char this[Index index] => ref WrittenSpan[index];
 
@@ -64,7 +64,8 @@ public sealed partial class PooledStringBuilder(int capacity) :
     [MustDisposeResource]
     public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
     {
-        CopyWorker<char>.Copy(str, _buffer!);
+        Debug.Assert(_buffer is not null);
+        SpanHelpers<char>.Copy(str, _buffer);
         Length = str.Length;
     }
 
@@ -109,7 +110,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
         ref char source = ref MemoryMarshal.GetReference(chars);
-        CopyWorker<char>.Copy(ref source, ref destination, (uint)chars.Length);
+        SpanHelpers<char>.Memmove(ref destination, ref source, (uint)chars.Length);
         Length += chars.Length;
     }
 
@@ -225,7 +226,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
         {
             ref char source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
             ref char destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-            CopyWorker<char>.Copy(ref source, ref destination, (uint)Length);
+            SpanHelpers<char>.Memmove(ref destination, ref source, (uint)Length);
         }
 
         ArrayPool<char>.Shared.Return(oldBuffer);

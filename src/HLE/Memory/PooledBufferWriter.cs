@@ -26,13 +26,13 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     IDisposable,
     ICopyable<T>,
     IEquatable<PooledBufferWriter<T>>,
-    IIndexAccessible<T>,
+    IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
     ICollectionProvider<T>,
     IMemoryProvider<T>
 {
-    T IIndexAccessible<T>.this[int index] => WrittenSpan[index];
+    T IIndexable<T>.this[int index] => WrittenSpan[index];
 
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
@@ -63,7 +63,8 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     [MustDisposeResource]
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
-        CopyWorker<T>.Copy(data, _buffer!);
+        Debug.Assert(_buffer is not null);
+        SpanHelpers<T>.Copy(data, _buffer);
         Count = data.Length;
     }
 
@@ -148,7 +149,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public void Write(ref T data, int length)
     {
         ref T destination = ref GetReference(length);
-        CopyWorker<T>.Copy(ref data, ref destination, (uint)length);
+        SpanHelpers<T>.Memmove(ref destination, ref data, (uint)length);
         Count += length;
     }
 
@@ -176,7 +177,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(writtenSpan.Length);
-        CopyWorker<T>.Copy(writtenSpan, result);
+        SpanHelpers<T>.Copy(writtenSpan, result);
         return result;
     }
 
@@ -232,7 +233,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
             }
 
             T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
-            CopyWorker<T>.Copy(oldBuffer, newBuffer);
+            SpanHelpers<T>.Copy(oldBuffer, newBuffer);
             _buffer = newBuffer;
         }
         finally
@@ -272,7 +273,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
         if (Count != 0)
         {
-            CopyWorker<T>.Copy(oldBuffer, newBuffer);
+            SpanHelpers<T>.Copy(oldBuffer, newBuffer);
         }
 
         ArrayPool<T>.Shared.Return(oldBuffer);

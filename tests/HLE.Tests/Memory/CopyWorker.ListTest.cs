@@ -8,7 +8,7 @@ using Xunit;
 
 namespace HLE.Tests.Memory;
 
-public sealed partial class CopyWorkerTest
+public sealed class CopyWorkerTest
 {
     [Fact]
     public void CopyListToListWithoutOffsetTest()

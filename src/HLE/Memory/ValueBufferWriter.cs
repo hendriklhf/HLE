@@ -164,7 +164,7 @@ public ref struct ValueBufferWriter<T>
     public void Write(scoped ref T data, int length)
     {
         ref T destination = ref GetReference(length);
-        CopyWorker<T>.Copy(ref data, ref destination, (uint)length);
+        SpanHelpers<T>.Memmove(ref destination, ref data, (uint)length);
         Count += length;
     }
 
@@ -192,7 +192,7 @@ public ref struct ValueBufferWriter<T>
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(writtenSpan.Length);
-        CopyWorker<T>.Copy(writtenSpan, result);
+        SpanHelpers<T>.Copy(writtenSpan, result);
         return result;
     }
 
@@ -248,7 +248,7 @@ public ref struct ValueBufferWriter<T>
 
         Span<T> oldBuffer = GetBuffer();
         Span<T> newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
-        CopyWorker<T>.Copy(oldBuffer[..count], newBuffer);
+        SpanHelpers<T>.Copy(oldBuffer[..count], newBuffer);
         _buffer = ref MemoryMarshal.GetReference(newBuffer);
         BufferLength = newBuffer.Length;
 
@@ -294,7 +294,7 @@ public ref struct ValueBufferWriter<T>
         Span<T> newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
         if (count != 0)
         {
-            CopyWorker<T>.Copy(oldBuffer[..count], newBuffer);
+            SpanHelpers<T>.Copy(oldBuffer[..count], newBuffer);
         }
 
         _buffer = ref MemoryMarshal.GetReference(newBuffer);

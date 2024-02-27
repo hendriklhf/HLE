@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-public readonly unsafe ref partial struct CopyWorker<T>
+public readonly unsafe ref struct CopyWorker<T>
 {
     private readonly ref T _source;
     private readonly nuint _length;
@@ -114,7 +114,7 @@ public readonly unsafe ref partial struct CopyWorker<T>
         CopyTo(ref MemoryMarshal.GetReference(destination));
     }
 
-    public void CopyTo(scoped ref T destination) => s_memmove(ref destination, ref _source, _length);
+    public void CopyTo(scoped ref T destination) => SpanHelpers<T>.Memmove(ref destination, ref _source, _length);
 
     public void CopyTo(T* destination) => CopyTo(ref Unsafe.AsRef<T>(destination));
 

@@ -20,7 +20,7 @@ public unsafe struct NativeString :
     IDisposable,
     IEquatable<NativeString>,
     ICountable,
-    IIndexAccessible<char>,
+    IIndexable<char>,
     ISpanProvider<char>,
     IMemoryProvider<char>
 {
@@ -35,7 +35,7 @@ public unsafe struct NativeString :
 
     readonly char IReadOnlyList<char>.this[int index] => this[index];
 
-    readonly char IIndexAccessible<char>.this[int index] => this[index];
+    readonly char IIndexable<char>.this[int index] => this[index];
 
     public readonly ref char this[Index index] => ref this[index.GetOffset(Length)];
 
@@ -117,9 +117,9 @@ public unsafe struct NativeString :
 
         *(nuint*)buffer = 0;
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
-        rawStringData->MethodTable = (MethodTable*)typeof(string).TypeHandle.Value;
+        rawStringData->MethodTable = ObjectMarshal.GetMethodTable<string>();
         rawStringData->Length = chars.Length;
-        CopyWorker<char>.Copy(chars, &rawStringData->FirstChar);
+        SpanHelpers<char>.Copy(chars, &rawStringData->FirstChar);
 
         Length = chars.Length;
         _buffer = buffer;

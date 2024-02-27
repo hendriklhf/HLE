@@ -31,8 +31,8 @@ internal static class ThrowHelper
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowCalledCollectionBuilderConstructor()
-        => throw new NotSupportedException("This class should not be instantiated. It only has static method that are used for building collections.");
+    public static void ThrowCalledCollectionBuilderConstructor<TCollectionBuilder>()
+        => throw new NotSupportedException($"{typeof(TCollectionBuilder)} should not be instantiated. It only has static method that are used for building collections.");
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

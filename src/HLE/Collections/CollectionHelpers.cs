@@ -168,6 +168,9 @@ public static partial class CollectionHelpers
             case IReadOnlyMemoryProvider<T> readOnlyMemoryProvider:
                 memory = readOnlyMemoryProvider.GetReadOnlyMemory();
                 return true;
+            case FrozenSet<T> frozenSet:
+                memory = frozenSet.Items.AsMemory();
+                return true;
         }
 
         if (TryGetMemory(collection, out Memory<T> mutableMemory))
@@ -289,7 +292,7 @@ public static partial class CollectionHelpers
             case IReadOnlyList<T> readOnlyList:
                 element = readOnlyList[index];
                 return true;
-            case IIndexAccessible<T> indexAccessible:
+            case IIndexable<T> indexAccessible:
                 element = indexAccessible[index];
                 return true;
             default:
@@ -379,7 +382,7 @@ public static partial class CollectionHelpers
                     copyable.CopyTo(destination);
                     writtenElements = elementCount;
                     return true;
-                case IIndexAccessible<T> indexAccessible:
+                case IIndexable<T> indexAccessible:
                     for (int i = 0; i < elementCount; i++)
                     {
                         destination[i] = indexAccessible[i];
@@ -424,7 +427,7 @@ public static partial class CollectionHelpers
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             array = ArrayPool<T>.Shared.RentExact(span.Length);
-            CopyWorker<T>.Copy(span, array);
+            SpanHelpers<T>.Copy(span, array);
             return new(array, ArrayPool<T>.Shared);
         }
 
@@ -442,7 +445,7 @@ public static partial class CollectionHelpers
 
         using PooledList<T> list = enumerable.ToPooledList();
         array = ArrayPool<T>.Shared.RentExact(list.Count);
-        CopyWorker<T>.Copy(list.AsSpan(), array);
+        SpanHelpers<T>.Copy(list.AsSpan(), array);
         return new(array, ArrayPool<T>.Shared);
     }
 }

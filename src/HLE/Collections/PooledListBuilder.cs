@@ -7,9 +7,9 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
-public sealed class PooledList
+public sealed class PooledListBuilder
 {
-    public PooledList() => ThrowHelper.ThrowCalledCollectionBuilderConstructor();
+    public PooledListBuilder() => ThrowHelper.ThrowCalledCollectionBuilderConstructor<PooledListBuilder>();
 
     [Pure]
     [MustDisposeResource]

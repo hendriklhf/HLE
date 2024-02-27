@@ -60,7 +60,7 @@ public sealed partial class ArrayPool<T>
                     }
 
                     array = currentRef;
-                    CopyWorker<T[]>.Copy(ref Unsafe.Add(ref currentRef, 1), ref currentRef, (uint)count - i - 1);
+                    SpanHelpers<T[]>.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), (uint)count - i - 1);
                     _count = count - 1;
                     return true;
                 }

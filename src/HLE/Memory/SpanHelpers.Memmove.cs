@@ -1,27 +1,74 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-public readonly unsafe ref partial struct CopyWorker<T>
+public static unsafe class SpanHelpers<T>
 {
     /// <summary>
     /// <c>Memmove(ref T destination, ref T source, nuint elementCount)</c>
     /// </summary>
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
-    internal static readonly delegate*<ref T, ref T, nuint, void> s_memmove = GetMemmoveFunctionPointer();
+    private static readonly delegate*<ref T, ref T, nuint, void> s_memmove = GetMemmoveFunctionPointer();
 
-    private static delegate*<ref T, ref T, nuint, void> GetMemmoveFunctionPointer() =>
-        (delegate*<ref T, ref T, nuint, void>)
-        typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-            .First(static m => m is { Name: "Memmove", IsGenericMethod: true })
-            .MakeGenericMethod(typeof(T))
-            .MethodHandle
-            .GetFunctionPointer();
+    private static delegate*<ref T, ref T, nuint, void> GetMemmoveFunctionPointer()
+    {
+        MethodInfo? memmove = Array.Find(
+            typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static),
+            static m => m is { Name: "Memmove", IsGenericMethod: true }
+        );
+
+        if (memmove is not null)
+        {
+            return (delegate*<ref T, ref T, nuint, void>)memmove
+                .MakeGenericMethod(typeof(T)).MethodHandle.GetFunctionPointer();
+        }
+
+#if NET9_0_OR_GREATER
+        memmove = Array.Find(
+            Type.GetType("System.SpanHelpers")!.GetMethods(BindingFlags.NonPublic | BindingFlags.Static),
+            static m => m is { Name: "Memmove", IsGenericMethod: true }
+        );
+
+        if (memmove is not null)
+        {
+            return (delegate*<ref T, ref T, nuint, void>)memmove
+                .MakeGenericMethod(typeof(T)).MethodHandle.GetFunctionPointer();
+        }
+#endif
+
+        Debug.Fail($"Using {nameof(MemmoveFallback)} method.");
+        return &MemmoveFallback;
+    }
+
+    private static void MemmoveFallback(ref T destination, ref T source, nuint elementCount)
+    {
+        if (elementCount == 0)
+        {
+            return;
+        }
+
+        ReadOnlySpan<T> sourceSpan;
+        Span<T> destinationSpan;
+        while (elementCount >= int.MaxValue)
+        {
+            sourceSpan = MemoryMarshal.CreateReadOnlySpan(ref source, int.MaxValue);
+            destinationSpan = MemoryMarshal.CreateSpan(ref destination, int.MaxValue);
+            sourceSpan.CopyTo(destinationSpan);
+
+            elementCount -= int.MaxValue;
+            source = ref Unsafe.Add(ref source, int.MaxValue);
+            destination = ref Unsafe.Add(ref destination, int.MaxValue);
+        }
+
+        sourceSpan = MemoryMarshal.CreateReadOnlySpan(ref source, (int)elementCount);
+        destinationSpan = MemoryMarshal.CreateSpan(ref destination, (int)elementCount);
+        sourceSpan.CopyTo(destinationSpan);
+    }
 
     public static void Copy(T[] source, T* destination)
         => s_memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
@@ -59,15 +106,15 @@ public readonly unsafe ref partial struct CopyWorker<T>
     public static void Copy(ReadOnlySpan<T> source, T* destination)
         => s_memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
-    /// <inheritdoc cref="Copy(ref T,ref T,nuint)"/>
-    public static void Copy(T* source, T* destination, nuint elementCount)
+    /// <inheritdoc cref="Memmove(ref T,ref T,nuint)"/>
+    public static void Memmove(T* source, T* destination, nuint elementCount)
         => NativeMemory.Copy(source, destination, (uint)sizeof(T) * elementCount);
 
     /// <summary>
     /// Copies the given amount of elements from the source into the destination.
     /// </summary>
-    /// <param name="source">The source of the elements.</param>
     /// <param name="destination">The destination of the elements.</param>
+    /// <param name="source">The source of the elements.</param>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
-    public static void Copy(ref T source, ref T destination, nuint elementCount) => s_memmove(ref destination, ref source, elementCount);
+    public static void Memmove(ref T destination, ref T source, nuint elementCount) => s_memmove(ref destination, ref source, elementCount);
 }

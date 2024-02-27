@@ -44,24 +44,24 @@ public sealed class RentedArrayTest
         array[2] = 2;
         array[3] = 3;
 
-        IIndexAccessible<int> indexAccessible = array;
-        Assert.Equal(0, indexAccessible[0]);
-        Assert.Equal(1, indexAccessible[1]);
-        Assert.Equal(2, indexAccessible[2]);
-        Assert.Equal(3, indexAccessible[3]);
+        IIndexable<int> indexable = array;
+        Assert.Equal(0, indexable[0]);
+        Assert.Equal(1, indexable[1]);
+        Assert.Equal(2, indexable[2]);
+        Assert.Equal(3, indexable[3]);
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-            IIndexAccessible<int> indexAccessible = array;
-            _ = indexAccessible[-1];
+            IIndexable<int> indexable = array;
+            _ = indexable[-1];
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-            IIndexAccessible<int> indexAccessible = array;
-            _ = indexAccessible[array.Length];
+            IIndexable<int> indexable = array;
+            _ = indexable[array.Length];
         });
     }
 

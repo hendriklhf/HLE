@@ -17,7 +17,7 @@ public sealed class ConcurrentPooledList<T> :
     ICopyable<T>,
     IEquatable<ConcurrentPooledList<T>>,
     IDisposable,
-    IIndexAccessible<T>,
+    IIndexable<T>,
     IReadOnlyList<T>,
     ICollectionProvider<T>
 {

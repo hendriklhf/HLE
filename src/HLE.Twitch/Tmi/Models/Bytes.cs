@@ -33,7 +33,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     {
         Length = data.Length;
         _buffer = ArrayPool<byte>.Shared.RentAsRentedArray(data.Length);
-        CopyWorker<byte>.Copy(data, _buffer.AsSpan());
+        SpanHelpers<byte>.Copy(data, _buffer.AsSpan());
     }
 
     public static Bytes AsBytes(RentedArray<byte> buffer, int length) => new(buffer, length);
@@ -56,7 +56,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
         }
 
         byte[] result = GC.AllocateUninitializedArray<byte>(length);
-        CopyWorker<byte>.Copy(AsSpan(), result);
+        SpanHelpers<byte>.Copy(AsSpan(), result);
         return result;
     }
 

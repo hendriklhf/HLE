@@ -18,7 +18,7 @@ public unsafe partial struct NativeMemory<T> :
     ICollection<T>,
     ICopyable<T>,
     IBitwiseEquatable<NativeMemory<T>>,
-    IIndexAccessible<T>,
+    IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
     ICollectionProvider<T>,
@@ -34,7 +34,7 @@ public unsafe partial struct NativeMemory<T> :
         }
     }
 
-    readonly T IIndexAccessible<T>.this[int index] => this[index];
+    readonly T IIndexable<T>.this[int index] => this[index];
 
     public readonly ref T this[Index index] => ref this[index.GetOffset(Length)];
 
@@ -227,7 +227,7 @@ public unsafe partial struct NativeMemory<T> :
 
         ref T source = ref Reference;
         T[] result = GC.AllocateUninitializedArray<T>(length);
-        CopyWorker<T>.Copy(ref source, ref MemoryMarshal.GetArrayDataReference(result), (uint)length);
+        SpanHelpers<T>.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref source, (uint)length);
         return result;
     }
 

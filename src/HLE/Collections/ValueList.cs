@@ -139,7 +139,7 @@ public ref struct ValueList<T>
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(source.Length);
-        CopyWorker<T>.Copy(source, result);
+        SpanHelpers<T>.Copy(source, result);
         return result;
     }
 
@@ -190,7 +190,7 @@ public ref struct ValueList<T>
         Span<T> newBuffer = ArrayPool<T>.Shared.Rent(newSize);
         if (count != 0)
         {
-            CopyWorker<T>.Copy(oldBuffer[..count], newBuffer);
+            SpanHelpers<T>.Copy(oldBuffer[..count], newBuffer);
         }
 
         _buffer = ref MemoryMarshal.GetReference(newBuffer);
@@ -228,7 +228,7 @@ public ref struct ValueList<T>
             ref T destination = ref Unsafe.Add(ref buffer, count);
             if (items.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
             {
-                CopyWorker<T>.Copy(span, ref destination);
+                SpanHelpers<T>.Copy(span, ref destination);
                 Count = count + itemsCount;
                 return;
             }
@@ -265,7 +265,7 @@ public ref struct ValueList<T>
 
         int count = Count;
         ref T destination = ref Unsafe.Add(ref GetBufferReference(), count);
-        CopyWorker<T>.Copy(items, ref destination);
+        SpanHelpers<T>.Copy(items, ref destination);
         Count = count + items.Length;
     }
 
@@ -305,7 +305,7 @@ public ref struct ValueList<T>
         T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
         ref T source = ref MemoryMarshal.GetReference(oldBuffer);
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-        CopyWorker<T>.Copy(ref source, ref destination, (uint)count);
+        SpanHelpers<T>.Memmove(ref destination, ref source, (uint)count);
 
         if (!IsStackalloced)
         {

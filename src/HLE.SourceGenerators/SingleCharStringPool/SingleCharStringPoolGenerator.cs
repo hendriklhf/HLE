@@ -30,7 +30,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
         sourceBuilder.AppendLine("using System;").AppendLine();
         sourceBuilder.AppendLine("namespace HLE.Strings;").AppendLine();
         sourceBuilder.AppendLine("public static partial class SingleCharStringPool").AppendLine("{");
-        sourceBuilder.Append(Indentation).AppendLine("private static readonly string[] _cachedSingleCharStrings =");
+        sourceBuilder.Append(Indentation).AppendLine("internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings() => new[]");
         sourceBuilder.Append(Indentation).Append('{');
 
         for (int i = 0; i < cachedTokenStrings.Length - 1; i++)
@@ -46,8 +46,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
 
         sourceBuilder.Append(cachedTokenStrings[cachedTokenStrings.Length - 1]);
 
-        sourceBuilder.AppendLine().Append(Indentation).AppendLine("};").AppendLine();
-        sourceBuilder.Append(Indentation).AppendLine("internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings() => _cachedSingleCharStrings;");
+        sourceBuilder.AppendLine().Append(Indentation).AppendLine("};");
         sourceBuilder.AppendLine("}");
         context.AddSource("HLE.Strings.ShortStringCache.g.cs", sourceBuilder.ToString());
     }

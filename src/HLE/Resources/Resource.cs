@@ -18,7 +18,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     ICollection<byte>,
     IReadOnlySpanProvider<byte>,
     ICopyable<byte>,
-    IIndexAccessible<byte>,
+    IIndexable<byte>,
     IReadOnlyList<byte>,
     ICollectionProvider<byte>,
     IReadOnlyMemoryProvider<byte>
@@ -32,7 +32,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
         }
     }
 
-    byte IIndexAccessible<byte>.this[int index]
+    byte IIndexable<byte>.this[int index]
     {
         get
         {

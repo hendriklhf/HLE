@@ -22,7 +22,7 @@ public sealed class LazyString :
     IReadOnlySpanProvider<char>,
     IReadOnlyMemoryProvider<char>,
     ICopyable<char>,
-    IIndexAccessible<char>,
+    IIndexable<char>,
     ICollectionProvider<char>,
     IReadOnlyCollection<char>,
     ICollection<char>
@@ -36,7 +36,7 @@ public sealed class LazyString :
         }
     }
 
-    char IIndexAccessible<char>.this[int index] => this[index];
+    char IIndexable<char>.this[int index] => this[index];
 
     public ref readonly char this[Index index] => ref this[index.GetOffset(Length)];
 
@@ -80,7 +80,7 @@ public sealed class LazyString :
         }
 
         char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length);
-        CopyWorker<char>.Copy(chars, buffer);
+        SpanHelpers<char>.Copy(chars, buffer);
         _chars = buffer;
         Length = chars.Length;
     }
@@ -162,7 +162,7 @@ public sealed class LazyString :
 
         ref char chars = ref GetReference();
         char[] result = GC.AllocateUninitializedArray<char>(Length);
-        CopyWorker<char>.Copy(ref chars, ref MemoryMarshal.GetArrayDataReference(result), (uint)Length);
+        SpanHelpers<char>.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref chars, (uint)Length);
         return result;
     }
 

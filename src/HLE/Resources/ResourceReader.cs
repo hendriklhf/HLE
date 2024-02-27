@@ -87,8 +87,8 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     {
         string assemblyName = _assemblyName;
         Span<char> buffer = stackalloc char[assemblyName.Length + resourceName.Length];
-        CopyWorker<char>.Copy(assemblyName, buffer);
-        CopyWorker<char>.Copy(resourceName, buffer.SliceUnsafe(assemblyName.Length));
+        SpanHelpers<char>.Copy(assemblyName, buffer);
+        SpanHelpers<char>.Copy(resourceName, buffer.SliceUnsafe(assemblyName.Length));
 
         return StringPool.Shared.GetOrAdd(buffer);
     }
@@ -124,7 +124,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
 
         Debug.Fail($"The implementation of {nameof(Assembly.GetManifestResourceStream)} has changed.");
 
-        if (stream.Length > Array.MaxLength)
+        if (streamLength > Array.MaxLength)
         {
             ThrowStreamLengthExceedsMaxArrayLength();
         }

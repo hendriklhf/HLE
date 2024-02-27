@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <OutputType>Library</OutputType>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
@@ -16,7 +16,7 @@
         <FileVersion>2.1.8</FileVersion>
         <Description>A library containing useful methods and data lists.</Description>
         <Authors>Hendrik</Authors>
-        <PackageTags>library c# csharp .net8 dotnet</PackageTags>
+        <PackageTags>library c# csharp .net9 dotnet</PackageTags>
         <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

@@ -20,11 +20,11 @@ public sealed class ConcurrentStack<T> :
     IReadOnlyCollection<T>,
     ICopyable<T>,
     IReadOnlySpanProvider<T>,
-    IIndexAccessible<T>,
+    IIndexable<T>,
     IMemoryProvider<T>,
     ICollectionProvider<T>
 {
-    T IIndexAccessible<T>.this[int index] => AsSpan()[index];
+    T IIndexable<T>.this[int index] => AsSpan()[index];
 
     public int Count { get; private set; }
 
@@ -136,7 +136,7 @@ public sealed class ConcurrentStack<T> :
 
         int newBufferLength = BufferHelpers.GrowArray((uint)_buffer.Length, 1);
         T[] newBuffer = GC.AllocateUninitializedArray<T>(newBufferLength);
-        CopyWorker<T>.Copy(_buffer.AsSpan(0, Count), newBuffer);
+        SpanHelpers<T>.Copy(_buffer.AsSpan(0, Count), newBuffer);
 
         _buffer = newBuffer;
     }
@@ -164,7 +164,7 @@ public sealed class ConcurrentStack<T> :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(source.Length);
-        CopyWorker<T>.Copy(source, result);
+        SpanHelpers<T>.Copy(source, result);
         return result;
     }
 

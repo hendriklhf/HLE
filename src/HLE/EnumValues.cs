@@ -43,7 +43,7 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
         ReadOnlySpan<TEnum> values = AsSpan();
         ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
         ref TUnderlyingType underlyingTypeReference = ref Unsafe.As<TEnum, TUnderlyingType>(ref valuesReference);
-        return MemoryMarshal.CreateReadOnlySpan(ref underlyingTypeReference, values.Length);
+        return MemoryMarshal.CreateReadOnlySpan(ref underlyingTypeReference, Count);
     }
 
     [DoesNotReturn]

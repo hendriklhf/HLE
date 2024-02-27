@@ -25,11 +25,12 @@ BenchmarkRunner.Run<Bench>(config);
 
 [MemoryDiagnoser]
 [DisassemblyDiagnoser]
+[Orderer(SummaryOrderPolicy.SlowestToFastest)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [SuppressMessage("Performance", "CA1822:Mark members as static")]
 [SuppressMessage("ReSharper", "ClassCanBeSealed.Global")]
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 [SuppressMessage("Design", "CA1024:Use properties where appropriate")]
-#pragma warning disable CA1001
-#pragma warning disable CA1707
+[SuppressMessage("Maintainability", "CA1515:Consider making public types internal")]
+#pragma warning disable CA1001, CA1707
 public class Bench;

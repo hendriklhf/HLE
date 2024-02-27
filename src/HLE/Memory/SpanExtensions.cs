@@ -53,7 +53,7 @@ public static class SpanExtensions
 
         T[] result = GC.AllocateUninitializedArray<T>(length);
         ref T destination = ref MemoryMarshal.GetArrayDataReference(result);
-        CopyWorker<T>.Copy(ref source, ref destination, (uint)length);
+        SpanHelpers<T>.Memmove(ref destination, ref source, (uint)length);
         return result;
     }
 }

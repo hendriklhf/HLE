@@ -22,7 +22,7 @@ public sealed class StringArray :
     ICollection<string>,
     IReadOnlyCollection<string>,
     ICopyable<string>,
-    IIndexAccessible<string>,
+    IIndexable<string>,
     IEquatable<StringArray>,
     IReadOnlySpanProvider<string>,
     IReadOnlyMemoryProvider<string>,
@@ -120,7 +120,7 @@ public sealed class StringArray :
         }
 
         string[] result = new string[length];
-        CopyWorker<string>.Copy(_strings, result);
+        SpanHelpers<string>.Copy(_strings, result);
         return result;
     }
 
@@ -321,26 +321,26 @@ public sealed class StringArray :
                 chars = _chars;
                 if (index != Length - 1)
                 {
-                    CopyWorker<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
+                    SpanHelpers<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
                 }
 
-                CopyWorker<char>.Copy(str, chars[starts[index]..]);
+                SpanHelpers<char>.Copy(str, chars[starts[index]..]);
                 SpanHelpers.Add(starts[(index + 1)..], lengthDifference);
                 lengths[index] = str.Length;
                 break;
             case < 0: // new string is shorter
                 if (index != Length - 1)
                 {
-                    CopyWorker<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
+                    SpanHelpers<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
                 }
 
-                CopyWorker<char>.Copy(str, chars[starts[index]..]);
+                SpanHelpers<char>.Copy(str, chars[starts[index]..]);
                 SpanHelpers.Add(starts[(index + 1)..], lengthDifference);
                 lengths[index] = str.Length;
                 break;
             default: // new string has same length
                 Span<char> destination = chars[starts[index]..];
-                CopyWorker<char>.Copy(str, destination);
+                SpanHelpers<char>.Copy(str, destination);
                 break;
         }
 
@@ -373,7 +373,7 @@ public sealed class StringArray :
 
         if (oldBuffer is not null)
         {
-            CopyWorker<char>.Copy(oldBuffer.AsSpan(..^freeBufferSize), chars);
+            SpanHelpers<char>.Copy(oldBuffer.AsSpan(..^freeBufferSize), chars);
             ArrayPool<char>.Shared.Return(oldBuffer);
         }
 

@@ -93,7 +93,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         }
 
         TValue[] result = GC.AllocateUninitializedArray<TValue>(count);
-        CopyWorker<TValue>.Copy(Values.AsSpan(), result);
+        SpanHelpers<TValue>.Copy(Values.AsSpan(), result);
         return result;
     }
 

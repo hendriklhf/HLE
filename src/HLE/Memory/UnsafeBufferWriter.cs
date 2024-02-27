@@ -45,7 +45,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
     public void Write(scoped ref T source, int count)
     {
         ref T destination = ref Unsafe.Add(ref _buffer, Count);
-        CopyWorker<T>.Copy(ref source, ref destination, (uint)count);
+        SpanHelpers<T>.Memmove(ref destination, ref source, (uint)count);
         Count += count;
     }
 

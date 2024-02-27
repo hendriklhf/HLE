@@ -50,7 +50,7 @@ public static class StringExtensions
             return;
         }
 
-        CopyWorker<char>.Copy(span, ref destination);
+        SpanHelpers<char>.Copy(span, ref destination);
     }
 
     public static unsafe void CopyTo(this string? str, char* destination)
@@ -61,6 +61,6 @@ public static class StringExtensions
             return;
         }
 
-        CopyWorker<char>.Copy(span, destination);
+        SpanHelpers<char>.Copy(span, destination);
     }
 }

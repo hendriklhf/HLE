@@ -70,7 +70,7 @@ public sealed partial class RegexPool
         {
             ref Regex? source = ref MemoryMarshal.GetArrayDataReference(_regexes);
             ref Regex? destination = ref Unsafe.Add(ref source, 1);
-            CopyWorker<Regex?>.Copy(ref source, ref destination, (uint)(_regexes.Length - 1));
+            SpanHelpers<Regex?>.Memmove(ref destination, ref source, (uint)(_regexes.Length - 1));
             source = regex;
         }
 

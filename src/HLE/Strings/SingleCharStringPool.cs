@@ -48,7 +48,7 @@ public static partial class SingleCharStringPool
     {
         if (str.Length != 1)
         {
-            return;
+            ThrowStringIsNotASingleCharString(str);
         }
 
         char c = str[0];
@@ -64,4 +64,9 @@ public static partial class SingleCharStringPool
     public static bool Contains(char c) => c < AmountOfCachedSingleCharStrings || s_customSingleCharStringCache.ContainsKey(c);
 
     internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings();
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowStringIsNotASingleCharString(string str)
+        => throw new InvalidOperationException($"The provided string's (\"{str}\") length is not 1.");
 }

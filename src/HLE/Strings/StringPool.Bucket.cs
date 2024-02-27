@@ -77,7 +77,7 @@ public sealed partial class StringPool
         private void AddWithoutLock(string value)
         {
             ref string? stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-            CopyWorker<string?>.Copy(ref stringsReference, ref Unsafe.Add(ref stringsReference, 1), (uint)(_strings.Length - 1));
+            SpanHelpers<string?>.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, (uint)(_strings.Length - 1));
             stringsReference = value;
         }
 

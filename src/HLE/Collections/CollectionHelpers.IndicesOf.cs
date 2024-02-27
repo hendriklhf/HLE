@@ -44,7 +44,7 @@ public static partial class CollectionHelpers
 
                 break;
             }
-            case IIndexAccessible<T> indexAccessible:
+            case IIndexable<T> indexAccessible:
             {
                 for (int i = 0; i < elementCount; i++)
                 {
@@ -162,7 +162,7 @@ public static partial class CollectionHelpers
 
                 break;
             }
-            case IIndexAccessible<T> indexAccessible:
+            case IIndexable<T> indexAccessible:
             {
                 for (int i = 0; i < elementCount; i++)
                 {
@@ -280,7 +280,7 @@ public static partial class CollectionHelpers
 
                 break;
             }
-            case IIndexAccessible<T> indexAccessible:
+            case IIndexable<T> indexAccessible:
             {
                 for (int i = 0; i < elementCount; i++)
                 {

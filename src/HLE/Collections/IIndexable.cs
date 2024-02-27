@@ -1,6 +1,6 @@
 namespace HLE.Collections;
 
-public interface IIndexAccessible<out T>
+public interface IIndexable<out T>
 {
     /// <summary>
     /// Gets the item at the given index of the collection.

@@ -25,7 +25,7 @@ public struct RentedArray<T> :
     ICollection<T>,
     ICopyable<T>,
     IEquatable<RentedArray<T>>,
-    IIndexAccessible<T>,
+    IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
     ICollectionProvider<T>,
@@ -41,15 +41,13 @@ public struct RentedArray<T> :
         }
     }
 
-    readonly T IIndexAccessible<T>.this[int index] => this[index];
+    readonly T IIndexable<T>.this[int index] => this[index];
 
     public readonly ref T this[Index index] => ref this[index.GetOffset(Length)];
 
     public readonly Span<T> this[Range range] => AsSpan(range);
 
     public readonly ref T Reference => ref MemoryMarshal.GetArrayDataReference(Array);
-
-    internal readonly ref T UncheckedReference => ref MemoryMarshal.GetArrayDataReference(_array!);
 
     public readonly int Length => Array.Length;
 
@@ -142,7 +140,7 @@ public struct RentedArray<T> :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(array.Length);
-        CopyWorker<T>.Copy(array, result);
+        SpanHelpers<T>.Copy(array, result);
         return result;
     }
 

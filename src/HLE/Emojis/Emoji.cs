@@ -29,12 +29,19 @@ public static partial class Emoji
         .ToFrozenSet();
 
     [Pure]
+    public static bool IsEmoji(char c)
+    {
+        using NativeString str = new(new ReadOnlySpan<char>(in c));
+        return IsEmoji(str.AsString());
+    }
+
+    [Pure]
     public static bool IsEmoji(string text) => s_emojis.Contains(text);
 
     [Pure]
     public static bool IsEmoji(ReadOnlySpan<char> text)
     {
         using NativeString str = new(text);
-        return s_emojis.Contains(str.AsString());
+        return IsEmoji(str.AsString());
     }
 }

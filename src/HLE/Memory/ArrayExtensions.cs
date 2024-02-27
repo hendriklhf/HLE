@@ -10,19 +10,15 @@ public static class ArrayExtensions
         copyWorker.CopyTo(destination);
     }
 
-    public static void CopyTo<T>(this T[] source, T[] destination)
-    {
-        CopyWorker<T> copyWorker = new(source);
-        copyWorker.CopyTo(destination);
-    }
+    public static void CopyTo<T>(this T[] source, T[] destination) => SpanHelpers<T>.Copy(source, destination);
 
     // already exist:
     // public static void CopyTo<T>(this T[] source, Memory<T> destination)
     // public static void CopyTo<T>(this T[] source, Span<T> destination)
 
     public static void CopyTo<T>(this T[] source, ref T destination)
-        => CopyWorker<T>.Copy(source, ref destination);
+        => SpanHelpers<T>.Copy(source, ref destination);
 
     public static unsafe void CopyTo<T>(this T[] source, T* destination)
-        => CopyWorker<T>.Copy(source, destination);
+        => SpanHelpers<T>.Copy(source, destination);
 }
