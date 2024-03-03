@@ -110,7 +110,7 @@ public static unsafe partial class SpanHelpers<T>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
     public static void Memmove(ref T destination, ref T source, nuint elementCount)
     {
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlap(ref source, ref destination, elementCount))
         {
             s_memmove(ref destination, ref source, elementCount);
             return;
@@ -118,6 +118,11 @@ public static unsafe partial class SpanHelpers<T>
 
         Memmove(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), elementCount * (uint)sizeof(T));
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool Overlap(ref T source, ref T destination, nuint elementCount) =>
+        (nuint)Unsafe.ByteOffset(ref source, ref destination) < elementCount ||
+        (nuint)Unsafe.ByteOffset(ref destination, ref source) < elementCount;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     [SuppressMessage("Maintainability", "CA1502:Avoid excessive complexity")]
@@ -139,7 +144,7 @@ public static unsafe partial class SpanHelpers<T>
                 byteCount = alignmentResult.ByteCount;
                 break;
             default:
-                goto Copy128;
+                goto CopyLessThanAlignmentThreshold;
         }
 
         bool nothingMoreToCopy = Copy32768ByteBlocks(ref destination, ref source, ref byteCount);
@@ -228,7 +233,7 @@ public static unsafe partial class SpanHelpers<T>
 
         if (byteCount >= 256)
         {
-            Copy256Byte__NoInline(ref destination, ref source);
+            Copy256Bytes__NoInline(ref destination, ref source);
             if (byteCount == 256)
             {
                 return;
@@ -239,99 +244,107 @@ public static unsafe partial class SpanHelpers<T>
             byteCount -= 256;
         }
 
-        Copy128:
-        if (byteCount >= 128)
+        CopyLessThanAlignmentThreshold:
+        switch (byteCount)
         {
-            Copy128Bytes__NoInline(ref destination, ref source);
-            if (byteCount == 128)
+            case >= 128:
+                Copy128Bytes__NoInline(ref destination, ref source);
+                if (byteCount == 128)
+                {
+                    return;
+                }
+
+                byteCount -= 128;
+                goto CopyLessThanAlignmentThreshold;
+            case >= 64:
             {
+                Copy64Bytes(ref source, ref destination);
+                byteCount -= 64;
+                if (byteCount == 0)
+                {
+                    return;
+                }
+
+                nuint remainder = 64 - byteCount;
+                destination = Unsafe.Add(ref destination, 64 - remainder);
+                source = Unsafe.Add(ref source, 64 - remainder);
+                Copy64Bytes(ref source, ref destination);
                 return;
             }
-
-            destination = Unsafe.Add(ref destination, 128);
-            source = Unsafe.Add(ref source, 128);
-            byteCount -= 128;
-        }
-
-        if (byteCount >= 64)
-        {
-            Copy64Bytes(ref source, ref destination);
-            byteCount -= 64;
-            if (byteCount == 0)
+            case >= 32:
             {
+                Copy32Bytes(ref source, ref destination);
+                byteCount -= 32;
+                if (byteCount == 0)
+                {
+                    return;
+                }
+
+                nuint remainder = 32 - byteCount;
+                destination = Unsafe.Add(ref destination, 32 - remainder);
+                source = Unsafe.Add(ref source, 32 - remainder);
+                Copy32Bytes(ref source, ref destination);
                 return;
             }
-
-            destination = Unsafe.Add(ref destination, 64);
-            source = Unsafe.Add(ref source, 64);
-        }
-
-        if (byteCount >= 32)
-        {
-            Copy32Bytes(ref source, ref destination);
-            byteCount -= 32;
-            if (byteCount == 0)
+            case >= 16:
             {
+                Copy16Bytes(ref source, ref destination);
+                byteCount -= 16;
+                if (byteCount == 0)
+                {
+                    return;
+                }
+
+                nuint remainder = 16 - byteCount;
+                destination = Unsafe.Add(ref destination, 16 - remainder);
+                source = Unsafe.Add(ref source, 16 - remainder);
+                Copy16Bytes(ref source, ref destination);
                 return;
             }
-
-            destination = Unsafe.Add(ref destination, 32);
-            source = Unsafe.Add(ref source, 32);
-        }
-
-        if (byteCount >= 16)
-        {
-            Copy16Bytes(ref source, ref destination);
-            byteCount -= 16;
-            if (byteCount == 0)
+            case >= 8:
             {
+                Copy8Bytes(ref source, ref destination);
+                byteCount -= 8;
+                if (byteCount == 0)
+                {
+                    return;
+                }
+
+                nuint remainder = 8 - byteCount;
+                destination = Unsafe.Add(ref destination, 8 - remainder);
+                source = Unsafe.Add(ref source, 8 - remainder);
+                Copy8Bytes(ref source, ref destination);
                 return;
             }
-
-            destination = Unsafe.Add(ref destination, 16);
-            source = Unsafe.Add(ref source, 16);
-        }
-
-        if (byteCount >= 8)
-        {
-            Copy8Bytes(ref source, ref destination);
-            byteCount -= 8;
-            if (byteCount == 0)
-            {
+            case 7:
+                Copy4Bytes(ref source, ref destination);
+                Copy4Bytes(ref Unsafe.Add(ref source, 3), ref Unsafe.Add(ref destination, 3));
                 return;
-            }
-
-            destination = Unsafe.Add(ref destination, 8);
-            source = Unsafe.Add(ref source, 8);
-        }
-
-        if (byteCount >= 4)
-        {
-            Copy4Bytes(ref source, ref destination);
-            byteCount -= 4;
-            if (byteCount == 0)
-            {
+            case 6:
+                Copy4Bytes(ref source, ref destination);
+                Copy4Bytes(ref Unsafe.Add(ref source, 2), ref Unsafe.Add(ref destination, 2));
                 return;
-            }
-
-            destination = Unsafe.Add(ref destination, 4);
-            source = Unsafe.Add(ref source, 4);
-        }
-
-        if (byteCount >= 2)
-        {
-            Copy2Bytes(ref source, ref destination);
-            byteCount -= 2;
-            if (byteCount == 0)
-            {
+            case 5:
+                Copy4Bytes(ref source, ref destination);
+                Copy4Bytes(ref Unsafe.Add(ref source, 1), ref Unsafe.Add(ref destination, 1));
                 return;
-            }
-
-            destination = Unsafe.Add(ref destination, 2);
-            source = Unsafe.Add(ref source, 2);
+            case 4:
+                Copy4Bytes(ref source, ref destination);
+                return;
+            case 3:
+                Copy2Bytes(ref source, ref destination);
+                Copy2Bytes(ref Unsafe.Add(ref source, 1), ref Unsafe.Add(ref destination, 1));
+                return;
+            case 2:
+                Copy2Bytes(ref source, ref destination);
+                return;
+            case 1:
+                Copy1Bytes(ref source, ref destination);
+                return;
+            default:
+                ThrowHelper.ThrowUnreachableException();
+                return;
         }
-
-        Copy1Bytes(ref source, ref destination);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -451,31 +464,13 @@ public static unsafe partial class SpanHelpers<T>
             return;
         }
 
-        if (Environment.Is64BitProcess)
-        {
-            Unsafe.As<byte, long>(ref destination) = Unsafe.As<byte, long>(ref source);
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref destination, sizeof(long))) = Unsafe.As<byte, long>(ref Unsafe.Add(ref source, sizeof(long)));
-            return;
-        }
-
-        Unsafe.As<byte, int>(ref destination) = Unsafe.As<byte, int>(ref source);
-        Unsafe.As<byte, int>(ref Unsafe.Add(ref destination, sizeof(int))) = Unsafe.As<byte, int>(ref Unsafe.Add(ref source, sizeof(int)));
-        Unsafe.As<byte, int>(ref Unsafe.Add(ref destination, sizeof(int) * 2)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref source, sizeof(int) * 2));
-        Unsafe.As<byte, int>(ref Unsafe.Add(ref destination, sizeof(int) * 3)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref source, sizeof(int) * 3));
+        Unsafe.As<byte, long>(ref destination) = Unsafe.As<byte, long>(ref source);
+        Unsafe.As<byte, long>(ref Unsafe.Add(ref destination, sizeof(long))) = Unsafe.As<byte, long>(ref Unsafe.Add(ref source, sizeof(long)));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Copy8Bytes(ref byte source, ref byte destination)
-    {
-        if (Environment.Is64BitProcess)
-        {
-            Unsafe.As<byte, long>(ref destination) = Unsafe.As<byte, long>(ref source);
-            return;
-        }
-
-        Unsafe.As<byte, int>(ref destination) = Unsafe.As<byte, int>(ref source);
-        Unsafe.As<byte, int>(ref Unsafe.Add(ref destination, sizeof(int))) = Unsafe.As<byte, int>(ref Unsafe.Add(ref source, sizeof(int)));
-    }
+    private static void Copy8Bytes(ref byte source, ref byte destination) =>
+        Unsafe.As<byte, long>(ref destination) = Unsafe.As<byte, long>(ref source);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Copy4Bytes(ref byte source, ref byte destination) => Unsafe.As<byte, int>(ref destination) = Unsafe.As<byte, int>(ref source);
@@ -491,106 +486,24 @@ public static unsafe partial class SpanHelpers<T>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static AlignmentResult Align(ref byte source, ref byte destination, nuint byteCount)
     {
-        switch (byteCount)
+        Debug.Assert(byteCount >= 64);
+
+        ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 64, AlignmentMethod.Add);
+        nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
+        if (alignmentDifference == 0)
         {
-            case >= 64:
-            {
-                ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 64, AlignmentMethod.Add);
-                nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
-                if (alignmentDifference == 0)
-                {
-                    goto default;
-                }
-
-                Copy64Bytes(ref source, ref destination);
-                source = Unsafe.Add(ref source, alignmentDifference);
-                destination = Unsafe.Add(ref destination, alignmentDifference);
-                byteCount -= alignmentDifference;
-                return new(
-                    ref Unsafe.Add(ref source, alignmentDifference),
-                    ref Unsafe.Add(ref destination, alignmentDifference),
-                    byteCount - alignmentDifference
-                );
-            }
-            case >= 32:
-            {
-                ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 32, AlignmentMethod.Add);
-                nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
-                if (alignmentDifference == 0)
-                {
-                    goto default;
-                }
-
-                Copy32Bytes(ref source, ref destination);
-                source = Unsafe.Add(ref source, alignmentDifference);
-                destination = Unsafe.Add(ref destination, alignmentDifference);
-                byteCount -= alignmentDifference;
-                return new(
-                    ref Unsafe.Add(ref source, alignmentDifference),
-                    ref Unsafe.Add(ref destination, alignmentDifference),
-                    byteCount - alignmentDifference
-                );
-            }
-            case >= 16:
-            {
-                ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 16, AlignmentMethod.Add);
-                nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
-                if (alignmentDifference == 0)
-                {
-                    goto default;
-                }
-
-                Copy16Bytes(ref source, ref destination);
-                source = Unsafe.Add(ref source, alignmentDifference);
-                destination = Unsafe.Add(ref destination, alignmentDifference);
-                byteCount -= alignmentDifference;
-                return new(
-                    ref Unsafe.Add(ref source, alignmentDifference),
-                    ref Unsafe.Add(ref destination, alignmentDifference),
-                    byteCount - alignmentDifference
-                );
-            }
-            case >= 8:
-            {
-                ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 8, AlignmentMethod.Add);
-                nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
-                if (alignmentDifference == 0)
-                {
-                    goto default;
-                }
-
-                Copy8Bytes(ref source, ref destination);
-                source = Unsafe.Add(ref source, alignmentDifference);
-                destination = Unsafe.Add(ref destination, alignmentDifference);
-                byteCount -= alignmentDifference;
-                return new(
-                    ref Unsafe.Add(ref source, alignmentDifference),
-                    ref Unsafe.Add(ref destination, alignmentDifference),
-                    byteCount - alignmentDifference
-                );
-            }
-            case >= 4:
-            {
-                ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 4, AlignmentMethod.Add);
-                nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
-                if (alignmentDifference == 0)
-                {
-                    goto default;
-                }
-
-                Copy4Bytes(ref source, ref destination);
-                source = Unsafe.Add(ref source, alignmentDifference);
-                destination = Unsafe.Add(ref destination, alignmentDifference);
-                byteCount -= alignmentDifference;
-                return new(
-                    ref Unsafe.Add(ref source, alignmentDifference),
-                    ref Unsafe.Add(ref destination, alignmentDifference),
-                    byteCount - alignmentDifference
-                );
-            }
-            default:
-                return new(ref source, ref destination, byteCount);
+            return new(ref source, ref destination, byteCount);
         }
+
+        Copy64Bytes(ref source, ref destination);
+        source = Unsafe.Add(ref source, alignmentDifference);
+        destination = Unsafe.Add(ref destination, alignmentDifference);
+        byteCount -= alignmentDifference;
+        return new(
+            ref Unsafe.Add(ref source, alignmentDifference),
+            ref Unsafe.Add(ref destination, alignmentDifference),
+            byteCount - alignmentDifference
+        );
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -612,7 +525,7 @@ public static unsafe partial class SpanHelpers<T>
     private static void Copy512Bytes_NoInline(ref byte destination, ref byte source) => Copy512Bytes(ref source, ref destination);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void Copy256Byte__NoInline(ref byte destination, ref byte source) => Copy256Bytes(ref source, ref destination);
+    private static void Copy256Bytes__NoInline(ref byte destination, ref byte source) => Copy256Bytes(ref source, ref destination);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Copy128Bytes__NoInline(ref byte destination, ref byte source) => Copy128Bytes(ref source, ref destination);
