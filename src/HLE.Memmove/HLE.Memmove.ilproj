@@ -3,7 +3,6 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <OutputType>Library</OutputType>
-        <RootNamespace>HLE.SpanHelpers.Memmove</RootNamespace>
     </PropertyGroup>
 
 </Project>

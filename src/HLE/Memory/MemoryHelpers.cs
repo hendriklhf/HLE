@@ -1,6 +1,9 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using HLE.Numerics;
 
 namespace HLE.Memory;
 
@@ -27,4 +30,29 @@ public static unsafe class MemoryHelpers
         int totalByteSize = sizeof(T) * elementCount;
         return totalByteSize <= s_maximumStackallocSize;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref T Align<T>(ref T reference, nuint alignment, AlignmentMethod method)
+    {
+        if (BitOperations.PopCount(alignment) != 1)
+        {
+            ThrowAlignmentNeedsToBePowerOfTwo();
+        }
+
+        nuint value = (nuint)Unsafe.AsPointer(ref reference);
+        switch (method)
+        {
+            case AlignmentMethod.Add:
+                return ref Unsafe.AsRef<T>((void*)(value + alignment - (value % alignment)));
+            case AlignmentMethod.Subtract:
+                return ref Unsafe.AsRef<T>((void*)(value & ~(alignment - 1)));
+            default:
+                ThrowHelper.ThrowInvalidEnumValue(method);
+                return ref Unsafe.NullRef<T>();
+        }
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowAlignmentNeedsToBePowerOfTwo() => throw new InvalidOperationException("The alignment needs to be a power of 2.");
 }

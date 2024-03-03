@@ -19,15 +19,15 @@ internal static class MemmoveGenerator
 
         ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(AssemblyName);
 
-        TypeBuilder typeBuilder = moduleBuilder.DefineType($"{NamespaceName}.{TypeName}", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
+        TypeBuilder typeBuilder = moduleBuilder.DefineType($"{NamespaceName}.{TypeName}", TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit | TypeAttributes.HasSecurity);
 
-        MethodBuilder methodBuilder = typeBuilder.DefineMethod(MethodName, MethodAttributes.Public | MethodAttributes.Static);
+        MethodBuilder methodBuilder = typeBuilder.DefineMethod(MethodName, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.RequireSecObject | MethodAttributes.HasSecurity);
         SetCustomMethodAttributes(methodBuilder);
         SetParameters(methodBuilder);
         GenerateMethodBody(methodBuilder.GetILGenerator());
 
         _ = typeBuilder.CreateType();
-        assemblyBuilder.Save($@"..\..\{LibraryFileName}");
+        assemblyBuilder.Save($@"..\..\..\{LibraryFileName}");
     }
 
     private static void SetParameters(MethodBuilder methodBuilder)
@@ -71,18 +71,6 @@ internal static class MemmoveGenerator
         {
             return memmove;
         }
-
-#if NET9_0_OR_GREATER
-        memmove = Array.Find(
-            Type.GetType("System.SpanHelpers")!.GetMethods(BindingFlags.NonPublic | BindingFlags.Static),
-            static m => m is { Name: "Memmove", IsGenericMethod: true }
-        );
-
-        if (memmove is not null)
-        {
-            return memmove;
-        }
-#endif
 
         throw new InvalidOperationException("Could not find a suitable memmove function.");
     }

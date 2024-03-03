@@ -14,7 +14,7 @@
 
 .class public abstract auto ansi sealed HLE.Memmove.SpanHelpers extends [System.Runtime]System.Object
 {
-    .method public static void Memmove<T>(!!T& destination,!!T& source,native uint elementCount) cil managed aggressiveinlining
+    .method public static reqsecobj void Memmove<T>(!!T& destination, !!T& source, native uint elementCount) cil managed aggressiveinlining
     {
           .maxstack 8
           ldarg.0
