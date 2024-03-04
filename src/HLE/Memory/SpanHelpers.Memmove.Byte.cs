@@ -9,7 +9,7 @@ namespace HLE.Memory;
 
 public static unsafe partial class SpanHelpers
 {
-    private const nuint AlignmentThreshold = 256; // if changed, a label also needs to be fixed
+    private const nuint AlignmentThreshold = 256;
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -31,7 +31,7 @@ public static unsafe partial class SpanHelpers
         CheckByteCount:
         switch (BitOperations.LeadingZeroCount((ulong)byteCount))
         {
-            case <= 48:
+            case <= 48: // >= 32768
                 Copy32768ByteBlocks(ref destination, ref source, ref byteCount);
                 if (byteCount == 0)
                 {
@@ -39,7 +39,7 @@ public static unsafe partial class SpanHelpers
                 }
 
                 goto CheckByteCount;
-            case 49:
+            case 49: // >= 16384
                 Copy16384Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 16384)
                 {
@@ -50,7 +50,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 16384);
                 byteCount -= 16384;
                 goto CheckByteCount;
-            case 50:
+            case 50: // >= 8192
                 Copy8192Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 8192)
                 {
@@ -61,7 +61,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 8192);
                 byteCount -= 8192;
                 goto CheckByteCount;
-            case 51:
+            case 51: // >= 4096
                 Copy4096Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 4096)
                 {
@@ -72,7 +72,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 4096);
                 byteCount -= 4096;
                 goto CheckByteCount;
-            case 52:
+            case 52: // >= 2048
                 Copy2048Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 2048)
                 {
@@ -83,7 +83,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 2048);
                 byteCount -= 2048;
                 goto CheckByteCount;
-            case 53:
+            case 53: // >= 1024
                 Copy1024Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 1024)
                 {
@@ -94,7 +94,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 1024);
                 byteCount -= 1024;
                 goto CheckByteCount;
-            case 54:
+            case 54: // >= 512
                 Copy512Bytes_NoInline(ref destination, ref source);
                 if (byteCount == 512)
                 {
@@ -105,7 +105,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 512);
                 byteCount -= 512;
                 goto CheckByteCount;
-            case 55:
+            case 55: // >= 256
                 Copy256Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 256)
                 {
@@ -116,7 +116,7 @@ public static unsafe partial class SpanHelpers
                 source = Unsafe.Add(ref source, 256);
                 byteCount -= 256;
                 goto CheckByteCount;
-            case 56:
+            case 56: // >= 128
                 Copy128Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 128)
                 {
@@ -125,7 +125,7 @@ public static unsafe partial class SpanHelpers
 
                 byteCount -= 128;
                 goto CheckByteCount;
-            case 57:
+            case 57: // >= 64
             {
                 Copy64Bytes(ref source, ref destination);
                 byteCount -= 64;
@@ -140,7 +140,7 @@ public static unsafe partial class SpanHelpers
                 Copy64Bytes(ref source, ref destination);
                 return;
             }
-            case 58:
+            case 58: // >= 32
             {
                 Copy32Bytes(ref source, ref destination);
                 byteCount -= 32;
@@ -155,7 +155,7 @@ public static unsafe partial class SpanHelpers
                 Copy32Bytes(ref source, ref destination);
                 return;
             }
-            case 59:
+            case 59: // >= 16
             {
                 Copy16Bytes(ref source, ref destination);
                 byteCount -= 16;
@@ -170,7 +170,7 @@ public static unsafe partial class SpanHelpers
                 Copy16Bytes(ref source, ref destination);
                 return;
             }
-            case 60:
+            case 60: // >= 8
             {
                 Copy8Bytes(ref source, ref destination);
                 byteCount -= 8;
