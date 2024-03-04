@@ -111,7 +111,7 @@ public static unsafe class SpanHelpers<T>
             return;
         }
 
-        SpanHelpers.Memmove(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), elementCount * (uint)sizeof(T));
+        SpanHelpers.Memmove(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), checked(elementCount * (uint)sizeof(T)));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

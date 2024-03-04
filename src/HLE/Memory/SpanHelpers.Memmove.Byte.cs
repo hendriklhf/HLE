@@ -21,7 +21,7 @@ public static unsafe partial class SpanHelpers
             case 0:
                 return;
             case >= AlignmentThreshold when !MemoryHelpers.IsAligned(ref destination, 64):
-                AlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
+                MemmoveAlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
                 destination = ref alignmentResult.Destination;
                 source = ref alignmentResult.Source;
                 byteCount = alignmentResult.ByteCount;
@@ -258,7 +258,7 @@ public static unsafe partial class SpanHelpers
     private static void Copy8192Bytes(ref byte source, ref byte destination)
     {
         Copy4096Bytes(ref source, ref destination);
-        Copy4096Bytes(ref Unsafe.Add(ref source, 2048), ref Unsafe.Add(ref destination, 4096));
+        Copy4096Bytes(ref Unsafe.Add(ref source, 4096), ref Unsafe.Add(ref destination, 4096));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -338,8 +338,8 @@ public static unsafe partial class SpanHelpers
             return;
         }
 
-        Unsafe.As<byte, long>(ref destination) = Unsafe.As<byte, long>(ref source);
-        Unsafe.As<byte, long>(ref Unsafe.Add(ref destination, sizeof(long))) = Unsafe.As<byte, long>(ref Unsafe.Add(ref source, sizeof(long)));
+        Copy8Bytes(ref source, ref destination);
+        Copy8Bytes(ref Unsafe.Add(ref source, 8), ref Unsafe.Add(ref destination, 8));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -358,7 +358,7 @@ public static unsafe partial class SpanHelpers
     private static void Copy1Bytes(ref byte source, ref byte destination) => destination = source;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static AlignmentResult Align(ref byte source, ref byte destination, nuint byteCount)
+    private static MemmoveAlignmentResult Align(ref byte source, ref byte destination, nuint byteCount)
     {
         Debug.Assert(byteCount >= 64);
 
@@ -401,4 +401,24 @@ public static unsafe partial class SpanHelpers
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Copy128Bytes__NoInline(ref byte destination, ref byte source) => Copy128Bytes(ref source, ref destination);
+
+    private readonly ref struct MemmoveAlignmentResult
+    {
+        public ref byte Source => ref _source;
+
+        public ref byte Destination => ref _destination;
+
+        public nuint ByteCount { get; }
+
+        private readonly ref byte _destination;
+        private readonly ref byte _source;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public MemmoveAlignmentResult(ref byte source, ref byte destination, nuint byteCount)
+        {
+            _source = ref source;
+            _destination = ref destination;
+            ByteCount = byteCount;
+        }
+    }
 }
