@@ -105,7 +105,7 @@ public static unsafe class SpanHelpers<T>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
     public static void Memmove(ref T destination, ref T source, nuint elementCount)
     {
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlap(ref source, ref destination, elementCount))
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlaps(ref source, ref destination, elementCount))
         {
             s_memmove(ref destination, ref source, elementCount);
             return;
@@ -115,7 +115,7 @@ public static unsafe class SpanHelpers<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool Overlap(ref T source, ref T destination, nuint elementCount) =>
+    private static bool Overlaps(ref T source, ref T destination, nuint elementCount) =>
         (nuint)Unsafe.ByteOffset(ref source, ref destination) < elementCount ||
         (nuint)Unsafe.ByteOffset(ref destination, ref source) < elementCount;
 }
