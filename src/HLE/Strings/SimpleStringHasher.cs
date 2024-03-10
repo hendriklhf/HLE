@@ -26,7 +26,7 @@ internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
             return 0;
         }
 
-        char middleChar = Unsafe.Add(ref chars, length >> 1);
+        char middleChar = Unsafe.Add(ref chars, length >>> 1);
         char lastChar = Unsafe.Add(ref chars, length - 1);
 
         int hash = ~(chars | (chars << 16)) ^ ~(middleChar | (middleChar << 16)) ^ ~(lastChar | (lastChar << 16));

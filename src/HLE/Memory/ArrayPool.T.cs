@@ -41,7 +41,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
         _buckets = buckets;
 
-        Debug.Assert(arrayLength >> 1 == ArrayPool.MaximumArrayLength);
+        Debug.Assert(arrayLength >>> 1 == ArrayPool.MaximumArrayLength);
     }
 
     [Pure]

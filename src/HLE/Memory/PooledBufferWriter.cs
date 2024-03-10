@@ -42,7 +42,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     /// <summary>
     /// A <see cref="Memory{T}"/> view over the written elements.
     /// </summary>
-    public Memory<T> WrittenMemory => _buffer.AsMemory(..Count);
+    public Memory<T> WrittenMemory => GetBuffer().AsMemory(..Count);
 
     /// <summary>
     /// The amount of written elements.
