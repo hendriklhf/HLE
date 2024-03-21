@@ -105,6 +105,11 @@ public static unsafe class SpanHelpers<T>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
     public static void Memmove(ref T destination, ref T source, nuint elementCount)
     {
+        if (Unsafe.AreSame(ref destination, ref source))
+        {
+            return;
+        }
+
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlaps(ref source, ref destination, elementCount))
         {
             s_memmove(ref destination, ref source, elementCount);

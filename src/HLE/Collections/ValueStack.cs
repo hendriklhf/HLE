@@ -6,22 +6,16 @@ using HLE.Memory;
 
 namespace HLE.Collections;
 
-public ref struct ValueStack<T>
+public ref struct ValueStack<T>(Span<T> stack)
 {
     public int Count { get; private set; }
 
     public readonly int Capacity => _stack.Length;
 
-    internal readonly Span<T> _stack = [];
+    internal readonly Span<T> _stack = stack;
 
-    public ValueStack()
+    public ValueStack() : this([])
     {
-    }
-
-    public ValueStack(Span<T> stack, int count = 0)
-    {
-        _stack = stack;
-        Count = count;
     }
 
     public void Push(T item)

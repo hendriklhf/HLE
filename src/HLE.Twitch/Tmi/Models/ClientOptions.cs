@@ -15,7 +15,7 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; init; }
+    public bool UseSSL { get; init; } = true;
 
     /// <summary>
     /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.

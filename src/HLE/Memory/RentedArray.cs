@@ -78,11 +78,13 @@ public struct RentedArray<T> :
 
     public static RentedArray<T> Empty => new();
 
-    internal T[]? _array = [];
-    internal readonly ArrayPool<T> _pool = ArrayPool<T>.Shared;
+    internal T[]? _array;
+    internal readonly ArrayPool<T> _pool;
 
     public RentedArray()
     {
+        _array = [];
+        _pool = ArrayPool<T>.Shared;
     }
 
     [MustDisposeResource]

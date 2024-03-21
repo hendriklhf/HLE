@@ -11,14 +11,12 @@ public ref struct ValueQueue<T>
 
     public readonly int Capacity => _queue.Length;
 
-    internal readonly Span<T> _queue = [];
+    internal readonly Span<T> _queue;
     private readonly int _lastIndex;
     private int _enqueueIndex;
     private int _dequeueIndex;
 
-    public ValueQueue()
-    {
-    }
+    public ValueQueue() => _queue = [];
 
     public ValueQueue(Span<T> queue)
     {

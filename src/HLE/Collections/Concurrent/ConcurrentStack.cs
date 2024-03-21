@@ -32,9 +32,11 @@ public sealed class ConcurrentStack<T> :
 
     public object SyncRoot { get; } = new();
 
-    internal T[] _buffer = [];
+    internal T[] _buffer;
 
     private const int DefaultCapacity = 8;
+
+    public ConcurrentStack() => _buffer = [];
 
     public ConcurrentStack(int capacity)
     {
@@ -44,10 +46,6 @@ public sealed class ConcurrentStack<T> :
         }
 
         _buffer = GC.AllocateUninitializedArray<T>(capacity);
-    }
-
-    public ConcurrentStack()
-    {
     }
 
     public ReadOnlySpan<T> AsSpan() => _buffer.AsSpanUnsafe(..Count);

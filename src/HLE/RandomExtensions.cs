@@ -333,11 +333,7 @@ public static class RandomExtensions
 
     [Pure]
     public static TEnum NextEnumValue<TEnum>(this Random random) where TEnum : struct, Enum
-    {
-        ref TEnum values = ref EnumValues<TEnum>.Reference;
-        int count = EnumValues<TEnum>.Count;
-        return Unsafe.Add(ref values, random.Next(0, count));
-    }
+        => Unsafe.Add(ref EnumValues<TEnum>.Reference, random.Next(0, EnumValues<TEnum>.Count));
 
     [Pure]
     internal static unsafe TEnum NextEnumFlags<TEnum>(this Random random) where TEnum : struct, Enum

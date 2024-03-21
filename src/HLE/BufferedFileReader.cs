@@ -49,15 +49,15 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         return _size;
     }
 
-    public int ReadBytes(Span<byte> buffer) => RandomAccess.Read(OpenHandleIfNotOpen(), buffer, 0);
+    public int ReadBytes(Span<byte> buffer, long fileOffset) => RandomAccess.Read(OpenHandleIfNotOpen(), buffer, fileOffset);
 
     // ReSharper disable once InconsistentNaming
-    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, 0);
+    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer, long fileOffset) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, fileOffset);
 
     public void ReadBytes<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
-        int fileSize = GetFileSize(fileHandle);
+        int fileSize = GetFileSizeInt32(fileHandle);
         int bytesRead = RandomAccess.Read(fileHandle, byteWriter.GetSpan(fileSize), 0);
         byteWriter.Advance(bytesRead);
     }
@@ -65,7 +65,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
         SafeFileHandle handle = OpenHandleIfNotOpen();
-        int fileSize = GetFileSize(handle);
+        int fileSize = GetFileSizeInt32(handle);
         int bytesRead = await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0);
         byteWriter.Advance(bytesRead);
     }
@@ -151,7 +151,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int GetFileSize(SafeFileHandle fileHandle)
+    private static int GetFileSizeInt32(SafeFileHandle fileHandle)
     {
         long fileSize = RandomAccess.GetLength(fileHandle);
         EnsureFileSizeDoesntExceedMaxArrayLength(fileSize);

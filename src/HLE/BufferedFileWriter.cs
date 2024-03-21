@@ -20,8 +20,9 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
     public string FilePath { get; } = filePath;
 
     private SafeFileHandle? _fileHandle;
-    private long _size = -1;
+    private long _size = UninitializedSize;
 
+    private const long UninitializedSize = -1;
     private const FileMode HandleMode = FileMode.OpenOrCreate;
     private const FileAccess HandleAccess = FileAccess.Write;
     private const FileShare HandleShare = FileShare.Write;
@@ -35,7 +36,7 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         }
 
         long size = _size;
-        if (size != -1)
+        if (size != UninitializedSize)
         {
             RandomAccess.SetLength(fileHandle, size);
         }
@@ -47,38 +48,36 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
     public void WriteBytes(ReadOnlySpan<byte> bytes)
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
-        long size = GetFileSize(fileHandle, false);
-
-        RandomAccess.Write(fileHandle, bytes, size);
-        _size = size + bytes.Length;
+        long writeOffset = GetWriteOffset(fileHandle, false);
+        RandomAccess.Write(fileHandle, bytes, writeOffset);
+        _size = writeOffset + bytes.Length;
     }
 
     public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> bytes)
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
-        long size = GetFileSize(fileHandle, false);
-
-        await RandomAccess.WriteAsync(fileHandle, bytes, size);
-        _size = size + bytes.Length;
+        long writeOffset = GetWriteOffset(fileHandle, false);
+        await RandomAccess.WriteAsync(fileHandle, bytes, writeOffset);
+        _size = writeOffset + bytes.Length;
     }
 
     public void AppendBytes(ReadOnlySpan<byte> bytes)
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
-        long size = GetFileSize(fileHandle, true);
+        long writeOffset = GetWriteOffset(fileHandle, true);
 
-        RandomAccess.Write(fileHandle, bytes, size);
-        _size = size + bytes.Length;
+        RandomAccess.Write(fileHandle, bytes, writeOffset);
+        _size = writeOffset + bytes.Length;
     }
 
     public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> bytes)
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
-        long size = GetFileSize(fileHandle, true);
+        long writeOffset = GetWriteOffset(fileHandle, true);
 
-        await RandomAccess.WriteAsync(fileHandle, bytes, size);
+        await RandomAccess.WriteAsync(fileHandle, bytes, writeOffset);
 
-        _size = size + bytes.Length;
+        _size = writeOffset + bytes.Length;
     }
 
     public void WriteChars(ReadOnlySpan<char> chars, Encoding fileEncoding)
@@ -118,10 +117,10 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly long GetFileSize(SafeFileHandle fileHandle, [ConstantExpected] bool append)
+    private readonly long GetWriteOffset(SafeFileHandle fileHandle, [ConstantExpected] bool append)
     {
         long size = _size;
-        if (size == -1)
+        if (size == UninitializedSize)
         {
             size = append ? RandomAccess.GetLength(fileHandle) : 0;
         }

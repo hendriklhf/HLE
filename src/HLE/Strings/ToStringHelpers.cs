@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,6 +9,7 @@ using HLE.Collections;
 
 namespace HLE.Strings;
 
+[SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "doesnt work because of constraints")]
 internal static class ToStringHelpers
 {
     private static readonly ConcurrentDictionary<Type, string> s_cache = new();
