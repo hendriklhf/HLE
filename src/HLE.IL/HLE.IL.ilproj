@@ -3,7 +3,6 @@
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <OutputType>Library</OutputType>
-        <Configuration>Release</Configuration>
     </PropertyGroup>
 
 </Project>

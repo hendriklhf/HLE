@@ -13,14 +13,14 @@ public sealed class BufferedFileReaderTest
 
     public BufferedFileReaderTest()
     {
-        string temporaryDirectory = $"{Path.GetTempPath()}{nameof(BufferedFileReaderTest)}_{Guid.NewGuid():N}";
+        string temporaryDirectory = Path.Combine(Path.GetTempPath(), nameof(BufferedFileReaderTest), $"{Guid.NewGuid():N}");
         Directory.CreateDirectory(temporaryDirectory);
         _temporaryDirectory = temporaryDirectory;
     }
 
     private string WriteFileAndGetPath(string content)
     {
-        string path = $"{_temporaryDirectory}{Path.DirectorySeparatorChar}{Guid.NewGuid():N}";
+        string path = Path.Combine(_temporaryDirectory, $"{Guid.NewGuid():N}");
         File.WriteAllText(path, content);
         return path;
     }

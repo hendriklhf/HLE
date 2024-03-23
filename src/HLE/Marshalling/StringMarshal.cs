@@ -3,6 +3,7 @@ using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -122,7 +123,8 @@ public static class StringMarshal
     /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string AsString(Span<char> span) => AsString((ReadOnlySpan<char>)span);
+    public static string AsString(Span<char> span)
+        => span.Length == 0 ? string.Empty : AsString(ref MemoryMarshal.GetReference(span));
 
     /// <summary>
     /// Converts a <see cref="ReadOnlySpan{Char}"/> back to a <see cref="string"/>.
@@ -133,23 +135,14 @@ public static class StringMarshal
     /// <returns>The <see cref="ReadOnlySpan{Char}"/> as a <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe string AsString(ReadOnlySpan<char> span)
-    {
-        if (span.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        ref byte charsReference = ref Unsafe.As<char, byte>(ref MemoryMarshal.GetReference(span));
-        charsReference = ref Unsafe.Subtract(ref charsReference, sizeof(int) + sizeof(nuint));
-        return ObjectMarshal.ReadObject<string, byte>(ref charsReference);
-    }
+    public static string AsString(ReadOnlySpan<char> span)
+        => span.Length == 0 ? string.Empty : AsString(ref MemoryMarshal.GetReference(span));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe ref char GetReference(string str)
-    {
-        byte* ptr = *(byte**)&str;
-        return ref Unsafe.AsRef<char>(ptr + sizeof(nuint) + sizeof(int));
-    }
+    private static string AsString(ref char chars) => ILMethods.AsString(ref chars);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref char GetReference(string str) => ref ILMethods.GetStringReference(str);
 }
