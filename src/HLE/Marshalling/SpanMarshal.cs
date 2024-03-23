@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.IL;
 
 namespace HLE.Marshalling;
 
@@ -76,12 +77,13 @@ public static unsafe class SpanMarshal
             return ref arrayMethodTable;
         }
 
-        return ref ThrowCantGetMethodTableOfUnknownType<TSpanElement>(); // finding the MemoryManager is impossible
+        ThrowCantGetMethodTableOfUnknownType<TSpanElement>(); // finding the MemoryManager is impossible
+        return ref Unsafe.NullRef<byte>();
     }
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static ref byte ThrowCantGetMethodTableOfUnknownType<TSpanElement>() => throw new InvalidOperationException(
+    private static void ThrowCantGetMethodTableOfUnknownType<TSpanElement>() => throw new InvalidOperationException(
         $"The {typeof(Span<TSpanElement>)} is backed by an unknown type or native memory. " +
         $"It's not possible to convert it to a {typeof(Span<TSpanElement>)}"
     );
@@ -126,9 +128,5 @@ public static unsafe class SpanMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] AsArray<T>(ref T firstElement)
-    {
-        ref byte byteRef = ref Unsafe.As<T, byte>(ref firstElement);
-        return ObjectMarshal.ReadObject<T[], byte>(ref Unsafe.Subtract(ref byteRef, sizeof(nuint) + sizeof(nuint)));
-    }
+    public static T[] AsArray<T>(ref T firstElement) => UnsafeIL.AsArray(ref firstElement);
 }

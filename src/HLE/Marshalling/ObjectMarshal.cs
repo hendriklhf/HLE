@@ -32,12 +32,12 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref TRef GetMethodTableReference<TRef>(object obj)
-        => ref Unsafe.AsRef<TRef>(GetMethodTablePointer(obj));
+        => ref UnsafeIL.AsRef<object, TRef>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref nuint GetMethodTableReference(object obj)
-        => ref Unsafe.AsRef<nuint>(GetMethodTablePointer(obj));
+        => ref UnsafeIL.AsRef<object, nuint>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -57,18 +57,12 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T ReadObject<T>(ref nuint methodTablePointer) where T : class
-    {
-        nuint ptr = (nuint)Unsafe.AsPointer(ref methodTablePointer);
-        return ReadObject<T>(ptr);
-    }
+        => UnsafeIL.RefAs<nuint, T>(ref methodTablePointer);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TObject ReadObject<TObject, TRef>(ref TRef methodTableReference) where TObject : class
-    {
-        nuint ptr = (nuint)Unsafe.AsPointer(ref methodTableReference);
-        return ReadObject<TObject>(ptr);
-    }
+        => UnsafeIL.RefAs<TRef, TObject>(ref methodTableReference);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,27 +77,23 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T ReadObject<T>(nuint methodTablePointer) where T : class
-        => *(T*)&methodTablePointer;
+        => UnsafeIL.As<nuint, T>(methodTablePointer);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T GetField<T>(object obj, nuint byteOffset)
-        => ref ILMethods.GetField<T>(obj, byteOffset + (uint)sizeof(nuint));
+    public static ref T GetField<T>(object obj, nuint byteOffset) => ref UnsafeIL.GetField<T>(obj, byteOffset + (uint)sizeof(nuint));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawStringData GetRawStringData(string str)
-        => ref Unsafe.AsRef<RawStringData>(*(RawStringData**)&str);
+    public static ref RawStringData GetRawStringData(string str) => ref UnsafeIL.AsRef<string, RawStringData>(str);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string GetString(ref RawStringData data)
-        => ReadObject<string, RawStringData>(ref data);
+    public static string GetString(ref RawStringData data) => ReadObject<string, RawStringData>(ref data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string GetString(RawStringData* data)
-        => ReadObject<string>(data);
+    public static string GetString(RawStringData* data) => ReadObject<string>(data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,18 +109,15 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawArrayData GetRawArrayData<T>(T[] array)
-        => ref Unsafe.AsRef<RawArrayData>(*(RawArrayData**)&array);
+    public static ref RawArrayData GetRawArrayData<T>(T[] array) => ref UnsafeIL.AsRef<T[], RawArrayData>(array);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(ref RawArrayData data)
-        => ReadObject<T[], RawArrayData>(ref data);
+    public static T[] GetArray<T>(ref RawArrayData data) => ReadObject<T[], RawArrayData>(ref data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(RawArrayData* data)
-        => ReadObject<T[]>(data);
+    public static T[] GetArray<T>(RawArrayData* data) => ReadObject<T[]>(data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

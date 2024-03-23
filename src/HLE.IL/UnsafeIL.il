@@ -12,7 +12,7 @@
 
 .module HLE.IL
 
-.class public abstract auto ansi sealed HLE.IL.ILMethods
+.class public abstract auto ansi sealed HLE.IL.UnsafeIL
 {
     .method public static !!0& GetField<T>(object obj, native unsigned int byteOffset) cil managed aggressiveinlining
     {
@@ -39,6 +39,34 @@
         sub
         ldc.i4.4
         sub
+        ret
+    }
+
+    .method public static !!0[] AsArray<T>(!!0& firstElement) cil managed aggressiveinlining
+    {
+        ldarg.0
+        sizeof [System.Runtime]System.UIntPtr
+        sub
+        sizeof [System.Runtime]System.UIntPtr
+        sub
+        ret
+    }
+
+    .method public static !!1 As<TFrom, TTo>(!!0 from) cil managed aggressiveinlining
+    {
+        ldarg.0
+        ret
+    }
+
+    .method public static !!1& AsRef<TFrom, TTo>(!!0 from) cil managed aggressiveinlining
+    {
+        ldarg.0
+        ret
+    }
+
+    .method public static !!1 RefAs<TFrom, TTo>(!!0& from) cil managed aggressiveinlining
+    {
+        ldarg.0
         ret
     }
 }

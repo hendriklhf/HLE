@@ -140,9 +140,9 @@ public static class StringMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static string AsString(ref char chars) => ILMethods.AsString(ref chars);
+    private static string AsString(ref char chars) => UnsafeIL.AsString(ref chars);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref char GetReference(string str) => ref ILMethods.GetStringReference(str);
+    public static ref char GetReference(string str) => ref UnsafeIL.GetStringReference(str);
 }
