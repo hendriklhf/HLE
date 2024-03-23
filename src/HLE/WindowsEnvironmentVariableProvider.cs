@@ -12,7 +12,7 @@ using HLE.Strings;
 namespace HLE;
 
 [SupportedOSPlatform("windows")]
-public sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<WindowsEnvironmentVariableProvider>
+internal sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<WindowsEnvironmentVariableProvider>
 {
     [Pure]
     public unsafe EnvironmentVariables GetEnvironmentVariables()

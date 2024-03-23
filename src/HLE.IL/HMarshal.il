@@ -14,7 +14,7 @@
 
 .class public abstract auto ansi sealed HLE.IL.HMarshal extends [System.Runtime]System.Object
 {
-    .method public static hidebysig object ReadField(object obj, native unsigned int byteOffset) cil managed
+    .method public static !!0& GetField<T>(object obj, native unsigned int byteOffset) cil managed aggressiveinlining
     {
         ldarg.0
         ldarg.1

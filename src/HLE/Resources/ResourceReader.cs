@@ -18,10 +18,9 @@ namespace HLE.Resources;
 
 public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
 {
-    public Assembly Assembly { get; }
-
     int IReadOnlyCollection<Resource>.Count => _resources.Count;
 
+    private readonly Assembly _assembly;
     private readonly string _assemblyName;
     private readonly ConcurrentDictionary<string, Resource> _resources = new();
 
@@ -30,7 +29,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     [MustDisposeResource]
     public ResourceReader(Assembly assembly)
     {
-        Assembly = assembly;
+        _assembly = assembly;
         string? assemblyName = assembly.GetName().Name;
         ArgumentException.ThrowIfNullOrEmpty(assemblyName);
         _assemblyName = $"{assemblyName}.";
@@ -100,7 +99,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
             return resource != default;
         }
 
-        using Stream? stream = Assembly.GetManifestResourceStream(resourcePath);
+        using Stream? stream = _assembly.GetManifestResourceStream(resourcePath);
         if (stream is null)
         {
             _resources.AddOrSet(resourcePath, default);
@@ -122,7 +121,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
             return true;
         }
 
-        Debug.Fail($"The implementation of {nameof(Assembly.GetManifestResourceStream)} has changed.");
+        Debug.Fail($"The implementation of {nameof(_assembly.GetManifestResourceStream)} has changed.");
 
         if (streamLength > Array.MaxLength)
         {

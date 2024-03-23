@@ -93,7 +93,7 @@ public static class ChatterinoSettingsReader
             return $"~/Library/Application Support/chatterino/Settings/{WindowLayoutFile}";
         }
 
-        ThrowHelper.ThrowPlatformNotSupportedException();
+        ThrowHelper.ThrowOperatingSystemNotSupported();
         return null!;
     }
 }

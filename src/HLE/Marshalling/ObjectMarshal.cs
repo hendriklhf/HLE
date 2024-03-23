@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using HLE.IL;
 
 namespace HLE.Marshalling;
 
@@ -87,10 +88,7 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetField<T>(object obj, nuint byteOffset)
-    {
-        ref byte firstField = ref Unsafe.Add(ref GetMethodTableReference<byte>(obj), sizeof(nuint));
-        return ref Unsafe.As<byte, T>(ref Unsafe.Add(ref firstField, byteOffset));
-    }
+        => ref HMarshal.GetField<T>(obj, byteOffset + (uint)sizeof(nuint));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

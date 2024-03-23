@@ -77,7 +77,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
         byte[] result = GC.AllocateUninitializedArray<byte>(length);
         ref byte destination = ref MemoryMarshal.GetArrayDataReference(result);
         ref byte source = ref Unsafe.AsRef<byte>(_resource);
-        Unsafe.CopyBlock(ref destination, ref source, (uint)length);
+        SpanHelpers<byte>.Memmove(ref destination, ref source, (uint)length);
         return result;
     }
 

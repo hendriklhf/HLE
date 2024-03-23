@@ -9,7 +9,7 @@ using Xunit;
 namespace HLE.Tests.Marshalling;
 
 [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-public sealed unsafe class ObjectMarshalTest
+public sealed unsafe partial class ObjectMarshalTest
 {
     public static object[][] GetObjectSizeArrayParameters { get; } =
     [

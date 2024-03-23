@@ -35,6 +35,12 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
 
     public EnvironmentVariables(FrozenDictionary<string, string> environmentVariables) => _environmentVariables = environmentVariables;
 
+    public static EnvironmentVariables Create()
+    {
+        IEnvironmentVariableProvider provider = EnvironmentVariableProvider.Create();
+        return provider.GetEnvironmentVariables();
+    }
+
     bool IReadOnlyDictionary<string, string>.ContainsKey(string key) => _environmentVariables.ContainsKey(key);
 
     bool IReadOnlyDictionary<string, string>.TryGetValue(string key, [MaybeNullWhen(false)] out string value)

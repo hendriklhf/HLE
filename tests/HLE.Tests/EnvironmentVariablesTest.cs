@@ -9,7 +9,7 @@ public sealed class EnvironmentVariablesTest
     [Fact]
     public void CreateTest()
     {
-        EnvironmentVariables environmentVariables = EnvironmentVariableProvider.Create().GetEnvironmentVariables();
+        EnvironmentVariables environmentVariables = EnvironmentVariables.Create();
         IDictionary actualEnvironmentVariables = Environment.GetEnvironmentVariables();
         Assert.Equal(actualEnvironmentVariables.Count, environmentVariables.Count);
 

@@ -13,7 +13,7 @@ namespace HLE;
 
 [SupportedOSPlatform("linux")]
 [SupportedOSPlatform("macos")]
-public sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<UnixEnvironmentVariableProvider>
+internal sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<UnixEnvironmentVariableProvider>
 {
     [Pure]
     public unsafe EnvironmentVariables GetEnvironmentVariables()

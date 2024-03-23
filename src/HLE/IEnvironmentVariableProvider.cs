@@ -1,6 +1,6 @@
 namespace HLE;
 
-public interface IEnvironmentVariableProvider
+internal interface IEnvironmentVariableProvider
 {
     EnvironmentVariables GetEnvironmentVariables();
 }

@@ -4,7 +4,7 @@ using System.Diagnostics.Contracts;
 
 namespace HLE;
 
-public static class EnvironmentVariableProvider
+internal static class EnvironmentVariableProvider
 {
     [Pure]
     [SuppressMessage("Style", "IDE0046:Convert to conditional expression")]
@@ -20,6 +20,7 @@ public static class EnvironmentVariableProvider
             return new UnixEnvironmentVariableProvider();
         }
 
-        throw new NotSupportedException("The current operating system is not yet supported.");
+        ThrowHelper.ThrowOperatingSystemNotSupported();
+        return null!;
     }
 }

@@ -13,9 +13,9 @@ public sealed partial class SpanHelpersTest
         for (int i = 0; i < 1024; i++)
         {
             int elementCount = Random.Shared.Next(0, 524288);
-            Span<int> source = new int[elementCount];
+            Span<int> source = GC.AllocateUninitializedArray<int>(elementCount);
             Random.Shared.Fill(source);
-            Span<int> destination = new int[elementCount];
+            Span<int> destination = GC.AllocateUninitializedArray<int>(elementCount);
 
             SpanHelpers<int>.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
             Assert.True(destination.SequenceEqual(source));

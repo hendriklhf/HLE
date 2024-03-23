@@ -11,7 +11,8 @@ internal static class ThrowHelper
 {
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowObjectDisposedException<T>() => throw new ObjectDisposedException(typeof(T).FullName);
+    public static void ThrowObjectDisposedException<T>() where T : IDisposable
+        => throw new ObjectDisposedException(typeof(T).FullName);
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -36,9 +37,10 @@ internal static class ThrowHelper
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowPlatformNotSupportedException() => throw new PlatformNotSupportedException();
+    public static void ThrowTaskCancelledException() => throw new TaskCanceledException();
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowTaskCancelledException() => throw new TaskCanceledException();
+    public static void ThrowOperatingSystemNotSupported()
+        => throw new NotSupportedException("The current operating system is not yet supported.");
 }
