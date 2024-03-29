@@ -11,7 +11,8 @@ namespace HLE.Memory;
 public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     MemoryManager<T>,
     IEquatable<NativeMemoryManager<T>>,
-    ISpanProvider<T>
+    ISpanProvider<T>,
+    IMemoryProvider<T>
     where T : unmanaged, IEquatable<T>
 {
     private readonly T* _memory = memory;
@@ -25,6 +26,10 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     public override Span<T> GetSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_memory), _length);
 
     ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => GetSpan();
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => Memory;
+
+    Memory<T> IMemoryProvider<T>.GetMemory() => Memory;
 
     /// <summary>
     /// Throws a <see cref="NotSupportedException"/>.<br/>

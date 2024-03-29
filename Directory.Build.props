@@ -1,23 +1,25 @@
 <Project>
-    <PropertyGroup>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>disable</ImplicitUsings>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-        <NeutralLanguage>en-US</NeutralLanguage>
-        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <WarningsAsErrors>Nullable</WarningsAsErrors>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <DebugType>embedded</DebugType>
-    </PropertyGroup>
 
-    <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->
-    <PropertyGroup Condition="'$(Configuration)'=='Release'">
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <NoWarn>CS1591</NoWarn>
-    </PropertyGroup>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-        <NoWarn>IDE0005</NoWarn>
-    </PropertyGroup>
+  <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <NoWarn>IDE0005</NoWarn>
+  </PropertyGroup>
+
 </Project>

@@ -5,4 +5,8 @@
         <OutputType>Library</OutputType>
     </PropertyGroup>
 
+    <ItemGroup>
+      <None Include="UnsafeIL.il" />
+    </ItemGroup>
+
 </Project>

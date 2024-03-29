@@ -26,33 +26,27 @@ public static unsafe class ObjectMarshal
     /// <returns>The amount of bytes allocated for the object.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint GetObjectSize(object obj)
-        => BaseObjectSize + (nuint)s_getRawObjectSize(obj);
+    public static nuint GetObjectSize(object obj) => BaseObjectSize + (nuint)s_getRawObjectSize(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref TRef GetMethodTableReference<TRef>(object obj)
-        => ref UnsafeIL.AsRef<object, TRef>(obj);
+    public static ref TRef GetMethodTableReference<TRef>(object obj) => ref UnsafeIL.AsRef<object, TRef>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref nuint GetMethodTableReference(object obj)
-        => ref UnsafeIL.AsRef<object, nuint>(obj);
+    public static ref nuint GetMethodTableReference(object obj) => ref UnsafeIL.AsRef<object, nuint>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TPointer* GetMethodTablePointer<TPointer>(object obj)
-        => *(TPointer**)&obj;
+    public static TPointer* GetMethodTablePointer<TPointer>(object obj) => UnsafeIL.AsPointer<object, TPointer>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint* GetMethodTablePointer(object obj)
-        => *(nuint**)&obj;
+    public static nuint* GetMethodTablePointer(object obj) => UnsafeIL.AsPointer<object, nuint>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable(object obj)
-        => **(MethodTable***)&obj;
+    public static MethodTable* GetMethodTable(object obj) => (MethodTable*)*UnsafeIL.AsPointer<object, nuint>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

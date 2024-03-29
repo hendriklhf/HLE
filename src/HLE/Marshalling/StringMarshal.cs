@@ -73,13 +73,13 @@ public static class StringMarshal
         if (!MemoryHelpers.UseStackalloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
-            span.CopyTo(rentedCopyBuffer.AsSpan());
+            SpanHelpers<char>.Copy(span, rentedCopyBuffer.AsSpan());
             MemoryExtensions.ToLowerInvariant(rentedCopyBuffer[..span.Length], span);
             return;
         }
 
         Span<char> copyBuffer = stackalloc char[span.Length];
-        span.CopyTo(copyBuffer);
+        SpanHelpers<char>.Copy(span, copyBuffer);
         MemoryExtensions.ToLowerInvariant(copyBuffer, span);
     }
 
@@ -99,13 +99,13 @@ public static class StringMarshal
         if (!MemoryHelpers.UseStackalloc<char>(span.Length))
         {
             using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
-            span.CopyTo(rentedCopyBuffer.AsSpan());
+            SpanHelpers<char>.Copy(span, rentedCopyBuffer.AsSpan());
             MemoryExtensions.ToUpperInvariant(rentedCopyBuffer[..span.Length], span);
             return;
         }
 
         Span<char> copyBuffer = stackalloc char[span.Length];
-        span.CopyTo(copyBuffer);
+        SpanHelpers<char>.Copy(span, copyBuffer);
         MemoryExtensions.ToUpperInvariant(copyBuffer, span);
     }
 

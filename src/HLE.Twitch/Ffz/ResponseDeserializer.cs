@@ -15,8 +15,6 @@ internal readonly ref struct ResponseDeserializer(ReadOnlySpan<byte> response)
 
     public ImmutableArray<Emote> Deserialize()
     {
-        ReadOnlySpan<byte> emotesProperty = "emoticons"u8;
-
         // ReSharper disable once NotDisposedResource
         ValueList<Emote> emotes = new(50);
         try
@@ -24,7 +22,7 @@ internal readonly ref struct ResponseDeserializer(ReadOnlySpan<byte> response)
             Utf8JsonReader reader = new(_response);
             while (reader.Read())
             {
-                if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals(emotesProperty))
+                if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueTextEquals("emoticons"u8))
                 {
                     DeserializeEmotes(ref reader, ref emotes);
                     break;

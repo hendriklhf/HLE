@@ -12,9 +12,9 @@
 
 .module HLE.IL
 
-.class public abstract auto ansi sealed HLE.IL.UnsafeIL
+.class public abstract auto ansi sealed beforefieldinit HLE.IL.UnsafeIL extends [System.Runtime]System.Object
 {
-    .method public static !!0& GetField<T>(object obj, native unsigned int byteOffset) cil managed aggressiveinlining
+    .method public hidebysig static !!T& GetField<T>(object obj, native unsigned int byteOffset) cil managed aggressiveinlining
     {
         ldarg.0
         ldarg.1
@@ -22,7 +22,7 @@
         ret
     }
 
-    .method public static char& GetStringReference(string str) cil managed aggressiveinlining
+    .method public hidebysig static char& GetStringReference(string str) cil managed aggressiveinlining
     {
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
@@ -32,7 +32,17 @@
         ret
     }
 
-    .method public static string AsString(char& chars) cil managed aggressiveinlining
+    .method public hidebysig static !!T& GetArrayReference<T>(!!0[] 'array') cil managed aggressiveinlining
+    {
+        ldarg.0
+        sizeof [System.Runtime]System.UIntPtr
+        add
+        sizeof [System.Runtime]System.UIntPtr
+        add
+        ret
+    }
+
+    .method public hidebysig static string AsString(char& chars) cil managed aggressiveinlining
     {
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
@@ -42,7 +52,7 @@
         ret
     }
 
-    .method public static !!0[] AsArray<T>(!!0& firstElement) cil managed aggressiveinlining
+    .method public hidebysig static !!T[] AsArray<T>(!!0& firstElement) cil managed aggressiveinlining
     {
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
@@ -52,19 +62,31 @@
         ret
     }
 
-    .method public static !!1 As<TFrom, TTo>(!!0 from) cil managed aggressiveinlining
+    .method public hidebysig static !!TTo As<TFrom, TTo>(!!TFrom from) cil managed aggressiveinlining
     {
         ldarg.0
         ret
     }
 
-    .method public static !!1& AsRef<TFrom, TTo>(!!0 from) cil managed aggressiveinlining
+    .method public hidebysig static !!TTo& AsRef<TFrom, TTo>(!!TFrom from) cil managed aggressiveinlining
     {
         ldarg.0
         ret
     }
 
-    .method public static !!1 RefAs<TFrom, TTo>(!!0& from) cil managed aggressiveinlining
+    .method public hidebysig static !!TTo RefAs<TFrom, TTo>(!!TFrom& from) cil managed aggressiveinlining
+    {
+        ldarg.0
+        ret
+    }
+
+    .method public hidebysig static !!TTo* AsPointer<TFrom, TTo>(!!TFrom from) cil managed aggressiveinlining
+    {
+        ldarg.0
+        ret
+    }
+
+    .method public hidebysig static !!TTo PointerAs<TFrom, TTo>(!!TFrom* from) cil managed aggressiveinlining
     {
         ldarg.0
         ret

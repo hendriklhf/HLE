@@ -21,7 +21,9 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     internal readonly Bucket[] _buckets;
 
     [ThreadStatic]
-    private static ThreadLocalBucket s_threadLocalBucket;
+    [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
+    private static ThreadLocalBucket t_threadLocalBucket;
 
     private const ArrayReturnOptions DefaultReturnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements;
 
@@ -124,7 +126,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             return false;
         }
 
-        ref ThreadLocalBucket threadLocalBucket = ref s_threadLocalBucket;
+        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
         if (!threadLocalBucket.IsInitialized)
         {
             threadLocalBucket = new();
@@ -186,7 +188,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             return false;
         }
 
-        ref ThreadLocalBucket threadLocalBucket = ref s_threadLocalBucket;
+        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
         if (!threadLocalBucket.IsInitialized)
         {
             threadLocalBucket = new();
