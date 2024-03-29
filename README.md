@@ -1,2 +1,2 @@
 # HLE
-A library containing useful methods and data lists.
+A library containing mostly high performance types and methods.
