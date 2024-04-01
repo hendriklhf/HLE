@@ -130,14 +130,11 @@ public static partial class CollectionHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
     {
-        if (collection.GetType() == typeof(T[]))
-        {
-            span = Unsafe.As<T[]>(collection);
-            return true;
-        }
-
         switch (collection)
         {
+            case T[] array:
+                span = array;
+                return true;
             case List<T> list:
                 span = CollectionsMarshal.AsSpan(list);
                 return true;
@@ -186,14 +183,11 @@ public static partial class CollectionHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
     {
-        if (collection.GetType() == typeof(T[]))
-        {
-            memory = Unsafe.As<T[]>(collection);
-            return true;
-        }
-
         switch (collection)
         {
+            case T[] array:
+                memory = array;
+                return true;
             case List<T> list:
                 memory = ListMarshal.AsMemory(list);
                 return true;

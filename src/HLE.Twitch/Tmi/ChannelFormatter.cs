@@ -17,21 +17,21 @@ internal static partial class ChannelFormatter
 
     [Pure]
     [SkipLocalsInit]
-    public static string Format(ReadOnlySpan<char> channel, bool withHashtag)
+    public static string Format(ReadOnlySpan<char> channel, bool prefixWithHashtag)
     {
         Span<char> result = stackalloc char[MaximumPrefixedChannelNameLength];
-        int length = FormatChannel(channel, withHashtag, result);
+        int length = FormatChannel(channel, prefixWithHashtag, result);
         return StringPool.Shared.GetOrAdd(result[..length]);
     }
 
-    private static int FormatChannel(ReadOnlySpan<char> channel, bool withHashtag, Span<char> result)
+    private static int FormatChannel(ReadOnlySpan<char> channel, bool prefixWithHashtag, Span<char> result)
     {
         if (!GetChannelPattern().IsMatch(channel))
         {
             ThrowInvalidChannelFormat(channel);
         }
 
-        if (withHashtag)
+        if (prefixWithHashtag)
         {
             if (channel[0] == ChannelPrefix)
             {

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.IL;
 
 namespace HLE.Memory;
 
@@ -31,7 +32,7 @@ public sealed partial class ObjectPool<T>
         public T Create()
         {
             TElement[] array = GC.AllocateUninitializedArray<TElement>(ArrayLength);
-            return Unsafe.As<TElement[], T>(ref array);
+            return UnsafeIL.As<TElement[], T>(array);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,7 +43,7 @@ public sealed partial class ObjectPool<T>
                 return;
             }
 
-            TElement[] array = Unsafe.As<T, TElement[]>(ref obj);
+            TElement[] array = UnsafeIL.As<T, TElement[]>(obj);
             Array.Clear(array);
         }
 

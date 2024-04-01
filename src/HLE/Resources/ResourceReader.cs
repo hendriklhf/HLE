@@ -23,7 +23,6 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     private readonly Assembly _assembly;
     private readonly string _assemblyName;
     private readonly ConcurrentDictionary<string, Resource> _resources = new();
-
     private List<GCHandle>? _handles;
 
     [MustDisposeResource]

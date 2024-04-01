@@ -85,7 +85,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             return array;
         }
 
-        if (!BitOperations.IsPow2(length))
+        if (BitOperations.PopCount((uint)length) != 1)
         {
             bucketIndex--;
         }
@@ -97,8 +97,9 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private T[] RentFromSharedBuckets(int bucketIndex)
     {
-        ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
-        int bucketsLength = _buckets.Length;
+        Bucket[] buckets = _buckets;
+        ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buckets), bucketIndex);
+        int bucketsLength = buckets.Length;
         int tryCount = 0;
         const int MaximumTryCount = 3;
         do
@@ -120,7 +121,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
-        if (!BitOperations.IsPow2(arrayLength))
+        if (BitOperations.PopCount((uint)arrayLength) != 1)
         {
             array = null;
             return false;
@@ -183,7 +184,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryReturnToThreadLocalBucket(T[] array, ArrayReturnOptions returnOptions, int pow2Length, int bucketIndex)
     {
-        if (!BitOperations.IsPow2(array.Length))
+        if (BitOperations.PopCount((uint)array.Length) != 1)
         {
             return false;
         }
@@ -251,7 +252,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         }
 
         pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)array.Length);
-        if (!BitOperations.IsPow2(array.Length))
+        if (pow2Length != array.Length)
         {
             pow2Length >>= 1;
         }
@@ -262,8 +263,9 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
     public void Clear()
     {
-        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(_buckets);
-        int lengths = _buckets.Length;
+        Bucket[] buckets = _buckets;
+        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(buckets);
+        int lengths = buckets.Length;
         for (int i = 0; i < lengths; i++)
         {
             ref Bucket bucket = ref Unsafe.Add(ref bucketReference, i);

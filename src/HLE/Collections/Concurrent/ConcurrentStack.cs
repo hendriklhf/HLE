@@ -64,6 +64,7 @@ public sealed class ConcurrentStack<T> :
             ref T bufferReference = ref MemoryMarshal.GetArrayDataReference(buffer);
             ref T destination = ref Unsafe.Add(ref bufferReference, count);
             destination = item;
+            Count = count + 1;
         }
     }
 
@@ -71,12 +72,13 @@ public sealed class ConcurrentStack<T> :
     {
         lock (SyncRoot)
         {
-            if (Count == 0)
+            int count = Count;
+            if (count == 0)
             {
                 ThrowStackIsEmpty();
             }
 
-            int index = --Count;
+            int index = count - 1;
             ref T itemReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), index);
             T item = itemReference;
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -84,6 +86,7 @@ public sealed class ConcurrentStack<T> :
                 itemReference = default!;
             }
 
+            Count = index;
             return item;
         }
     }
@@ -96,13 +99,14 @@ public sealed class ConcurrentStack<T> :
     {
         lock (SyncRoot)
         {
-            if (Count == 0)
+            int count = Count;
+            if (count == 0)
             {
                 item = default;
                 return false;
             }
 
-            int index = --Count;
+            int index = count - 1;
             ref T itemReference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buffer), index);
             item = itemReference;
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -110,6 +114,7 @@ public sealed class ConcurrentStack<T> :
                 itemReference = default!;
             }
 
+            Count = index;
             return true;
         }
     }

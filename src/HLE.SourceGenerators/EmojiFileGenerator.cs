@@ -39,21 +39,24 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     public void Initialize(GeneratorInitializationContext context)
     {
-        if (_emojiJsonBytes is not null)
+        byte[]? emojiJsonBytes = _emojiJsonBytes;
+        if (emojiJsonBytes is not null)
         {
             return;
         }
 
-        if (TryGetEmojiJsonBytesFromCache(out _emojiJsonBytes))
+        if (TryGetEmojiJsonBytesFromCache(out emojiJsonBytes))
         {
+            _emojiJsonBytes = emojiJsonBytes;
             return;
         }
 
         using HttpClient httpClient = new();
         Task<byte[]> task = httpClient.GetByteArrayAsync(HttpRequestUrl);
         task.Wait();
-        _emojiJsonBytes = task.Result;
-        WriteBytesToCacheFile(_emojiJsonBytes);
+        emojiJsonBytes = task.Result;
+        WriteBytesToCacheFile(emojiJsonBytes);
+        _emojiJsonBytes = emojiJsonBytes;
     }
 
     public void Execute(GeneratorExecutionContext context)

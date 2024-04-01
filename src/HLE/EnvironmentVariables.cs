@@ -35,11 +35,7 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
 
     public EnvironmentVariables(FrozenDictionary<string, string> environmentVariables) => _environmentVariables = environmentVariables;
 
-    public static EnvironmentVariables Create()
-    {
-        IEnvironmentVariableProvider provider = EnvironmentVariableProvider.Create();
-        return provider.GetEnvironmentVariables();
-    }
+    public static EnvironmentVariables Create() => EnvironmentVariableProvider.GetEnvironmentVariables();
 
     bool IReadOnlyDictionary<string, string>.ContainsKey(string key) => _environmentVariables.ContainsKey(key);
 

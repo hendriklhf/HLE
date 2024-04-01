@@ -13,11 +13,13 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
 {
     public T Integer
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         readonly get
         {
             EnsureValidIntegerType();
             return _value & GetIntegerMask();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set
         {
             EnsureValidIntegerType();
@@ -28,11 +30,13 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
 
     public unsafe bool Bool
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         readonly get
         {
             EnsureValidIntegerType();
             return (_value & GetBooleanMask()) != T.Zero;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set
         {
             EnsureValidIntegerType();

@@ -53,7 +53,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
 
     private readonly byte* _resource = resource;
 
-    public static Resource Empty => [];
+    public static Resource Empty => new();
 
     public Resource() : this(null, 0)
     {

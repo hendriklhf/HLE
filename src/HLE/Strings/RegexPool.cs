@@ -12,7 +12,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
 {
     private readonly Bucket[] _buckets;
 
-    public static RegexPool Shared { get; } = [];
+    public static RegexPool Shared { get; } = new();
 
     private const int DefaultPoolCapacity = 4096;
     private const int DefaultBucketCapacity = 32;

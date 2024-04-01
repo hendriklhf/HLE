@@ -7,7 +7,6 @@
 
 .assembly HLE.IL
 {
-    .ver 0:0:0:0
 }
 
 .module HLE.IL
@@ -16,6 +15,8 @@
 {
     .method public hidebysig static !!T& GetField<T>(object obj, native unsigned int byteOffset) cil managed aggressiveinlining
     {
+        .maxstack 2
+
         ldarg.0
         ldarg.1
         add
@@ -24,6 +25,8 @@
 
     .method public hidebysig static char& GetStringReference(string str) cil managed aggressiveinlining
     {
+        .maxstack 2
+
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
         add
@@ -34,6 +37,8 @@
 
     .method public hidebysig static !!T& GetArrayReference<T>(!!0[] 'array') cil managed aggressiveinlining
     {
+        .maxstack 2
+
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
         add
@@ -44,6 +49,8 @@
 
     .method public hidebysig static string AsString(char& chars) cil managed aggressiveinlining
     {
+        .maxstack 2
+
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
         sub
@@ -54,6 +61,8 @@
 
     .method public hidebysig static !!T[] AsArray<T>(!!0& firstElement) cil managed aggressiveinlining
     {
+        .maxstack 2
+
         ldarg.0
         sizeof [System.Runtime]System.UIntPtr
         sub
@@ -64,30 +73,40 @@
 
     .method public hidebysig static !!TTo As<TFrom, TTo>(!!TFrom from) cil managed aggressiveinlining
     {
+        .maxstack 1
+
         ldarg.0
         ret
     }
 
     .method public hidebysig static !!TTo& AsRef<TFrom, TTo>(!!TFrom from) cil managed aggressiveinlining
     {
+        .maxstack 1
+
         ldarg.0
         ret
     }
 
     .method public hidebysig static !!TTo RefAs<TFrom, TTo>(!!TFrom& from) cil managed aggressiveinlining
     {
+        .maxstack 1
+
         ldarg.0
         ret
     }
 
     .method public hidebysig static !!TTo* AsPointer<TFrom, TTo>(!!TFrom from) cil managed aggressiveinlining
     {
+        .maxstack 1
+
         ldarg.0
         ret
     }
 
     .method public hidebysig static !!TTo PointerAs<TFrom, TTo>(!!TFrom* from) cil managed aggressiveinlining
     {
+        .maxstack 1
+
         ldarg.0
         ret
     }

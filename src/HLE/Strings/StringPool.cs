@@ -20,7 +20,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
     private readonly Bucket[] _buckets;
 
-    public static StringPool Shared { get; } = [];
+    public static StringPool Shared { get; } = new();
 
     private const int DefaultPoolCapacity = 4096;
     private const int DefaultBucketCapacity = 32;

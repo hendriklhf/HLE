@@ -6,9 +6,13 @@ namespace HLE;
 
 internal static class EnvironmentVariableProvider
 {
+    private static readonly IEnvironmentVariableProvider s_provider = CreateProvider();
+
     [Pure]
+    public static EnvironmentVariables GetEnvironmentVariables() => s_provider.GetEnvironmentVariables();
+
     [SuppressMessage("Style", "IDE0046:Convert to conditional expression")]
-    public static IEnvironmentVariableProvider Create()
+    private static IEnvironmentVariableProvider CreateProvider()
     {
         if (OperatingSystem.IsWindows())
         {
