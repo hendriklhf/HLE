@@ -56,83 +56,83 @@ public sealed unsafe partial class ObjectMarshalTest
     [Fact]
     public void GetMethodTableReference_T_Test()
     {
-        const string Str = "hello";
-        ref nuint reference = ref ObjectMarshal.GetMethodTableReference(Str);
+        const string Hello = "hello";
+        ref nuint reference = ref ObjectMarshal.GetMethodTableReference(Hello);
         Assert.Equal(typeof(string).TypeHandle.Value, (nint)reference);
     }
 
     [Fact]
     public void GetMethodTablePointer_T_Test()
     {
-        const string Str = "hello";
-        nuint* ptr = ObjectMarshal.GetMethodTablePointer(Str);
+        const string Hello = "hello";
+        nuint* ptr = ObjectMarshal.GetMethodTablePointer(Hello);
         Assert.Equal(typeof(string).TypeHandle.Value, (nint)(*ptr));
     }
 
     [Fact]
     public void GetMethodTable_T_Instance_Test()
     {
-        const string Str = "hello";
-        MethodTable* mt = ObjectMarshal.GetMethodTable(Str);
+        const string Hello = "hello";
+        MethodTable* mt = ObjectMarshal.GetMethodTable(Hello);
         Assert.Equal(typeof(string).TypeHandle.Value, (nint)mt);
     }
 
     [Fact]
     public void ReadObject_T_Test()
     {
-        const string Str = "hello";
-        string str = ObjectMarshal.ReadObject<string>(ref ObjectMarshal.GetMethodTableReference(Str));
-        Assert.Same(Str, str);
+        const string Hello = "hello";
+        string str = ObjectMarshal.ReadObject<string>(ref ObjectMarshal.GetMethodTableReference(Hello));
+        Assert.Same(Hello, str);
     }
 
     [Fact]
     public void ReadObject_TObject_TRef_Test()
     {
-        const string Str = "hello";
-        string str = ObjectMarshal.ReadObject<string, nuint>(ref ObjectMarshal.GetMethodTableReference(Str));
-        Assert.Same(Str, str);
+        const string Hello = "hello";
+        string str = ObjectMarshal.ReadObject<string, nuint>(ref ObjectMarshal.GetMethodTableReference(Hello));
+        Assert.Same(Hello, str);
     }
 
     [Fact]
     public void ReadObject_VoidPtr_Test()
     {
-        const string Str = "hello";
-        nuint* ptr = ObjectMarshal.GetMethodTablePointer(Str);
+        const string Hello = "hello";
+        nuint* ptr = ObjectMarshal.GetMethodTablePointer(Hello);
         string str = ObjectMarshal.ReadObject<string>(ptr);
-        Assert.Same(Str, str);
+        Assert.Same(Hello, str);
     }
 
     [Fact]
     public void ReadObject_MethodTablePointer_Test()
     {
-        const string Str = "hello";
-        MethodTable** ptr = (MethodTable**)ObjectMarshal.GetMethodTablePointer(Str);
+        const string Hello = "hello";
+        MethodTable** ptr = (MethodTable**)ObjectMarshal.GetMethodTablePointer(Hello);
         string str = ObjectMarshal.ReadObject<string>(ptr);
-        Assert.Same(Str, str);
+        Assert.Same(Hello, str);
     }
 
     [Fact]
     public void ReadObject_Nuint_Test()
     {
-        const string Str = "hello";
-        void* ptr = ObjectMarshal.GetMethodTablePointer(Str);
+        const string Hello = "hello";
+        void* ptr = ObjectMarshal.GetMethodTablePointer(Hello);
         string str = ObjectMarshal.ReadObject<string>((nuint)ptr);
-        Assert.Same(Str, str);
+        Assert.Same(Hello, str);
     }
 
     [Fact]
     public void GetRawStringDataTest()
     {
-        const string Str = "hello";
-        ref RawStringData data = ref ObjectMarshal.GetRawStringData(Str);
+        const string Hello = "hello";
+        ref RawStringData data = ref ObjectMarshal.GetRawStringData(Hello);
 
         Assert.True(data.MethodTable == ObjectMarshal.GetMethodTable<string>());
 
-        Assert.Equal(Str.Length, data.Length);
-        Assert.Equal(Str[0], data.FirstChar);
+        Assert.Equal(Hello.Length, data.Length);
+        Assert.Equal(Hello[0], data.FirstChar);
 
-        Assert.True(Unsafe.AreSame(ref StringMarshal.GetReference(Str), ref data.FirstChar));
-        Assert.True(MemoryMarshal.CreateReadOnlySpan(ref data.FirstChar, data.Length).SequenceEqual(Str));
+        Assert.True(Unsafe.AreSame(ref StringMarshal.GetReference(Hello), ref data.FirstChar));
+        Assert.True(MemoryMarshal.CreateReadOnlySpan(ref data.FirstChar, data.Length).SequenceEqual(Hello));
     }
 
     [Theory]

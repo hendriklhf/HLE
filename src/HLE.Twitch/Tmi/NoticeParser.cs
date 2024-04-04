@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Strings;
 using HLE.Twitch.Tmi.Models;
@@ -45,7 +46,7 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
             type = ParseNoticeType(msgIdWithoutUnderscores);
         }
 
-        byte hasTagAsByte = Unsafe.As<bool, byte>(ref hasTag);
+        byte hasTagAsByte = hasTag.AsByte();
         ReadOnlySpan<byte> message = ircMessage[(indicesOfWhitespaces[2 + hasTagAsByte] + 2)..];
 
         ReadOnlySpan<byte> channel = ircMessage[(indicesOfWhitespaces[1 + hasTagAsByte] + 1)..indicesOfWhitespaces[2 + hasTagAsByte]];

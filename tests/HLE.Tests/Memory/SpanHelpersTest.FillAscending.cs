@@ -10,37 +10,37 @@ namespace HLE.Tests.Memory;
 public sealed partial class SpanHelpersTest
 {
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-    public static object[][] FillAscendingParameters { get; } =
-    [
-        [(byte)0],
-        [(byte)128],
-        [(byte)255],
-        [(sbyte)-127],
-        [(sbyte)0],
-        [(sbyte)120],
-        [(short)-30_000],
-        [(short)0],
-        [(short)30_000],
-        [(ushort)0],
-        [(ushort)30_000],
-        [(ushort)60_000],
-        [-1_000_000],
-        [-200],
-        [0],
-        [1000],
-        [1_000_000],
-        [0U],
-        [3000U],
-        [1_000_000U],
-        [-1_000_000L],
-        [-5000L],
-        [0L],
-        [10_000L],
-        [1_000_000L],
-        [0UL],
-        [10_000UL],
-        [1_000_000UL]
-    ];
+    public static TheoryData<object> FillAscendingParameters { get; } =
+        new([
+            (byte)0,
+            (byte)128,
+            (byte)255,
+            (sbyte)-127,
+            (sbyte)0,
+            (sbyte)120,
+            (short)-30_000,
+            (short)0,
+            (short)30_000,
+            (ushort)0,
+            (ushort)30_000,
+            (ushort)60_000,
+            -1_000_000,
+            -200,
+            0,
+            1000,
+            1_000_000,
+            0U,
+            3000U,
+            1_000_000U,
+            -1_000_000L,
+            -5000L,
+            0L,
+            10_000L,
+            1_000_000L,
+            0UL,
+            10_000UL,
+            1_000_000U
+        ]);
 
     [Theory]
     [MemberData(nameof(FillAscendingParameters))]

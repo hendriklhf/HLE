@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using HLE.Marshalling;
 using HLE.Numerics;
 using Xunit;
 
@@ -67,7 +68,7 @@ public sealed class NumberHelperTest
         {
             int number = numbers[i];
             bool isNegative = number < 0;
-            Assert.Equal(number.ToString().Length - Unsafe.As<bool, byte>(ref isNegative), NumberHelpers.GetNumberLength(number));
+            Assert.Equal(number.ToString().Length - isNegative.AsByte(), NumberHelpers.GetNumberLength(number));
         }
     }
 

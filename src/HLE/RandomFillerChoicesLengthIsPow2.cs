@@ -1,0 +1,55 @@
+using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using HLE.Memory;
+
+namespace HLE;
+
+internal sealed class RandomFillerChoicesLengthIsPow2 : RandomFiller, IEquatable<RandomFillerChoicesLengthIsPow2>
+{
+    public override void Fill<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
+    {
+        Debug.Assert(BitOperations.IsPow2(choicesLength));
+
+        int mask = choicesLength - 1;
+        if (!MemoryHelpers.UseStackalloc<uint>(destinationLength))
+        {
+            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(destinationLength);
+            random.Fill(randomIndicesBuffer.AsSpan(..destinationLength));
+            ref uint indicesBufferRef = ref randomIndicesBuffer.Reference;
+            for (int i = 0; i < destinationLength; i++)
+            {
+                int randomIndex = (int)(Unsafe.Add(ref indicesBufferRef, i) & mask);
+                Unsafe.Add(ref destination, i) = Unsafe.Add(ref choices, randomIndex);
+            }
+
+            return;
+        }
+
+        Span<uint> randomIndices = stackalloc uint[destinationLength];
+        random.Fill(randomIndices);
+        ref uint indicesRef = ref MemoryMarshal.GetReference(randomIndices);
+        for (int i = 0; i < destinationLength; i++)
+        {
+            int randomIndex = (int)(Unsafe.Add(ref indicesRef, i) & mask);
+            Unsafe.Add(ref destination, i) = Unsafe.Add(ref choices, randomIndex);
+        }
+    }
+
+    [Pure]
+    public bool Equals([NotNullWhen(true)] RandomFillerChoicesLengthIsPow2? other) => ReferenceEquals(this, other);
+
+    [Pure]
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
+
+    [Pure]
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+
+    public static bool operator ==(RandomFillerChoicesLengthIsPow2? left, RandomFillerChoicesLengthIsPow2? right) => Equals(left, right);
+
+    public static bool operator !=(RandomFillerChoicesLengthIsPow2? left, RandomFillerChoicesLengthIsPow2? right) => !(left == right);
+}

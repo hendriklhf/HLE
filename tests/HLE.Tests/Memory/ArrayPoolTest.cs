@@ -8,8 +8,9 @@ namespace HLE.Tests.Memory;
 
 public sealed class ArrayPoolTest
 {
-    private readonly ArrayPool<int> _integerArrayPool = new();
-    private readonly ArrayPool<string> _stringArrayPool = new();
+    public static TheoryData<int> Pow2LengthMinimumToMaximumLengthParameters { get; } = CreatePow2LengthMinimumToMaximumLengthParameters();
+
+    public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = CreateConsecutiveValues0To4096Parameters();
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
@@ -25,7 +26,9 @@ public sealed class ArrayPoolTest
     [Fact]
     public void RentReturnsNonEmptyArrayForLengthZero()
     {
-        int[] array = _integerArrayPool.Rent(0);
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(0);
         Assert.NotEmpty(array);
     }
 
@@ -36,34 +39,57 @@ public sealed class ArrayPoolTest
     [InlineData(-34534765)]
     [InlineData(int.MinValue)]
     public void RentThrowsForNegativeLength(int negativeLength)
-        => Assert.Throws<ArgumentOutOfRangeException>(() => _integerArrayPool.Rent(negativeLength));
+        => Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            ArrayPool<int> pool = new();
+            return pool.Rent(negativeLength);
+        });
 
     [Theory]
     [InlineData(1)]
     [InlineData(ArrayPool.MinimumArrayLength - 1)]
     public void RentArrayShorterThanMinimumLength(int minimumLength)
     {
-        int[] array = _integerArrayPool.Rent(minimumLength);
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(minimumLength);
         Assert.Equal(ArrayPool.MinimumArrayLength, array.Length);
     }
 
     [Theory]
-    [InlineData(ArrayPool.MinimumArrayLength)]
-    [InlineData(256)]
-    [InlineData(2048)]
-    [InlineData(4096)]
-    [InlineData(8192)]
-    public void RentArrayOfPow2Length(int arrayLength)
+    [MemberData(nameof(ConsecutiveValues0To4096Parameters))]
+    public void RentArrayMinimumLength(int minimumLength)
     {
-        int[] array = _integerArrayPool.Rent(arrayLength);
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(minimumLength);
         int[] previousArray = array;
-        _integerArrayPool.Return(array);
+        pool.Return(array);
         for (int i = 0; i < 1024; i++)
         {
-            array = _integerArrayPool.Rent(arrayLength);
-            Assert.Equal(arrayLength, array.Length);
+            array = pool.Rent(minimumLength);
+            Assert.True(array.Length >= minimumLength);
             Assert.Same(previousArray, array);
-            _integerArrayPool.Return(array);
+            pool.Return(array);
+            previousArray = array;
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Pow2LengthMinimumToMaximumLengthParameters))]
+    public void RentArrayOfPow2Length(int minimumLength)
+    {
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(minimumLength);
+        int[] previousArray = array;
+        pool.Return(array);
+        for (int i = 0; i < 1024; i++)
+        {
+            array = pool.Rent(minimumLength);
+            Assert.True(array.Length >= minimumLength);
+            Assert.Same(previousArray, array);
+            pool.Return(array);
             previousArray = array;
         }
     }
@@ -76,114 +102,171 @@ public sealed class ArrayPoolTest
     [InlineData(4096)]
     public void RentAsRentedArrayTest(int minimumLength)
     {
-        using RentedArray<int> rentedArray = _integerArrayPool.RentAsRentedArray(minimumLength);
+        ArrayPool<int> pool = new();
+
+        using RentedArray<int> rentedArray = pool.RentAsRentedArray(minimumLength);
         Assert.True(rentedArray.Length >= minimumLength);
-        Assert.Same(_integerArrayPool, rentedArray._pool);
+        Assert.Same(pool, rentedArray._pool);
     }
 
     [Fact]
-    public void ReturnNullArrayDoesntThrow() => _integerArrayPool.Return(null);
+    public void ReturnNullArrayDoesntThrow()
+    {
+        ArrayPool<int> pool = new();
+
+        pool.Return(null);
+    }
 
     [Fact]
-    public void ReturnEmptyArrayDoesntThrow() => _integerArrayPool.Return([]);
+    public void ReturnEmptyArrayDoesntThrow()
+    {
+        ArrayPool<int> pool = new();
+
+        pool.Return([]);
+    }
 
     [Fact]
     public void ClearArray_WithClearOnlyIfManagedType_ManagedType()
     {
-        string[] array = _stringArrayPool.Rent(32);
+        ArrayPool<string> pool = new();
+
+        string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
-        _stringArrayPool.Return(array, ArrayReturnOptions.ClearOnlyIfManagedType);
+        pool.Return(array, ArrayReturnOptions.ClearOnlyIfManagedType);
         Assert.All(array, static s => Assert.Null(s));
     }
 
     [Fact]
     public void DontClearArray_WithClearOnlyIfManagedType_ValueType()
     {
-        int[] array = _integerArrayPool.Rent(32);
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
-        _integerArrayPool.Return(array, ArrayReturnOptions.ClearOnlyIfManagedType);
+        pool.Return(array, ArrayReturnOptions.ClearOnlyIfManagedType);
         Assert.All(array, static i => Assert.Equal(int.MaxValue, i));
     }
 
     [Fact]
     public void DontClearArray_ValueType_ReturnOptionNone()
     {
-        int[] array = _integerArrayPool.Rent(32);
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
-        _integerArrayPool.Return(array, ArrayReturnOptions.None);
+        pool.Return(array, ArrayReturnOptions.None);
         Assert.All(array, static i => Assert.Equal(int.MaxValue, i));
     }
 
     [Fact]
     public void DontClearArray_ManagedType_ReturnOptionNone()
     {
-        string[] array = _stringArrayPool.Rent(32);
+        ArrayPool<string> pool = new();
+
+        string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
-        _stringArrayPool.Return(array, ArrayReturnOptions.None);
+        pool.Return(array, ArrayReturnOptions.None);
         Assert.All(array, static s => Assert.Same("hello", s));
     }
 
     [Fact]
     public void ClearArray_ValueType_ReturnOptionClear()
     {
-        int[] array = _integerArrayPool.Rent(32);
+        ArrayPool<int> pool = new();
+
+        int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
-        _integerArrayPool.Return(array, ArrayReturnOptions.Clear);
+        pool.Return(array, ArrayReturnOptions.Clear);
         Assert.All(array, static i => Assert.Equal(0, i));
     }
 
     [Fact]
     public void ClearArray_ManagedType_ReturnOptionClear()
     {
-        string[] array = _stringArrayPool.Rent(32);
+        ArrayPool<string> pool = new();
+
+        string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
-        _stringArrayPool.Return(array, ArrayReturnOptions.Clear);
+        pool.Return(array, ArrayReturnOptions.Clear);
         Assert.All(array, static s => Assert.Null(s));
     }
 
     [Fact]
     public void ClearPoolTest()
     {
+        ArrayPool<int> pool = new();
+
         for (int i = 0; i < 8; i++)
         {
-            int[] array = _integerArrayPool.Rent(ArrayPool.MinimumArrayLength << i);
-            int[] array2 = _integerArrayPool.Rent(ArrayPool.MinimumArrayLength << i);
-            _integerArrayPool.Return(array);
-            _integerArrayPool.Return(array2);
+            int[] array = pool.Rent(ArrayPool.MinimumArrayLength << i);
+            int[] array2 = pool.Rent(ArrayPool.MinimumArrayLength << i);
+            pool.Return(array);
+            pool.Return(array2);
         }
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        Assert.False(_integerArrayPool._buckets.All(static b => b._stack.All(static a => a is null)));
+        Assert.False(pool._buckets.All(static b => b._stack.All(static a => a is null)));
 
-        _integerArrayPool.Clear();
+        pool.Clear();
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        Assert.True(_integerArrayPool._buckets.All(static b => b._stack.All(static a => a is null)));
+        Assert.True(pool._buckets.All(static b => b._stack.All(static a => a is null)));
     }
 
     [Theory]
-    [InlineData(44)]
-    [InlineData(474)]
-    [InlineData(1536)]
-    [InlineData(8461)]
+    [MemberData(nameof(ConsecutiveValues0To4096Parameters))]
     public void RentExactTest(int length)
     {
-        int[] firstArray = _integerArrayPool.RentExact(length);
-        _integerArrayPool.Return(firstArray);
-        int[] secondArray = _integerArrayPool.RentExact(length);
-        _integerArrayPool.Return(secondArray);
+        ArrayPool<int> pool = new();
 
-        // initializes the thread local bucket
-        _ = _integerArrayPool.Rent((int)(BitOperations.RoundUpToPowerOf2((uint)length) >> 1));
+        int[] firstArray = pool.RentExact(length);
+        pool.Return(firstArray);
+        int[] secondArray = pool.RentExact(length);
+        pool.Return(secondArray);
 
-        int[] thirdArray = _integerArrayPool.Rent((int)(BitOperations.RoundUpToPowerOf2((uint)length) >> 1));
+        int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
+        if (roundedLength != length) // basically a IsPow2 check
+        {
+            roundedLength >>>= 1;
+
+            // initializes the thread local bucket
+            // only if "length" is not pow2, the bucket hasn't been initialized
+            _ = pool.Rent(roundedLength);
+        }
+
+        int[] thirdArray = pool.Rent(roundedLength);
 
         Assert.Equal(length, firstArray.Length);
         Assert.Equal(length, secondArray.Length);
-        Assert.Equal(length, thirdArray.Length);
+        Assert.True(thirdArray.Length >= length);
 
-        Assert.Same(firstArray, secondArray);
-        Assert.Same(firstArray, thirdArray);
-        Assert.Same(thirdArray, secondArray);
+        if (length >= ArrayPool.MinimumArrayLength)
+        {
+            Assert.Same(firstArray, secondArray);
+            Assert.Same(firstArray, thirdArray);
+            Assert.Same(thirdArray, secondArray);
+        }
+    }
+
+    private static TheoryData<int> CreatePow2LengthMinimumToMaximumLengthParameters()
+    {
+        TheoryData<int> data = new();
+        for (int i = ArrayPool.MinimumArrayLength; i <= ArrayPool.MaximumArrayLength; i <<= 1)
+        {
+            data.Add(i);
+        }
+
+        return data;
+    }
+
+    private static TheoryData<int> CreateConsecutiveValues0To4096Parameters()
+    {
+        TheoryData<int> data = new();
+        for (int i = 0; i <= 4096; i++)
+        {
+            data.Add(i);
+        }
+
+        return data;
     }
 }

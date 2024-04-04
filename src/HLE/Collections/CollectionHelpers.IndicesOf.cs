@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -118,10 +119,8 @@ public static partial class CollectionHelpers
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            bool equals = predicate(Unsafe.Add(ref firstItem, i));
-            int equalsAsByte = Unsafe.As<bool, byte>(ref equals);
             destination[length] = i;
-            length += equalsAsByte;
+            length += predicate(Unsafe.Add(ref firstItem, i)).AsByte();
         }
 
         return length;
@@ -236,10 +235,9 @@ public static partial class CollectionHelpers
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
-            bool equals = predicate(Unsafe.Add(ref firstItem, i));
-            int equalsAsByte = Unsafe.As<bool, byte>(ref equals);
             destination[length] = i;
-            length += equalsAsByte;
+            bool equals = predicate(Unsafe.Add(ref firstItem, i));
+            length += equals.AsByte();
         }
 
         return length;

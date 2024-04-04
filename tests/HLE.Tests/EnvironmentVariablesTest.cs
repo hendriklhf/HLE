@@ -7,7 +7,7 @@ namespace HLE.Tests;
 public sealed class EnvironmentVariablesTest
 {
     [Fact]
-    public void CreateTest()
+    public void GetEnvironmentVariablesTest()
     {
         EnvironmentVariables environmentVariables = EnvironmentVariables.Create();
         IDictionary actualEnvironmentVariables = Environment.GetEnvironmentVariables();

@@ -61,6 +61,8 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
                 break;
         }
 
+        Debug.Assert(BitOperations.PopCount((uint)length) == 1);
+
         int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPool.BucketIndexOffset;
         return TryRentFromThreadLocalBucket(length, bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
     }
@@ -70,8 +72,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        int roundedLength = length >= 1 << 30 ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)length);
-        switch (roundedLength)
+        switch (length)
         {
             case > ArrayPool.MaximumArrayLength:
                 return GC.AllocateUninitializedArray<T>(length);
@@ -79,13 +80,17 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
                 return length == 0 ? [] : new T[length];
         }
 
+        T[]? array;
+        int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
         int bucketIndex = BitOperations.TrailingZeroCount(roundedLength) - ArrayPool.BucketIndexOffset;
-        if (TryRentFromThreadLocalBucket(length, bucketIndex, out T[]? array))
+        if (roundedLength == length)
         {
-            return array;
+            if (TryRentFromThreadLocalBucket(length, bucketIndex, out array))
+            {
+                return array;
+            }
         }
-
-        if (BitOperations.PopCount((uint)length) != 1)
+        else
         {
             bucketIndex--;
         }
@@ -97,11 +102,12 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private T[] RentFromSharedBuckets(int bucketIndex)
     {
+        const int MaximumTryCount = 3;
+
         Bucket[] buckets = _buckets;
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buckets), bucketIndex);
         int bucketsLength = buckets.Length;
         int tryCount = 0;
-        const int MaximumTryCount = 3;
         do
         {
             if (bucket.TryRent(out T[]? array))
@@ -113,7 +119,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             bucketIndex++;
             tryCount++;
         }
-        while (bucketIndex < bucketsLength && tryCount < MaximumTryCount);
+        while (tryCount < MaximumTryCount && bucketIndex < bucketsLength);
 
         return Unsafe.Subtract(ref bucket, MaximumTryCount).Rent();
     }
@@ -121,11 +127,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
-        if (BitOperations.PopCount((uint)arrayLength) != 1)
-        {
-            array = null;
-            return false;
-        }
+        Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
 
         ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
         if (!threadLocalBucket.IsInitialized)

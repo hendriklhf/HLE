@@ -157,7 +157,7 @@ public static class RandomNumberGeneratorExtensions
 
         random.Fill(chars);
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        SpanHelpers.BitwiseAnd(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
+        SpanHelpers.And(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
         return result;
     }
 

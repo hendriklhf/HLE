@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text;
 using HLE.Collections;
+using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -82,6 +83,10 @@ public static unsafe class StructMarshal
 
         return leftBytes.SequenceEqual(rightBytes);
     }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte AsByte(this bool b) => UnsafeIL.As<bool, byte>(b);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

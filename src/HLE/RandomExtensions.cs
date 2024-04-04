@@ -214,7 +214,7 @@ public static class RandomExtensions
 
         random.Fill(chars);
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        SpanHelpers.BitwiseAnd(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
+        SpanHelpers.And(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, --max); // exclusive max
         return result;
     }
 
@@ -275,34 +275,28 @@ public static class RandomExtensions
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         string result = StringMarshal.FastAllocateString(length, out Span<char> chars);
-        if (choices.Length == 0)
-        {
-            return result;
-        }
-
-        uint choicesLength = (uint)choices.Length;
-        if (!MemoryHelpers.UseStackalloc<uint>(length))
-        {
-            using RentedArray<uint> randomIndicesBuffer = ArrayPool<uint>.Shared.RentAsRentedArray(length);
-            random.Fill(randomIndicesBuffer.AsSpan(..length));
-            for (int i = 0; i < length; i++)
-            {
-                int randomIndex = (int)(randomIndicesBuffer[i] % choicesLength);
-                chars[i] = choices[randomIndex];
-            }
-
-            return result;
-        }
-
-        Span<uint> randomIndices = stackalloc uint[length];
-        random.Fill(randomIndices);
-        for (int i = 0; i < length; i++)
-        {
-            int randomIndex = (int)(randomIndices[i] % choicesLength);
-            chars[i] = choices[randomIndex];
-        }
-
+        random.Fill(chars, choices);
         return result;
+    }
+
+    public static void Fill<T>(this Random random, T[] destination, ReadOnlySpan<T> choices)
+        => random.Fill(ref MemoryMarshal.GetArrayDataReference(destination), destination.Length, choices);
+
+    public static void Fill<T>(this Random random, Span<T> destination, ReadOnlySpan<T> choices)
+        => random.Fill(ref MemoryMarshal.GetReference(destination), destination.Length, choices);
+
+    [SkipLocalsInit]
+    public static void Fill<T>(this Random random, ref T destination, int destinationLength, ReadOnlySpan<T> choices)
+    {
+        ArgumentOutOfRangeException.ThrowIfZero(choices.Length);
+
+        if (destinationLength == 0)
+        {
+            return;
+        }
+
+        RandomFiller filler = RandomFiller.Create(choices.Length);
+        filler.Fill(random, ref destination, destinationLength, ref MemoryMarshal.GetReference(choices), choices.Length);
     }
 
     [Pure]

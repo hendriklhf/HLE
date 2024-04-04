@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -10,10 +9,15 @@ namespace HLE.Memory;
 public static partial class SpanHelpers
 {
     public static void FillAscending<T>(Span<T> destination) where T : INumber<T>
-        => FillAscending(destination, T.Zero);
+    {
+        EnsureValidIntegerType<T>();
+        FillAscending(destination, T.Zero);
+    }
 
     public static unsafe void FillAscending<T>(Span<T> destination, T start) where T : INumber<T>
     {
+        EnsureValidIntegerType<T>();
+
         ref T destinationReference = ref MemoryMarshal.GetReference(destination);
 
         switch (sizeof(T))
@@ -40,17 +44,11 @@ public static partial class SpanHelpers
 
     public static void FillAscending<T>(ref T destination, int length, T start) where T : INumber<T>
     {
-        Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
+        EnsureValidIntegerType<T>();
 
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
-#if VECTOR_INDICES
             Vector512<T> ascendingValueAdditions = Vector512<T>.Indices;
-#else
-            Vector512<T> ascendingValueAdditions = Vector512<T>.Zero;
-            CreateAscendingValueVector(ref Unsafe.As<Vector512<T>, T>(ref ascendingValueAdditions), Vector512<T>.Count);
-#endif
-
             while (length >= Vector512<T>.Count)
             {
                 Vector512<T> startValues = Vector512.Create(start);
@@ -67,13 +65,7 @@ public static partial class SpanHelpers
 
         if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
         {
-#if VECTOR_INDICES
             Vector256<T> ascendingValueAdditions = Vector256<T>.Indices;
-#else
-            Vector256<T> ascendingValueAdditions = Vector256<T>.Zero;
-            CreateAscendingValueVector(ref Unsafe.As<Vector256<T>, T>(ref ascendingValueAdditions), Vector256<T>.Count);
-#endif
-
             while (length >= Vector256<T>.Count)
             {
                 Vector256<T> startValues = Vector256.Create(start);
@@ -90,13 +82,7 @@ public static partial class SpanHelpers
 
         if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
         {
-#if VECTOR_INDICES
             Vector128<T> ascendingValueAdditions = Vector128<T>.Indices;
-#else
-            Vector128<T> ascendingValueAdditions = Vector128<T>.Zero;
-            CreateAscendingValueVector(ref Unsafe.As<Vector128<T>, T>(ref ascendingValueAdditions), Vector128<T>.Count);
-#endif
-
             while (length >= Vector128<T>.Count)
             {
                 Vector128<T> startValues = Vector128.Create(start);
@@ -115,54 +101,4 @@ public static partial class SpanHelpers
             Unsafe.Add(ref destination, i) = start + T.CreateTruncating(i);
         }
     }
-
-#if !VECTOR_INDICES
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe void CreateAscendingValueVector<T>(ref T vector, int vectorSize)
-    {
-        switch (sizeof(T))
-        {
-            case sizeof(byte):
-            {
-                ref byte reference = ref Unsafe.As<T, byte>(ref vector);
-                for (int i = 0; i < vectorSize; i++)
-                {
-                    Unsafe.Add(ref reference, i) = (byte)i;
-                }
-
-                return;
-            }
-            case sizeof(ushort):
-            {
-                ref ushort reference = ref Unsafe.As<T, ushort>(ref vector);
-                for (int i = 0; i < vectorSize; i++)
-                {
-                    Unsafe.Add(ref reference, i) = (ushort)i;
-                }
-
-                return;
-            }
-            case sizeof(uint):
-            {
-                ref uint reference = ref Unsafe.As<T, uint>(ref vector);
-                for (int i = 0; i < vectorSize; i++)
-                {
-                    Unsafe.Add(ref reference, i) = (uint)i;
-                }
-
-                return;
-            }
-            case sizeof(ulong):
-            {
-                ref ulong reference = ref Unsafe.As<T, ulong>(ref vector);
-                for (int i = 0; i < vectorSize; i++)
-                {
-                    Unsafe.Add(ref reference, i) = (ulong)i;
-                }
-
-                return;
-            }
-        }
-    }
-#endif
 }

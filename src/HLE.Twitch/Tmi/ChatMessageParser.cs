@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
 using HLE.Strings;
@@ -87,8 +88,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 
         ReadOnlySpan<byte> actionPrefix = ircMessage[(indicesOfWhitespaces[3] + 1)..indicesOfWhitespaces[4]];
         bool isAction = actionPrefix.SequenceEqual(ActionPrefix);
-        int asByte = Unsafe.As<bool, byte>(ref isAction);
-        return (ChatMessageFlags)(asByte << 4);
+        return (ChatMessageFlags)(isAction.AsByte() << 4);
     }
 
     private protected static ReadOnlySpan<byte> GetUsername(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
@@ -145,7 +145,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected static ReadOnlySpan<byte> GetDisplayName(ReadOnlySpan<byte> value)
     {
         bool isBackSlash = value[^2] == '\\';
-        int asByte = Unsafe.As<bool, byte>(ref isBackSlash) << 1;
+        int asByte = isBackSlash.AsByte() << 1;
         ReadOnlySpan<byte> displayName = value[..^asByte];
         Debug.Assert(displayName.Length != 0);
         return displayName;
@@ -154,8 +154,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected static ChatMessageFlags GetIsFirstMsg(ReadOnlySpan<byte> value)
     {
         bool isFirstMessage = value[0] == '1';
-        int asByte = Unsafe.As<bool, byte>(ref isFirstMessage);
-        return (ChatMessageFlags)asByte;
+        return (ChatMessageFlags)isFirstMessage.AsByte();
     }
 
     private protected static void GetId(ReadOnlySpan<byte> value, out Guid id)
@@ -168,8 +167,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected static ChatMessageFlags GetIsModerator(ReadOnlySpan<byte> value)
     {
         bool isModerator = value[0] == '1';
-        int asByte = Unsafe.As<bool, byte>(ref isModerator);
-        return (ChatMessageFlags)(asByte << 1);
+        return (ChatMessageFlags)(isModerator.AsByte() << 1);
     }
 
     private protected static long GetChannelId(ReadOnlySpan<byte> value) => NumberHelpers.ParsePositiveNumber<long>(value);
@@ -177,8 +175,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected static ChatMessageFlags GetIsSubscriber(ReadOnlySpan<byte> value)
     {
         bool isSubscriber = value[0] == '1';
-        int asByte = Unsafe.As<bool, byte>(ref isSubscriber);
-        return (ChatMessageFlags)(asByte << 2);
+        return (ChatMessageFlags)(isSubscriber.AsByte() << 2);
     }
 
     private protected static long GetTmiSentTs(ReadOnlySpan<byte> value) => NumberHelpers.ParsePositiveNumber<long>(value);
@@ -186,8 +183,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected static ChatMessageFlags GetIsTurboUser(ReadOnlySpan<byte> value)
     {
         bool isTurboUser = value[0] == '1';
-        int asByte = Unsafe.As<bool, byte>(ref isTurboUser);
-        return (ChatMessageFlags)(asByte << 3);
+        return (ChatMessageFlags)(isTurboUser.AsByte() << 3);
     }
 
     private protected static long GetUserId(ReadOnlySpan<byte> value) => NumberHelpers.ParsePositiveNumber<long>(value);
@@ -197,32 +193,31 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
         const int CharAAndZeroDiff = UpperCaseAMinus10 - CharZero;
 
         byte firstChar = Unsafe.Add(ref numberReference, 0);
-        byte thirdChar = Unsafe.Add(ref numberReference, 2);
-        byte fifthChar = Unsafe.Add(ref numberReference, 4);
-
         bool isFirstCharHexLetter = IsHexLetter(firstChar);
-        bool isThirdCharHexLetter = IsHexLetter(thirdChar);
-        bool isFifthCharHexLetter = IsHexLetter(fifthChar);
-
-        int red = firstChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isFirstCharHexLetter)));
-        int green = thirdChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isThirdCharHexLetter)));
-        int blue = fifthChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isFifthCharHexLetter)));
-
+        int red = firstChar - (CharZero + (CharAAndZeroDiff * isFirstCharHexLetter.AsByte()));
         red <<= 4;
+
+        byte thirdChar = Unsafe.Add(ref numberReference, 2);
+        bool isThirdCharHexLetter = IsHexLetter(thirdChar);
+        int green = thirdChar - (CharZero + (CharAAndZeroDiff * isThirdCharHexLetter.AsByte()));
         green <<= 4;
+
+        byte fifthChar = Unsafe.Add(ref numberReference, 4);
+        bool isFifthCharHexLetter = IsHexLetter(fifthChar);
+        int blue = fifthChar - (CharZero + (CharAAndZeroDiff * isFifthCharHexLetter.AsByte()));
         blue <<= 4;
 
         byte secondChar = Unsafe.Add(ref numberReference, 1);
-        byte forthChar = Unsafe.Add(ref numberReference, 3);
-        byte sixthChar = Unsafe.Add(ref numberReference, 5);
-
         bool isSecondCharHexLetter = IsHexLetter(secondChar);
-        bool isForthCharHexLetter = IsHexLetter(forthChar);
-        bool isSixthCharHexLetter = IsHexLetter(sixthChar);
+        red |= secondChar - (CharZero + (CharAAndZeroDiff * isSecondCharHexLetter.AsByte()));
 
-        red |= secondChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isSecondCharHexLetter)));
-        green |= forthChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isForthCharHexLetter)));
-        blue |= sixthChar - (CharZero + (CharAAndZeroDiff * Unsafe.As<bool, byte>(ref isSixthCharHexLetter)));
+        byte forthChar = Unsafe.Add(ref numberReference, 3);
+        bool isForthCharHexLetter = IsHexLetter(forthChar);
+        green |= forthChar - (CharZero + (CharAAndZeroDiff * isForthCharHexLetter.AsByte()));
+
+        byte sixthChar = Unsafe.Add(ref numberReference, 5);
+        bool isSixthCharHexLetter = IsHexLetter(sixthChar);
+        blue |= sixthChar - (CharZero + (CharAAndZeroDiff * isSixthCharHexLetter.AsByte()));
 
         return new((byte)red, (byte)green, (byte)blue);
     }
