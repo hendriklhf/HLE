@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using HLE.Collections;
 using HLE.IL;
 
 namespace HLE.Marshalling;
@@ -19,6 +21,10 @@ public static unsafe class ObjectMarshal
         .MethodHandle
         .GetFunctionPointer();
 
+    private static readonly ConcurrentDictionary<Type, bool> s_isReferenceOrContainsReferenceCache = new();
+    private static readonly MethodInfo s_isReferenceOrContainsReferenceMethod =
+        typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences), BindingFlags.Public | BindingFlags.Static)!;
+
     /// <summary>
     /// Gets the amount of bytes allocated for the instance of the object.
     /// </summary>
@@ -27,6 +33,19 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint GetObjectSize(object obj) => BaseObjectSize + (nuint)s_getRawObjectSize(obj);
+
+    [Pure]
+    public static bool IsReferenceOrContainsReference(Type type)
+    {
+        if (s_isReferenceOrContainsReferenceCache.TryGetValue(type, out bool isReferenceOrContainsReference))
+        {
+            return isReferenceOrContainsReference;
+        }
+
+        isReferenceOrContainsReference = (bool)s_isReferenceOrContainsReferenceMethod.MakeGenericMethod(type).Invoke(null, null)!;
+        s_isReferenceOrContainsReferenceCache.AddOrSet(type, isReferenceOrContainsReference);
+        return isReferenceOrContainsReference;
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

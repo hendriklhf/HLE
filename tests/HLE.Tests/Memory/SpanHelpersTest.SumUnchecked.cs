@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -10,28 +9,11 @@ namespace HLE.Tests.Memory;
 
 public sealed partial class SpanHelpersTest
 {
-    private const int ElementCount = 4096;
-
-#pragma warning disable IDE0300 // simplify collection initialization
-    [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-    public static object[][] SumUncheckedParameters { get; } =
-    [
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt8()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt8()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt16()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt16()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt32()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt32()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt64()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt64()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextUInt128()).ToArray()],
-        [Enumerable.Range(0, ElementCount).Select(static _ => Random.Shared.NextInt128()).ToArray()]
-    ];
-#pragma warning restore IDE0300
+    public static TheoryData<Array> SumUncheckedParameters { get; } = CreateSumUncheckedParameters();
 
     [Theory]
     [MemberData(nameof(SumUncheckedParameters))]
-    public void SumUncheckedTest(object values)
+    public void SumUncheckedTest(Array values)
     {
         Type? arrayElementType = values.GetType().GetElementType();
         Assert.NotNull(arrayElementType);
@@ -57,5 +39,41 @@ public sealed partial class SpanHelpersTest
         }
 
         return sum;
+    }
+
+    private static TheoryData<Array> CreateSumUncheckedParameters()
+    {
+        ReadOnlySpan<int> elementCounts = [0, 1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096];
+        ReadOnlySpan<Type> elementTypes =
+        [
+            typeof(byte), typeof(sbyte), typeof(short), typeof(ushort),
+            typeof(int), typeof(uint), typeof(long), typeof(ulong),
+            typeof(Int128), typeof(UInt128), typeof(char)
+        ];
+
+        TheoryData<Array> data = new();
+
+        foreach (int elementCount in elementCounts)
+        {
+            foreach (Type elementType in elementTypes)
+            {
+                Array array = Array.CreateInstance(elementType, elementCount);
+                Random.Shared.Fill(array);
+                data.Add(array);
+            }
+        }
+
+        ReadOnlySpan<int> randomElementCounts = Enumerable.Range(0, 16).Select(static _ => Random.Shared.Next(32, 1024)).ToArray();
+        foreach (int elementCount in randomElementCounts)
+        {
+            foreach (Type elementType in elementTypes)
+            {
+                Array array = Array.CreateInstance(elementType, elementCount);
+                Random.Shared.Fill(array);
+                data.Add(array);
+            }
+        }
+
+        return data;
     }
 }

@@ -3,7 +3,7 @@ using System;
 namespace HLE;
 
 [Flags]
-internal enum RandomFillingOptimizations
+internal enum RandomWritingOptimizations
 {
     None = 0,
     ChoicesLengthIsPow2 = 1,

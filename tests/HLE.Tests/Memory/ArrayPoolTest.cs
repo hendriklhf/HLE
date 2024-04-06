@@ -68,8 +68,11 @@ public sealed class ArrayPoolTest
         for (int i = 0; i < 1024; i++)
         {
             array = pool.Rent(minimumLength);
+
             Assert.True(array.Length >= minimumLength);
             Assert.Same(previousArray, array);
+            Assert.Equal(GC.MaxGeneration, GC.GetGeneration(array)); // array is pinned
+
             pool.Return(array);
             previousArray = array;
         }
@@ -87,8 +90,11 @@ public sealed class ArrayPoolTest
         for (int i = 0; i < 1024; i++)
         {
             array = pool.Rent(minimumLength);
+
             Assert.True(array.Length >= minimumLength);
             Assert.Same(previousArray, array);
+            Assert.Equal(GC.MaxGeneration, GC.GetGeneration(array)); // array is pinned
+
             pool.Return(array);
             previousArray = array;
         }
@@ -225,7 +231,7 @@ public sealed class ArrayPoolTest
         pool.Return(secondArray);
 
         int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
-        if (roundedLength != length) // basically a IsPow2 check
+        if (roundedLength != length) // basically a !IsPow2 check
         {
             roundedLength >>>= 1;
 
@@ -245,6 +251,7 @@ public sealed class ArrayPoolTest
             Assert.Same(firstArray, secondArray);
             Assert.Same(firstArray, thirdArray);
             Assert.Same(thirdArray, secondArray);
+            Assert.Equal(GC.MaxGeneration, GC.GetGeneration(firstArray)); // array is pinned
         }
     }
 

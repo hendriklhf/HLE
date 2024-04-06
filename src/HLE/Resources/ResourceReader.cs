@@ -111,33 +111,31 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
         }
 
         int streamLength = (int)stream.Length;
-        if (stream is UnmanagedMemoryStream memoryStream)
+        if (!_assembly.IsCollectible)
         {
-            memoryStream.Position = 0;
-            byte* pointer = memoryStream.PositionPointer;
-            resource = new(pointer, streamLength);
-            _resources.AddOrSet(resourcePath, resource);
-            return true;
+            if (stream is UnmanagedMemoryStream memoryStream)
+            {
+                memoryStream.Position = 0;
+                byte* pointer = memoryStream.PositionPointer;
+                resource = new(pointer, streamLength);
+                _resources.AddOrSet(resourcePath, resource);
+                return true;
+            }
+
+            Debug.Fail($"The implementation of {nameof(_assembly.GetManifestResourceStream)} has changed.");
         }
 
-        Debug.Fail($"The implementation of {nameof(_assembly.GetManifestResourceStream)} has changed.");
+        // fallback for the case that the implementation of GetManifestResourceStream has changed
 
         if (streamLength > Array.MaxLength)
         {
             ThrowStreamLengthExceedsMaxArrayLength();
         }
 
-        // fallback for the case that the implementation of GetManifestResourceStream has changed
         byte[] buffer = GC.AllocateUninitializedArray<byte>(streamLength, true);
         StoreHandle(GCHandle.Alloc(buffer));
 
-        int bytesRead = 0;
-        do
-        {
-            bytesRead += stream.Read(buffer);
-        }
-        while (bytesRead != buffer.Length);
-
+        stream.ReadExactly(buffer);
         byte* bufferPointer = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(buffer));
         resource = new(bufferPointer, streamLength);
         _resources.AddOrSet(resourcePath, resource);

@@ -9,19 +9,19 @@ using HLE.Memory;
 
 namespace HLE;
 
-internal sealed class RandomFillerChoicesLengthIsPow2And8Bits : RandomFiller, IEquatable<RandomFillerChoicesLengthIsPow2And8Bits>
+internal sealed class RandomWriterChoicesLengthIsPow2And16Bits : RandomWriter, IEquatable<RandomWriterChoicesLengthIsPow2And16Bits>
 {
-    public override void Fill<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
+    public override void Write<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
     {
         Debug.Assert(BitOperations.IsPow2(choicesLength));
-        Debug.Assert(choicesLength <= byte.MaxValue);
+        Debug.Assert(choicesLength <= ushort.MaxValue);
 
         int mask = choicesLength - 1;
-        if (!MemoryHelpers.UseStackalloc<byte>(destinationLength))
+        if (!MemoryHelpers.UseStackalloc<ushort>(destinationLength))
         {
-            using RentedArray<byte> randomIndicesBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(destinationLength);
+            using RentedArray<ushort> randomIndicesBuffer = ArrayPool<ushort>.Shared.RentAsRentedArray(destinationLength);
             random.Fill(randomIndicesBuffer.AsSpan(..destinationLength));
-            ref byte indicesBufferRef = ref randomIndicesBuffer.Reference;
+            ref ushort indicesBufferRef = ref randomIndicesBuffer.Reference;
             for (int i = 0; i < destinationLength; i++)
             {
                 int randomIndex = Unsafe.Add(ref indicesBufferRef, i) & mask;
@@ -31,9 +31,9 @@ internal sealed class RandomFillerChoicesLengthIsPow2And8Bits : RandomFiller, IE
             return;
         }
 
-        Span<byte> randomIndices = stackalloc byte[destinationLength];
+        Span<ushort> randomIndices = stackalloc ushort[destinationLength];
         random.Fill(randomIndices);
-        ref byte indicesRef = ref MemoryMarshal.GetReference(randomIndices);
+        ref ushort indicesRef = ref MemoryMarshal.GetReference(randomIndices);
         for (int i = 0; i < destinationLength; i++)
         {
             int randomIndex = Unsafe.Add(ref indicesRef, i) & mask;
@@ -42,7 +42,7 @@ internal sealed class RandomFillerChoicesLengthIsPow2And8Bits : RandomFiller, IE
     }
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] RandomFillerChoicesLengthIsPow2And8Bits? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] RandomWriterChoicesLengthIsPow2And16Bits? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
@@ -50,7 +50,7 @@ internal sealed class RandomFillerChoicesLengthIsPow2And8Bits : RandomFiller, IE
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(RandomFillerChoicesLengthIsPow2And8Bits? left, RandomFillerChoicesLengthIsPow2And8Bits? right) => Equals(left, right);
+    public static bool operator ==(RandomWriterChoicesLengthIsPow2And16Bits? left, RandomWriterChoicesLengthIsPow2And16Bits? right) => Equals(left, right);
 
-    public static bool operator !=(RandomFillerChoicesLengthIsPow2And8Bits? left, RandomFillerChoicesLengthIsPow2And8Bits? right) => !(left == right);
+    public static bool operator !=(RandomWriterChoicesLengthIsPow2And16Bits? left, RandomWriterChoicesLengthIsPow2And16Bits? right) => !(left == right);
 }

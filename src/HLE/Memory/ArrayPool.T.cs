@@ -96,7 +96,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         }
 
         Bucket bucket = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
-        return bucket.TryRentExact(length, out array) ? array : GC.AllocateUninitializedArray<T>(length);
+        return bucket.TryRentExact(length, out array) ? array : GC.AllocateUninitializedArray<T>(length, true);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path

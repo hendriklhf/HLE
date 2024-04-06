@@ -8,9 +8,9 @@ using HLE.Memory;
 
 namespace HLE;
 
-internal sealed class RandomFillerChoicesLengthIs16Bits : RandomFiller, IEquatable<RandomFillerChoicesLengthIs16Bits>
+internal sealed class RandomWriterChoicesLengthIs16Bits : RandomWriter, IEquatable<RandomWriterChoicesLengthIs16Bits>
 {
-    public override void Fill<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
+    public override void Write<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
     {
         Debug.Assert(choicesLength <= ushort.MaxValue);
 
@@ -39,7 +39,7 @@ internal sealed class RandomFillerChoicesLengthIs16Bits : RandomFiller, IEquatab
     }
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] RandomFillerChoicesLengthIs16Bits? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] RandomWriterChoicesLengthIs16Bits? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
@@ -47,7 +47,7 @@ internal sealed class RandomFillerChoicesLengthIs16Bits : RandomFiller, IEquatab
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(RandomFillerChoicesLengthIs16Bits? left, RandomFillerChoicesLengthIs16Bits? right) => Equals(left, right);
+    public static bool operator ==(RandomWriterChoicesLengthIs16Bits? left, RandomWriterChoicesLengthIs16Bits? right) => Equals(left, right);
 
-    public static bool operator !=(RandomFillerChoicesLengthIs16Bits? left, RandomFillerChoicesLengthIs16Bits? right) => !(left == right);
+    public static bool operator !=(RandomWriterChoicesLengthIs16Bits? left, RandomWriterChoicesLengthIs16Bits? right) => !(left == right);
 }
