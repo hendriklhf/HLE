@@ -11,6 +11,9 @@ public static unsafe partial class SpanHelpers
 {
     private const nuint AlignmentThreshold = 256;
 
+    internal static void Memmove(void* destination, void* source, nuint byteCount)
+        => Memmove(ref Unsafe.AsRef<byte>(destination), ref Unsafe.AsRef<byte>(source), byteCount);
+
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.NoInlining)]
     [SuppressMessage("Maintainability", "CA1502:Avoid excessive complexity")]

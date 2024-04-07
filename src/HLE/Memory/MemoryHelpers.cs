@@ -32,6 +32,10 @@ public static unsafe class MemoryHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAligned(void* pointer, nuint alignment)
+        => IsAligned(ref Unsafe.AsRef<byte>(pointer), alignment);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAligned<T>(ref T reference, nuint alignment)
     {
         if (BitOperations.PopCount(alignment) != 1)
