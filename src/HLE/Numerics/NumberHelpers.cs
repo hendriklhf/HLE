@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Memory;
 
 namespace HLE.Numerics;
@@ -196,4 +197,24 @@ public static class NumberHelpers
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static T ThrowInvalidEnumArgumentException<T>(AlignmentMethod method) where T : INumber<T>
         => throw new InvalidEnumArgumentException(nameof(method), (int)method, typeof(AlignmentMethod));
+
+    public static void Increment<T>(Span<T> numbers) where T : INumber<T>, IMinMaxValue<T>
+        => Increment(numbers, T.MinValue, T.MaxValue);
+
+    public static void Increment<T>(Span<T> numbers, T min, T max) where T : INumber<T>
+    {
+        int index = numbers.LastIndexOfAnyExcept(max);
+        if (index < 0)
+        {
+            return;
+        }
+
+        ref T numbersRef = ref MemoryMarshal.GetReference(numbers);
+        for (int i = index + 1; i < numbers.Length; i++)
+        {
+            Unsafe.Add(ref numbersRef, i) = min;
+        }
+
+        Unsafe.Add(ref numbersRef, index)++;
+    }
 }
