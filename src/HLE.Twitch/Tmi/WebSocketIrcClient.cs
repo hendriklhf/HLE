@@ -232,13 +232,10 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
-    // ReSharper disable once InconsistentNaming
     public Task ConnectAsync(ReadOnlyMemory<byte>[] channels) => ConnectAsync(channels.AsMemory());
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
-    // ReSharper disable once InconsistentNaming
-    public Task ConnectAsync(List<ReadOnlyMemory<byte>> channels)
-        => ConnectAsync(ListMarshal.AsMemory(channels));
+    public Task ConnectAsync(List<ReadOnlyMemory<byte>> channels) => ConnectAsync(ListMarshal.AsMemory(channels));
 
     /// <summary>
     /// Asynchronously connects the client to the Twitch IRC server.
@@ -289,7 +286,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// Asynchronously sends a raw message to the Twitch IRC server.
     /// </summary>
     /// <param name="rawMessage">The IRC message.</param>
-    // ReSharper disable once InconsistentNaming
     public ValueTask SendRawAsync(ReadOnlyMemory<byte> rawMessage) => SendAsync(rawMessage);
 
     /// <summary>

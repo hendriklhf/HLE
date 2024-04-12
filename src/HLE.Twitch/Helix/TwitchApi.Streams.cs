@@ -35,7 +35,6 @@ public sealed partial class TwitchApi
         return stream;
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream?> GetStreamAsync(string username) => GetStreamAsync(username.AsMemory());
 
     public async ValueTask<Stream?> GetStreamAsync(ReadOnlyMemory<char> username)
@@ -59,11 +58,9 @@ public sealed partial class TwitchApi
         return stream;
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames) =>
         GetStreamsAsync(usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<long> channelIds)
         => GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory) ? channelIdsMemory : channelIds.ToArray());
 
@@ -83,35 +80,27 @@ public sealed partial class TwitchApi
         // ReSharper restore PossibleMultipleEnumeration
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(List<string> usernames)
         => GetStreamsAsync(ListMarshal.AsMemory(usernames), ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(List<long> channelIds)
         => GetStreamsAsync(ReadOnlyMemory<string>.Empty, ListMarshal.AsMemory(channelIds));
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(List<string> usernames, List<long> channelIds)
         => GetStreamsAsync(ListMarshal.AsMemory(usernames), ListMarshal.AsMemory(channelIds));
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(params string[] usernames)
         => GetStreamsAsync(usernames, ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(params long[] channelIds)
         => GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIds);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(string[] usernames, long[] channelIds)
         => GetStreamsAsync(usernames.AsMemory(), channelIds);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(ReadOnlyMemory<string> usernames)
         => GetStreamsAsync(usernames, ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<Stream[]> GetStreamsAsync(ReadOnlyMemory<long> channelIds)
         => GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIds);
 

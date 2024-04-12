@@ -76,6 +76,10 @@ public static unsafe class SpanHelpers<T>
         => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
     /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
+    public static void Copy(Span<T> source, ref T destination)
+        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), (uint)source.Length);
+
+    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
     public static void Copy(ReadOnlySpan<T> source, T[] destination)
         => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 

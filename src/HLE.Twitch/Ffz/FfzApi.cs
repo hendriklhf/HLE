@@ -64,7 +64,6 @@ public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
         return emotes;
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(string channelName) => GetChannelEmotesAsync(channelName.AsMemory());
 
     public async ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(ReadOnlyMemory<char> channelName)

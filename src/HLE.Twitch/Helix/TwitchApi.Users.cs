@@ -37,7 +37,6 @@ public sealed partial class TwitchApi
         return user;
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<User?> GetUserAsync(string username) => GetUserAsync(username.AsMemory());
 
     public async ValueTask<User?> GetUserAsync(ReadOnlyMemory<char> username)
@@ -61,15 +60,12 @@ public sealed partial class TwitchApi
         return user;
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<string> usernames)
         => GetUsersAsync(usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<long> userIds)
         => GetUsersAsync(ReadOnlyMemory<string>.Empty, userIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> userIdsMemory) ? userIdsMemory : userIds.ToArray());
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<string> usernames, IEnumerable<long> userIds)
     {
         bool usernamesIsMemory = usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory);
@@ -84,35 +80,27 @@ public sealed partial class TwitchApi
         };
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(List<string> usernames)
         => GetUsersAsync(ListMarshal.AsMemory(usernames), ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(List<long> userIds)
         => GetUsersAsync(ReadOnlyMemory<string>.Empty, ListMarshal.AsMemory(userIds));
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(List<string> usernames, List<long> userIds)
         => GetUsersAsync(ListMarshal.AsMemory(usernames), ListMarshal.AsMemory(userIds));
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(params string[] usernames)
         => GetUsersAsync(usernames, ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(params long[] userIds)
         => GetUsersAsync(ReadOnlyMemory<string>.Empty, userIds);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(string[] usernames, long[] userIds)
         => GetUsersAsync(usernames.AsMemory(), userIds);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(ReadOnlyMemory<string> usernames)
         => GetUsersAsync(usernames, ReadOnlyMemory<long>.Empty);
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<ImmutableArray<User>> GetUsersAsync(ReadOnlyMemory<long> userIds)
         => GetUsersAsync(ReadOnlyMemory<string>.Empty, userIds);
 

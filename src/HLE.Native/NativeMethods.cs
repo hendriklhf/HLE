@@ -1,21 +1,35 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Iced.Intel;
 using static Iced.Intel.AssemblerRegisters;
 
 namespace HLE.Native;
 
-public static unsafe partial class NativeMethods
+public static unsafe class NativeMethods
 {
-    private static readonly delegate*<byte*, byte*, nuint, void> s_memmove = CreateMemmove();
+    private static readonly delegate*<byte*, byte*, nuint, void> s_repmovsq = CreateRepMovsq();
 
-    private const int VirtualAllocationType = 0x1000;
-    private const int VirtualAllocProtectionType = 0x40;
+    public static void RepMovsq(byte* destination, byte* source, nuint byteCount)
+    {
+        ValidatePlatform();
 
-    public static void Memmove(byte* destination, byte* source, nuint byteCount) => s_memmove(destination, source, byteCount >>> 3);
+        if (byteCount == 0)
+        {
+            return;
+        }
 
-    private static delegate*<byte*, byte*, nuint, void> CreateMemmove()
+        if ((byteCount & ((uint)sizeof(nuint) - 1)) != 0)
+        {
+            ThrowByteCountNeedsToBeDivisibleByPointerSize(nameof(byteCount));
+        }
+
+        s_repmovsq(destination, source, byteCount >>> (Environment.Is64BitProcess ? 3 : 2));
+    }
+
+    private static delegate*<byte*, byte*, nuint, void> CreateRepMovsq()
     {
         Assembler assembler = CreateAssembler();
 
@@ -39,12 +53,28 @@ public static unsafe partial class NativeMethods
         MemoryStream stream = new();
         StreamCodeWriter codeWriter = new(stream);
         assembler.Assemble(codeWriter, 0);
-        byte* buffer = (byte*)VirtualAlloc(0, (nuint)stream.Position, VirtualAllocationType, VirtualAllocProtectionType);
-        stream.GetBuffer().AsSpan(..(int)stream.Position).CopyTo(new(buffer, (int)stream.Position));
+        nuint codeLength = (nuint)stream.Position;
+        byte* buffer = MemoryApi.VirtualAlloc(codeLength, AllocationType.Commit, ProtectionType.ExecuteReadWrite);
+        stream.GetBuffer().AsSpan(..(int)codeLength).CopyTo(new(buffer, (int)codeLength));
         return buffer;
     }
 
-    [LibraryImport("kernel32.dll", EntryPoint = "VirtualAlloc")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial nuint VirtualAlloc(nuint address, nuint size, int allocationType, int protectionType);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ValidatePlatform()
+    {
+        if (!Environment.Is64BitProcess || RuntimeInformation.ProcessArchitecture != Architecture.X64)
+        {
+            ThrowPlatformNotSupported();
+        }
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowPlatformNotSupported()
+        => throw new PlatformNotSupportedException($"The platform needs to be x64 in order to use methods of {typeof(NativeMethods)}.");
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowByteCountNeedsToBeDivisibleByPointerSize(string paramName)
+        => throw new ArgumentException($"The amount bytes that will be copied needs to be divisible by {sizeof(nuint)}.", paramName);
 }

@@ -226,15 +226,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask SendAsync(string channel, string message) => SendAsync(channel.AsMemory(), message.AsMemory());
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask SendAsync(string channel, ReadOnlyMemory<char> message) => SendAsync(channel.AsMemory(), message);
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask SendAsync(ReadOnlyMemory<char> channel, string message) => SendAsync(channel, message.AsMemory());
 
     /// <summary>
@@ -284,7 +281,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     private static void ThrowClientNotConnectedException() => throw new ClientNotConnectedException();
 
     /// <inheritdoc cref="SendAsync(long,ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask SendAsync(long channelId, string message) => SendAsync(channelId, message.AsMemory());
 
     /// <summary>
@@ -315,7 +311,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask SendRawAsync(string rawMessage) => SendRawAsync(rawMessage.AsMemory());
 
     /// <summary>
@@ -336,10 +331,8 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Asynchronously connects the client to the chat server. This method will be exited after the client has joined all channels.
     /// </summary>
-    // ReSharper disable once InconsistentNaming
     public Task ConnectAsync() => IsConnected ? Task.CompletedTask : ConnectAsync(_ircChannels.GetUtf8Names().AsMemory());
 
-    // ReSharper disable once InconsistentNaming
     private Task ConnectAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> ircChannels) => _client.ConnectAsync(ircChannels);
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
@@ -358,12 +351,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask JoinChannelsAsync(List<string> channels)
-        => JoinChannelsAsync(ListMarshal.AsMemory(channels));
+    public ValueTask JoinChannelsAsync(List<string> channels) => JoinChannelsAsync(ListMarshal.AsMemory(channels));
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask JoinChannelsAsync(params string[] channels) => JoinChannelsAsync(channels.AsMemory());
 
     /// <summary>
@@ -380,7 +370,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="JoinChannelAsync(ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask JoinChannelAsync(string channel) => JoinChannelAsync(channel.AsMemory());
 
     /// <summary>
@@ -388,7 +377,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     /// <param name="channel">The channel</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if the <paramref name="channel"/> is in the wrong format.</exception>
-    // ReSharper disable once InconsistentNaming
     public ValueTask JoinChannelAsync(ReadOnlyMemory<char> channel)
     {
         IrcChannel ircChannel = _ircChannels.Add(channel.Span);
@@ -396,14 +384,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="LeaveChannelAsync(ReadOnlyMemory{char})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask LeaveChannelAsync(string channel) => LeaveChannelAsync(channel.AsMemory());
 
     /// <summary>
     /// If the client is not connected, removes the channel from the channel list, otherwise asynchronously leaves the channel.
     /// </summary>
     /// <param name="channel">The channel</param>
-    // ReSharper disable once InconsistentNaming
     public ValueTask LeaveChannelAsync(ReadOnlyMemory<char> channel)
     {
         IrcChannel? ircChannel = _ircChannels.Remove(channel.Span);
@@ -432,12 +418,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
-    // ReSharper disable once InconsistentNaming
-    public ValueTask LeaveChannelsAsync(List<string> channels)
-        => LeaveChannelsAsync(ListMarshal.AsMemory(channels));
+    public ValueTask LeaveChannelsAsync(List<string> channels) => LeaveChannelsAsync(ListMarshal.AsMemory(channels));
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
-    // ReSharper disable once InconsistentNaming
     public ValueTask LeaveChannelsAsync(params string[] channels) => LeaveChannelsAsync(channels.AsMemory());
 
     /// <summary>
