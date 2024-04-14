@@ -156,7 +156,13 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     public bool Contains(string str) => Contains(str.AsSpan());
 
     [Pure]
-    public bool Contains(ReadOnlySpan<char> span) => span.Length == 0 || GetBucket(span).Contains(span);
+    public bool Contains(ReadOnlySpan<char> span)
+        => span.Length switch
+        {
+            0 => true,
+            1 => SingleCharStringPool.Contains(span[0]),
+            _ => GetBucket(span).Contains(span)
+        };
 
     [Pure]
     [SkipLocalsInit]

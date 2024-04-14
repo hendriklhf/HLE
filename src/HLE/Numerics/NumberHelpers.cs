@@ -175,7 +175,7 @@ public static class NumberHelpers
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T Align<T>(T value, T alignment, AlignmentMethod method = AlignmentMethod.Add) where T : IBinaryNumber<T>
+    public static T Align<T>(T value, T alignment, AlignmentMethod method) where T : IBinaryNumber<T>
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(alignment);
 

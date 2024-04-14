@@ -63,25 +63,22 @@ public static unsafe class StructMarshal
             return true;
         }
 
-        ReadOnlySpan<byte> leftBytes = GetBytes(ref left);
-        ReadOnlySpan<byte> rightBytes = GetBytes(ref right);
-
         if (Vector512.IsHardwareAccelerated && sizeof(TLeft) == Vector512<byte>.Count)
         {
-            return Vector512.Create(leftBytes) == Vector512.Create(rightBytes);
+            return Vector512.Create<byte>(GetBytes(ref left)) == Vector512.Create<byte>(GetBytes(ref right));
         }
 
         if (Vector256.IsHardwareAccelerated && sizeof(TLeft) == Vector256<byte>.Count)
         {
-            return Vector256.Create(leftBytes) == Vector256.Create(rightBytes);
+            return Vector256.Create<byte>(GetBytes(ref left)) == Vector256.Create<byte>(GetBytes(ref right));
         }
 
         if (Vector128.IsHardwareAccelerated && sizeof(TLeft) == Vector128<byte>.Count)
         {
-            return Vector128.Create(leftBytes) == Vector128.Create(rightBytes);
+            return Vector128.Create<byte>(GetBytes(ref left)) == Vector128.Create<byte>(GetBytes(ref right));
         }
 
-        return leftBytes.SequenceEqual(rightBytes);
+        return GetBytes(ref left).SequenceEqual(GetBytes(ref right));
     }
 
     [Pure]

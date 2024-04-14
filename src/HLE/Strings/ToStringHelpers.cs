@@ -28,7 +28,6 @@ internal static class ToStringHelpers
 
     [Pure]
     [SkipLocalsInit]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string FormatCollection(Type collectionType, int elementCount)
     {
         if (!s_cache.TryGetValue(collectionType, out string? formattedCollection))

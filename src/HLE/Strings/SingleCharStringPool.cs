@@ -39,7 +39,7 @@ public static partial class SingleCharStringPool
             return str;
         }
 
-        str = c.ToString();
+        str = char.ToString(c);
         s_customSingleCharStringCache.AddOrSet(c, str);
         return str;
     }
