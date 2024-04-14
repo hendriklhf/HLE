@@ -53,5 +53,5 @@ public static unsafe class AsmHelpers
         s_repmovsd(destination, source, byteCount >>> 2);
     }
 
-    private static void* CreateMethod(string name) => MethodAllocator.Allocate(s_resourceReader.Read(name));
+    private static void* CreateMethod(string name) => MethodAllocator.Allocate(s_resourceReader.Read(name).AsSpan());
 }

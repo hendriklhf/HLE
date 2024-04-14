@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -8,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace HLE.Strings;
 
-public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex>
+public sealed partial class RegexPool : IEquatable<RegexPool>
 {
     private readonly Bucket[] _buckets;
 
@@ -30,7 +28,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
 
     public void Clear()
     {
-        ReadOnlySpan<Bucket> buckets = _buckets;
+        Span<Bucket> buckets = _buckets;
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i].Clear();
@@ -104,16 +102,16 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
         return GetBucket(pattern, options, timeout).Contains(pattern, options, timeout);
     }
 
-    private Bucket GetBucket(Regex regex) => GetBucket(regex.ToString(), regex.Options, regex.MatchTimeout);
+    private ref Bucket GetBucket(Regex regex) => ref GetBucket(regex.ToString(), regex.Options, regex.MatchTimeout);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
+    private ref Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
         uint patternHash = SimpleStringHasher.Hash(pattern);
         int hash = HashCode.Combine(patternHash, (int)options, timeout);
-        ReadOnlySpan<Bucket> buckets = _buckets;
+        Span<Bucket> buckets = _buckets;
         int index = (int)((uint)hash % (uint)buckets.Length);
-        return buckets[index];
+        return ref buckets[index];
     }
 
     [Pure]
@@ -128,17 +126,4 @@ public sealed partial class RegexPool : IEquatable<RegexPool>, IEnumerable<Regex
     public static bool operator ==(RegexPool? left, RegexPool? right) => Equals(left, right);
 
     public static bool operator !=(RegexPool? left, RegexPool? right) => !(left == right);
-
-    public IEnumerator<Regex> GetEnumerator()
-    {
-        foreach (Bucket bucket in _buckets)
-        {
-            foreach (Regex regex in bucket)
-            {
-                yield return regex;
-            }
-        }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

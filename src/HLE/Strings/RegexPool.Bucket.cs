@@ -1,9 +1,6 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using HLE.Collections;
 using HLE.Memory;
@@ -12,9 +9,10 @@ namespace HLE.Strings;
 
 public sealed partial class RegexPool
 {
-    private readonly struct Bucket : IEnumerable<Regex>, IEquatable<Bucket>
+    private partial struct Bucket : IEquatable<Bucket>
     {
-        private readonly Regex?[] _regexes = GC.AllocateArray<Regex>(DefaultBucketCapacity, true);
+        private Regexes _regexes;
+        private readonly object _lock = new();
 
         public Bucket()
         {
@@ -22,15 +20,15 @@ public sealed partial class RegexPool
 
         public void Clear()
         {
-            lock (_regexes)
+            lock (_lock)
             {
-                Array.Clear(_regexes);
+                _regexes.AsSpan().Clear();
             }
         }
 
         public Regex GetOrAdd(string pattern, RegexOptions options, TimeSpan timeout)
         {
-            lock (_regexes)
+            lock (_lock)
             {
                 if (TryGetWithoutLock(pattern, options, timeout, out Regex? regex))
                 {
@@ -45,7 +43,7 @@ public sealed partial class RegexPool
 
         public Regex GetOrAdd(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
         {
-            lock (_regexes)
+            lock (_lock)
             {
                 if (TryGetWithoutLock(pattern, options, timeout, out Regex? regex))
                 {
@@ -60,7 +58,7 @@ public sealed partial class RegexPool
 
         public void Add(Regex regex)
         {
-            lock (_regexes)
+            lock (_lock)
             {
                 AddWithoutLock(regex);
             }
@@ -68,15 +66,15 @@ public sealed partial class RegexPool
 
         private void AddWithoutLock(Regex regex)
         {
-            ref Regex? source = ref MemoryMarshal.GetArrayDataReference(_regexes);
+            ref Regex? source = ref _regexes.Reference;
             ref Regex? destination = ref Unsafe.Add(ref source, 1);
-            SpanHelpers<Regex?>.Memmove(ref destination, ref source, (uint)(_regexes.Length - 1));
+            SpanHelpers<Regex?>.Memmove(ref destination, ref source, DefaultBucketCapacity - 1);
             source = regex;
         }
 
         public bool TryGet(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
-            lock (_regexes)
+            lock (_lock)
             {
                 return TryGetWithoutLock(pattern, options, timeout, out regex);
             }
@@ -84,9 +82,8 @@ public sealed partial class RegexPool
 
         private bool TryGetWithoutLock(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
-            ref Regex? regexesReference = ref MemoryMarshal.GetArrayDataReference(_regexes);
-            int regexesLength = _regexes.Length;
-            for (int i = 0; i < regexesLength; i++)
+            ref Regex? regexesReference = ref _regexes.Reference;
+            for (int i = 0; i < DefaultBucketCapacity; i++)
             {
                 Regex? current = Unsafe.Add(ref regexesReference, i);
                 if (current is null)
@@ -120,33 +117,17 @@ public sealed partial class RegexPool
         /// </summary>
         /// <param name="indexOfMatchingRegex">The index of the matching regex in <see cref="_regexes"/>.</param>
         private void MoveRegexByFourIndices(int indexOfMatchingRegex)
-            => _regexes.MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
+            => _regexes.AsSpan().MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
 
         public bool Contains(Regex regex) => TryGet(regex.ToString(), regex.Options, regex.MatchTimeout, out _);
 
         public bool Contains(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout) => TryGet(pattern, options, timeout, out _);
 
-        public IEnumerator<Regex> GetEnumerator()
-        {
-            // ReSharper disable once InconsistentlySynchronizedField
-            foreach (Regex? regex in _regexes)
-            {
-                if (regex is not null)
-                {
-                    yield return regex;
-                }
-            }
-        }
+        public readonly bool Equals(Bucket other) => ReferenceEquals(_lock, other._lock);
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
-        // ReSharper disable once InconsistentlySynchronizedField
-        public bool Equals(Bucket other) => _regexes.Equals(other._regexes);
-
-        public override bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
-
-        // ReSharper disable once InconsistentlySynchronizedField
-        public override int GetHashCode() => _regexes.GetHashCode();
+        public override readonly int GetHashCode() => RuntimeHelpers.GetHashCode(_lock);
 
         public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
 

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using HLE.Marshalling.Windows;
 
 namespace HLE.Marshalling.Asm;
 

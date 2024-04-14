@@ -1,20 +1,21 @@
+using System;
 using System.Runtime.CompilerServices;
+using HLE.Marshalling.Windows;
 using HLE.Memory;
 using HLE.Numerics;
-using HLE.Resources;
 
 namespace HLE.Marshalling.Asm;
 
 internal static unsafe class MethodAllocator
 {
     private static byte* s_buffer = (byte*)MemoryApi.VirtualAlloc(DefaultBufferSize, AllocationType.Commit, ProtectionType.ExecuteReadWrite);
-    private static nuint s_bufferLength = 1024;
+    private static nuint s_bufferLength = DefaultBufferSize;
     private static nuint s_bufferPosition;
 
     private const uint DefaultBufferSize = 1024;
 
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public static void* Allocate(Resource code)
+    public static void* Allocate(ReadOnlySpan<byte> code)
     {
         nuint freeBufferSize = GetFreeBufferSize();
         if (freeBufferSize < (uint)code.Length)
@@ -24,11 +25,11 @@ internal static unsafe class MethodAllocator
 
         nuint bufferPosition = s_bufferPosition;
         byte* destination = s_buffer + bufferPosition;
-        SpanHelpers<byte>.Copy(code.AsSpan(), destination);
+        SpanHelpers<byte>.Copy(code, destination);
         s_bufferPosition = NumberHelpers.Align<nuint>(bufferPosition + (uint)code.Length, 8, AlignmentMethod.Add);
         if (bufferPosition >= s_bufferLength)
         {
-            GrowBuffer(128);
+            GrowBuffer(DefaultBufferSize);
         }
 
         return destination;
@@ -36,9 +37,12 @@ internal static unsafe class MethodAllocator
 
     private static void GrowBuffer(uint sizeHint)
     {
-        nuint newLength = BufferHelpers.GrowNativeBuffer(s_bufferLength, sizeHint);
+        nuint bufferLength = s_bufferLength;
+        nuint newLength = BufferHelpers.GrowNativeBuffer(bufferLength, sizeHint);
         byte* newBuffer = (byte*)MemoryApi.VirtualAlloc(newLength, AllocationType.Commit, ProtectionType.ExecuteReadWrite);
-        SpanHelpers.Memmove(newBuffer, s_buffer, s_bufferPosition);
+        byte* oldBuffer = s_buffer;
+        SpanHelpers.Memmove(newBuffer, oldBuffer, s_bufferPosition);
+        MemoryApi.VirtualFree(oldBuffer, bufferLength);
         s_buffer = newBuffer;
         s_bufferLength = newLength;
     }

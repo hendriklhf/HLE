@@ -13,7 +13,7 @@ public sealed class BufferedFileReaderTest
 
     public BufferedFileReaderTest()
     {
-        string temporaryDirectory = Path.Combine(Path.GetTempPath(), nameof(BufferedFileReaderTest), $"{Guid.NewGuid():N}");
+        string temporaryDirectory = Path.Combine(Path.GetTempPath(), @"HLE\Tests\BufferedFileReaderTest", $"{Guid.NewGuid():N}");
         Directory.CreateDirectory(temporaryDirectory);
         _temporaryDirectory = temporaryDirectory;
     }

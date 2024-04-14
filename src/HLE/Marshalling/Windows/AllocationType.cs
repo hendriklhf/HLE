@@ -1,9 +1,9 @@
 using System;
 
-namespace HLE.Marshalling.Asm;
+namespace HLE.Marshalling.Windows;
 
 [Flags]
-internal enum AllocationType
+public enum AllocationType
 {
     None = 0,
     Commit = 0x00001000,

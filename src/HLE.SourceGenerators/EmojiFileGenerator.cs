@@ -35,7 +35,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     private const string HttpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
     private const string Indentation = "    ";
-    private const string CacheDirectory = "HLE.SourceGenerators.EmojiFileGenerator\\";
+    private const string CacheDirectory = @"HLE\SourceGenerators\EmojiFileGenerator\";
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -77,7 +77,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
     private static bool TryGetEmojiJsonBytesFromCache(out byte[]? emojiJsonBytes)
     {
-        string cacheDirectory = Path.GetTempPath() + CacheDirectory;
+        string cacheDirectory = Path.Combine(Path.GetTempPath(), CacheDirectory);
         if (!Directory.Exists(cacheDirectory))
         {
             emojiJsonBytes = null;
@@ -106,7 +106,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
     private static void WriteBytesToCacheFile(byte[] emojiJsonBytes)
     {
-        string cacheDirectory = Path.GetTempPath() + CacheDirectory;
+        string cacheDirectory = Path.Combine(Path.GetTempPath(), CacheDirectory);
         if (!Directory.Exists(cacheDirectory))
         {
             Directory.CreateDirectory(cacheDirectory);

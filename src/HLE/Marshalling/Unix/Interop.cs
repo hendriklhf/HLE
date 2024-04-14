@@ -11,13 +11,13 @@ namespace HLE.Marshalling.Unix;
 public static partial class Interop
 {
     [Pure]
-    public static nint GetEnvironment() => __GetEnviron();
+    public static nint GetEnvironment() => _GetEnviron();
 
-    public static void FreeEnvironment(nint environment) => __FreeEnviron(environment);
+    public static void FreeEnvironment(nint environment) => _FreeEnviron(environment);
 
     [LibraryImport("libSystem.Native", EntryPoint = "SystemNative_GetEnviron")]
-    private static partial nint __GetEnviron();
+    private static partial nint _GetEnviron();
 
     [LibraryImport("libSystem.Native", EntryPoint = "SystemNative_FreeEnviron")]
-    private static partial void __FreeEnviron(nint environ);
+    private static partial void _FreeEnviron(nint environ);
 }

@@ -1,9 +1,9 @@
 using System;
 
-namespace HLE.Marshalling.Asm;
+namespace HLE.Marshalling.Windows;
 
 [Flags]
-internal enum ProtectionType
+public enum ProtectionType
 {
     None = 0,
     NoAccess = 0x01,

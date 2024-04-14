@@ -1,9 +1,9 @@
 using System;
 
-namespace HLE.Marshalling.Asm;
+namespace HLE.Marshalling.Windows;
 
 [Flags]
-internal enum FreeType
+public enum FreeType
 {
     None = 0,
     CoalescePlaceholders = 0x00000001,
