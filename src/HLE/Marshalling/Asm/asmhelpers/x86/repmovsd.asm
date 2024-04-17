@@ -1,6 +1,6 @@
 bits 32
 
-repmovsd:
+repmovsd: ; void repmovsd(void* destination, void* source, nuint byteCount)
     push esi
     push edi
     mov esi, edx

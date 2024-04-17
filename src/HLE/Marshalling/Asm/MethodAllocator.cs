@@ -8,7 +8,7 @@ namespace HLE.Marshalling.Asm;
 
 internal static unsafe class MethodAllocator
 {
-    private static byte* s_buffer = (byte*)MemoryApi.VirtualAlloc(DefaultBufferSize, AllocationType.Commit, ProtectionType.ExecuteReadWrite);
+    private static byte* s_buffer = (byte*)MemoryApi.VirtualAlloc(DefaultBufferSize, AllocationType.Commit, ProtectionType.Execute);
     private static nuint s_bufferLength = DefaultBufferSize;
     private static nuint s_bufferPosition;
 
@@ -17,29 +17,37 @@ internal static unsafe class MethodAllocator
     [MethodImpl(MethodImplOptions.Synchronized)]
     public static void* Allocate(ReadOnlySpan<byte> code)
     {
-        nuint freeBufferSize = GetFreeBufferSize();
-        if (freeBufferSize < (uint)code.Length)
+        MemoryApi.VirtualProtect(s_buffer, s_bufferLength, ProtectionType.ReadWrite);
+        try
         {
-            GrowBuffer((uint)code.Length);
-        }
+            nuint freeBufferSize = GetFreeBufferSize();
+            if (freeBufferSize < (uint)code.Length)
+            {
+                GrowBuffer((uint)code.Length);
+            }
 
-        nuint bufferPosition = s_bufferPosition;
-        byte* destination = s_buffer + bufferPosition;
-        SpanHelpers<byte>.Copy(code, destination);
-        s_bufferPosition = NumberHelpers.Align<nuint>(bufferPosition + (uint)code.Length, 8, AlignmentMethod.Add);
-        if (bufferPosition >= s_bufferLength)
+            nuint bufferPosition = s_bufferPosition;
+            byte* destination = s_buffer + bufferPosition;
+            SpanHelpers<byte>.Copy(code, destination);
+            s_bufferPosition = NumberHelpers.Align(bufferPosition + (uint)code.Length, (nuint)sizeof(nuint), AlignmentMethod.Add);
+            if (bufferPosition >= s_bufferLength)
+            {
+                GrowBuffer(DefaultBufferSize);
+            }
+
+            return destination;
+        }
+        finally
         {
-            GrowBuffer(DefaultBufferSize);
+            MemoryApi.VirtualProtect(s_buffer, s_bufferLength, ProtectionType.Execute);
         }
-
-        return destination;
     }
 
     private static void GrowBuffer(uint sizeHint)
     {
         nuint bufferLength = s_bufferLength;
         nuint newLength = BufferHelpers.GrowNativeBuffer(bufferLength, sizeHint);
-        byte* newBuffer = (byte*)MemoryApi.VirtualAlloc(newLength, AllocationType.Commit, ProtectionType.ExecuteReadWrite);
+        byte* newBuffer = (byte*)MemoryApi.VirtualAlloc(newLength, AllocationType.Commit, ProtectionType.ReadWrite);
         byte* oldBuffer = s_buffer;
         SpanHelpers.Memmove(newBuffer, oldBuffer, s_bufferPosition);
         MemoryApi.VirtualFree(oldBuffer, bufferLength);

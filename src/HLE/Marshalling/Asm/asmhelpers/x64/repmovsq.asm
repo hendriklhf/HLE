@@ -1,6 +1,6 @@
 bits 64
 
-repmovsq:
+repmovsq: ; void repmovsq(void* destination, void* source, nuint byteCount)
     mov r9, rsi
     mov r10, rdi
     mov rsi, rdx

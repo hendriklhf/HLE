@@ -40,6 +40,10 @@
   <ItemGroup>
     <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x64\repmovsq.bin" />
     <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x86\repmovsd.bin" />
+    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x86\rdrand16.bin" />
+    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x86\rdrand32.bin" />
+    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x64\rdrand64.bin" />
+    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x64\ParseHexColor.bin" />
   </ItemGroup>
 
 </Project>

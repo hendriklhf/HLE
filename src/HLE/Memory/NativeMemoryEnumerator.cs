@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using HLE.Memory;
 
-namespace HLE.Collections;
+namespace HLE.Memory;
 
 public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatable<NativeMemoryEnumerator<T>>
     where T : unmanaged
@@ -28,7 +27,7 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
 
     public bool MoveNext() => _current++ < _end;
 
-    public void Reset() => _current = 0;
+    public void Reset() => _current = -1;
 
     [Pure]
     public readonly bool Equals(NativeMemoryEnumerator<T> other)
@@ -39,7 +38,7 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
         => obj is NativeMemoryEnumerator<T> other && Equals(other);
 
     [Pure]
-    public override readonly int GetHashCode() => HashCode.Combine((nuint)_memory, _end);
+    public override readonly int GetHashCode() => HashCode.Combine((nuint)_memory, _current, _end);
 
     public static bool operator ==(NativeMemoryEnumerator<T> left, NativeMemoryEnumerator<T> right) => left.Equals(right);
 
