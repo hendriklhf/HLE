@@ -37,7 +37,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
 
     public Regex GetOrAdd(Regex regex)
     {
-        Bucket bucket = GetBucket(regex);
+        ref Bucket bucket = ref GetBucket(regex);
         if (!bucket.Contains(regex))
         {
             bucket.Add(regex);
@@ -77,7 +77,11 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
         Add(regex);
     }
 
-    public void Add(Regex regex) => GetBucket(regex).Add(regex);
+    public void Add(Regex regex)
+    {
+        ref Bucket bucket = ref GetBucket(regex);
+        bucket.Add(regex);
+    }
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, [MaybeNullWhen(false)] out Regex regex)
         => TryGet(pattern, RegexOptions.None, Regex.InfiniteMatchTimeout, out regex);

@@ -264,6 +264,7 @@ public unsafe partial struct NativeMemory<T> :
 
     readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly void ThrowIfDisposed()
     {
         if (IsDisposed)

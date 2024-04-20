@@ -61,14 +61,14 @@ public sealed partial class TwitchApi
     }
 
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<string> usernames)
-        => GetUsersAsync(usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
+        => GetUsersAsync(usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
 
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<long> userIds)
         => GetUsersAsync(ReadOnlyMemory<string>.Empty, userIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> userIdsMemory) ? userIdsMemory : userIds.ToArray());
 
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<string> usernames, IEnumerable<long> userIds)
     {
-        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory);
+        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
         bool userIdsIsMemory = userIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> userIdsMemory);
 
         return usernamesIsMemory switch

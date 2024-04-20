@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using HLE.Collections;
 using HLE.Marshalling;
 
@@ -102,7 +103,14 @@ public static partial class SpanHelpers
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     Unsafe.Add(ref destination, indicesLength++) = startIndex + index;
-                    equals ^= (1U << index);
+                    if (Bmi1.X64.IsSupported)
+                    {
+                        equals = Bmi1.X64.ResetLowestSetBit(equals);
+                    }
+                    else
+                    {
+                        equals ^= (1UL << index);
+                    }
                 }
 
                 startIndex += Vector512<T>.Count;
@@ -122,7 +130,14 @@ public static partial class SpanHelpers
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     Unsafe.Add(ref destination, indicesLength++) = startIndex + index;
-                    equals ^= (1U << index);
+                    if (Bmi1.IsSupported)
+                    {
+                        equals = Bmi1.ResetLowestSetBit(equals);
+                    }
+                    else
+                    {
+                        equals ^= (1U << index);
+                    }
                 }
 
                 startIndex += Vector256<T>.Count;
@@ -142,7 +157,14 @@ public static partial class SpanHelpers
                 {
                     int index = BitOperations.TrailingZeroCount(equals);
                     Unsafe.Add(ref destination, indicesLength++) = startIndex + index;
-                    equals ^= (1U << index);
+                    if (Bmi1.IsSupported)
+                    {
+                        equals = Bmi1.ResetLowestSetBit(equals);
+                    }
+                    else
+                    {
+                        equals ^= (1U << index);
+                    }
                 }
 
                 startIndex += Vector128<T>.Count;

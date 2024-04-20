@@ -9,8 +9,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
+using HLE.Memory;
 
-namespace HLE.Memory;
+namespace HLE.IO;
 
 public sealed class PooledStream(int capacity) :
     Stream,

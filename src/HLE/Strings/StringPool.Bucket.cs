@@ -1,9 +1,6 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -11,25 +8,28 @@ namespace HLE.Strings;
 
 public sealed partial class StringPool
 {
-    private readonly struct Bucket(int bucketCapacity = DefaultBucketCapacity) :
-        IEnumerable<string>,
-        IEquatable<Bucket>
+    private partial struct Bucket : IEquatable<Bucket>
     {
-        internal readonly string?[] _strings = GC.AllocateArray<string>(bucketCapacity, true);
+        private Strings _strings;
+        private readonly object _lock = new();
 
-        private const int MoveItemThreshold = 6;
+        private const int MoveItemThreshold = 4;
+
+        public Bucket()
+        {
+        }
 
         public void Clear()
         {
-            lock (_strings)
+            lock (_lock)
             {
-                Array.Clear(_strings);
+                _strings.AsSpan().Clear();
             }
         }
 
         public string GetOrAdd(ReadOnlySpan<char> span)
         {
-            lock (_strings)
+            lock (_lock)
             {
                 if (TryGetWithoutLock(span, out string? value))
                 {
@@ -44,7 +44,7 @@ public sealed partial class StringPool
 
         public string GetOrAdd(string str)
         {
-            lock (_strings)
+            lock (_lock)
             {
                 if (TryGetWithoutLock(str, out _))
                 {
@@ -58,7 +58,7 @@ public sealed partial class StringPool
 
         public void Add(string value)
         {
-            lock (_strings)
+            lock (_lock)
             {
                 AddWithoutLock(value);
             }
@@ -66,7 +66,7 @@ public sealed partial class StringPool
 
         public bool TryGet(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            lock (_strings)
+            lock (_lock)
             {
                 return TryGetWithoutLock(span, out value);
             }
@@ -76,14 +76,14 @@ public sealed partial class StringPool
 
         private void AddWithoutLock(string value)
         {
-            ref string? stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-            SpanHelpers<string?>.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, (uint)(_strings.Length - 1));
+            ref string? stringsReference = ref _strings.Reference;
+            SpanHelpers<string?>.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, DefaultBucketCapacity - 1);
             stringsReference = value;
         }
 
         private bool TryGetWithoutLock(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            Span<string?> strings = _strings;
+            Span<string?> strings = _strings.AsSpan();
             for (int i = 0; i < strings.Length; i++)
             {
                 string? str = strings[i];
@@ -113,29 +113,13 @@ public sealed partial class StringPool
             return false;
         }
 
-        public IEnumerator<string> GetEnumerator()
-        {
-            // ReSharper disable once InconsistentlySynchronizedField
-            foreach (string? str in _strings)
-            {
-                if (str is null)
-                {
-                    break;
-                }
+        // ReSharper disable once InconsistentlySynchronizedField
+        public readonly bool Equals(Bucket other) => ReferenceEquals(_lock, other._lock);
 
-                yield return str;
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
         // ReSharper disable once InconsistentlySynchronizedField
-        public bool Equals(Bucket other) => _strings.Equals(other._strings);
-
-        public override bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
-
-        // ReSharper disable once InconsistentlySynchronizedField
-        public override int GetHashCode() => _strings.GetHashCode();
+        public override readonly int GetHashCode() => RuntimeHelpers.GetHashCode(_lock);
 
         public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
 

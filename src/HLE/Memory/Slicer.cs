@@ -7,7 +7,7 @@ namespace HLE.Memory;
 
 public readonly ref partial struct Slicer<T>
 {
-    /// <inheritdoc cref="GetStart(System.Span{T},int,int)"/>
+    /// <inheritdoc cref="GetStart(Span{T},int,int)"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetStart(ReadOnlySpan<T> span, int start, int length)

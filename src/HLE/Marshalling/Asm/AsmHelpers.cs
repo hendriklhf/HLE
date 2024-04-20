@@ -18,7 +18,7 @@ internal static unsafe class AsmHelpers
     private static readonly delegate*<ulong> s_rdrand64 = (delegate*<ulong>)CreateMethod("Marshalling.Asm.asmhelpers.x64.rdrand64.bin");
     private static readonly delegate*<uint> s_rdrand32 = (delegate*<uint>)CreateMethod("Marshalling.Asm.asmhelpers.x86.rdrand32.bin");
     private static readonly delegate*<ushort> s_rdrand16 = (delegate*<ushort>)CreateMethod("Marshalling.Asm.asmhelpers.x86.rdrand16.bin");
-    private static readonly delegate*<byte*, void*, void> s_parseHexColor = (delegate*<byte*, void*, void>)CreateMethod("Marshalling.Asm.asmhelpers.x64.ParseHexColor.bin");
+    private static readonly delegate*<byte*, uint> s_parseHexColor = (delegate*<byte*, uint>)CreateMethod("Marshalling.Asm.asmhelpers.x64.ParseHexColor.bin");
 
     private static bool IsX64 => RuntimeInformation.ProcessArchitecture is Architecture.X64;
 
@@ -84,10 +84,20 @@ internal static unsafe class AsmHelpers
     [Pure]
     public static byte Rdrand8() => (byte)Rdrand16();
 
-    public static void ParseHexColor(byte* hex, void* colors)
+    [Pure]
+    public static uint ParseHexColor(ReadOnlySpan<byte> hex)
+    {
+        fixed (byte* ptr = hex)
+        {
+            return ParseHexColor(ptr);
+        }
+    }
+
+    [Pure]
+    public static uint ParseHexColor(byte* hex)
     {
         ValidatePlatform(IsX64, Architecture.X64);
-        s_parseHexColor(hex, colors);
+        return s_parseHexColor(hex);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -15,10 +15,7 @@ public static class ListMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetReference<T>(List<T> list)
-    {
-        T[] array = GetArray(list);
-        return ref MemoryMarshal.GetArrayDataReference(array);
-    }
+        => ref MemoryMarshal.GetArrayDataReference(GetArray(list));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

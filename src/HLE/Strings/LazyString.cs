@@ -190,10 +190,10 @@ public sealed class LazyString :
     }
 
     [Pure]
-    public override string ToString() => ToString(0);
+    public override string ToString() => ToString(false);
 
     [Pure]
-    public string ToString(int maximumPoolingLength)
+    public string ToString(bool poolString)
     {
         if (_string is not null)
         {
@@ -211,7 +211,7 @@ public sealed class LazyString :
         Debug.Assert(charBuffer is not null);
 
         ReadOnlySpan<char> chars = charBuffer.AsSpanUnsafe(..Length);
-        string str = Length <= maximumPoolingLength ? StringPool.Shared.GetOrAdd(chars) : new(chars);
+        string str = poolString ? StringPool.Shared.GetOrAdd(chars) : new(chars);
         ArrayPool<char>.Shared.Return(charBuffer);
 
         _string = str;
@@ -254,13 +254,13 @@ public sealed class LazyString :
         copyWorker.CopyTo(destination);
     }
 
-    public void Add(char item) => throw new NotSupportedException();
+    void ICollection<char>.Add(char item) => throw new NotSupportedException();
 
-    public void Clear() => throw new NotSupportedException();
+    void ICollection<char>.Clear() => throw new NotSupportedException();
 
     public bool Contains(char item) => AsSpan().Contains(item);
 
-    public bool Remove(char item) => throw new NotSupportedException();
+    bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 
     ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => AsSpan();
 

@@ -59,7 +59,7 @@ public sealed partial class TwitchApi
     }
 
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames) =>
-        GetStreamsAsync(usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
+        GetStreamsAsync(usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
 
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<long> channelIds)
         => GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory) ? channelIdsMemory : channelIds.ToArray());
@@ -67,7 +67,7 @@ public sealed partial class TwitchApi
     public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames, IEnumerable<long> channelIds)
     {
         // ReSharper disable PossibleMultipleEnumeration
-        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory<string>(out ReadOnlyMemory<string> usernamesMemory);
+        bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
         bool channelIdsIsMemory = channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory);
 
         return usernamesIsMemory switch

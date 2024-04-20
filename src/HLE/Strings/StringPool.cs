@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -10,14 +8,8 @@ using HLE.Memory;
 
 namespace HLE.Strings;
 
-public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<string>
+public sealed partial class StringPool : IEquatable<StringPool>
 {
-    public int BucketCount => _buckets.Length;
-
-    public int BucketCapacity => _buckets[0]._strings.Length;
-
-    public int Capacity => BucketCount * BucketCapacity;
-
     private readonly Bucket[] _buckets;
 
     public static StringPool Shared { get; } = new();
@@ -28,14 +20,12 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     /// <summary>
     /// Constructor for a <see cref="StringPool"/>.
     /// </summary>
-    /// <param name="poolCapacity">The amount of buckets in the pool.</param>
-    /// <param name="bucketCapacity">The amount of strings per bucket in the pool.</param>
-    public StringPool(int poolCapacity = DefaultPoolCapacity, int bucketCapacity = DefaultBucketCapacity)
+    public StringPool()
     {
-        Bucket[] buckets = GC.AllocateArray<Bucket>(poolCapacity, true);
+        Bucket[] buckets = GC.AllocateArray<Bucket>(DefaultPoolCapacity, true);
         for (int i = 0; i < buckets.Length; i++)
         {
-            buckets[i] = new(bucketCapacity);
+            buckets[i] = new();
         }
 
         _buckets = buckets;
@@ -62,17 +52,24 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
                 return str;
         }
 
-        return GetBucket(str).GetOrAdd(str);
+        ref Bucket bucket = ref GetBucket(str);
+        return bucket.GetOrAdd(str);
     }
 
     [Pure]
-    public string GetOrAdd(ReadOnlySpan<char> span) =>
-        span.Length switch
+    public string GetOrAdd(ReadOnlySpan<char> span)
+    {
+        switch (span.Length)
         {
-            0 => string.Empty,
-            1 => SingleCharStringPool.GetOrAdd(span[0]),
-            _ => GetBucket(span).GetOrAdd(span)
-        };
+            case 0:
+                return string.Empty;
+            case 1:
+                return SingleCharStringPool.GetOrAdd(span[0]);
+            default:
+                ref Bucket bucket = ref GetBucket(span);
+                return bucket.GetOrAdd(span);
+        }
+    }
 
     [Pure]
     [SkipLocalsInit]
@@ -108,7 +105,7 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
                 break;
         }
 
-        Bucket bucket = GetBucket(value);
+        ref Bucket bucket = ref GetBucket(value);
         if (!bucket.Contains(value))
         {
             bucket.Add(value);
@@ -125,7 +122,8 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
             case 1:
                 return SingleCharStringPool.TryGet(span[0], out value);
             default:
-                return GetBucket(span).TryGet(span, out value);
+                ref Bucket bucket = ref GetBucket(span);
+                return bucket.TryGet(span, out value);
         }
     }
 
@@ -157,12 +155,18 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
 
     [Pure]
     public bool Contains(ReadOnlySpan<char> span)
-        => span.Length switch
+    {
+        switch (span.Length)
         {
-            0 => true,
-            1 => SingleCharStringPool.Contains(span[0]),
-            _ => GetBucket(span).Contains(span)
-        };
+            case 0:
+                return true;
+            case 1:
+                return SingleCharStringPool.Contains(span[0]);
+            default:
+                ref Bucket bucket = ref GetBucket(span);
+                return bucket.Contains(span);
+        }
+    }
 
     [Pure]
     [SkipLocalsInit]
@@ -188,26 +192,13 @@ public sealed partial class StringPool : IEquatable<StringPool>, IEnumerable<str
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Bucket GetBucket(ReadOnlySpan<char> span)
+    private ref Bucket GetBucket(ReadOnlySpan<char> span)
     {
         ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(_buckets);
         uint hash = SimpleStringHasher.Hash(span);
         int index = (int)(hash % (uint)_buckets.Length);
-        return Unsafe.Add(ref bucketReference, index);
+        return ref Unsafe.Add(ref bucketReference, index);
     }
-
-    public IEnumerator<string> GetEnumerator()
-    {
-        foreach (Bucket bucket in _buckets)
-        {
-            foreach (string str in bucket)
-            {
-                yield return str;
-            }
-        }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
     public bool Equals([NotNullWhen(true)] StringPool? other) => ReferenceEquals(this, other);

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Strings;
@@ -8,38 +9,47 @@ using HLE.Strings;
 namespace HLE.Twitch.Tmi.Models;
 
 [DebuggerDisplay("{ToString()}")]
+[StructLayout(LayoutKind.Sequential)]
+[SuppressMessage("ReSharper", "ConvertToAutoProperty")]
+[SuppressMessage("Roslynator", "RCS1085:Use auto-implemented property")]
+[SuppressMessage("Style", "IDE0032:Use auto property")]
 public readonly struct Color : IBitwiseEquatable<Color>
 {
-    public byte Red { get; }
+    public byte Red => _red;
 
-    public byte Green { get; }
+    public byte Green => _green;
 
-    public byte Blue { get; }
+    public byte Blue => _blue;
 
-    public bool IsEmpty { get; }
+    public bool IsEmpty => _empty;
 
     public static Color Empty => new();
 
-    public Color() => IsEmpty = true;
+    private readonly byte _blue;
+    private readonly byte _green;
+    private readonly byte _red;
+    private readonly bool _empty;
+
+    public Color() => _empty = true;
 
     public Color(byte red, byte green, byte blue)
     {
-        Red = red;
-        Green = green;
-        Blue = blue;
+        _red = red;
+        _green = green;
+        _blue = blue;
     }
 
     public Color(System.Drawing.Color color)
     {
         if (color.IsEmpty)
         {
-            IsEmpty = true;
+            _empty = true;
             return;
         }
 
-        Red = color.R;
-        Green = color.G;
-        Blue = color.B;
+        _red = color.R;
+        _green = color.G;
+        _blue = color.B;
     }
 
 #pragma warning disable CA2225

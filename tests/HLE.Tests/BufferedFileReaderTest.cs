@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using HLE.IO;
 using HLE.Memory;
 using Xunit;
 
@@ -13,7 +14,7 @@ public sealed class BufferedFileReaderTest
 
     public BufferedFileReaderTest()
     {
-        string temporaryDirectory = Path.Combine(Path.GetTempPath(), @"HLE\Tests\BufferedFileReaderTest", $"{Guid.NewGuid():N}");
+        string temporaryDirectory = Path.Combine(Path.GetTempPath(), PathHelpers.TypeNameToPath<BufferedFileReaderTest>());
         Directory.CreateDirectory(temporaryDirectory);
         _temporaryDirectory = temporaryDirectory;
     }

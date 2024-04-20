@@ -120,6 +120,20 @@ public sealed partial class PooledStringBuilder(int capacity) :
         Unsafe.Add(ref GetBufferReference(), Length++) = c;
     }
 
+    public void Append(char c, int count)
+    {
+        if (count == 0)
+        {
+            return;
+        }
+
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+
+        GrowIfNeeded(count);
+        FreeBufferSpan[..count].Fill(c);
+        Length += count;
+    }
+
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default)
         => Append<byte>(value, format);
 

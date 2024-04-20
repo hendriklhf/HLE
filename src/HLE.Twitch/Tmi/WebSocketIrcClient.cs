@@ -127,14 +127,14 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         try
         {
-            CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
+            CancellationToken token = _cancellationTokenSource.Token;
             ClientWebSocket webSocket = _webSocket;
 
             int writtenBufferCount = 0;
             Memory<byte> buffer = GC.AllocateUninitializedArray<byte>(8192, true);
-            while (webSocket.State is WebSocketState.Open && !cancellationTokenSource.IsCancellationRequested)
+            while (webSocket.State is WebSocketState.Open && !token.IsCancellationRequested)
             {
-                ValueWebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(buffer[writtenBufferCount..], cancellationTokenSource.Token);
+                ValueWebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(buffer[writtenBufferCount..], token);
                 if (receiveResult.Count == 0 || OnBytesReceived is null)
                 {
                     continue;

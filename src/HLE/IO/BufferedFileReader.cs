@@ -11,7 +11,7 @@ using JetBrains.Annotations;
 using Microsoft.Win32.SafeHandles;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
-namespace HLE;
+namespace HLE.IO;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [method: MustDisposeResource]

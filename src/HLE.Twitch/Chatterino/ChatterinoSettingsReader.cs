@@ -3,6 +3,7 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using HLE.Collections;
+using HLE.IO;
 using HLE.Memory;
 using HLE.Strings;
 

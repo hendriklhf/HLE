@@ -120,7 +120,7 @@ public static class StringMarshal
         Unsafe.InitBlock(ref Unsafe.As<char, byte>(ref GetReference(str)), 0, (uint)(str.Length << 1));
     }
 
-    /// <inheritdoc cref="AsString(System.ReadOnlySpan{char})"/>
+    /// <inheritdoc cref="AsString(ReadOnlySpan{char})"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string AsString(Span<char> span)

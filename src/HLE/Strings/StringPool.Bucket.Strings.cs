@@ -3,24 +3,23 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 
 namespace HLE.Strings;
 
-public sealed partial class RegexPool
+public sealed partial class StringPool
 {
     private partial struct Bucket
     {
         [InlineArray(DefaultBucketCapacity)]
         [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
-        private struct Regexes
+        private struct Strings
         {
-            private Regex? _regexes;
+            private string? _strings;
 
-            public ref Regex? Reference => ref Unsafe.AsRef(ref _regexes);
+            public ref string? Reference => ref Unsafe.AsRef(ref _strings);
 
             [Pure]
-            public Span<Regex?> AsSpan() => MemoryMarshal.CreateSpan(ref _regexes, DefaultBucketCapacity);
+            public Span<string?> AsSpan() => MemoryMarshal.CreateSpan(ref _strings, DefaultBucketCapacity);
         }
     }
 }
