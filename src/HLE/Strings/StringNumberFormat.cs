@@ -14,7 +14,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     public static StringNumberFormat Binary { get; } = Create("01");
 
-    [SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "not the type name")]
+    [SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "not the type's name")]
     public static StringNumberFormat Decimal { get; } = Create(StringConstants.Numbers);
 
     public static StringNumberFormat HexadecimalUpperCase { get; } = Create("0123456789ABCDEF");
@@ -32,6 +32,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
     [SkipLocalsInit]
     public static StringNumberFormat Create(char minimumCharValue, char maximumCharValue)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(minimumCharValue, maximumCharValue);
         int charLength = maximumCharValue - minimumCharValue + 1;
         string format = StringMarshal.FastAllocateString(charLength, out Span<char> chars);
         SpanHelpers.FillAscending(chars, minimumCharValue);
@@ -52,9 +53,10 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     private static void ValidateChars(ReadOnlySpan<char> chars)
     {
-        foreach (char c in chars)
+        for (int i = 0; i < chars.Length; i++)
         {
-            if (chars.Count(c) != 1)
+            char c = chars[i];
+            if (chars[i..].Count(c) != 1)
             {
                 ThrowContainsCharMultipleTimes(c);
             }

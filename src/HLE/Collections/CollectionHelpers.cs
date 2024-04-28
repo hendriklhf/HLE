@@ -21,13 +21,8 @@ public static partial class CollectionHelpers
 {
     [Pure]
     [LinqTunnel]
-    public static IEnumerable<T> Replace<T>([NoEnumeration] this IEnumerable<T> collection, Func<T, bool> predicate, T replacement)
-    {
-        foreach (T item in collection)
-        {
-            yield return predicate(item) ? replacement : item; // TODO: create own enumerator
-        }
-    }
+    public static ReplaceEnumerable<T> Replace<T>([NoEnumeration] this IEnumerable<T> enumerable, Func<T, bool> predicate, T replacement)
+        => new(enumerable, predicate, replacement);
 
     public static void Replace<T>(this List<T> list, Func<T, bool> predicate, T replacement)
         => Replace(CollectionsMarshal.AsSpan(list), predicate, replacement);
@@ -95,22 +90,22 @@ public static partial class CollectionHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlySpan<T> span)
+    public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out ReadOnlySpan<T> span)
     {
-        if (typeof(T) == typeof(char) && collection is string str)
+        if (typeof(T) == typeof(char) && enumerable is string str)
         {
             ref char firstChar = ref StringMarshal.GetReference(str);
             span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, T>(ref firstChar), str.Length);
             return true;
         }
 
-        if (TryGetSpan(collection, out Span<T> mutableSpan))
+        if (TryGetSpan(enumerable, out Span<T> mutableSpan))
         {
             span = mutableSpan;
             return true;
         }
 
-        switch (collection)
+        switch (enumerable)
         {
             case ImmutableArray<T> immutableArray:
                 span = immutableArray.AsSpan();
@@ -128,9 +123,9 @@ public static partial class CollectionHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> collection, out Span<T> span)
+    public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out Span<T> span)
     {
-        switch (collection)
+        switch (enumerable)
         {
             case T[] array:
                 span = array;
@@ -148,16 +143,16 @@ public static partial class CollectionHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> collection, out ReadOnlyMemory<T> memory)
+    public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> enumerable, out ReadOnlyMemory<T> memory)
     {
-        if (typeof(T) == typeof(char) && collection is string str)
+        if (typeof(T) == typeof(char) && enumerable is string str)
         {
             ReadOnlyMemory<char> stringMemory = str.AsMemory();
             memory = Unsafe.As<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(ref stringMemory);
             return true;
         }
 
-        switch (collection)
+        switch (enumerable)
         {
             case ImmutableArray<T> immutableArray:
                 memory = ImmutableCollectionsMarshal.AsArray(immutableArray);
@@ -170,7 +165,7 @@ public static partial class CollectionHelpers
                 return true;
         }
 
-        if (TryGetMemory(collection, out Memory<T> mutableMemory))
+        if (TryGetMemory(enumerable, out Memory<T> mutableMemory))
         {
             memory = mutableMemory;
             return true;
@@ -181,9 +176,9 @@ public static partial class CollectionHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> collection, out Memory<T> memory)
+    public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> enumerable, out Memory<T> memory)
     {
-        switch (collection)
+        switch (enumerable)
         {
             case T[] array:
                 memory = array;
@@ -270,15 +265,15 @@ public static partial class CollectionHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetNonEnumeratedElementAt<T>([NoEnumeration] this IEnumerable<T> collection, int index, [MaybeNullWhen(false)] out T element)
+    public static bool TryGetNonEnumeratedElementAt<T>([NoEnumeration] this IEnumerable<T> enumerable, int index, [MaybeNullWhen(false)] out T element)
     {
-        if (collection.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+        if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             element = span[index];
             return true;
         }
 
-        switch (collection)
+        switch (enumerable)
         {
             case IList<T> list:
                 element = list[index];
@@ -341,21 +336,21 @@ public static partial class CollectionHelpers
 
     /// <summary>
     /// Tries to enumerate a <see cref="IEnumerable{T}"/> and write the elements into a buffer.<br/>
-    /// If the amount of elements in <paramref name="collection"/> can be found out, the method will check if there is enough space in the buffer.
+    /// If the amount of elements in <paramref name="enumerable"/> can be found out, the method will check if there is enough space in the buffer.
     /// If there isn't enough space, the method will return <see langword="false"/> and set <paramref name="writtenElements"/> to <c>0</c>.<br/>
     /// If no amount of elements could be retrieved, the method will start writing elements into the buffer and will do so until it is finished, in which case it will return <see langword="true"/>,
     /// or until it runs out of buffer space, in which case it will return <see langword="false"/>.<br/>
     /// </summary>
     /// <remarks>This method is in some cases much more efficient than calling <c>.ToArray()</c> on an <see cref="IEnumerable{T}"/> and enables using a rented <see cref="Array"/> from an <see cref="ArrayPool{T}"/> to store the elements.</remarks>
-    /// <param name="collection">The <see cref="IEnumerable{T}"/> that will be enumerated and elements will be taken from.</param>
+    /// <param name="enumerable">The <see cref="IEnumerable{T}"/> that will be enumerated and elements will be taken from.</param>
     /// <param name="destination">The buffer the elements will be written into.</param>
     /// <param name="writtenElements">The amount of written elements.</param>
     /// <typeparam name="T">The type of elements in the <see cref="IEnumerable{T}"/>.</typeparam>
     /// <returns>True, if a full enumeration into the buffer was possible, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryEnumerateInto<T>(this IEnumerable<T> collection, Span<T> destination, out int writtenElements)
+    public static bool TryEnumerateInto<T>(this IEnumerable<T> enumerable, Span<T> destination, out int writtenElements)
     {
-        if (collection.TryGetNonEnumeratedCount(out int elementCount))
+        if (enumerable.TryGetNonEnumeratedCount(out int elementCount))
         {
             if (elementCount > destination.Length)
             {
@@ -363,14 +358,14 @@ public static partial class CollectionHelpers
                 return false;
             }
 
-            if (collection.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
+            if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
             {
                 span.CopyTo(destination);
                 writtenElements = span.Length;
                 return true;
             }
 
-            switch (collection)
+            switch (enumerable)
             {
                 case ICopyable<T> copyable:
                     copyable.CopyTo(destination);
@@ -387,7 +382,7 @@ public static partial class CollectionHelpers
         }
 
         writtenElements = 0;
-        foreach (T item in collection)
+        foreach (T item in enumerable)
         {
             if (writtenElements >= destination.Length)
             {

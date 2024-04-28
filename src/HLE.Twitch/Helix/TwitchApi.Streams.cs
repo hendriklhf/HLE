@@ -14,6 +14,8 @@ namespace HLE.Twitch.Helix;
 
 public sealed partial class TwitchApi
 {
+    private const string StreamsEndpoint = "streams";
+
     public async ValueTask<Stream?> GetStreamAsync(long userId)
     {
         if (TryGetStreamFromCache(userId, out Stream? stream))
@@ -21,7 +23,7 @@ public sealed partial class TwitchApi
             return stream;
         }
 
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "streams", ApiBaseUrl.Length + "streams".Length + 50);
+        using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
         urlBuilder.AppendParameter("user_id", userId);
         using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
         GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
@@ -44,7 +46,7 @@ public sealed partial class TwitchApi
             return stream;
         }
 
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "streams", ApiBaseUrl.Length + "streams".Length + 50);
+        using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
         urlBuilder.AppendParameter("user_login", username.Span);
         using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
         GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
@@ -58,13 +60,13 @@ public sealed partial class TwitchApi
         return stream;
     }
 
-    public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames) =>
-        GetStreamsAsync(usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
+    public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames)
+        => GetStreamsAsync(usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory) ? usernamesMemory : usernames.ToArray(), ReadOnlyMemory<long>.Empty);
 
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<long> channelIds)
         => GetStreamsAsync(ReadOnlyMemory<string>.Empty, channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory) ? channelIdsMemory : channelIds.ToArray());
 
-    public async ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames, IEnumerable<long> channelIds)
+    public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames, IEnumerable<long> channelIds)
     {
         // ReSharper disable PossibleMultipleEnumeration
         bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
@@ -72,10 +74,10 @@ public sealed partial class TwitchApi
 
         return usernamesIsMemory switch
         {
-            true when channelIdsIsMemory => await GetStreamsAsync(usernamesMemory, channelIdsMemory),
-            true when !channelIdsIsMemory => await GetStreamsAsync(usernamesMemory, channelIds.ToArray()),
-            false when channelIdsIsMemory => await GetStreamsAsync(usernamesMemory.ToArray(), channelIdsMemory),
-            _ => await GetStreamsAsync(usernames.ToArray(), channelIds.ToArray())
+            true when channelIdsIsMemory => GetStreamsAsync(usernamesMemory, channelIdsMemory),
+            true when !channelIdsIsMemory => GetStreamsAsync(usernamesMemory, channelIds.ToArray()),
+            false when channelIdsIsMemory => GetStreamsAsync(usernamesMemory.ToArray(), channelIdsMemory),
+            _ => GetStreamsAsync(usernames.ToArray(), channelIds.ToArray())
         };
         // ReSharper restore PossibleMultipleEnumeration
     }
@@ -111,58 +113,61 @@ public sealed partial class TwitchApi
         return streamCount == 0 ? [] : buffer.ToArray(..streamCount);
     }
 
-    public async ValueTask<int> GetStreamsAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Stream[] destination)
+    public ValueTask<int> GetStreamsAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Stream[] destination)
     {
         int parameterCount = usernames.Length + channelIds.Length;
-        switch (parameterCount)
+        return parameterCount switch
         {
-            case 0:
-                return 0;
-            case 100:
-                throw new ArgumentException("The endpoint allows only up to 100 parameters. You can't pass more than 100 usernames or user ids in total.");
-        }
+            0 => ValueTask.FromResult(0),
+            100 => throw new ArgumentException("The endpoint allows only up to 100 parameters. You can't pass more than 100 usernames or user ids in total."),
+            _ => GetStreamsCoreAsync(usernames, channelIds, destination)
+        };
 
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "streams", usernames.Length * 35 + channelIds.Length * 25 + 50);
-        int cachedStreamCount = 0;
-        for (int i = 0; i < usernames.Length; i++)
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<int> GetStreamsCoreAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Stream[] destination)
         {
-            string username = usernames.Span[i];
-            if (TryGetStreamFromCache(username, out Stream? stream))
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, usernames.Length * 35 + channelIds.Length * 25 + 50);
+            int cachedStreamCount = 0;
+            for (int i = 0; i < usernames.Length; i++)
             {
-                destination[cachedStreamCount++] = stream;
-                continue;
+                string username = usernames.Span[i];
+                if (TryGetStreamFromCache(username, out Stream? stream))
+                {
+                    destination[cachedStreamCount++] = stream;
+                    continue;
+                }
+
+                urlBuilder.AppendParameter("user_login", username);
             }
 
-            urlBuilder.AppendParameter("user_login", username);
-        }
-
-        for (int i = 0; i < channelIds.Length; i++)
-        {
-            long userId = channelIds.Span[i];
-            if (TryGetStreamFromCache(userId, out Stream? stream))
+            for (int i = 0; i < channelIds.Length; i++)
             {
-                destination[cachedStreamCount++] = stream;
-                continue;
+                long userId = channelIds.Span[i];
+                if (TryGetStreamFromCache(userId, out Stream? stream))
+                {
+                    destination[cachedStreamCount++] = stream;
+                    continue;
+                }
+
+                urlBuilder.AppendParameter("user_id", userId);
             }
 
-            urlBuilder.AppendParameter("user_id", userId);
-        }
+            if (urlBuilder.ParameterCount == 0)
+            {
+                return cachedStreamCount;
+            }
 
-        if (urlBuilder.ParameterCount == 0)
-        {
-            return cachedStreamCount;
-        }
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
+            int deserializedStreamCount = getResponse.Items.Length;
+            if (deserializedStreamCount != 0)
+            {
+                getResponse.Items.CopyTo(destination[cachedStreamCount..]);
+            }
 
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
-        int deserializedStreamCount = getResponse.Items.Length;
-        if (deserializedStreamCount != 0)
-        {
-            getResponse.Items.CopyTo(destination[cachedStreamCount..]);
+            Cache?.AddStreams(destination.AsSpan(cachedStreamCount..(cachedStreamCount + deserializedStreamCount)));
+            return deserializedStreamCount + cachedStreamCount;
         }
-
-        Cache?.AddStreams(destination.AsSpan(cachedStreamCount..(cachedStreamCount + deserializedStreamCount)));
-        return deserializedStreamCount + cachedStreamCount;
     }
 
     private bool TryGetStreamFromCache(long channelId, [MaybeNullWhen(false)] out Stream stream)

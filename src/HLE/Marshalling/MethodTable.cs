@@ -7,6 +7,7 @@ namespace HLE.Marshalling;
 [StructLayout(LayoutKind.Explicit)]
 [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
 [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
+[SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
 public readonly struct MethodTable
 {
     /// <summary>

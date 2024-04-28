@@ -11,6 +11,7 @@ public sealed partial class RegexPool
 {
     private partial struct Bucket : IEquatable<Bucket>
     {
+        [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "InlineArray")]
         private Regexes _regexes;
         private readonly object _lock = new();
 

@@ -148,7 +148,7 @@ public ref partial struct ValueStringBuilder
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
         GrowIfNeeded(count);
-        FreeBufferSpan[..count].Fill(c);
+        FreeBufferSpan.SliceUnsafe(0, count).Fill(c);
         Length += count;
     }
 
@@ -265,11 +265,10 @@ public ref partial struct ValueStringBuilder
     {
         Debug.Assert(neededSize >= 0);
 
-        int length = Length;
         Span<char> oldBuffer = GetBuffer();
-
         int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         Span<char> newBuffer = ArrayPool<char>.Shared.Rent(newSize);
+        int length = Length;
         if (length != 0)
         {
             SpanHelpers<char>.Copy(oldBuffer.SliceUnsafe(..length), newBuffer);

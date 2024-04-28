@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -8,16 +10,32 @@ using HLE.Memory;
 
 namespace HLE.Marshalling;
 
-public static class StringMarshal
+public static unsafe class StringMarshal
 {
-    internal static readonly unsafe delegate*<int, string> s_fastAllocateString = (delegate*<int, string>)typeof(string)
-        .GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static)!
-        .MethodHandle
-        .GetFunctionPointer();
+    private static readonly delegate*<int, string> s_fastAllocateString = GetFastAllocateStringFunctionPointer();
+
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
+    private static delegate*<int, string> GetFastAllocateStringFunctionPointer()
+    {
+        MethodInfo? fastAllocateStringMethodInfo =
+            typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static);
+
+        if (fastAllocateStringMethodInfo is not null)
+        {
+            return (delegate*<int, string>)fastAllocateStringMethodInfo
+                .MethodHandle
+                .GetFunctionPointer();
+        }
+
+        Debug.Fail($"Using {nameof(FastAllocateStringFallback)}!");
+        return &FastAllocateStringFallback;
+    }
+
+    private static string FastAllocateStringFallback(int length) => new('\0', length);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe string FastAllocateString(int length, out Span<char> chars)
+    public static string FastAllocateString(int length, out Span<char> chars)
     {
         if (length == 0)
         {

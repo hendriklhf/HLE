@@ -12,6 +12,7 @@ public sealed partial class StringPool
     {
         [InlineArray(DefaultBucketCapacity)]
         [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
+        [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
         private struct Strings
         {
             private string? _strings;

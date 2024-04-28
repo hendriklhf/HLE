@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using HLE.IL;
 
 namespace HLE.Marshalling;
 
@@ -15,7 +15,7 @@ public static class ListMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetReference<T>(List<T> list)
-        => ref MemoryMarshal.GetArrayDataReference(GetArray(list));
+        => ref UnsafeIL.GetArrayReference(GetArray(list));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

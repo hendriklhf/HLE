@@ -14,6 +14,7 @@ namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
+[CollectionBuilder(typeof(ValueListBuilder), nameof(ValueListBuilder.Create))]
 public ref struct ValueList<T>
 {
     public readonly ref T this[int index]
@@ -33,7 +34,7 @@ public ref struct ValueList<T>
     public int Count
     {
         readonly get => _countAndIsStackalloced.Integer;
-        private set
+        internal set
         {
             Debug.Assert(value >= 0);
             _countAndIsStackalloced.SetIntegerUnsafe(value);

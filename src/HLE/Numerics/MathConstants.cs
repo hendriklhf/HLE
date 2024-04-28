@@ -179,7 +179,7 @@ public static class MathConstants
     /// <summary>
     /// The Rydberg constant in m^-1.
     /// </summary>
-    public const double RydbergConstant = 10973731.568160;
+    public const double RydbergConstant = 10_973_731.568160;
 
     /// <summary>
     /// The second radiation constant in m * K.
@@ -189,7 +189,7 @@ public static class MathConstants
     /// <summary>
     /// The speed of light c in a vacuum in m/s.
     /// </summary>
-    public const double SpeedOfLight = 299792458;
+    public const double SpeedOfLight = 299_792_458;
 
     /// <summary>
     /// The Stefan-Boltzmann constant in W * m^-2 * K^-4.
@@ -204,7 +204,7 @@ public static class MathConstants
     /// <summary>
     /// The hyperfine transition frequency of Caesium-133 in Hz.
     /// </summary>
-    public const double TransitionFrequencyOfCs133 = 9192631770;
+    public const double TransitionFrequencyOfCs133 = 9_192_631_770;
 
     /// <summary>
     /// The von Klitzing constant in Ohm.

@@ -130,7 +130,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
         GrowIfNeeded(count);
-        FreeBufferSpan[..count].Fill(c);
+        FreeBufferSpan.SliceUnsafe(0, count).Fill(c);
         Length += count;
     }
 
@@ -292,7 +292,6 @@ public sealed partial class PooledStringBuilder(int capacity) :
         copyWorker.CopyTo(destination, offset);
     }
 
-    [SuppressMessage("Roslynator", "RCS1168:Parameter name differs from base name")]
     public void CopyTo(char[] destination, int offset = 0)
     {
         CopyWorker<char> copyWorker = new(WrittenSpan);

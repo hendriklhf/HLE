@@ -39,8 +39,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
-    // ReSharper disable once InconsistentNaming
-    public bool UseSSL => _client.UseSSL;
+    public bool UseSsl => _client.UseSsl;
 
     /// <summary>
     /// The list of channels the client is connected to. Channels can be retrieved by the owner's username or user id in order to read the room state, e.g. if slow-mode is on.
@@ -262,24 +261,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), messageUtf8.AsMemory());
     }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNotConnectedToChannelException(ReadOnlyMemory<char> channel)
-        => throw new NotConnectedToChannelException(new string(channel.Span));
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNotConnectedToChannelException(long channelId)
-        => throw new NotConnectedToChannelException(channelId);
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowAnonymousClientException() => throw new AnonymousClientException();
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowClientNotConnectedException() => throw new ClientNotConnectedException();
-
     /// <inheritdoc cref="SendAsync(long,ReadOnlyMemory{char})"/>
     public ValueTask SendAsync(long channelId, string message) => SendAsync(channelId, message.AsMemory());
 
@@ -309,6 +290,24 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         using Bytes messageUtf8 = Utf16ToUtf8(message.Span);
         await _client.SendMessageAsync(prefixedChannel.AsMemory(), messageUtf8.AsMemory());
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowNotConnectedToChannelException(ReadOnlyMemory<char> channel)
+        => throw new NotConnectedToChannelException(new string(channel.Span));
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowNotConnectedToChannelException(long channelId)
+        => throw new NotConnectedToChannelException(channelId);
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowAnonymousClientException() => throw new AnonymousClientException();
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowClientNotConnectedException() => throw new ClientNotConnectedException();
 
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
     public ValueTask SendRawAsync(string rawMessage) => SendRawAsync(rawMessage.AsMemory());
@@ -492,10 +491,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         => _onNoticeReceived?.Invoke(this, e);
 
     // ReSharper disable once AsyncVoidMethod
+    [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
     private async void IrcHandler_OnReconnectReceivedAsync(object? o, EventArgs eventArgs)
         => await _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
 
     // ReSharper disable once AsyncVoidMethod
+    [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
     private async void IrcHandler_OnPingReceivedAsync(object? _, Bytes e)
     {
         try

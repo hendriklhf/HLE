@@ -3,7 +3,7 @@ using System;
 namespace HLE.Marshalling.Windows;
 
 [Flags]
-public enum AllocationType
+public enum AllocationTypes
 {
     None = 0,
     Commit = 0x00001000,

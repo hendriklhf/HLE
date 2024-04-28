@@ -23,15 +23,6 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
     public static ReadOnlySpan<TEnum> AsSpan() => s_values;
 
     [Pure]
-    public static ReadOnlyMemory<TEnum> AsMemory() => s_values;
-
-    [Pure]
-    public static ImmutableArray<TEnum> AsImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(s_values);
-
-    [Pure]
-    public static IEnumerable<TEnum> AsEnumerable() => s_values;
-
-    [Pure]
     public static unsafe ReadOnlySpan<TUnderlyingType> AsSpan<TUnderlyingType>()
         where TUnderlyingType : unmanaged
     {
@@ -45,6 +36,15 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
         ref TUnderlyingType underlyingTypeReference = ref Unsafe.As<TEnum, TUnderlyingType>(ref valuesReference);
         return MemoryMarshal.CreateReadOnlySpan(ref underlyingTypeReference, Count);
     }
+
+    [Pure]
+    public static ReadOnlyMemory<TEnum> AsMemory() => s_values;
+
+    [Pure]
+    public static ImmutableArray<TEnum> AsImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(s_values);
+
+    [Pure]
+    public static IEnumerable<TEnum> AsEnumerable() => s_values;
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

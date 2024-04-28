@@ -20,7 +20,7 @@ public sealed class TypeFormatterTest
         new Parameter($"HLE{DefaultNamespaceSeparator}Tests{DefaultNamespaceSeparator}Strings{DefaultNamespaceSeparator}TypeFormatterTest.Parameter", typeof(Parameter)),
         new Parameter($"HLE{DefaultNamespaceSeparator}Tests{DefaultNamespaceSeparator}Strings{DefaultNamespaceSeparator}TypeFormatterTest.Parameter[]", typeof(Parameter[])),
         new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>)),
-        new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}.Enumerator", typeof(FrozenDictionary<string, Type>.Enumerator))
+        new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary.Enumerator{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>.Enumerator))
     );
 
     private readonly TypeFormatter _formatter = new(new()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -16,6 +17,7 @@ public static unsafe class ObjectMarshal
         get => (uint)(sizeof(nuint) + sizeof(nuint)); // object header + method table
     }
 
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static readonly delegate*<object, nint> s_getRawObjectSize = (delegate*<object, nint>)typeof(RuntimeHelpers)
         .GetMethod("GetRawObjectDataSize", BindingFlags.NonPublic | BindingFlags.Static)!
         .MethodHandle
@@ -66,6 +68,14 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static MethodTable* GetMethodTable(object obj) => (MethodTable*)*UnsafeIL.AsPointer<object, nuint>(obj);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static MethodTable* GetMethodTable<T>() => GetMethodTable(typeof(T));
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static MethodTable* GetMethodTable(Type type) => (MethodTable*)type.TypeHandle.Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -142,12 +152,4 @@ public static unsafe class ObjectMarshal
         BaseObjectSize +
         (nuint)sizeof(nuint) /* array length */ +
         (uint)arrayLength * (uint)sizeof(T); /* items */
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable<T>() => GetMethodTable(typeof(T));
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable(Type type) => (MethodTable*)type.TypeHandle.Value;
 }

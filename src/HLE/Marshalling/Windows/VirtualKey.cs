@@ -5,6 +5,7 @@ namespace HLE.Marshalling.Windows;
 [SuppressMessage("Design", "CA1069:Enums values should not be duplicated")]
 [SuppressMessage("Roslynator", "RCS1234:Duplicate enum value")]
 [SuppressMessage("Design", "CA1028:Enum Storage should be Int32")]
+[SuppressMessage("Minor Code Smell", "S4022:Enumerations should have \"Int32\" storage")]
 public enum VirtualKey : ushort
 {
     None = 0x0,

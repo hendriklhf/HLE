@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 namespace HLE.Marshalling.Windows;
 
 [StructLayout(LayoutKind.Explicit)]
+[SuppressMessage("Critical Code Smell", "S4000:Pointers to unmanaged memory should not be visible")]
 public unsafe struct MouseInput : IInput, IEquatable<MouseInput>
 {
     [FieldOffset(4)]

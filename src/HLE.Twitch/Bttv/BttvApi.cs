@@ -26,76 +26,82 @@ public sealed class BttvApi : IBttvApi, IEquatable<BttvApi>
         }
     }
 
-    public async ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(long channelId)
+    public ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(long channelId)
     {
-        if (TryGetChannelEmotesFromCache(channelId, out ImmutableArray<Emote> emotes))
+        return TryGetChannelEmotesFromCache(channelId, out ImmutableArray<Emote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetChannelEmotesCoreAsync(channelId);
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(long channelId)
         {
+            using PooledStringBuilder urlBuilder = new(100);
+            urlBuilder.Append(ApiBaseUrl, "/cached/users/twitch/");
+            urlBuilder.Append(channelId);
+
+            using HttpClient httpClient = new();
+            using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+            if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+            {
+                return [];
+            }
+
+            using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
+            }
+
+            if (httpContentBytes.Length == 0)
+            {
+                throw new HttpResponseEmptyException();
+            }
+
+            GetUserResponse userResponse = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), BttvJsonSerializerContext.Default.GetUserResponse);
+            if (userResponse.ChannelEmotes.Length == 0 && userResponse.SharedEmotes.Length == 0)
+            {
+                return [];
+            }
+
+            Emote[] emoteArray = new Emote[userResponse.ChannelEmotes.Length + userResponse.SharedEmotes.Length];
+            userResponse.ChannelEmotes.CopyTo(emoteArray.AsSpan());
+            userResponse.SharedEmotes.CopyTo(emoteArray.AsSpan(userResponse.ChannelEmotes.Length));
+            ImmutableArray<Emote> emotes = ImmutableCollectionsMarshal.AsImmutableArray(emoteArray);
+            Cache?.AddChannelEmotes(channelId, emotes);
             return emotes;
         }
-
-        using PooledStringBuilder urlBuilder = new(100);
-        urlBuilder.Append(ApiBaseUrl, "/cached/users/twitch/");
-        urlBuilder.Append(channelId);
-
-        using HttpClient httpClient = new();
-        using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
-        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
-        {
-            return [];
-        }
-
-        using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
-
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
-        }
-
-        if (httpContentBytes.Length == 0)
-        {
-            throw new HttpResponseEmptyException();
-        }
-
-        GetUserResponse userResponse = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), BttvJsonSerializerContext.Default.GetUserResponse);
-        if (userResponse.ChannelEmotes.Length == 0 && userResponse.SharedEmotes.Length == 0)
-        {
-            return [];
-        }
-
-        Emote[] emoteArray = new Emote[userResponse.ChannelEmotes.Length + userResponse.SharedEmotes.Length];
-        userResponse.ChannelEmotes.CopyTo(emoteArray.AsSpan());
-        userResponse.SharedEmotes.CopyTo(emoteArray.AsSpan(userResponse.ChannelEmotes.Length));
-        emotes = ImmutableCollectionsMarshal.AsImmutableArray(emoteArray);
-        Cache?.AddChannelEmotes(channelId, emotes);
-        return emotes;
     }
 
-    public async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync()
+    public ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync()
     {
-        if (TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes))
+        return TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetGlobalEmotesCoreAsync();
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesCoreAsync()
         {
+            using PooledStringBuilder urlBuilder = new(100);
+            urlBuilder.Append(ApiBaseUrl, "/cached/emotes/global");
+
+            using HttpClient httpClient = new();
+            using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+            using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
+            }
+
+            if (httpContentBytes.Length == 0)
+            {
+                throw new HttpResponseEmptyException();
+            }
+
+            ImmutableArray<Emote> emotes = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), BttvJsonSerializerContext.Default.ImmutableArrayEmote);
+            Cache?.AddGlobalEmotes(emotes);
             return emotes;
         }
-
-        using PooledStringBuilder urlBuilder = new(100);
-        urlBuilder.Append(ApiBaseUrl, "/cached/emotes/global");
-
-        using HttpClient httpClient = new();
-        using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
-        using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
-        }
-
-        if (httpContentBytes.Length == 0)
-        {
-            throw new HttpResponseEmptyException();
-        }
-
-        emotes = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), BttvJsonSerializerContext.Default.ImmutableArrayEmote);
-        Cache?.AddGlobalEmotes(emotes);
-        return emotes;
     }
 
     private bool TryGetChannelEmotesFromCache(long channelId, out ImmutableArray<Emote> emotes)

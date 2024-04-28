@@ -15,6 +15,7 @@ public static unsafe class SpanHelpers<T>
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
     private static readonly delegate*<ref T, ref T, nuint, void> s_memmove = GetMemmoveFunctionPointer();
 
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static delegate*<ref T, ref T, nuint, void> GetMemmoveFunctionPointer()
     {
         MethodInfo? memmove = Array.Find(

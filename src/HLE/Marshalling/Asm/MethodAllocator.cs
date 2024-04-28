@@ -8,7 +8,7 @@ namespace HLE.Marshalling.Asm;
 
 internal static unsafe class MethodAllocator
 {
-    private static byte* s_buffer = (byte*)MemoryApi.VirtualAlloc(DefaultBufferSize, AllocationType.Commit, ProtectionType.Execute);
+    private static byte* s_buffer = (byte*)MemoryApi.VirtualAlloc(DefaultBufferSize, AllocationTypes.Commit, ProtectionTypes.Execute);
     private static nuint s_bufferLength = DefaultBufferSize;
     private static nuint s_bufferPosition;
 
@@ -17,7 +17,7 @@ internal static unsafe class MethodAllocator
     [MethodImpl(MethodImplOptions.Synchronized)]
     public static void* Allocate(ReadOnlySpan<byte> code)
     {
-        MemoryApi.VirtualProtect(s_buffer, s_bufferLength, ProtectionType.ReadWrite);
+        MemoryApi.VirtualProtect(s_buffer, s_bufferLength, ProtectionTypes.ReadWrite);
         try
         {
             nuint freeBufferSize = GetFreeBufferSize();
@@ -39,7 +39,7 @@ internal static unsafe class MethodAllocator
         }
         finally
         {
-            MemoryApi.VirtualProtect(s_buffer, s_bufferLength, ProtectionType.Execute);
+            MemoryApi.VirtualProtect(s_buffer, s_bufferLength, ProtectionTypes.Execute);
         }
     }
 
@@ -47,7 +47,7 @@ internal static unsafe class MethodAllocator
     {
         nuint bufferLength = s_bufferLength;
         nuint newLength = BufferHelpers.GrowNativeBuffer(bufferLength, sizeHint);
-        byte* newBuffer = (byte*)MemoryApi.VirtualAlloc(newLength, AllocationType.Commit, ProtectionType.ReadWrite);
+        byte* newBuffer = (byte*)MemoryApi.VirtualAlloc(newLength, AllocationTypes.Commit, ProtectionTypes.ReadWrite);
         byte* oldBuffer = s_buffer;
         SpanHelpers.Memmove(newBuffer, oldBuffer, s_bufferPosition);
         MemoryApi.VirtualFree(oldBuffer, bufferLength);

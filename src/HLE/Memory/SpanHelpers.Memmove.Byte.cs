@@ -9,7 +9,8 @@ namespace HLE.Memory;
 
 public static unsafe partial class SpanHelpers
 {
-    private const nuint AlignmentThreshold = 256;
+    private const nuint MemmoveAlignment = 64;
+    private const nuint MemmoveAlignmentThreshold = 256;
 
     internal static void Memmove(void* destination, void* source, nuint byteCount)
         => Memmove(ref Unsafe.AsRef<byte>(destination), ref Unsafe.AsRef<byte>(source), byteCount);
@@ -23,7 +24,7 @@ public static unsafe partial class SpanHelpers
         {
             case 0:
                 return;
-            case >= AlignmentThreshold when !MemoryHelpers.IsAligned(ref destination, 64):
+            case >= MemmoveAlignmentThreshold when !MemoryHelpers.IsAligned(ref destination, MemmoveAlignment):
                 MemmoveAlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
                 destination = ref alignmentResult.Destination;
                 source = ref alignmentResult.Source;
@@ -46,7 +47,7 @@ public static unsafe partial class SpanHelpers
                 destination = ref Unsafe.Add(ref destination, copiedBytes);
                 source = ref Unsafe.Add(ref source, copiedBytes);
                 goto CheckByteCount;
-            case <= 48: // >= 32768
+            case 48: // >= 32768
                 Copy32768Bytes__NoInline(ref destination, ref source);
                 if (byteCount == 32768)
                 {
@@ -215,18 +216,18 @@ public static unsafe partial class SpanHelpers
                 return;
             case 6:
                 Copy4Bytes(ref source, ref destination);
-                Copy4Bytes(ref Unsafe.Add(ref source, 2), ref Unsafe.Add(ref destination, 2));
+                Copy2Bytes(ref Unsafe.Add(ref source, 4), ref Unsafe.Add(ref destination, 4));
                 return;
             case 5:
                 Copy4Bytes(ref source, ref destination);
-                Copy4Bytes(ref Unsafe.Add(ref source, 1), ref Unsafe.Add(ref destination, 1));
+                Copy1Byte(ref Unsafe.Add(ref source, 4), ref Unsafe.Add(ref destination, 4));
                 return;
             case 4:
                 Copy4Bytes(ref source, ref destination);
                 return;
             case 3:
                 Copy2Bytes(ref source, ref destination);
-                Copy2Bytes(ref Unsafe.Add(ref source, 1), ref Unsafe.Add(ref destination, 1));
+                Copy1Byte(ref Unsafe.Add(ref source, 2), ref Unsafe.Add(ref destination, 2));
                 return;
             case 2:
                 Copy2Bytes(ref source, ref destination);
@@ -387,9 +388,9 @@ public static unsafe partial class SpanHelpers
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static MemmoveAlignmentResult Align(ref byte source, ref byte destination, nuint byteCount)
     {
-        Debug.Assert(byteCount >= 64);
+        Debug.Assert(byteCount >= MemmoveAlignment);
 
-        ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, 64, AlignmentMethod.Add);
+        ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, MemmoveAlignment, AlignmentMethod.Add);
         nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
 
         Debug.Assert(alignmentDifference != 0);

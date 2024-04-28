@@ -281,9 +281,14 @@ public unsafe partial struct NativeMemory<T> :
 
     [Pure]
     public override readonly string ToString()
-        => typeof(T) == typeof(char)
-            ? Length == 0 ? string.Empty : new((char*)Pointer, 0, Length)
-            : ToStringHelpers.FormatCollection(this);
+    {
+        if (typeof(T) == typeof(char))
+        {
+            return Length == 0 ? string.Empty : new((char*)Pointer, 0, Length);
+        }
+
+        return ToStringHelpers.FormatCollection(this);
+    }
 
     [Pure]
     public readonly bool Equals(NativeMemory<T> other) => Length == other.Length && Pointer == other.Pointer;

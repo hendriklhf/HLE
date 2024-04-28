@@ -43,16 +43,18 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public ConcurrentDoubleDictionary() => _dictionary = [];
 
-    public ConcurrentDoubleDictionary(
+    public ConcurrentDoubleDictionary
+    (
         int capacity,
         IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
         IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null
     )
         => _dictionary = new(capacity, primaryKeyComparer, secondaryKeyComparer);
 
-    public ConcurrentDoubleDictionary(
-        IEqualityComparer<TPrimaryKey>? primaryKeyComparer = null,
-        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer = null
+    public ConcurrentDoubleDictionary
+    (
+        IEqualityComparer<TPrimaryKey>? primaryKeyComparer,
+        IEqualityComparer<TSecondaryKey>? secondaryKeyComparer
     )
         => _dictionary = new(primaryKeyComparer, secondaryKeyComparer);
 

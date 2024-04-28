@@ -78,9 +78,9 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
     {
-        int requiredDestinationSize = Channel.Length + Username.Length + Message.Length + 6;
+        int requiredDestinationSize = Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length;
         if (destination.Length < requiredDestinationSize)
         {
             charsWritten = 0;

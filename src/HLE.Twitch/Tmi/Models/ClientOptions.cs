@@ -14,8 +14,7 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
-    // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; init; } = true;
+    public bool UseSsl { get; init; } = true;
 
     /// <summary>
     /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.
@@ -40,7 +39,7 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ClientOptions other && Equals(other);
 
     [Pure]
-    public override int GetHashCode() => HashCode.Combine(UseSSL, IsVerifiedBot, ParsingMode);
+    public override int GetHashCode() => HashCode.Combine(UseSsl, IsVerifiedBot, ParsingMode);
 
     public static bool operator ==(ClientOptions left, ClientOptions right) => left.Equals(right);
 

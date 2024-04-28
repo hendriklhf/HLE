@@ -3,7 +3,7 @@ using System;
 namespace HLE.Marshalling.Windows;
 
 [Flags]
-public enum FreeType
+public enum FreeTypes
 {
     None = 0,
     CoalescePlaceholders = 0x00000001,

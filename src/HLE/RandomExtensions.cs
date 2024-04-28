@@ -20,70 +20,70 @@ public static class RandomExtensions
 {
     private static ReadOnlySpan<ulong> LeadingZeroFlagMaskValues =>
     [
-        0xFFFFFFFFFFFFFFFF,
-        0xFFFFFFFFFFFFFFFF >> 1,
-        0xFFFFFFFFFFFFFFFF >> 2,
-        0xFFFFFFFFFFFFFFFF >> 3,
-        0xFFFFFFFFFFFFFFFF >> 4,
-        0xFFFFFFFFFFFFFFFF >> 5,
-        0xFFFFFFFFFFFFFFFF >> 6,
-        0xFFFFFFFFFFFFFFFF >> 7,
-        0xFFFFFFFFFFFFFFFF >> 8,
-        0xFFFFFFFFFFFFFFFF >> 9,
-        0xFFFFFFFFFFFFFFFF >> 10,
-        0xFFFFFFFFFFFFFFFF >> 11,
-        0xFFFFFFFFFFFFFFFF >> 12,
-        0xFFFFFFFFFFFFFFFF >> 13,
-        0xFFFFFFFFFFFFFFFF >> 14,
-        0xFFFFFFFFFFFFFFFF >> 15,
-        0xFFFFFFFFFFFFFFFF >> 16,
-        0xFFFFFFFFFFFFFFFF >> 17,
-        0xFFFFFFFFFFFFFFFF >> 18,
-        0xFFFFFFFFFFFFFFFF >> 19,
-        0xFFFFFFFFFFFFFFFF >> 20,
-        0xFFFFFFFFFFFFFFFF >> 21,
-        0xFFFFFFFFFFFFFFFF >> 22,
-        0xFFFFFFFFFFFFFFFF >> 23,
-        0xFFFFFFFFFFFFFFFF >> 24,
-        0xFFFFFFFFFFFFFFFF >> 25,
-        0xFFFFFFFFFFFFFFFF >> 26,
-        0xFFFFFFFFFFFFFFFF >> 27,
-        0xFFFFFFFFFFFFFFFF >> 28,
-        0xFFFFFFFFFFFFFFFF >> 29,
-        0xFFFFFFFFFFFFFFFF >> 30,
-        0xFFFFFFFFFFFFFFFF >> 31,
-        0xFFFFFFFFFFFFFFFF >> 32,
-        0xFFFFFFFFFFFFFFFF >> 33,
-        0xFFFFFFFFFFFFFFFF >> 34,
-        0xFFFFFFFFFFFFFFFF >> 35,
-        0xFFFFFFFFFFFFFFFF >> 36,
-        0xFFFFFFFFFFFFFFFF >> 37,
-        0xFFFFFFFFFFFFFFFF >> 38,
-        0xFFFFFFFFFFFFFFFF >> 39,
-        0xFFFFFFFFFFFFFFFF >> 40,
-        0xFFFFFFFFFFFFFFFF >> 41,
-        0xFFFFFFFFFFFFFFFF >> 42,
-        0xFFFFFFFFFFFFFFFF >> 43,
-        0xFFFFFFFFFFFFFFFF >> 44,
-        0xFFFFFFFFFFFFFFFF >> 45,
-        0xFFFFFFFFFFFFFFFF >> 46,
-        0xFFFFFFFFFFFFFFFF >> 47,
-        0xFFFFFFFFFFFFFFFF >> 48,
-        0xFFFFFFFFFFFFFFFF >> 49,
-        0xFFFFFFFFFFFFFFFF >> 50,
-        0xFFFFFFFFFFFFFFFF >> 51,
-        0xFFFFFFFFFFFFFFFF >> 52,
-        0xFFFFFFFFFFFFFFFF >> 53,
-        0xFFFFFFFFFFFFFFFF >> 54,
-        0xFFFFFFFFFFFFFFFF >> 55,
-        0xFFFFFFFFFFFFFFFF >> 56,
-        0xFFFFFFFFFFFFFFFF >> 57,
-        0xFFFFFFFFFFFFFFFF >> 58,
-        0xFFFFFFFFFFFFFFFF >> 59,
-        0xFFFFFFFFFFFFFFFF >> 60,
-        0xFFFFFFFFFFFFFFFF >> 61,
-        0xFFFFFFFFFFFFFFFF >> 62,
-        0xFFFFFFFFFFFFFFFF >> 63,
+        ulong.MaxValue,
+        ulong.MaxValue >> 1,
+        ulong.MaxValue >> 2,
+        ulong.MaxValue >> 3,
+        ulong.MaxValue >> 4,
+        ulong.MaxValue >> 5,
+        ulong.MaxValue >> 6,
+        ulong.MaxValue >> 7,
+        ulong.MaxValue >> 8,
+        ulong.MaxValue >> 9,
+        ulong.MaxValue >> 10,
+        ulong.MaxValue >> 11,
+        ulong.MaxValue >> 12,
+        ulong.MaxValue >> 13,
+        ulong.MaxValue >> 14,
+        ulong.MaxValue >> 15,
+        ulong.MaxValue >> 16,
+        ulong.MaxValue >> 17,
+        ulong.MaxValue >> 18,
+        ulong.MaxValue >> 19,
+        ulong.MaxValue >> 20,
+        ulong.MaxValue >> 21,
+        ulong.MaxValue >> 22,
+        ulong.MaxValue >> 23,
+        ulong.MaxValue >> 24,
+        ulong.MaxValue >> 25,
+        ulong.MaxValue >> 26,
+        ulong.MaxValue >> 27,
+        ulong.MaxValue >> 28,
+        ulong.MaxValue >> 29,
+        ulong.MaxValue >> 30,
+        ulong.MaxValue >> 31,
+        ulong.MaxValue >> 32,
+        ulong.MaxValue >> 33,
+        ulong.MaxValue >> 34,
+        ulong.MaxValue >> 35,
+        ulong.MaxValue >> 36,
+        ulong.MaxValue >> 37,
+        ulong.MaxValue >> 38,
+        ulong.MaxValue >> 39,
+        ulong.MaxValue >> 40,
+        ulong.MaxValue >> 41,
+        ulong.MaxValue >> 42,
+        ulong.MaxValue >> 43,
+        ulong.MaxValue >> 44,
+        ulong.MaxValue >> 45,
+        ulong.MaxValue >> 46,
+        ulong.MaxValue >> 47,
+        ulong.MaxValue >> 48,
+        ulong.MaxValue >> 49,
+        ulong.MaxValue >> 50,
+        ulong.MaxValue >> 51,
+        ulong.MaxValue >> 52,
+        ulong.MaxValue >> 53,
+        ulong.MaxValue >> 54,
+        ulong.MaxValue >> 55,
+        ulong.MaxValue >> 56,
+        ulong.MaxValue >> 57,
+        ulong.MaxValue >> 58,
+        ulong.MaxValue >> 59,
+        ulong.MaxValue >> 60,
+        ulong.MaxValue >> 61,
+        ulong.MaxValue >> 62,
+        ulong.MaxValue >> 63,
         0
     ];
 
@@ -344,6 +344,29 @@ public static class RandomExtensions
         randomWriter.Write(random, ref destination, destinationLength, ref MemoryMarshal.GetReference(choices), choices.Length);
     }
 
+    public static unsafe void Fill(this Random random, Array array)
+    {
+        if (ObjectMarshal.IsReferenceOrContainsReference(array.GetType().GetElementType()!))
+        {
+            ThrowArrayElementTypeMustBeUnmanaged();
+        }
+
+        ushort componentSize = ObjectMarshal.GetMethodTable(array)->ComponentSize;
+        ref byte reference = ref MemoryMarshal.GetArrayDataReference(array);
+        random.Write(ref reference, componentSize * array.Length);
+    }
+
+    public static void Fill<T>(this Random random, T[] array) where T : unmanaged
+        => random.Fill(array.AsSpan());
+
+    public static void Fill<T>(this Random random, Span<T> span) where T : unmanaged
+        => random.Write(ref MemoryMarshal.GetReference(span), span.Length);
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowArrayElementTypeMustBeUnmanaged()
+        => throw new InvalidOperationException("The array element type must be an unmanaged type.");
+
     [Pure]
     public static bool NextBool(this Random random)
     {
@@ -428,52 +451,29 @@ public static class RandomExtensions
         random.NextBytes(span);
     }
 
-    public static unsafe void Fill(this Random random, Array array)
-    {
-        if (ObjectMarshal.IsReferenceOrContainsReference(array.GetType().GetElementType()!))
-        {
-            ThrowArrayElementTypeMustBeUnmanaged();
-        }
-
-        ushort componentSize = ObjectMarshal.GetMethodTable(array)->ComponentSize;
-        ref byte reference = ref MemoryMarshal.GetArrayDataReference(array);
-        random.Write(ref reference, componentSize * array.Length);
-    }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowArrayElementTypeMustBeUnmanaged()
-        => throw new InvalidOperationException("The array element type must be an unmanaged type.");
-
-    public static void Fill<T>(this Random random, T[] array) where T : unmanaged
-        => random.Fill(array.AsSpan());
-
-    public static void Fill<T>(this Random random, Span<T> span) where T : unmanaged
-        => random.Write(ref MemoryMarshal.GetReference(span), span.Length);
-
     [Pure]
-    public static T[] Shuffle<T>(this Random random, IEnumerable<T> collection)
+    public static T[] Shuffle<T>(this Random random, IEnumerable<T> enumerable)
     {
-        T[] result;
-        if (CollectionHelpers.TryGetNonEnumeratedCount(collection, out int count))
+        T[] items;
+        if (CollectionHelpers.TryGetNonEnumeratedCount(enumerable, out int count))
         {
-            result = GC.AllocateUninitializedArray<T>(count);
-            if (!collection.TryNonEnumeratedCopyTo(result))
+            items = GC.AllocateUninitializedArray<T>(count);
+            if (!enumerable.TryNonEnumeratedCopyTo(items))
             {
-                collection.TryEnumerateInto(result, out _);
+                enumerable.TryEnumerateInto(items, out _);
             }
         }
         else
         {
-            result = collection.ToArray();
+            items = enumerable.ToArray();
         }
 
-        random.Shuffle(result);
-        return result;
+        random.Shuffle(items);
+        return items;
     }
 
-    public static void Shuffle<T>(this Random random, List<T> collection)
-        => random.Shuffle(CollectionsMarshal.AsSpan(collection));
+    public static void Shuffle<T>(this Random random, List<T> list)
+        => random.Shuffle(CollectionsMarshal.AsSpan(list));
 
     [Pure]
     public static ref T GetItem<T>(this Random random, List<T> items)

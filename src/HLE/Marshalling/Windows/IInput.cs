@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace HLE.Marshalling.Windows;
 
-#pragma warning disable CA1040
+[SuppressMessage("Design", "CA1040:Avoid empty interfaces")]
+[SuppressMessage("Minor Code Smell", "S4023:Interfaces should not be empty")]
 public interface IInput;
-#pragma warning restore CA1040

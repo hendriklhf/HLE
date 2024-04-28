@@ -16,6 +16,8 @@ namespace HLE.Twitch.Helix;
 
 public sealed partial class TwitchApi
 {
+    private const string UsersEndpoint = "users";
+
     public async ValueTask<User?> GetUserAsync(long userId)
     {
         if (TryGetUserFromCache(userId, out User? user))
@@ -23,7 +25,7 @@ public sealed partial class TwitchApi
             return user;
         }
 
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "users", ApiBaseUrl.Length + "users".Length + 50);
+        using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, ApiBaseUrl.Length + UsersEndpoint.Length + 50);
         urlBuilder.AppendParameter("id", userId);
         using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
         GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
@@ -46,7 +48,7 @@ public sealed partial class TwitchApi
             return user;
         }
 
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "users", ApiBaseUrl.Length + "users".Length + 50);
+        using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, ApiBaseUrl.Length + UsersEndpoint.Length + 50);
         urlBuilder.AppendParameter("login", username.Span);
         using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
         GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
@@ -111,58 +113,61 @@ public sealed partial class TwitchApi
         return userCount == 0 ? [] : ImmutableCollectionsMarshal.AsImmutableArray(buffer.ToArray(..userCount));
     }
 
-    public async ValueTask<int> GetUsersAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> userIds, User[] destination)
+    public ValueTask<int> GetUsersAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> userIds, User[] destination)
     {
         int parameterCount = usernames.Length + userIds.Length;
-        switch (parameterCount)
+        return parameterCount switch
         {
-            case 0:
-                return 0;
-            case > 100:
-                throw new ArgumentException("The endpoint allows only up to 100 parameters. You can't pass more than 100 usernames or user ids in total.");
-        }
+            0 => ValueTask.FromResult(0),
+            > 100 => throw new ArgumentException("The endpoint allows only up to 100 parameters. You can't pass more than 100 usernames or user ids in total."),
+            _ => GetUsersCoreAsync(usernames, userIds, destination)
+        };
 
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "users", usernames.Length * 35 + userIds.Length * 25 + 50);
-        int cachedUserCount = 0;
-        for (int i = 0; i < usernames.Length; i++)
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<int> GetUsersCoreAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> userIds, User[] destination)
         {
-            string username = usernames.Span[i];
-            if (TryGetUserFromCache(username, out User? user))
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, usernames.Length * 35 + userIds.Length * 25 + 50);
+            int cachedUserCount = 0;
+            for (int i = 0; i < usernames.Length; i++)
             {
-                destination[cachedUserCount++] = user;
-                continue;
+                string username = usernames.Span[i];
+                if (TryGetUserFromCache(username, out User? user))
+                {
+                    destination[cachedUserCount++] = user;
+                    continue;
+                }
+
+                urlBuilder.AppendParameter("login", username);
             }
 
-            urlBuilder.AppendParameter("login", username);
-        }
-
-        for (int i = 0; i < userIds.Length; i++)
-        {
-            long userId = userIds.Span[i];
-            if (TryGetUserFromCache(userId, out User? user))
+            for (int i = 0; i < userIds.Length; i++)
             {
-                destination[cachedUserCount++] = user;
-                continue;
+                long userId = userIds.Span[i];
+                if (TryGetUserFromCache(userId, out User? user))
+                {
+                    destination[cachedUserCount++] = user;
+                    continue;
+                }
+
+                urlBuilder.AppendParameter("id", userId);
             }
 
-            urlBuilder.AppendParameter("id", userId);
-        }
+            if (urlBuilder.ParameterCount == 0)
+            {
+                return cachedUserCount;
+            }
 
-        if (urlBuilder.ParameterCount == 0)
-        {
-            return cachedUserCount;
-        }
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
+            int deserializedUserCount = getResponse.Items.Length;
+            if (deserializedUserCount != 0)
+            {
+                getResponse.Items.CopyTo(destination[cachedUserCount..]);
+            }
 
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
-        int deserializedUserCount = getResponse.Items.Length;
-        if (deserializedUserCount != 0)
-        {
-            getResponse.Items.CopyTo(destination[cachedUserCount..]);
+            Cache?.AddUsers(destination.AsSpan(cachedUserCount..(cachedUserCount + deserializedUserCount)));
+            return deserializedUserCount + cachedUserCount;
         }
-
-        Cache?.AddUsers(destination.AsSpan(cachedUserCount..(cachedUserCount + deserializedUserCount)));
-        return deserializedUserCount + cachedUserCount;
     }
 
     private bool TryGetUserFromCache(long userId, [MaybeNullWhen(false)] out User user)

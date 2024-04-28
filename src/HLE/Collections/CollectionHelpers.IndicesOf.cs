@@ -11,15 +11,15 @@ namespace HLE.Collections;
 public static partial class CollectionHelpers
 {
     [Pure]
-    public static int[] IndicesOf<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
+    public static int[] IndicesOf<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate)
     {
-        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span))
+        if (TryGetReadOnlySpan(enumerable, out ReadOnlySpan<T> span))
         {
             return IndicesOf(span, predicate);
         }
 
-        using ValueList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        switch (collection)
+        using ValueList<int> indices = enumerable.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        switch (enumerable)
         {
             case IList<T> iList:
             {
@@ -59,7 +59,7 @@ public static partial class CollectionHelpers
             }
             default:
                 int currentIndex = 0;
-                foreach (T item in collection)
+                foreach (T item in enumerable)
                 {
                     if (predicate(item))
                     {
@@ -127,15 +127,15 @@ public static partial class CollectionHelpers
     }
 
     [Pure]
-    public static unsafe int[] IndicesOf<T>(this IEnumerable<T> collection, delegate*<T, bool> predicate)
+    public static unsafe int[] IndicesOf<T>(this IEnumerable<T> enumerable, delegate*<T, bool> predicate)
     {
-        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span))
+        if (TryGetReadOnlySpan(enumerable, out ReadOnlySpan<T> span))
         {
             return IndicesOf(span, predicate);
         }
 
-        using ValueList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        switch (collection)
+        using ValueList<int> indices = enumerable.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        switch (enumerable)
         {
             case IList<T> iList:
             {
@@ -175,7 +175,7 @@ public static partial class CollectionHelpers
             }
             default:
                 int currentIndex = 0;
-                foreach (T item in collection)
+                foreach (T item in enumerable)
                 {
                     if (predicate(item))
                     {
@@ -244,15 +244,15 @@ public static partial class CollectionHelpers
     }
 
     [Pure]
-    public static int[] IndicesOf<T>(this IEnumerable<T> collection, T item) where T : IEquatable<T>
+    public static int[] IndicesOf<T>(this IEnumerable<T> enumerable, T item) where T : IEquatable<T>
     {
-        if (TryGetReadOnlySpan(collection, out ReadOnlySpan<T> span))
+        if (TryGetReadOnlySpan(enumerable, out ReadOnlySpan<T> span))
         {
             return span.IndicesOf(item);
         }
 
-        using ValueList<int> indices = collection.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
-        switch (collection)
+        using ValueList<int> indices = enumerable.TryGetNonEnumeratedCount(out int elementCount) ? new(elementCount) : new();
+        switch (enumerable)
         {
             case IList<T> iList:
             {
@@ -292,7 +292,7 @@ public static partial class CollectionHelpers
             }
             default:
                 int currentIndex = 0;
-                foreach (T t in collection)
+                foreach (T t in enumerable)
                 {
                     if (item.Equals(t))
                     {

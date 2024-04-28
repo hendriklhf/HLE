@@ -5,7 +5,6 @@ using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
 namespace HLE.SourceGenerators;
@@ -15,7 +14,7 @@ namespace HLE.SourceGenerators;
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
     private byte[]? _emojiJsonBytes;
-    private readonly Dictionary<string, string> _illegalEmojiNameReplacements = new(12)
+    private static readonly Dictionary<string, string> s_illegalEmojiNameReplacements = new(12)
     {
         { "100", "Hundred" },
         { "+1", "ThumbUp" },
@@ -37,7 +36,8 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     private const string Indentation = "    ";
     private const string CacheDirectory = @"HLE\SourceGenerators\EmojiFileGenerator\";
 
-    public void Initialize(GeneratorInitializationContext context)
+    // ReSharper disable once AsyncVoidMethod
+    public async void Initialize(GeneratorInitializationContext context)
     {
         byte[]? emojiJsonBytes = _emojiJsonBytes;
         if (emojiJsonBytes is not null)
@@ -52,9 +52,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
 
         using HttpClient httpClient = new();
-        Task<byte[]> task = httpClient.GetByteArrayAsync(HttpRequestUrl);
-        task.Wait();
-        emojiJsonBytes = task.Result;
+        emojiJsonBytes = await httpClient.GetByteArrayAsync(HttpRequestUrl);
         WriteBytesToCacheFile(emojiJsonBytes);
         _emojiJsonBytes = emojiJsonBytes;
     }
@@ -118,9 +116,6 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     private void AppendEmojis(StringBuilder sourceBuilder)
     {
-        ReadOnlySpan<byte> emojiProperty = "emoji"u8;
-        ReadOnlySpan<byte> aliasesProperty = "aliases"u8;
-
         JsonReaderOptions options = new()
         {
             CommentHandling = JsonCommentHandling.Skip,
@@ -136,21 +131,11 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         {
             switch (jsonReader.TokenType)
             {
-                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(emojiProperty):
-                    jsonReader.Read();
-                    ReadOnlySpan<byte> emojiBytes = jsonReader.ValueSpan;
-                    emojiLength = Encoding.UTF8.GetChars(emojiBytes.ToArray(), 0, emojiBytes.Length, emojiBuffer, 0);
+                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals("emoji"u8):
+                    GetEmoji(ref jsonReader, emojiBuffer, out emojiLength);
                     break;
-                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals(aliasesProperty):
-                    jsonReader.Read();
-                    jsonReader.Read();
-                    ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
-                    int nameLength = Encoding.UTF8.GetChars(nameBytes.ToArray(), 0, nameBytes.Length, nameBuffer, 0);
-                    nameBuffer[0] = char.ToUpper(nameBuffer[0]);
-                    CheckForIllegalName(nameBuffer, ref nameLength);
-
-                    sourceBuilder.Append(Indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
-                    sourceBuilder.Append("= \"").Append(emojiBuffer.AsSpan().Slice(0, emojiLength).ToArray()).AppendLine("\";");
+                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals("aliases"u8):
+                    AppendEmojiName(sourceBuilder, ref jsonReader, nameBuffer, emojiBuffer, emojiLength);
                     break;
                 default:
                     continue;
@@ -158,10 +143,29 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
     }
 
-    private void CheckForIllegalName(Span<char> name, ref int nameLength)
+    private static void GetEmoji(ref Utf8JsonReader jsonReader, char[] emojiBuffer, out int emojiLength)
+    {
+        jsonReader.Read();
+        ReadOnlySpan<byte> emojiBytes = jsonReader.ValueSpan;
+        emojiLength = Encoding.UTF8.GetChars(emojiBytes.ToArray(), 0, emojiBytes.Length, emojiBuffer, 0);
+    }
+
+    private static void AppendEmojiName(StringBuilder sourceBuilder, ref Utf8JsonReader jsonReader, char[] nameBuffer, char[] emojiBuffer, int emojiLength)
+    {
+        jsonReader.Read();
+        jsonReader.Read();
+        ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
+        int nameLength = Encoding.UTF8.GetChars(nameBytes.ToArray(), 0, nameBytes.Length, nameBuffer, 0);
+        nameBuffer[0] = char.ToUpper(nameBuffer[0]);
+        CheckForIllegalName(nameBuffer, ref nameLength);
+        sourceBuilder.Append(Indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
+        sourceBuilder.Append("= \"").Append(emojiBuffer.AsSpan().Slice(0, emojiLength).ToArray()).AppendLine("\";");
+    }
+
+    private static void CheckForIllegalName(Span<char> name, ref int nameLength)
     {
         ReadOnlySpan<char> readOnlyName = name.Slice(0, nameLength);
-        foreach (KeyValuePair<string, string> illegalVariableName in _illegalEmojiNameReplacements)
+        foreach (KeyValuePair<string, string> illegalVariableName in s_illegalEmojiNameReplacements)
         {
             if (!readOnlyName.SequenceEqual(illegalVariableName.Key.AsSpan()))
             {

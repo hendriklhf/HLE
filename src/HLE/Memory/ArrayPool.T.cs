@@ -23,6 +23,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [ThreadStatic]
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
+    [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
     private static ThreadLocalBucket t_threadLocalBucket;
 
     private const ArrayReturnOptions DefaultReturnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements;

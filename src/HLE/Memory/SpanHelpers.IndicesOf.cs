@@ -81,11 +81,6 @@ public static partial class SpanHelpers
         };
     }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDestinationTooShort<T>()
-        => throw new InvalidOperationException($"The destination needs to be at least as long as the {nameof(Span<T>)} of items provided.");
-
     public static int IndicesOf<T>(ref T items, int length, T item, ref int destination) where T : unmanaged, IEquatable<T>
     {
         Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
@@ -208,4 +203,9 @@ public static partial class SpanHelpers
 
         return indicesLength;
     }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowDestinationTooShort<T>()
+        => throw new InvalidOperationException($"The destination needs to be at least as long as the {nameof(Span<T>)} of items provided.");
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -44,6 +45,7 @@ internal static class ObjectTree
         return size;
     }
 
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static ReadOnlySpan<FieldInfo> GetFields(Type type)
     {
         if (s_fieldInfoCache.TryGetValue(type, out FieldInfo[]? fieldInfos))

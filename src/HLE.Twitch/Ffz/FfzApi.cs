@@ -24,118 +24,127 @@ public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
         }
     }
 
-    public async ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(long channelId)
+    public ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(long channelId)
     {
-        if (TryGetChannelEmotesFromCache(channelId, out ImmutableArray<Emote> emotes))
+        return TryGetChannelEmotesFromCache(channelId, out ImmutableArray<Emote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetChannelEmotesCoreAsync(channelId);
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(long channelId)
         {
+            using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
+            urlBuilder.Append(ApiBaseUrl, "/room/id/");
+            urlBuilder.Append(channelId);
+
+            using HttpClient httpClient = new();
+            using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+            if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+            {
+                return [];
+            }
+
+            using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
+            if (httpContentBytes.Length == 0)
+            {
+                throw new HttpResponseEmptyException();
+            }
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
+            }
+
+            Room room = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), FfzJsonSerializerContext.Default.GetRoomResponse).Room;
+            if (room == Room.Empty)
+            {
+                return [];
+            }
+
+            ImmutableArray<Emote> emotes = DeserializeResponse(httpContentBytes.AsSpan());
+            Cache?.AddChannelEmotes(channelId, room.TwitchUsername, emotes);
             return emotes;
         }
-
-        using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
-        urlBuilder.Append(ApiBaseUrl, "/room/id/");
-        urlBuilder.Append(channelId);
-
-        using HttpClient httpClient = new();
-        using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
-        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
-        {
-            return [];
-        }
-
-        using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
-        if (httpContentBytes.Length == 0)
-        {
-            throw new HttpResponseEmptyException();
-        }
-
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
-        }
-
-        Room room = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), FfzJsonSerializerContext.Default.GetRoomResponse).Room;
-        if (room == Room.Empty)
-        {
-            return [];
-        }
-
-        emotes = DeserializeResponse(httpContentBytes.AsSpan());
-        Cache?.AddChannelEmotes(channelId, room.TwitchUsername, emotes);
-        return emotes;
     }
 
     public ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(string channelName) => GetChannelEmotesAsync(channelName.AsMemory());
 
-    public async ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(ReadOnlyMemory<char> channelName)
+    public ValueTask<ImmutableArray<Emote>> GetChannelEmotesAsync(ReadOnlyMemory<char> channelName)
     {
-        if (TryGetChannelEmotesFromCache(channelName.Span, out ImmutableArray<Emote> emotes))
+        return TryGetChannelEmotesFromCache(channelName.Span, out ImmutableArray<Emote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetChannelEmotesCoreAsync(channelName);
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(ReadOnlyMemory<char> channelName)
         {
+            using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
+            urlBuilder.Append(ApiBaseUrl, "/room/", channelName.Span);
+
+            using HttpClient httpClient = new();
+            using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+            if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+            {
+                return [];
+            }
+
+            using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
+            }
+
+            if (httpContentBytes.Length == 0)
+            {
+                throw new HttpResponseEmptyException();
+            }
+
+            Room room = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), FfzJsonSerializerContext.Default.GetRoomResponse).Room;
+            if (room == Room.Empty)
+            {
+                return [];
+            }
+
+            ImmutableArray<Emote> emotes = DeserializeResponse(httpContentBytes.AsSpan());
+            Cache?.AddChannelEmotes(room.TwitchId, channelName.Span, emotes);
             return emotes;
         }
-
-        using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
-        urlBuilder.Append(ApiBaseUrl, "/room/", channelName.Span);
-
-        using HttpClient httpClient = new();
-        using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
-        if (httpResponse.StatusCode == HttpStatusCode.NotFound)
-        {
-            return [];
-        }
-
-        using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
-        }
-
-        if (httpContentBytes.Length == 0)
-        {
-            throw new HttpResponseEmptyException();
-        }
-
-        Room room = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), FfzJsonSerializerContext.Default.GetRoomResponse).Room;
-        if (room == Room.Empty)
-        {
-            return [];
-        }
-
-        emotes = DeserializeResponse(httpContentBytes.AsSpan());
-        Cache?.AddChannelEmotes(room.TwitchId, channelName.Span, emotes);
-        return emotes;
     }
 
-    public async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync()
+    public ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync()
     {
-        if (TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes))
+        return TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetGlobalEmotesCoreAsync();
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesCoreAsync()
         {
+            using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
+            urlBuilder.Append(ApiBaseUrl, "/set/global");
+
+            using HttpClient httpClient = new();
+            using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
+            using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
+            if (httpContentBytes.Length == 0)
+            {
+                throw new HttpResponseEmptyException();
+            }
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
+            }
+
+            ImmutableArray<Emote> emotes = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), FfzJsonSerializerContext.Default.GetGlobalEmotesResponse).Sets.GlobalSet.Emotes;
+            if (emotes.Length == 0)
+            {
+                return emotes;
+            }
+
+            Cache?.AddGlobalEmotes(emotes);
             return emotes;
         }
-
-        using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
-        urlBuilder.Append(ApiBaseUrl, "/set/global");
-
-        using HttpClient httpClient = new();
-        using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
-        using HttpContentBytes httpContentBytes = await HttpContentBytes.CreateAsync(httpResponse);
-        if (httpContentBytes.Length == 0)
-        {
-            throw new HttpResponseEmptyException();
-        }
-
-        if (!httpResponse.IsSuccessStatusCode)
-        {
-            throw new HttpRequestFailedException(httpResponse.StatusCode, httpContentBytes.AsSpan());
-        }
-
-        emotes = JsonSerializer.Deserialize(httpContentBytes.AsSpan(), FfzJsonSerializerContext.Default.GetGlobalEmotesResponse).Sets.GlobalSet.Emotes;
-        if (emotes.Length == 0)
-        {
-            return emotes;
-        }
-
-        Cache?.AddGlobalEmotes(emotes);
-        return emotes;
     }
 
     private bool TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes)

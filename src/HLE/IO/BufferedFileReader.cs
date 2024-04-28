@@ -13,8 +13,8 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.IO;
 
-// ReSharper disable once UseNameofExpressionForPartOfTheString
 [method: MustDisposeResource]
+// ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{FilePath}\"")]
 public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<BufferedFileReader>
 {
@@ -24,10 +24,6 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
     private long _size = UninitializedSize;
 
     private const long UninitializedSize = -1;
-    private const FileMode HandleMode = FileMode.Open;
-    private const FileAccess HandleAccess = FileAccess.Read;
-    private const FileShare HandleShare = FileShare.Read;
-    private const FileOptions HandleOptions = FileOptions.SequentialScan;
 
     public void Dispose()
     {
@@ -51,9 +47,6 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
 
     public int ReadBytes(Span<byte> buffer, long fileOffset) => RandomAccess.Read(OpenHandleIfNotOpen(), buffer, fileOffset);
 
-    // ReSharper disable once InconsistentNaming
-    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer, long fileOffset) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, fileOffset);
-
     public void ReadBytes<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
@@ -61,6 +54,9 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         int bytesRead = RandomAccess.Read(fileHandle, byteWriter.GetSpan(fileSize), 0);
         byteWriter.Advance(bytesRead);
     }
+
+    // ReSharper disable once InconsistentNaming
+    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer, long fileOffset) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, fileOffset);
 
     public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
     {
@@ -145,7 +141,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         }
 
         fileHandle?.Dispose();
-        fileHandle = File.OpenHandle(FilePath, HandleMode, HandleAccess, HandleShare, HandleOptions);
+        fileHandle = File.OpenHandle(FilePath, options: FileOptions.SequentialScan);
         _fileHandle = fileHandle;
         return fileHandle;
     }

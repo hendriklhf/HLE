@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
@@ -17,7 +18,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
         SingleCharStringPoolReceiver receiver = (SingleCharStringPoolReceiver)context.SyntaxReceiver!;
         if (receiver.AmountOfCachedSingleCharStrings < 0)
         {
-            throw new ArgumentOutOfRangeException(null, receiver.AmountOfCachedSingleCharStrings, "Amount of cached single char strings is below zero.");
+            ThrowAmountLessThanZero(receiver);
         }
 
         string[] cachedTokenStrings = new string[receiver.AmountOfCachedSingleCharStrings];
@@ -50,4 +51,8 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
         sourceBuilder.AppendLine("}");
         context.AddSource("HLE.Strings.ShortStringCache.g.cs", sourceBuilder.ToString());
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowAmountLessThanZero(SingleCharStringPoolReceiver receiver)
+        => throw new ArgumentOutOfRangeException($"{nameof(receiver)}.{nameof(receiver.AmountOfCachedSingleCharStrings)}", receiver.AmountOfCachedSingleCharStrings, "Amount of cached single char strings is below zero.");
 }

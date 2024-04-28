@@ -1,11 +1,10 @@
 using System;
 using System.IO;
 using System.Net.Http;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using HLE.Marshalling;
+using HLE.Collections;
 using HLE.Memory;
-using JetBrains.Annotations;
 
 namespace HLE.Twitch;
 
@@ -13,7 +12,7 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
 {
     public int Length { get; }
 
-    private RentedArray<byte> _bytes = [];
+    private byte[]? _bytes = [];
 
     public static HttpContentBytes Empty => new();
 
@@ -21,33 +20,61 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
     {
     }
 
-    private HttpContentBytes([HandlesResourceDisposal] RentedArray<byte> bytes, int length)
+    private HttpContentBytes(byte[] bytes, int length)
     {
         _bytes = bytes;
         Length = length;
     }
 
-    public readonly ReadOnlySpan<byte> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref _bytes.Reference, Length);
+    public void Dispose()
+    {
+        byte[]? bytes = _bytes;
+        if (bytes is null)
+        {
+            return;
+        }
 
-    public readonly ReadOnlyMemory<byte> AsMemory() => _bytes.AsMemory(..Length);
+        ArrayPool<byte>.Shared.Return(bytes);
+        _bytes = null;
+    }
 
-    public static async ValueTask<HttpContentBytes> CreateAsync(HttpResponseMessage httpResponse)
+    public readonly ReadOnlySpan<byte> AsSpan() => GetBytes().AsSpanUnsafe(..Length);
+
+    public readonly ReadOnlyMemory<byte> AsMemory() => GetBytes().AsMemory(..Length);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private readonly byte[] GetBytes()
+    {
+        byte[]? bytes = _bytes;
+        if (bytes is null)
+        {
+            ThrowHelper.ThrowObjectDisposedException<HttpContentBytes>();
+        }
+
+        return bytes;
+    }
+
+    // ReSharper disable once InconsistentNaming
+    public static ValueTask<HttpContentBytes> CreateAsync(HttpResponseMessage httpResponse)
     {
         long contentLength = httpResponse.Content.Headers.ContentLength ?? 0;
         if (contentLength == 0)
         {
-            return Empty;
+            return ValueTask.FromResult(Empty);
         }
 
         ArgumentOutOfRangeException.ThrowIfGreaterThan(contentLength, Array.MaxLength);
 
-        RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray((int)contentLength);
-        byte[] underlyingArray = RentedArrayMarshal.GetArray(buffer);
-        await using MemoryStream copyDestination = new(underlyingArray);
+        return CreateCoreAsync(httpResponse.Content, (int)contentLength);
 
-        await httpResponse.Content.LoadIntoBufferAsync();
-        await httpResponse.Content.CopyToAsync(copyDestination);
-        return new(buffer, (int)contentLength);
+        // ReSharper disable once InconsistentNaming
+        static async ValueTask<HttpContentBytes> CreateCoreAsync(HttpContent content, int contentLength)
+        {
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(contentLength);
+            await using MemoryStream copyDestination = new(buffer);
+            await content.CopyToAsync(copyDestination);
+            return new(buffer, contentLength);
+        }
     }
 
     public readonly bool Equals(HttpContentBytes other) => Length == other.Length && _bytes == other._bytes;
@@ -59,6 +86,4 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
     public static bool operator ==(HttpContentBytes left, HttpContentBytes right) => left.Equals(right);
 
     public static bool operator !=(HttpContentBytes left, HttpContentBytes right) => !(left == right);
-
-    public void Dispose() => _bytes.Dispose();
 }

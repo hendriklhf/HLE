@@ -3,7 +3,7 @@ using System;
 namespace HLE.Marshalling.Windows;
 
 [Flags]
-public enum ProtectionType
+public enum ProtectionTypes
 {
     None = 0,
     NoAccess = 0x01,

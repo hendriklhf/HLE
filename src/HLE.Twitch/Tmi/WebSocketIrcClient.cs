@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
+using HLE.Threading;
 using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
@@ -31,8 +32,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <summary>
     /// Indicates whether the connection uses SSL or not.
     /// </summary>
-    // ReSharper disable once InconsistentNaming
-    public bool UseSSL { get; }
+    public bool UseSsl { get; }
 
     /// <summary>
     /// Is invoked if the client connects to the server.
@@ -94,9 +94,9 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         Username = username;
         _usernameUtf8 = ImmutableCollectionsMarshal.AsImmutableArray(Encoding.UTF8.GetBytes(username));
         _oAuthToken = oAuthToken;
-        UseSSL = options.UseSSL;
+        UseSsl = options.UseSsl;
         _isVerifiedBot = options.IsVerifiedBot;
-        _connectionUri = UseSSL ? s_sslConnectionUri : s_nonSslConnectionUri;
+        _connectionUri = UseSsl ? s_sslConnectionUri : s_nonSslConnectionUri;
     }
 
     private async ValueTask SendAsync(ReadOnlyMemory<byte> message)
@@ -113,7 +113,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
     private void StartListeningThread()
     {
-        Thread listeningThread = new(StartListeningAsync)
+        Thread listeningThread = new(() => StartListeningAsync().Ignore())
         {
             IsBackground = true,
             Priority = ThreadPriority.AboveNormal
@@ -123,7 +123,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     }
 
     // ReSharper disable once AsyncVoidMethod
-    private async void StartListeningAsync()
+    private async Task StartListeningAsync()
     {
         try
         {
@@ -150,8 +150,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
                 PassAllLinesExceptLast(ref bytes);
 
-                // "bytes" now only contains left-over bytes, because the last received message didn't end with an new line
-                // left-over bytes will be handled in the next loop iteration when the new line has been received
+                // "bytes" now only contains left-over bytes, because the last received message didn't end with a new line.
+                // left-over bytes will be handled in the next loop iteration when a new line has been received.
                 bytes.Span.CopyTo(buffer.Span);
                 writtenBufferCount = bytes.Length;
             }

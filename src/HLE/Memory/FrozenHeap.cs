@@ -1,11 +1,15 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace HLE.Memory;
 
 internal static unsafe class FrozenHeap
 {
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static readonly delegate*<nint, nint, nint> s_registerFrozenSegment = (delegate*<nint, nint, nint>)typeof(GC).GetMethod("_RegisterFrozenSegment", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
+
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static readonly delegate*<nint, void> s_unregisterFrozenSegment = (delegate*<nint, void>)typeof(GC).GetMethod("_UnregisterFrozenSegment", BindingFlags.NonPublic | BindingFlags.Static)!.MethodHandle.GetFunctionPointer();
 
     public static nint RegisterSegment(nint address, nint size) => s_registerFrozenSegment(address, size);
