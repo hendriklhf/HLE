@@ -221,7 +221,7 @@ public sealed class ConcurrentStack<T> :
 
     public ArrayEnumerator<T> GetEnumerator() => new(_buffer, 0, Count);
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

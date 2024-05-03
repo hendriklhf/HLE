@@ -349,7 +349,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 
     public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using HLE.Collections;
 using Xunit;
 
@@ -65,6 +66,7 @@ public sealed class CollectionHelperTest
         {
             foreach (int _ in ..^100)
             {
+                Nop();
             }
         });
 
@@ -72,20 +74,23 @@ public sealed class CollectionHelperTest
         {
             foreach (int _ in 50..)
             {
+                Nop();
             }
         });
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void Nop()
+    {
+        // nop
     }
 
     [Fact]
     public void TryGetReadOnlySpanTest()
     {
-#pragma warning disable IDE0300 // Simplify collection initialization
         IEnumerable<int> array = new[] { 0, 1, 2, 3, 4 };
-#pragma warning restore IDE0300 // Simplify collection initialization
 
-#pragma warning disable IDE0028 // Simplify collection initialization
         IEnumerable<int> list = new List<int> { 0, 1, 2, 3, 4 };
-#pragma warning restore IDE0028 // Simplify collection initialization
 
         IEnumerable<char> str = "hello";
         IEnumerable<int> enumerable = Enumerable.Range(0, 5).Select(static _ => Random.Shared.Next()).Where(static i => i > 0);

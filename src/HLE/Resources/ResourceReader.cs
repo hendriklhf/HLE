@@ -159,7 +159,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
     private static void ThrowStreamLengthExceedsMaxArrayLength()
         => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
 
-    public IEnumerator<Resource> GetEnumerator() => _resources.Values.GetEnumerator();
+    public IEnumerator<Resource> GetEnumerator() => _resources.IsEmpty ? EmptyEnumeratorCache<Resource>.Enumerator : _resources.Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

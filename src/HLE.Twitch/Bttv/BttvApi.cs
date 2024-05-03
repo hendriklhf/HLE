@@ -32,7 +32,6 @@ public sealed class BttvApi : IBttvApi, IEquatable<BttvApi>
             ? ValueTask.FromResult(emotes)
             : GetChannelEmotesCoreAsync(channelId);
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(long channelId)
         {
             using PooledStringBuilder urlBuilder = new(100);

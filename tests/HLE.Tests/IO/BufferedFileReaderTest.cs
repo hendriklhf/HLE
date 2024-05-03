@@ -6,7 +6,7 @@ using HLE.IO;
 using HLE.Memory;
 using Xunit;
 
-namespace HLE.Tests;
+namespace HLE.Tests.IO;
 
 public sealed class BufferedFileReaderTest
 {

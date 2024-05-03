@@ -54,7 +54,6 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
         return bytes;
     }
 
-    // ReSharper disable once InconsistentNaming
     public static ValueTask<HttpContentBytes> CreateAsync(HttpResponseMessage httpResponse)
     {
         long contentLength = httpResponse.Content.Headers.ContentLength ?? 0;

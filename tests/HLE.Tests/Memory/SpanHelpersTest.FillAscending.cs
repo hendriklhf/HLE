@@ -11,7 +11,7 @@ public sealed partial class SpanHelpersTest
 {
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public static TheoryData<object> FillAscendingParameters { get; } =
-        new([
+        new(
             (byte)0,
             (byte)128,
             (byte)255,
@@ -40,7 +40,7 @@ public sealed partial class SpanHelpersTest
             0UL,
             10_000UL,
             1_000_000U
-        ]);
+        );
 
     [Theory]
     [MemberData(nameof(FillAscendingParameters))]

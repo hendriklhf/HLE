@@ -14,7 +14,10 @@ namespace HLE.Numerics;
 /// <param name="value">The value of the prefix.</param>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("{Name}")]
-public readonly struct UnitPrefix(string name, string symbol, double value) : IEquatable<UnitPrefix>, IComparable<UnitPrefix>, IComparable
+public readonly struct UnitPrefix(string name, string symbol, double value) :
+    IEquatable<UnitPrefix>,
+    IComparable<UnitPrefix>,
+    IComparable
 {
     /// <summary>
     /// The name of the prefix.
@@ -218,7 +221,7 @@ public readonly struct UnitPrefix(string name, string symbol, double value) : IE
     [Pure]
     public override int GetHashCode() => HashCode.Combine(Name, Symbol, Value);
 
-    public static bool operator ==(UnitPrefix left, UnitPrefix right) => Equals(left, right);
+    public static bool operator ==(UnitPrefix left, UnitPrefix right) => left.Equals(right);
 
     public static bool operator !=(UnitPrefix left, UnitPrefix right) => !(left == right);
 

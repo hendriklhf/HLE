@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using HLE.Marshalling;
 using HLE.Numerics;
 using Xunit;
@@ -75,8 +74,8 @@ public sealed class NumberHelperTest
     [Fact]
     public void GetDigitsTest()
     {
-        Assert.True(NumberHelpers.GetDigits(1234567) is [1, 2, 3, 4, 5, 6, 7]);
-        Assert.True(NumberHelpers.GetDigits(-1234567) is [1, 2, 3, 4, 5, 6, 7]);
+        Assert.True(NumberHelpers.GetDigits(1_234_567) is [1, 2, 3, 4, 5, 6, 7]);
+        Assert.True(NumberHelpers.GetDigits(-1_234_567) is [1, 2, 3, 4, 5, 6, 7]);
         Assert.True(NumberHelpers.GetDigits(0) is [0]);
         Assert.True(NumberHelpers.GetDigits(1) is [1]);
     }
@@ -86,13 +85,13 @@ public sealed class NumberHelperTest
     [InlineData(5, "5")]
     [InlineData(20, "20")]
     [InlineData(95972, "95972")]
-    [InlineData(345347853, "345347853")]
+    [InlineData(345_347_853, "345347853")]
     public void ParsePositiveNumberTest(int number, string text)
         => Assert.Equal(number, NumberHelpers.ParsePositiveNumber<int>(text));
 
     [Fact]
     public void ParsePositiveNumberFromBytesTest()
-        => Assert.Equal(7334687, NumberHelpers.ParsePositiveNumber<int>("7334687"u8));
+        => Assert.Equal(7_334_687, NumberHelpers.ParsePositiveNumber<int>("7334687"u8));
 
     [Theory]
     [MemberData(nameof(BringIntoRangeParameters))]

@@ -45,18 +45,15 @@ public sealed class IrcHandlerTest
             Assert.False(chatMessage.IsFirstMessage);
             Assert.Equal(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), chatMessage.Id);
             Assert.True(chatMessage.IsModerator);
-            Assert.Equal(616177816, chatMessage.ChannelId);
+            Assert.Equal(616_177_816, chatMessage.ChannelId);
             Assert.False(chatMessage.IsSubscriber);
-            Assert.Equal(1654020883875, chatMessage.TmiSentTs);
+            Assert.Equal(1_654_020_883_875, chatMessage.TmiSentTs);
             Assert.False(chatMessage.IsTurboUser);
-            Assert.Equal(87633910, chatMessage.UserId);
+            Assert.Equal(87_633_910, chatMessage.UserId);
             Assert.Equal("strbhlfe", chatMessage.Username);
             Assert.Equal("lbnshlfe", chatMessage.Channel);
             Assert.Equal("xd xd xd", chatMessage.Message);
-            if (chatMessage is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
+            chatMessage.Dispose();
         };
 
         Assert.True(handler.Handle(PrivMsg));
@@ -76,7 +73,7 @@ public sealed class IrcHandlerTest
             Assert.False(roomstateArgs.EmoteOnly);
             Assert.Equal(-1, roomstateArgs.FollowersOnly);
             Assert.False(roomstateArgs.R9K);
-            Assert.Equal(87633910, roomstateArgs.ChannelId);
+            Assert.Equal(87_633_910, roomstateArgs.ChannelId);
             Assert.Equal(0, roomstateArgs.SlowMode);
             Assert.False(roomstateArgs.SubsOnly);
             Assert.Equal("strbhlfe", roomstateArgs.Channel);
@@ -98,7 +95,7 @@ public sealed class IrcHandlerTest
             Assert.True(roomstateArgs.EmoteOnly);
             Assert.Equal(15, roomstateArgs.FollowersOnly);
             Assert.True(roomstateArgs.R9K);
-            Assert.Equal(87633910, roomstateArgs.ChannelId);
+            Assert.Equal(87_633_910, roomstateArgs.ChannelId);
             Assert.Equal(10, roomstateArgs.SlowMode);
             Assert.True(roomstateArgs.SubsOnly);
             Assert.Equal("strbhlfe", roomstateArgs.Channel);

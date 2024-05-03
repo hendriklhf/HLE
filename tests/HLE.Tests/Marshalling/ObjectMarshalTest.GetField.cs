@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using Xunit;
@@ -32,6 +31,7 @@ public sealed partial class ObjectMarshalTest
 
     [StructLayout(LayoutKind.Explicit)]
     [SuppressMessage("Roslynator", "RCS1213:Remove unused member declaration")]
+    [SuppressMessage("ReSharper", "ConvertToConstant.Local")]
     private sealed class TestClass
     {
         [FieldOffset(0)]

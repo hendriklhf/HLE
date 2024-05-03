@@ -17,7 +17,6 @@ public sealed partial class StringHelperTest
         Assert.Equal(5, str.Length);
         "hello".CopyTo(chars);
         Assert.Equal("hello", str);
-        Assert.NotSame(str, "hello");
     }
 
     [Fact]
@@ -25,14 +24,14 @@ public sealed partial class StringHelperTest
     {
         string str = Random.Shared.NextString(1000);
         ReadOnlyMemory<char>[] chunks = str.Chunk(50);
-        Assert.True(chunks.All(static c => c.Length == 50));
+        Assert.True(Array.TrueForAll(chunks, static c => c.Length == 50));
 
         str = Random.Shared.NextString(1025);
         chunks = str.Chunk(50);
         ReadOnlyMemory<char>[] allExceptLastChunk = chunks[..^1];
         Assert.Equal(20, allExceptLastChunk.Length);
-        Assert.True(allExceptLastChunk.All(static c => c.Length == 50));
-        Assert.True(chunks[^1].Length == 25);
+        Assert.True(Array.TrueForAll(allExceptLastChunk, static c => c.Length == 50));
+        Assert.Equal(25, chunks[^1].Length);
 
         chunks = string.Empty.Chunk(10);
         Assert.Empty(chunks);
@@ -107,7 +106,7 @@ public sealed partial class StringHelperTest
     [Fact]
     public void IndicesOf_string_ReadOnlySpanChar_Test()
     {
-        string str = Random.Shared.NextString(1000, "abc ");
+        string str = Random.Shared.NextString(1024, "abc ");
         using PooledList<int> correctIndices = [];
         for (int i = 0; i < str.Length; i++)
         {

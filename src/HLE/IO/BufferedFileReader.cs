@@ -55,7 +55,6 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         byteWriter.Advance(bytesRead);
     }
 
-    // ReSharper disable once InconsistentNaming
     public ValueTask<int> ReadBytesAsync(Memory<byte> buffer, long fileOffset) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, fileOffset);
 
     public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>

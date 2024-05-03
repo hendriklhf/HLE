@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using HLE.Memory;
 using Xunit;
@@ -36,7 +36,7 @@ public sealed class ArrayPoolTest
     [InlineData(-1)]
     [InlineData(-4)]
     [InlineData(-1024)]
-    [InlineData(-34534765)]
+    [InlineData(-34_534_765)]
     [InlineData(int.MinValue)]
     public void RentThrowsForNegativeLength(int negativeLength)
         => Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -80,6 +80,7 @@ public sealed class ArrayPoolTest
 
     [Theory]
     [MemberData(nameof(Pow2LengthMinimumToMaximumLengthParameters))]
+    [SuppressMessage("Major Code Smell", "S4144:Methods should not have identical implementations")]
     public void RentArrayOfPow2Length(int minimumLength)
     {
         ArrayPool<int> pool = new();
@@ -116,18 +117,18 @@ public sealed class ArrayPoolTest
     }
 
     [Fact]
+    [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions")]
     public void ReturnNullArrayDoesntThrow()
     {
         ArrayPool<int> pool = new();
-
         pool.Return(null);
     }
 
     [Fact]
+    [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions")]
     public void ReturnEmptyArrayDoesntThrow()
     {
         ArrayPool<int> pool = new();
-
         pool.Return([]);
     }
 
@@ -211,12 +212,12 @@ public sealed class ArrayPoolTest
         }
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        Assert.False(pool._buckets.All(static b => b._stack.All(static a => a is null)));
+        Assert.False(Array.TrueForAll(pool._buckets, static b => Array.TrueForAll(b._stack, static a => a is null)));
 
         pool.Clear();
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        Assert.True(pool._buckets.All(static b => b._stack.All(static a => a is null)));
+        Assert.True(Array.TrueForAll(pool._buckets, static b => Array.TrueForAll(b._stack, static a => a is null)));
     }
 
     [Theory]

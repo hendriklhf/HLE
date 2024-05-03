@@ -123,7 +123,6 @@ public sealed partial class TwitchApi
             _ => GetUsersCoreAsync(usernames, userIds, destination)
         };
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask<int> GetUsersCoreAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> userIds, User[] destination)
         {
             using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, usernames.Length * 35 + userIds.Length * 25 + 50);

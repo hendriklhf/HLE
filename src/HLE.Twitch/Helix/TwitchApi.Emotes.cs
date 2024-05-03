@@ -9,40 +9,45 @@ namespace HLE.Twitch.Helix;
 
 public sealed partial class TwitchApi
 {
-    public async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync()
+    public ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync()
     {
-        if (TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes))
+        return TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetGlobalEmotesCoreAsync();
+
+        async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesCoreAsync()
         {
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, "chat/emotes/global");
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            GetResponse<Emote> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseEmote);
+            if (getResponse.Items.Length == 0)
+            {
+                throw new InvalidOperationException("An unknown error occurred. The response contained zero emotes.");
+            }
+
+            ImmutableArray<Emote> emotes = getResponse.Items;
+            Cache?.AddGlobalEmotes(emotes);
             return emotes;
         }
-
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "chat/emotes/global");
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<Emote> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseEmote);
-        if (getResponse.Items.Length == 0)
-        {
-            throw new InvalidOperationException("An unknown error occurred. The response contained zero emotes.");
-        }
-
-        emotes = getResponse.Items;
-        Cache?.AddGlobalEmotes(emotes);
-        return emotes;
     }
 
-    public async ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesAsync(long channelId)
+    public ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesAsync(long channelId)
     {
-        if (TryGetChannelEmotesFromCache(channelId, out ImmutableArray<ChannelEmote> emotes))
+        return TryGetChannelEmotesFromCache(channelId, out ImmutableArray<ChannelEmote> emotes)
+            ? ValueTask.FromResult(emotes)
+            : GetChannelEmotesCoreAsync(channelId);
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesCoreAsync(long channelId)
         {
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, "chat/emotes");
+            urlBuilder.AppendParameter("broadcaster_id", channelId);
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            GetResponse<ChannelEmote> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseChannelEmote);
+            ImmutableArray<ChannelEmote> emotes = getResponse.Items;
+            Cache?.AddChannelEmotes(channelId, emotes);
             return emotes;
         }
-
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, "chat/emotes");
-        urlBuilder.AppendParameter("broadcaster_id", channelId);
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<ChannelEmote> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseChannelEmote);
-        emotes = getResponse.Items;
-        Cache?.AddChannelEmotes(channelId, emotes);
-        return emotes;
     }
 
     private bool TryGetGlobalEmotesFromCache(out ImmutableArray<Emote> emotes)

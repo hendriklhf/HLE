@@ -193,6 +193,7 @@ public sealed class RentedArrayTest
 
     [Fact]
     [SuppressMessage("ReSharper", "DisposeOnUsingVariable")]
+    [SuppressMessage("Major Code Smell", "S3966:Objects should not be disposed more than once")]
     public void Dispose_Test()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);

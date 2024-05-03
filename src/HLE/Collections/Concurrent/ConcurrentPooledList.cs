@@ -282,7 +282,8 @@ public sealed class ConcurrentPooledList<T> :
     // ReSharper disable once InconsistentlySynchronizedField
     public ArrayEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+    // ReSharper disable once InconsistentlySynchronizedField
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => _list.Count == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

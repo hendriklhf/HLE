@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using HLE.Twitch.Helix.Models;
+using JetBrains.Annotations;
 
 namespace HLE.Twitch.Helix;
 
@@ -37,12 +39,14 @@ public sealed partial class TwitchApi : ITwitchApi, IEquatable<TwitchApi>, IDisp
 
     public void Dispose() => _accessTokenRequestContent.Dispose();
 
+    [MustDisposeResource]
     private async ValueTask<HttpClient> CreateHttpClientAsync()
     {
         await EnsureValidAccessTokenAsync();
         HttpClient httpClient = new();
-        httpClient.DefaultRequestHeaders.Add("Client-Id", _clientId);
-        httpClient.DefaultRequestHeaders.Add("Authorization", _bearer);
+        HttpRequestHeaders requestHeaders = httpClient.DefaultRequestHeaders;
+        requestHeaders.Add("Client-Id", _clientId);
+        requestHeaders.Add("Authorization", _bearer);
         return httpClient;
     }
 
@@ -59,18 +63,24 @@ public sealed partial class TwitchApi : ITwitchApi, IEquatable<TwitchApi>, IDisp
         return JsonSerializer.Deserialize(httpContentBytes.AsSpan(), HelixJsonSerializerContext.Default.AccessToken);
     }
 
-    private async ValueTask EnsureValidAccessTokenAsync()
+    private ValueTask EnsureValidAccessTokenAsync()
     {
         AccessToken accessToken = _accessToken;
         if (accessToken != AccessToken.Empty && accessToken.IsValid)
         {
             Debug.Assert(_bearer is not null);
-            return;
+            return ValueTask.CompletedTask;
         }
 
-        accessToken = await GetAccessTokenAsync();
-        _bearer = $"Bearer {accessToken}";
-        _accessToken = accessToken;
+        return EnsureValidAccessTokenCoreAsync();
+
+        // ReSharper disable once InconsistentNaming
+        async ValueTask EnsureValidAccessTokenCoreAsync()
+        {
+            AccessToken accessToken = await GetAccessTokenAsync();
+            _bearer = $"Bearer {accessToken}";
+            _accessToken = accessToken;
+        }
     }
 
     private async ValueTask<HttpContentBytes> ExecuteRequestAsync(string url)

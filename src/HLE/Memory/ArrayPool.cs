@@ -12,6 +12,7 @@ internal static class ArrayPool
     /// Stores the maximum amount of arrays per length that the ArrayPool can hold.
     /// </summary>
     [SuppressMessage("Style", "IDE0055:Fix formatting")]
+    [SuppressMessage("Major Code Smell", "S109:Magic numbers should not be used")]
     public static ReadOnlySpan<int> BucketCapacities =>
     [
         // 16,32,64,128,256,512

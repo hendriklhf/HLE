@@ -61,7 +61,7 @@ public unsafe struct NativeString :
     public static uint MaximumLength
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int.MaxValue - ObjectMarshal.BaseObjectSize - sizeof(int) - sizeof(char)) / 2;
+        get => (int.MaxValue - ObjectMarshal.BaseObjectSize - sizeof(int) - sizeof(char)) / sizeof(char);
     }
 
     public NativeString()
@@ -132,12 +132,13 @@ public unsafe struct NativeString :
 
     public void Dispose()
     {
-        if (_buffer == null)
+        byte* buffer = _buffer;
+        if (buffer == null)
         {
             return;
         }
 
-        NativeMemory.AlignedFree(_buffer);
+        NativeMemory.AlignedFree(buffer);
         _buffer = null;
     }
 
@@ -207,7 +208,7 @@ public unsafe struct NativeString :
 
     public readonly NativeMemoryEnumerator<char> GetEnumerator() => new((char*)Unsafe.AsPointer(ref GetCharsReference()), Length);
 
-    readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<char>.Enumerator : GetEnumerator();
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

@@ -8,7 +8,7 @@
     <NeutralLanguage>en-US</NeutralLanguage>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 

@@ -84,7 +84,7 @@ public sealed class PoolBufferStringBuilderTest
         using PooledStringBuilder builder = new();
         builder.Append("hello");
 
-        Assert.True(builder._buffer.AsSpan().StartsWith("hello"));
+        Assert.True(builder._buffer.AsMemory().Span.StartsWith("hello"));
     }
 
     [Fact]

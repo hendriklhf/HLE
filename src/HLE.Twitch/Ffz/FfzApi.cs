@@ -30,7 +30,6 @@ public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
             ? ValueTask.FromResult(emotes)
             : GetChannelEmotesCoreAsync(channelId);
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(long channelId)
         {
             using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);

@@ -36,7 +36,8 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
 
         for (int i = 0; i < cachedTokenStrings.Length - 1; i++)
         {
-            if (i % 8 == 0)
+            const int StringsPerLine = 8;
+            if (i % StringsPerLine == 0)
             {
                 sourceBuilder.AppendLine();
                 sourceBuilder.Append(Indentation + Indentation);

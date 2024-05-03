@@ -16,48 +16,52 @@ public sealed partial class TwitchApi
 {
     private const string StreamsEndpoint = "streams";
 
-    public async ValueTask<Stream?> GetStreamAsync(long userId)
+    public ValueTask<Stream?> GetStreamAsync(long userId)
     {
-        if (TryGetStreamFromCache(userId, out Stream? stream))
+        return TryGetStreamFromCache(userId, out Stream? stream)
+            ? ValueTask.FromResult<Stream?>(stream)
+            : GetStreamCoreAsync(userId);
+
+        async ValueTask<Stream?> GetStreamCoreAsync(long userId)
         {
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
+            urlBuilder.AppendParameter("user_id", userId);
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
+            if (getResponse.Items.Length == 0)
+            {
+                return null;
+            }
+
+            stream = getResponse.Items[0];
+            Cache?.AddStream(stream);
             return stream;
         }
-
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
-        urlBuilder.AppendParameter("user_id", userId);
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
-        if (getResponse.Items.Length == 0)
-        {
-            return null;
-        }
-
-        stream = getResponse.Items[0];
-        Cache?.AddStream(stream);
-        return stream;
     }
 
     public ValueTask<Stream?> GetStreamAsync(string username) => GetStreamAsync(username.AsMemory());
 
-    public async ValueTask<Stream?> GetStreamAsync(ReadOnlyMemory<char> username)
+    public ValueTask<Stream?> GetStreamAsync(ReadOnlyMemory<char> username)
     {
-        if (TryGetStreamFromCache(username.Span, out Stream? stream))
+        return TryGetStreamFromCache(username.Span, out Stream? stream)
+            ? ValueTask.FromResult<Stream?>(stream)
+            : GetStreamCoreAsync(username);
+
+        async ValueTask<Stream?> GetStreamCoreAsync(ReadOnlyMemory<char> username)
         {
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
+            urlBuilder.AppendParameter("user_login", username.Span);
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
+            if (getResponse.Items.Length == 0)
+            {
+                return null;
+            }
+
+            stream = getResponse.Items[0];
+            Cache?.AddStream(stream);
             return stream;
         }
-
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
-        urlBuilder.AppendParameter("user_login", username.Span);
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
-        if (getResponse.Items.Length == 0)
-        {
-            return null;
-        }
-
-        stream = getResponse.Items[0];
-        Cache?.AddStream(stream);
-        return stream;
     }
 
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames)
@@ -68,7 +72,6 @@ public sealed partial class TwitchApi
 
     public ValueTask<Stream[]> GetStreamsAsync(IEnumerable<string> usernames, IEnumerable<long> channelIds)
     {
-        // ReSharper disable PossibleMultipleEnumeration
         bool usernamesIsMemory = usernames.TryGetReadOnlyMemory(out ReadOnlyMemory<string> usernamesMemory);
         bool channelIdsIsMemory = channelIds.TryGetReadOnlyMemory(out ReadOnlyMemory<long> channelIdsMemory);
 
@@ -79,7 +82,6 @@ public sealed partial class TwitchApi
             false when channelIdsIsMemory => GetStreamsAsync(usernamesMemory.ToArray(), channelIdsMemory),
             _ => GetStreamsAsync(usernames.ToArray(), channelIds.ToArray())
         };
-        // ReSharper restore PossibleMultipleEnumeration
     }
 
     public ValueTask<Stream[]> GetStreamsAsync(List<string> usernames)
@@ -123,7 +125,6 @@ public sealed partial class TwitchApi
             _ => GetStreamsCoreAsync(usernames, channelIds, destination)
         };
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask<int> GetStreamsCoreAsync(ReadOnlyMemory<string> usernames, ReadOnlyMemory<long> channelIds, Stream[] destination)
         {
             using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, usernames.Length * 35 + channelIds.Length * 25 + 50);

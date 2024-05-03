@@ -40,7 +40,7 @@ public sealed class SimpleStringHasherTest(ITestOutputHelper testOutputHelper)
         _testOutputHelper.WriteLine($"Less than average: {lessThanAverageCount}");
         _testOutputHelper.WriteLine($"Greater than average: {greaterThanAverageCount}");
 
-        Assert.True(counts.All(static c => c > Average * 0.125));
+        Assert.True(Array.TrueForAll(counts, static c => c > Average * 0.125));
         Assert.True(Math.Abs(greaterThanAverageCount - lessThanAverageCount) < Average * 0.075);
     }
 }

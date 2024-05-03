@@ -23,7 +23,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private const string ValueStringBuilderClassName = "ValueStringBuilder";
     private const string PooledStringBuilderClassName = "PooledStringBuilder";
 
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(GeneratorInitializationContext _)
     {
         for (int argumentCount = MinimumAmountOfArguments; argumentCount <= MaximumAmountOfArguments; argumentCount++)
         {

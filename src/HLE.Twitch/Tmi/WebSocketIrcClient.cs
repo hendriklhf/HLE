@@ -122,7 +122,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         listeningThread.Start();
     }
 
-    // ReSharper disable once AsyncVoidMethod
     private async Task StartListeningAsync()
     {
         try

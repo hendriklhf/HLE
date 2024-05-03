@@ -270,6 +270,11 @@ public sealed class LazyString :
 
     IEnumerator<char> IEnumerable<char>.GetEnumerator()
     {
+        if (Length == 0)
+        {
+            return EmptyEnumeratorCache<char>.Enumerator;
+        }
+
         string? str = _string;
         if (str is not null)
         {

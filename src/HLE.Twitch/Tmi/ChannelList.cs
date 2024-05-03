@@ -112,7 +112,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public IEnumerator<Channel> GetEnumerator() => _channels.GetEnumerator();
+    public IEnumerator<Channel> GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<Channel>.Enumerator : _channels.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

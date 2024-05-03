@@ -81,7 +81,7 @@ public sealed partial class SpanHelpersTest
 
         for (int i = 0; i < 128; i++)
         {
-            data.Add(Random.Shared.Next(4096, 1048576));
+            data.Add(Random.Shared.Next(4096, 1_048_576));
         }
 
         return data;

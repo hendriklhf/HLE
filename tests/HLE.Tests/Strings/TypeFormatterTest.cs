@@ -65,6 +65,7 @@ public sealed class TypeFormatterTest
     }
 
     [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
+    [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
     public readonly struct Parameter(string expected, Type type)
     {
         public string Expected { get; } = expected;

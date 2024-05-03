@@ -275,7 +275,7 @@ public unsafe partial struct NativeMemory<T> :
 
     public readonly NativeMemoryEnumerator<T> GetEnumerator() => new(_memory, Length);
 
-    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

@@ -239,7 +239,7 @@ public struct RentedArray<T> :
 
     public readonly ArrayEnumerator<T> GetEnumerator() => new(Array, 0, Array.Length);
 
-    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

@@ -9,7 +9,7 @@ public static partial class EmptyEnumeratorCache<T>
     {
         public T Current => default!;
 
-        object IEnumerator.Current => Current!;
+        object? IEnumerator.Current => null;
 
         public bool MoveNext() => false;
 

@@ -18,6 +18,7 @@ namespace HLE;
 
 public static class RandomExtensions
 {
+    [SuppressMessage("Major Code Smell", "S109:Magic numbers should not be used")]
     private static ReadOnlySpan<ulong> LeadingZeroFlagMaskValues =>
     [
         ulong.MaxValue,

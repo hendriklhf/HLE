@@ -22,6 +22,7 @@ public sealed class BufferHelpersTest
 
     [Fact]
     [SuppressMessage("Assertions", "xUnit2000:Constants and literals should be the expected argument", Justification = "Array.MaxLength is correctly expected.")]
+    [SuppressMessage("Major Code Smell", "S3415:Assertion arguments should be passed in the correct order")]
     public void MaximumArrayLengthIsInSyncWithArrayMaxLengthTest()
         => Assert.Equal(Array.MaxLength, BufferHelpers.MaximumArrayLength);
 

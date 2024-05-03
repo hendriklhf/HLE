@@ -37,7 +37,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     private const string CacheDirectory = @"HLE\SourceGenerators\EmojiFileGenerator\";
 
     // ReSharper disable once AsyncVoidMethod
-    public async void Initialize(GeneratorInitializationContext context)
+    public async void Initialize(GeneratorInitializationContext _)
     {
         byte[]? emojiJsonBytes = _emojiJsonBytes;
         if (emojiJsonBytes is not null)

@@ -221,8 +221,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
-        => throw new InvalidOperationException(
-            $"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
+        => throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
 
     public void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
 
@@ -330,7 +329,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public ArrayEnumerator<char> GetEnumerator() => new(GetBuffer(), 0, Length);
 
-    IEnumerator<char> IEnumerable<char>.GetEnumerator() => GetEnumerator();
+    IEnumerator<char> IEnumerable<char>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<char>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

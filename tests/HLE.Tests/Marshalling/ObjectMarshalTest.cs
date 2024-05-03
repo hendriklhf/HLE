@@ -168,6 +168,7 @@ public sealed unsafe partial class ObjectMarshalTest
 
     [Theory]
     [MemberData(nameof(GetRawArraySizeParameters))]
+    [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions", Justification = "testMethod.Invoke asserts")]
     public void GetRawArraySize_Array_Test(Array array)
     {
         MethodInfo method = typeof(ObjectMarshalTest).GetMethod(nameof(GetRawArraySizeTestCore), BindingFlags.NonPublic | BindingFlags.Static)!;

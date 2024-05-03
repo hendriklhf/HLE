@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using HLE.Collections;
@@ -374,6 +375,7 @@ public sealed class StringArrayTest(ITestOutputHelper testOutputHelper)
     }
 
     [Fact]
+    [SuppressMessage("Major Bug", "S2583:Conditionally executed code should be reachable", Justification = "analyzer is wrong. StringArray.Clear does not set StringArray.Length to 0")]
     public void ClearTest()
     {
         StringArray stringArray = new(Enumerable.Range(0, 1024)
