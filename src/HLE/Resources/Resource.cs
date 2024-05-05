@@ -104,6 +104,15 @@ public readonly unsafe struct Resource(byte* resource, int length) :
         return result;
     }
 
+    [Pure]
+    public List<byte> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public List<byte> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public List<byte> ToList(Range range) => AsSpan().ToList(range);
+
     public void CopyTo(List<byte> destination, int offset = 0)
     {
         CopyWorker<byte> copyWorker = new(_resource, Length);

@@ -144,6 +144,7 @@ public sealed class ConcurrentStack<T> :
         _buffer = newBuffer;
     }
 
+    [Pure]
     public List<T> ToList()
     {
         ReadOnlySpan<T> source = AsSpan();
@@ -158,6 +159,16 @@ public sealed class ConcurrentStack<T> :
         return result;
     }
 
+    [Pure]
+    public List<T> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public List<T> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public List<T> ToList(Range range) => AsSpan().ToList(range);
+
+    [Pure]
     public T[] ToArray()
     {
         ReadOnlySpan<T> source = AsSpan();
@@ -171,10 +182,13 @@ public sealed class ConcurrentStack<T> :
         return result;
     }
 
+    [Pure]
     public T[] ToArray(int start) => AsSpan().ToArray(start);
 
+    [Pure]
     public T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
 
+    [Pure]
     public T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     public void CopyTo(List<T> destination, int offset = 0)

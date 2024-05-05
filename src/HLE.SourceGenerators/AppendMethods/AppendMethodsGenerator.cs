@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -23,6 +24,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private const string ValueStringBuilderClassName = "ValueStringBuilder";
     private const string PooledStringBuilderClassName = "PooledStringBuilder";
 
+    [SuppressMessage("ReSharper", "UseCollectionExpression")]
     public void Initialize(GeneratorInitializationContext _)
     {
         for (int argumentCount = MinimumAmountOfArguments; argumentCount <= MaximumAmountOfArguments; argumentCount++)
@@ -42,11 +44,11 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        GenerateValueStringBuilderMethods(context);
-        GeneratePooledStringBuilderMethods(context);
+        GenerateValueStringBuilderMethods(ref context);
+        GeneratePooledStringBuilderMethods(ref context);
     }
 
-    private void GenerateValueStringBuilderMethods(GeneratorExecutionContext context)
+    private void GenerateValueStringBuilderMethods(ref readonly GeneratorExecutionContext context)
     {
         StringBuilder sourceBuilder = new(DefaultStringBuilderCapacity);
         sourceBuilder.AppendLine($"namespace {StringBuilderNamespace};").AppendLine();
@@ -69,7 +71,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
         context.AddSource($"{StringBuilderNamespace}.{ValueStringBuilderClassName}.g.cs", sourceBuilder.ToString());
     }
 
-    private void GeneratePooledStringBuilderMethods(GeneratorExecutionContext context)
+    private void GeneratePooledStringBuilderMethods(ref readonly GeneratorExecutionContext context)
     {
         StringBuilder sourceBuilder = new(DefaultStringBuilderCapacity);
         sourceBuilder.AppendLine($"namespace {StringBuilderNamespace};").AppendLine();

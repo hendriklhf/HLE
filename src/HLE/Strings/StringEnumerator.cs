@@ -17,7 +17,7 @@ public struct StringEnumerator(string str) : IEnumerator<char>, IEquatable<Strin
 
     public bool MoveNext() => ++_current < _str.Length;
 
-    public void Reset() => throw new NotSupportedException();
+    public void Reset() => _current = -1;
 
     public readonly void Dispose()
     {

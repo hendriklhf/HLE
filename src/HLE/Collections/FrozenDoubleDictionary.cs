@@ -125,6 +125,15 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         return result;
     }
 
+    [Pure]
+    public List<TValue> ToList(int start) => Values.AsSpan().ToList(start);
+
+    [Pure]
+    public List<TValue> ToList(int start, int length) => Values.AsSpan().ToList(start, length);
+
+    [Pure]
+    public List<TValue> ToList(Range range) => Values.AsSpan().ToList(range);
+
     public void CopyTo(List<TValue> destination, int offset = 0)
     {
         CopyWorker<TValue> copyWorker = new(Values.AsSpan());

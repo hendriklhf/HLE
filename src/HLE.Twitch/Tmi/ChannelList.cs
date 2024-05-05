@@ -42,7 +42,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
     /// <param name="channel">The channel.</param>
     public bool TryGet(ReadOnlySpan<char> channelName, [MaybeNullWhen(false)] out Channel channel)
     {
-        if (channelName.Length is < ChannelFormatter.MinimumChannelNameLength or > ChannelFormatter.MaximumChannelNameLength)
+        if (channelName.Length is < ChannelFormatter.MinimumChannelNameLength or > ChannelFormatter.MaximumPrefixedChannelNameLength)
         {
             channel = null;
             return false;
@@ -102,6 +102,15 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
 
     [Pure]
     public List<Channel> ToList() => _channels.ToList();
+
+    [Pure]
+    public List<Channel> ToList(int start) => _channels.ToList(start..);
+
+    [Pure]
+    public List<Channel> ToList(int start, int length) => _channels.ToList(start, length);
+
+    [Pure]
+    public List<Channel> ToList(Range range) => _channels.ToList(range);
 
     [Pure]
     public bool Equals([NotNullWhen(true)] ChannelList? other) => ReferenceEquals(this, other);

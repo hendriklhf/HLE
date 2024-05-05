@@ -117,6 +117,15 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     [Pure]
     public List<TValue> ToList() => _dictionary.ToList();
 
+    [Pure]
+    public List<TValue> ToList(int start) => _dictionary.ToList(start..);
+
+    [Pure]
+    public List<TValue> ToList(int start, int length) => _dictionary.ToList(start, length);
+
+    [Pure]
+    public List<TValue> ToList(Range range) => _dictionary.ToList(range);
+
     public IEnumerator<TValue> GetEnumerator() => _dictionary.Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : _dictionary.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

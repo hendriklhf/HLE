@@ -205,6 +205,15 @@ public sealed class PooledBufferWriter<T>(int capacity) :
         return result;
     }
 
+    [Pure]
+    public List<T> ToList(int start) => WrittenSpan.ToList(start);
+
+    [Pure]
+    public List<T> ToList(int start, int length) => WrittenSpan.ToList(start, length);
+
+    [Pure]
+    public List<T> ToList(Range range) => WrittenSpan.ToList(range);
+
     /// <summary>
     /// Trims unused buffer size.<br/>
     /// This method should ideally be called, when <see cref="Capacity"/> is much larger than <see cref="Count"/>.

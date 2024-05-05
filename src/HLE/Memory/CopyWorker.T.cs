@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 
 namespace HLE.Memory;
 
@@ -95,7 +96,7 @@ public readonly unsafe ref struct CopyWorker<T>
             CollectionsMarshal.SetCount(destination, (int)_length + offset);
         }
 
-        ref T destinationReference = ref Unsafe.Add(ref MemoryMarshal.GetReference(CollectionsMarshal.AsSpan(destination)), offset);
+        ref T destinationReference = ref Unsafe.Add(ref ListMarshal.GetReference(destination), offset);
         CopyTo(ref destinationReference);
     }
 

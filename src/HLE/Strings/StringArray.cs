@@ -148,6 +148,15 @@ public sealed class StringArray :
         return result;
     }
 
+    [Pure]
+    public List<string> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public List<string> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public List<string> ToList(Range range) => AsSpan().ToList(range);
+
     ReadOnlySpan<string> IReadOnlySpanProvider<string>.GetReadOnlySpan() => AsSpan();
 
     ReadOnlyMemory<string> IReadOnlyMemoryProvider<string>.GetReadOnlyMemory() => AsMemory();

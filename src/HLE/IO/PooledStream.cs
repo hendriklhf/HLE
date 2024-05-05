@@ -424,6 +424,15 @@ public sealed class PooledStream(int capacity) :
     }
 
     [Pure]
+    public List<byte> ToList(int start) => AsSpan().ToList(start..);
+
+    [Pure]
+    public List<byte> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public List<byte> ToList(Range range) => AsSpan().ToList(range);
+
+    [Pure]
     public Span<byte> AsSpan() => GetBuffer().AsSpanUnsafe(.._length);
 
     [Pure]

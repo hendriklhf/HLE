@@ -203,14 +203,15 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     public TValue[] ToArray()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        TValue[] result = GC.AllocateUninitializedArray<TValue>(Count);
+        TValue[] result = GC.AllocateUninitializedArray<TValue>(count);
         _values.Values.TryEnumerateInto(result, out int writtenElementCount);
-        Debug.Assert(writtenElementCount == Count);
+        Debug.Assert(writtenElementCount == count);
         return result;
     }
 
@@ -230,18 +231,32 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     [Pure]
     public List<TValue> ToList()
     {
-        if (Count == 0)
+        int count = Count;
+        if (count == 0)
         {
             return [];
         }
 
-        List<TValue> result = new(Count);
-        CollectionsMarshal.SetCount(result, Count);
+        List<TValue> result = new(count);
+        CollectionsMarshal.SetCount(result, count);
         Span<TValue> buffer = CollectionsMarshal.AsSpan(result);
         _values.Values.TryEnumerateInto(buffer, out int writtenElementCount);
-        Debug.Assert(writtenElementCount == Count);
+        Debug.Assert(writtenElementCount == count);
         return result;
     }
+
+    [Pure]
+    public List<TValue> ToList(int start) => ToList(start..Count);
+
+    [Pure]
+    public List<TValue> ToList(Range range)
+    {
+        (int start, int length) = range.GetOffsetAndLength(Count);
+        return ToList(start, length);
+    }
+
+    [Pure]
+    public List<TValue> ToList(int start, int length) => _values.Values.Skip(start).Take(length).ToList();
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

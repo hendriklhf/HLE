@@ -149,7 +149,7 @@ public unsafe partial struct NativeMemory<T> :
     [Pure]
     public readonly Memory<T> AsMemory() => new NativeMemoryManager<T>(Pointer, Length).Memory;
 
-#pragma warning disable CA2000 // dispose NativeMemoryManager (not needed)
+#pragma warning disable CA2000 // dispose NativeMemoryManager. Not needed, NativeMemoryManager.Dispose is a nop
     [Pure]
     public readonly Memory<T> AsMemory(int start) => new NativeMemoryManager<T>(Pointer, Length).Memory[start..];
 
@@ -255,6 +255,15 @@ public unsafe partial struct NativeMemory<T> :
         copyWorker.CopyTo(result);
         return result;
     }
+
+    [Pure]
+    public readonly List<T> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public readonly List<T> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public readonly List<T> ToList(Range range) => AsSpan().ToList(range);
 
     readonly void ICollection<T>.Add(T item) => throw new NotSupportedException();
 

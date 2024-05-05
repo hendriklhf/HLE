@@ -240,6 +240,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
+        // ReSharper disable once NotDisposedResource
         OnChatMessageReceived.Invoke(this, _chatMessageParser.Parse(ircMessage, indicesOfWhitespaces));
         return true;
     }

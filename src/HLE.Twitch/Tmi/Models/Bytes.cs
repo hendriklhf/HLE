@@ -84,6 +84,15 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
         return result;
     }
 
+    [Pure]
+    public readonly List<byte> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public readonly List<byte> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public readonly List<byte> ToList(Range range) => AsSpan().ToList(range);
+
     readonly ReadOnlySpan<byte> IReadOnlySpanProvider<byte>.GetReadOnlySpan() => AsSpan();
 
     readonly ReadOnlyMemory<byte> IReadOnlyMemoryProvider<byte>.GetReadOnlyMemory() => AsMemory();

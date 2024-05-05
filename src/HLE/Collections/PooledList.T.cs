@@ -134,6 +134,15 @@ public sealed class PooledList<T>(int capacity) :
         return result;
     }
 
+    [Pure]
+    public List<T> ToList(int start) => AsSpan(start..).ToList();
+
+    [Pure]
+    public List<T> ToList(int start, int length) => AsSpan(start, length).ToList();
+
+    [Pure]
+    public List<T> ToList(Range range) => AsSpan(range).ToList();
+
     Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
     ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();

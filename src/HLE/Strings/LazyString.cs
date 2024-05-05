@@ -190,6 +190,15 @@ public sealed class LazyString :
     }
 
     [Pure]
+    public List<char> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public List<char> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public List<char> ToList(Range range) => AsSpan().ToList(range);
+
+    [Pure]
     public override string ToString() => ToString(false);
 
     [Pure]
@@ -266,7 +275,7 @@ public sealed class LazyString :
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
-    public MemoryEnumerator<char> GetEnumerator() => new(ref GetReference(), Length);
+    public MemoryEnumerator<char> GetEnumerator() => new(ref GetReference(), Length); // TODO: change to StringEnumerator
 
     IEnumerator<char> IEnumerable<char>.GetEnumerator()
     {
@@ -278,7 +287,7 @@ public sealed class LazyString :
         string? str = _string;
         if (str is not null)
         {
-            return str.GetEnumerator();
+            return new StringEnumerator(str);
         }
 
         char[]? chars = _chars;

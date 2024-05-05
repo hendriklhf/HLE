@@ -170,6 +170,15 @@ public struct RentedArray<T> :
         return result;
     }
 
+    [Pure]
+    public readonly List<T> ToList(int start) => AsSpan(start..).ToList();
+
+    [Pure]
+    public readonly List<T> ToList(int start, int length) => AsSpan(start, length).ToList();
+
+    [Pure]
+    public readonly List<T> ToList(Range range) => AsSpan(range).ToList();
+
     public readonly void CopyTo(List<T> destination, int offset = 0)
     {
         CopyWorker<T> copyWorker = new(Array);
