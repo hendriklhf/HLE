@@ -28,6 +28,7 @@ public static unsafe class TaskHelpers
 
     [SuppressMessage("Roslynator", "RCS1046:Asynchronous method name should end with \'Async\'")]
     [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
+    [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
     private static Task WhenAllFallback(ReadOnlySpan<Task> tasks) => Task.WhenAll(tasks.ToArray());
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -39,5 +40,6 @@ public static unsafe class TaskHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage("Roslynator", "RCS1046:Asynchronous method name should end with \'Async\'")]
     [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
+    [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
     public static Task WhenAll(ReadOnlySpan<Task> tasks) => s_whenAll(tasks);
 }

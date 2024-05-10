@@ -256,7 +256,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
         messageBuilder.Clear();
         messageBuilder.Write(NickPrefix);
-        messageBuilder.Write(_usernameUtf8);
+        messageBuilder.Write(_usernameUtf8.AsSpan());
         await SendAsync(messageBuilder.WrittenMemory);
 
         messageBuilder.Clear();

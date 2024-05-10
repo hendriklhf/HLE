@@ -19,16 +19,22 @@ public sealed partial class TwitchApi
         {
             using UrlBuilder urlBuilder = new(ApiBaseUrl, "chat/emotes/global");
             using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-            GetResponse<Emote> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseEmote);
-            if (getResponse.Items.Length == 0)
+            HelixResponse<Emote> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseEmote);
+            if (helixResponse.Items.Length == 0)
             {
                 throw new InvalidOperationException("An unknown error occurred. The response contained zero emotes.");
             }
 
-            ImmutableArray<Emote> emotes = getResponse.Items;
+            ImmutableArray<Emote> emotes = helixResponse.Items;
             Cache?.AddGlobalEmotes(emotes);
             return emotes;
         }
+    }
+
+    public async ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesAsync(ReadOnlyMemory<char> username)
+    {
+        User user = await GetUserAsync(username) ?? throw new InvalidOperationException($"The user {username} does not exist.");
+        return await GetChannelEmotesAsync(user.Id);
     }
 
     public ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesAsync(long channelId)
@@ -37,14 +43,13 @@ public sealed partial class TwitchApi
             ? ValueTask.FromResult(emotes)
             : GetChannelEmotesCoreAsync(channelId);
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesCoreAsync(long channelId)
         {
             using UrlBuilder urlBuilder = new(ApiBaseUrl, "chat/emotes");
             urlBuilder.AppendParameter("broadcaster_id", channelId);
             using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-            GetResponse<ChannelEmote> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseChannelEmote);
-            ImmutableArray<ChannelEmote> emotes = getResponse.Items;
+            HelixResponse<ChannelEmote> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseChannelEmote);
+            ImmutableArray<ChannelEmote> emotes = helixResponse.Items;
             Cache?.AddChannelEmotes(channelId, emotes);
             return emotes;
         }

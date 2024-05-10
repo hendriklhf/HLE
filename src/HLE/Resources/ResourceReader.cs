@@ -125,7 +125,7 @@ public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceRead
             Debug.Fail($"The implementation of {nameof(_assembly.GetManifestResourceStream)} has changed.");
         }
 
-        // fallback for the case that the implementation of GetManifestResourceStream has changed
+        // fallback for the case that the implementation of GetManifestResourceStream has changed or the Assembly is collectible
 
         if (streamLength > Array.MaxLength)
         {

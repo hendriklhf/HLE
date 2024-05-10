@@ -62,7 +62,7 @@ public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<Chann
         return _channels.TryGetBySecondaryKey(channelNameHash, out channel);
     }
 
-    internal void Update(in Roomstate args)
+    internal void Update(ref readonly Roomstate args)
     {
         if (TryGet(args.ChannelId, out Channel? channel))
         {

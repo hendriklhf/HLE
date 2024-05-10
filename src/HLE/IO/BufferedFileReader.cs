@@ -5,7 +5,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using HLE.IL;
 using HLE.Memory;
 using JetBrains.Annotations;
 using Microsoft.Win32.SafeHandles;
@@ -55,13 +57,17 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         byteWriter.Advance(bytesRead);
     }
 
-    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer, long fileOffset) => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, fileOffset);
+    public ValueTask<int> ReadBytesAsync(Memory<byte> buffer, long fileOffset, CancellationToken token = default)
+        => RandomAccess.ReadAsync(OpenHandleIfNotOpen(), buffer, fileOffset, token);
 
-    public async ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter) where TWriter : IBufferWriter<byte>
+    public ValueTask ReadBytesAsync<TWriter>(TWriter byteWriter, CancellationToken token = default) where TWriter : IBufferWriter<byte>
+        => token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ReadBytesCoreAsync(byteWriter, token);
+
+    private async ValueTask ReadBytesCoreAsync<TWriter>(TWriter byteWriter, CancellationToken token) where TWriter : IBufferWriter<byte>
     {
         SafeFileHandle handle = OpenHandleIfNotOpen();
         int fileSize = GetFileSizeInt32(handle);
-        int bytesRead = await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0);
+        int bytesRead = await RandomAccess.ReadAsync(handle, byteWriter.GetMemory(fileSize), 0, token);
         byteWriter.Advance(bytesRead);
     }
 
@@ -74,10 +80,13 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         charWriter.Advance(charsWritten);
     }
 
-    public async ValueTask ReadCharsAsync<TWriter>(TWriter charWriter, Encoding fileEncoding) where TWriter : IBufferWriter<char>
+    public ValueTask ReadCharsAsync<TWriter>(TWriter charWriter, Encoding fileEncoding, CancellationToken token = default) where TWriter : IBufferWriter<char>
+        => token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ReadCharsCoreAsync(charWriter, fileEncoding, token);
+
+    private async ValueTask ReadCharsCoreAsync<TWriter>(TWriter charWriter, Encoding fileEncoding, CancellationToken token) where TWriter : IBufferWriter<char>
     {
         using PooledBufferWriter<byte> byteWriter = new();
-        await ReadBytesAsync(byteWriter);
+        await ReadBytesAsync(byteWriter, token);
         int charCount = fileEncoding.GetMaxCharCount(byteWriter.Count);
         int charsWritten = fileEncoding.GetChars(byteWriter.WrittenSpan, charWriter.GetSpan(charCount));
         charWriter.Advance(charsWritten);
@@ -90,10 +99,10 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
         ReadLinesCore(lines, charsWriter.WrittenSpan);
     }
 
-    public async ValueTask ReadLinesAsync<TWriter>(TWriter lines, Encoding fileEncoding) where TWriter : IBufferWriter<string>
+    public async ValueTask ReadLinesAsync<TWriter>(TWriter lines, Encoding fileEncoding, CancellationToken token = default) where TWriter : IBufferWriter<string>
     {
         using PooledBufferWriter<char> charsWriter = new();
-        await ReadCharsAsync(charsWriter, fileEncoding);
+        await ReadCharsAsync(charsWriter, fileEncoding, token);
         ReadLinesCore(lines, charsWriter.WrittenSpan);
     }
 
@@ -110,7 +119,7 @@ public struct BufferedFileReader(string filePath) : IDisposable, IEquatable<Buff
             string line = new(chars[..indexOfNewLine]);
             if (typeof(TWriter) == typeof(PooledBufferWriter<string>))
             {
-                Unsafe.As<PooledBufferWriter<string>>(lines).Write(line);
+                UnsafeIL.As<TWriter, PooledBufferWriter<string>>(lines).Write(line);
             }
             else
             {

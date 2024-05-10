@@ -212,6 +212,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         SubscribeToEvents();
     }
 
+    [SuppressMessage("Usage", "VSTHRD101:Avoid unsupported async delegates")]
     private void SubscribeToEvents()
     {
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);
@@ -220,8 +221,8 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         _client.OnConnectionException += async (_, _) => await ReconnectAfterConnectionExceptionAsync();
 
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceived;
-        _ircHandler.OnPingReceived += IrcHandler_OnPingReceivedAsync;
-        _ircHandler.OnReconnectReceived += IrcHandler_OnReconnectReceivedAsync;
+        _ircHandler.OnPingReceived += IrcHandler_OnPingReceived;
+        _ircHandler.OnReconnectReceived += IrcHandler_OnReconnectReceived;
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -491,38 +492,35 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         => _onNoticeReceived?.Invoke(this, e);
 
     // ReSharper disable once AsyncVoidMethod
-    [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
-    private async void IrcHandler_OnReconnectReceivedAsync(object? o, EventArgs eventArgs)
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
+    private async void IrcHandler_OnReconnectReceived(object? _, EventArgs e)
         => await _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
 
     // ReSharper disable once AsyncVoidMethod
-    [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
-    private async void IrcHandler_OnPingReceivedAsync(object? _, Bytes e)
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
+    private async void IrcHandler_OnPingReceived(object? _, Bytes bytes)
     {
         try
         {
-            using PooledBufferWriter<byte> builder = new(PongPrefix.Length + e.Length);
+            using PooledBufferWriter<byte> builder = new(PongPrefix.Length + bytes.Length);
             builder.Write(PongPrefix);
-            builder.Write(e.AsSpan());
+            builder.Write(bytes.AsSpan());
 
             await _client.SendRawAsync(builder.WrittenMemory);
         }
         finally
         {
-            e.Dispose();
+            bytes.Dispose();
         }
     }
 
-    private void IrcHandler_OnJoinReceived(object? _, JoinChannelMessage e)
-        => _onJoinedChannel?.Invoke(this, e);
+    private void IrcHandler_OnJoinReceived(object? _, JoinChannelMessage e) => _onJoinedChannel?.Invoke(this, e);
 
-    private void IrcHandler_OnPartReceived(object? _, LeftChannelMessage e)
-        => _onLeftChannel?.Invoke(this, e);
+    private void IrcHandler_OnPartReceived(object? _, LeftChannelMessage e) => _onLeftChannel?.Invoke(this, e);
 
     private async Task ReconnectAfterConnectionExceptionAsync()
     {
         await _reconnectionLock.WaitAsync();
-
         try
         {
             if (_client.State is WebSocketState.Open or WebSocketState.Connecting)

@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 
 namespace HLE.Strings;
 
@@ -51,7 +52,7 @@ public static partial class SingleCharStringPool
             ThrowStringIsNotASingleCharString(str);
         }
 
-        char c = str[0];
+        char c = StringMarshal.GetReference(str);
         if (c < AmountOfCachedSingleCharStrings)
         {
             return;

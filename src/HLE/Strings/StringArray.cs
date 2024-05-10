@@ -326,6 +326,7 @@ public sealed class StringArray :
         switch (lengthDifference)
         {
             case > 0: // new string is longer
+                Debug.WriteLine("new string is longer");
                 GrowBufferIfNeeded(lengthDifference);
                 chars = _chars;
                 if (index != Length - 1)
@@ -338,6 +339,7 @@ public sealed class StringArray :
                 lengths[index] = str.Length;
                 break;
             case < 0: // new string is shorter
+                Debug.WriteLine("new string is shorter");
                 if (index != Length - 1)
                 {
                     SpanHelpers<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
@@ -348,6 +350,7 @@ public sealed class StringArray :
                 lengths[index] = str.Length;
                 break;
             default: // new string has same length
+                Debug.WriteLine("new string has same length");
                 Span<char> destination = chars[starts[index]..];
                 SpanHelpers<char>.Copy(str, destination);
                 break;

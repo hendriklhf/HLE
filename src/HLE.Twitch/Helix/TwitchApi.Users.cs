@@ -18,48 +18,52 @@ public sealed partial class TwitchApi
 {
     private const string UsersEndpoint = "users";
 
-    public async ValueTask<User?> GetUserAsync(long userId)
+    public ValueTask<User?> GetUserAsync(long userId)
     {
-        if (TryGetUserFromCache(userId, out User? user))
+        return TryGetUserFromCache(userId, out User? user)
+            ? ValueTask.FromResult<User?>(user)
+            : GetUserCoreAsync(userId);
+
+        async ValueTask<User?> GetUserCoreAsync(long userId)
         {
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, ApiBaseUrl.Length + UsersEndpoint.Length + 50);
+            urlBuilder.AppendParameter("id", userId);
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            HelixResponse<User> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseUser);
+            if (helixResponse.Items.Length == 0)
+            {
+                return null;
+            }
+
+            User user = helixResponse.Items[0];
+            Cache?.AddUser(user);
             return user;
         }
-
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, ApiBaseUrl.Length + UsersEndpoint.Length + 50);
-        urlBuilder.AppendParameter("id", userId);
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
-        if (getResponse.Items.Length == 0)
-        {
-            return null;
-        }
-
-        user = getResponse.Items[0];
-        Cache?.AddUser(user);
-        return user;
     }
 
     public ValueTask<User?> GetUserAsync(string username) => GetUserAsync(username.AsMemory());
 
-    public async ValueTask<User?> GetUserAsync(ReadOnlyMemory<char> username)
+    public ValueTask<User?> GetUserAsync(ReadOnlyMemory<char> username)
     {
-        if (TryGetUserFromCache(username.Span, out User? user))
+        return TryGetUserFromCache(username.Span, out User? user)
+            ? ValueTask.FromResult<User?>(user)
+            : GetUsersCoreAsync(username);
+
+        async ValueTask<User?> GetUsersCoreAsync(ReadOnlyMemory<char> username)
         {
+            using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, ApiBaseUrl.Length + UsersEndpoint.Length + 50);
+            urlBuilder.AppendParameter("login", username.Span);
+            using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
+            HelixResponse<User> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseUser);
+            if (helixResponse.Items.Length == 0)
+            {
+                return null;
+            }
+
+            User user = helixResponse.Items[0];
+            Cache?.AddUser(user);
             return user;
         }
-
-        using UrlBuilder urlBuilder = new(ApiBaseUrl, UsersEndpoint, ApiBaseUrl.Length + UsersEndpoint.Length + 50);
-        urlBuilder.AppendParameter("login", username.Span);
-        using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-        GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
-        if (getResponse.Items.Length == 0)
-        {
-            return null;
-        }
-
-        user = getResponse.Items[0];
-        Cache?.AddUser(user);
-        return user;
     }
 
     public ValueTask<ImmutableArray<User>> GetUsersAsync(IEnumerable<string> usernames)
@@ -157,11 +161,11 @@ public sealed partial class TwitchApi
             }
 
             using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-            GetResponse<User> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseUser);
-            int deserializedUserCount = getResponse.Items.Length;
+            HelixResponse<User> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseUser);
+            int deserializedUserCount = helixResponse.Items.Length;
             if (deserializedUserCount != 0)
             {
-                getResponse.Items.CopyTo(destination[cachedUserCount..]);
+                helixResponse.Items.CopyTo(destination[cachedUserCount..]);
             }
 
             Cache?.AddUsers(destination.AsSpan(cachedUserCount..(cachedUserCount + deserializedUserCount)));

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using HLE.Memory;
 using JetBrains.Annotations;
@@ -53,31 +54,40 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         _size = writeOffset + bytes.Length;
     }
 
-    public async ValueTask WriteBytesAsync(ReadOnlyMemory<byte> bytes)
+    public ValueTask WriteBytesAsync(ReadOnlyMemory<byte> bytes, CancellationToken token = default)
     {
+        if (token.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(token);
+        }
+
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long writeOffset = GetWriteOffset(fileHandle, false);
-        await RandomAccess.WriteAsync(fileHandle, bytes, writeOffset);
+        ValueTask task = RandomAccess.WriteAsync(fileHandle, bytes, writeOffset, token);
         _size = writeOffset + bytes.Length;
+        return task;
     }
 
     public void AppendBytes(ReadOnlySpan<byte> bytes)
     {
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long writeOffset = GetWriteOffset(fileHandle, true);
-
         RandomAccess.Write(fileHandle, bytes, writeOffset);
         _size = writeOffset + bytes.Length;
     }
 
-    public async ValueTask AppendBytesAsync(ReadOnlyMemory<byte> bytes)
+    public ValueTask AppendBytesAsync(ReadOnlyMemory<byte> bytes, CancellationToken token = default)
     {
+        if (token.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(token);
+        }
+
         SafeFileHandle fileHandle = OpenHandleIfNotOpen();
         long writeOffset = GetWriteOffset(fileHandle, true);
-
-        await RandomAccess.WriteAsync(fileHandle, bytes, writeOffset);
-
+        ValueTask task = RandomAccess.WriteAsync(fileHandle, bytes, writeOffset, token);
         _size = writeOffset + bytes.Length;
+        return task;
     }
 
     public void WriteChars(ReadOnlySpan<char> chars, Encoding fileEncoding)
@@ -98,22 +108,28 @@ public struct BufferedFileWriter(string filePath) : IDisposable, IEquatable<Buff
         AppendBytes(bytes);
     }
 
-    public async ValueTask WriteCharsAsync(ReadOnlyMemory<char> chars, Encoding fileEncoding)
+    public ValueTask WriteCharsAsync(ReadOnlyMemory<char> chars, Encoding fileEncoding, CancellationToken token = default)
+        => token.IsCancellationRequested ? ValueTask.FromCanceled(token) : WriteCharsCoreAsync(chars, fileEncoding, token);
+
+    private async ValueTask WriteCharsCoreAsync(ReadOnlyMemory<char> chars, Encoding fileEncoding, CancellationToken token = default)
     {
         int maximumByteCount = fileEncoding.GetMaxByteCount(chars.Length);
         using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(maximumByteCount);
         int byteCount = fileEncoding.GetBytes(chars.Span, byteBuffer.AsSpan());
         ReadOnlyMemory<byte> bytes = byteBuffer.AsMemory(..byteCount);
-        await WriteBytesAsync(bytes);
+        await WriteBytesAsync(bytes, token);
     }
 
-    public async ValueTask AppendCharsAsync(ReadOnlyMemory<char> chars, Encoding fileEncoding)
+    public ValueTask AppendCharsAsync(ReadOnlyMemory<char> chars, Encoding fileEncoding, CancellationToken token = default)
+        => token.IsCancellationRequested ? ValueTask.FromCanceled(token) : AppendCharsCoreAsync(chars, fileEncoding, token);
+
+    private async ValueTask AppendCharsCoreAsync(ReadOnlyMemory<char> chars, Encoding fileEncoding, CancellationToken token)
     {
         int maximumByteCount = fileEncoding.GetMaxByteCount(chars.Length);
         using RentedArray<byte> byteBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(maximumByteCount);
         int byteCount = fileEncoding.GetBytes(chars.Span, byteBuffer.AsSpan());
         ReadOnlyMemory<byte> bytes = byteBuffer.AsMemory(..byteCount);
-        await AppendBytesAsync(bytes);
+        await AppendBytesAsync(bytes, token);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

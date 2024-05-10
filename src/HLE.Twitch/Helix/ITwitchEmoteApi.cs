@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
@@ -11,4 +12,6 @@ public interface ITwitchEmoteApi
     ValueTask<ImmutableArray<Emote>> GetGlobalEmotesAsync();
 
     ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesAsync(long channelId);
+
+    ValueTask<ImmutableArray<ChannelEmote>> GetChannelEmotesAsync(ReadOnlyMemory<char> username);
 }

@@ -6,8 +6,8 @@ using Stream = HLE.Twitch.Helix.Models.Stream;
 namespace HLE.Twitch.Helix;
 
 [JsonSerializable(typeof(AccessToken))]
-[JsonSerializable(typeof(GetResponse<User>))]
-[JsonSerializable(typeof(GetResponse<Emote>))]
-[JsonSerializable(typeof(GetResponse<Stream>))]
-[JsonSerializable(typeof(GetResponse<ChannelEmote>))]
+[JsonSerializable(typeof(HelixResponse<User>))]
+[JsonSerializable(typeof(HelixResponse<Emote>))]
+[JsonSerializable(typeof(HelixResponse<Stream>))]
+[JsonSerializable(typeof(HelixResponse<ChannelEmote>))]
 public sealed partial class HelixJsonSerializerContext : JsonSerializerContext;

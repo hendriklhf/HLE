@@ -35,7 +35,7 @@
         ret
     }
 
-    .method public hidebysig static !!T& GetArrayReference<T>(!!0[] 'array') cil managed aggressiveinlining
+    .method public hidebysig static !!T& GetArrayReference<T>(!!T[] 'array') cil managed aggressiveinlining
     {
         .maxstack 2
 
@@ -43,6 +43,19 @@
         sizeof [System.Runtime]System.UIntPtr
         add
         sizeof [System.Runtime]System.UIntPtr
+        add
+        ret
+    }
+
+    .method public hidebysig static !!T& GetArrayReference<T>(!!T[] 'array', int32 index) cil managed aggressiveinlining
+    {
+        .maxstack 3
+
+        ldarg.0
+        call !!T& [HLE.IL]HLE.IL.UnsafeIL::GetArrayReference<!!T>(!!T[])
+        sizeof !!T
+        ldarg.1
+        mul
         add
         ret
     }
@@ -59,7 +72,7 @@
         ret
     }
 
-    .method public hidebysig static !!T[] AsArray<T>(!!0& firstElement) cil managed aggressiveinlining
+    .method public hidebysig static !!T[] AsArray<T>(!!T& firstElement) cil managed aggressiveinlining
     {
         .maxstack 2
 

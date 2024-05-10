@@ -51,7 +51,7 @@ public sealed class Channel : IEquatable<Channel>
 
     internal ImmutableArray<byte> PrefixedNameUtf8 { get; }
 
-    internal Channel(in Roomstate args)
+    internal Channel(ref readonly Roomstate args)
     {
         Name = args.Channel;
         PrefixedNameUtf8 = ImmutableCollectionsMarshal.AsImmutableArray(Encoding.UTF8.GetBytes($"#{args.Channel}"));
@@ -63,7 +63,7 @@ public sealed class Channel : IEquatable<Channel>
         SubsOnly = args.SubsOnly;
     }
 
-    internal void Update(in Roomstate args)
+    internal void Update(ref readonly Roomstate args)
     {
         ReadOnlySpan<ChangedRoomStates> allChangedRoomStatesValues = EnumValues<ChangedRoomStates>.AsSpan();
         for (int i = 0; i < allChangedRoomStatesValues.Length; i++)

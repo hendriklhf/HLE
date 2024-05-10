@@ -35,9 +35,10 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     private const string HttpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
     private const string Indentation = "    ";
-    private const string CacheDirectory = @"HLE\SourceGenerators\EmojiFileGenerator\";
+    private const string CacheDirectory = "HLE/SourceGenerators/EmojiFileGenerator";
 
     // ReSharper disable once AsyncVoidMethod
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
     public async void Initialize(GeneratorInitializationContext _)
     {
         byte[]? emojiJsonBytes = _emojiJsonBytes;
@@ -60,17 +61,12 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context)
     {
-        if (_emojiJsonBytes is not { Length: not 0 })
-        {
-            throw new InvalidOperationException("The HTTP request of the emojis failed.");
-        }
-
-        StringBuilder sourceBuilder = new();
+        StringBuilder sourceBuilder = new(64_000);
         sourceBuilder.AppendLine("namespace HLE.Emojis;").AppendLine();
         sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
         AppendEmojis(sourceBuilder);
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Emoji.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Emojis.Emoji.g.cs", sourceBuilder.ToString());
     }
 
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
@@ -111,7 +107,7 @@ public sealed class EmojiFileGenerator : ISourceGenerator
             Directory.CreateDirectory(cacheDirectory);
         }
 
-        string emojiJsonPath = cacheDirectory + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        string emojiJsonPath = Path.Combine(cacheDirectory, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
         File.WriteAllBytes(emojiJsonPath, emojiJsonBytes);
     }
 

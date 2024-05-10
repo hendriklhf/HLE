@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
@@ -60,7 +61,7 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     {
         Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
         int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, (byte)' ', indicesOfWhitespacesBuffer, MaximumWhitespacesNeededToHandle);
-        return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
+        return Parse(ircMessage, indicesOfWhitespacesBuffer.SliceUnsafe(..whitespaceCount));
     }
 
     [Pure]

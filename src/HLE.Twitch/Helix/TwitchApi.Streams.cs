@@ -27,13 +27,13 @@ public sealed partial class TwitchApi
             using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
             urlBuilder.AppendParameter("user_id", userId);
             using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-            GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
-            if (getResponse.Items.Length == 0)
+            HelixResponse<Stream> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseStream);
+            if (helixResponse.Items.Length == 0)
             {
                 return null;
             }
 
-            stream = getResponse.Items[0];
+            stream = helixResponse.Items[0];
             Cache?.AddStream(stream);
             return stream;
         }
@@ -52,13 +52,13 @@ public sealed partial class TwitchApi
             using UrlBuilder urlBuilder = new(ApiBaseUrl, StreamsEndpoint, ApiBaseUrl.Length + StreamsEndpoint.Length + 50);
             urlBuilder.AppendParameter("user_login", username.Span);
             using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-            GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
-            if (getResponse.Items.Length == 0)
+            HelixResponse<Stream> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseStream);
+            if (helixResponse.Items.Length == 0)
             {
                 return null;
             }
 
-            stream = getResponse.Items[0];
+            stream = helixResponse.Items[0];
             Cache?.AddStream(stream);
             return stream;
         }
@@ -159,11 +159,11 @@ public sealed partial class TwitchApi
             }
 
             using HttpContentBytes response = await ExecuteRequestAsync(urlBuilder.ToString());
-            GetResponse<Stream> getResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.GetResponseStream);
-            int deserializedStreamCount = getResponse.Items.Length;
+            HelixResponse<Stream> helixResponse = JsonSerializer.Deserialize(response.AsSpan(), HelixJsonSerializerContext.Default.HelixResponseStream);
+            int deserializedStreamCount = helixResponse.Items.Length;
             if (deserializedStreamCount != 0)
             {
-                getResponse.Items.CopyTo(destination[cachedStreamCount..]);
+                helixResponse.Items.CopyTo(destination[cachedStreamCount..]);
             }
 
             Cache?.AddStreams(destination.AsSpan(cachedStreamCount..(cachedStreamCount + deserializedStreamCount)));

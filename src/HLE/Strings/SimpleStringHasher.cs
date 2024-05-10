@@ -13,6 +13,8 @@ internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
     private readonly ref char _chars = ref MemoryMarshal.GetReference(chars);
     private readonly int _length = chars.Length;
 
+    private static readonly uint s_seed = Random.Shared.NextUInt32();
+
     public uint Hash() => Hash(ref _chars, _length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -21,6 +23,8 @@ internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint Hash(ref char chars, int length)
     {
+        const int CharBitCount = sizeof(char) * 8;
+
         if (length == 0)
         {
             return 0;
@@ -29,7 +33,8 @@ internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
         char middleChar = Unsafe.Add(ref chars, length >>> 1);
         char lastChar = Unsafe.Add(ref chars, length - 1);
 
-        int hash = ~(chars | (chars << 16)) ^ ~(middleChar | (middleChar << 16)) ^ ~(lastChar | (lastChar << 16));
-        return (uint)(hash ^ (length | (length << 16)));
+        uint hash = (uint)(~(chars | (chars << CharBitCount)) ^ ~(middleChar | (middleChar << CharBitCount)) ^ ~(lastChar | (lastChar << CharBitCount)));
+        hash ^= (uint)(length | (length << CharBitCount));
+        return hash ^ s_seed;
     }
 }

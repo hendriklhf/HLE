@@ -50,7 +50,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
 
         sourceBuilder.AppendLine().Append(Indentation).AppendLine("};");
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Strings.ShortStringCache.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Strings.SingleCharStringPool.g.cs", sourceBuilder.ToString());
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

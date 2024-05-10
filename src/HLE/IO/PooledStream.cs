@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
+using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.IO;
@@ -59,18 +60,6 @@ public sealed class PooledStream(int capacity) :
         }
     }
 
-    private Span<byte> PositionalBuffer
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => GetBuffer().AsSpan(_position, _length - _position);
-    }
-
-    private ref byte PositionalReference
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => ref MemoryMarshal.GetReference(PositionalBuffer);
-    }
-
     private byte[]? _buffer = capacity == 0 ? [] : ArrayPool<byte>.Shared.Rent(capacity);
     private int _length;
     private int _position;
@@ -80,7 +69,15 @@ public sealed class PooledStream(int capacity) :
     }
 
     public PooledStream(ReadOnlySpan<byte> bytes) : this(bytes.Length)
-        => SpanHelpers<byte>.Copy(bytes, _buffer.AsSpan());
+    {
+        SpanHelpers<byte>.Copy(bytes, _buffer.AsSpan());
+        _length = bytes.Length;
+        _position = bytes.Length;
+    }
+
+    private Span<byte> GetPositionalBuffer() => GetBuffer().AsSpan(_position, _length - _position);
+
+    private ref byte GetPositionalReference() => ref UnsafeIL.GetArrayReference(GetBuffer(), _position);
 
     public override void Close()
     {
@@ -148,7 +145,7 @@ public sealed class PooledStream(int capacity) :
 
     public override int Read(Span<byte> buffer)
     {
-        Span<byte> positionalBuffer = PositionalBuffer;
+        Span<byte> positionalBuffer = GetPositionalBuffer();
         if (positionalBuffer.Length == 0)
         {
             return 0;
@@ -185,20 +182,22 @@ public sealed class PooledStream(int capacity) :
 
     public override int ReadByte()
     {
-        if (_position == _length)
+        int position = _position;
+        if (position == _length)
         {
             return -1;
         }
 
-        _position++;
-        return PositionalReference;
+        int value = UnsafeIL.GetArrayReference(GetBuffer(), position);
+        _position = position + 1;
+        return value;
     }
 
     public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan(offset, count));
 
     public override void Write(ReadOnlySpan<byte> buffer)
     {
-        Span<byte> positionalBuffer = PositionalBuffer;
+        Span<byte> positionalBuffer = GetPositionalBuffer();
         if (positionalBuffer.Length >= buffer.Length)
         {
             SpanHelpers<byte>.Copy(buffer, positionalBuffer);
@@ -206,7 +205,7 @@ public sealed class PooledStream(int capacity) :
         else
         {
             GrowBuffer((uint)buffer.Length);
-            SpanHelpers<byte>.Copy(buffer, PositionalBuffer);
+            SpanHelpers<byte>.Copy(buffer, GetPositionalBuffer());
         }
 
         int position = _position + buffer.Length;
@@ -242,14 +241,16 @@ public sealed class PooledStream(int capacity) :
 
     public override void WriteByte(byte value)
     {
-        if (_position == _length)
+        int position = _position;
+        if (position == _length)
         {
             GrowBuffer(1);
         }
 
-        PositionalReference = value;
-        _position++;
-        if (_position > _length)
+        GetPositionalReference() = value;
+
+        _position = ++position;
+        if (position > _length)
         {
             _length++;
         }

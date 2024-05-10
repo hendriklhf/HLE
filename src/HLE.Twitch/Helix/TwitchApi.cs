@@ -74,7 +74,6 @@ public sealed partial class TwitchApi : ITwitchApi, IEquatable<TwitchApi>, IDisp
 
         return EnsureValidAccessTokenCoreAsync();
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask EnsureValidAccessTokenCoreAsync()
         {
             AccessToken accessToken = await GetAccessTokenAsync();
