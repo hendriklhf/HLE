@@ -36,8 +36,8 @@ public sealed class StringArray :
 
     public string this[Index index]
     {
-        get => _strings[index];
-        set => SetString(index.GetOffset(Length), value);
+        get => this[index.GetOffset(Length)];
+        set => this[index.GetOffset(Length)] = value;
     }
 
     public ReadOnlySpan<string> this[Range range] => _strings.AsSpan(range);

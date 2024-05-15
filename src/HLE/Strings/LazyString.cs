@@ -275,7 +275,7 @@ public sealed class LazyString :
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
-    public MemoryEnumerator<char> GetEnumerator() => new(ref GetReference(), Length); // TODO: change to StringEnumerator
+    public MemoryEnumerator<char> GetEnumerator() => new(ref GetReference(), Length);
 
     IEnumerator<char> IEnumerable<char>.GetEnumerator()
     {

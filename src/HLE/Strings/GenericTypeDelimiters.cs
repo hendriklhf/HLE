@@ -1,11 +1,10 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using HLE.Memory;
 
 namespace HLE.Strings;
 
-public readonly struct GenericTypeDelimiters(string openingDelimiter, string closingDelimiter) : IBitwiseEquatable<GenericTypeDelimiters>
+public readonly struct GenericTypeDelimiters(string openingDelimiter, string closingDelimiter) : IEquatable<GenericTypeDelimiters>
 {
     public string Opening { get; } = openingDelimiter;
 

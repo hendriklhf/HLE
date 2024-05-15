@@ -87,7 +87,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public Memory<T> GetMemory(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return _buffer.AsMemory(Count..);
+        return GetBuffer().AsMemory(Count..);
     }
 
     /// <inheritdoc/>

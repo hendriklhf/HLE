@@ -44,10 +44,10 @@ public sealed class BufferedFileReaderTest
         string path = WriteFileAndGetPath("hello");
 
         using BufferedFileReader reader = new(path);
-        using PooledBufferWriter<char> bytes = new();
-        reader.ReadChars(bytes, Encoding.UTF8);
+        using PooledBufferWriter<char> chars = new();
+        reader.ReadChars(chars, Encoding.UTF8);
 
-        Assert.True(bytes.WrittenSpan is "hello");
+        Assert.True(chars.WrittenSpan is "hello");
     }
 
     [Fact]
@@ -68,9 +68,9 @@ public sealed class BufferedFileReaderTest
         string path = WriteFileAndGetPath("hello");
 
         using BufferedFileReader reader = new(path);
-        using PooledBufferWriter<char> bytes = new();
-        await reader.ReadCharsAsync(bytes, Encoding.UTF8);
+        using PooledBufferWriter<char> chars = new();
+        await reader.ReadCharsAsync(chars, Encoding.UTF8);
 
-        Assert.True(bytes.WrittenSpan is "hello");
+        Assert.True(chars.WrittenSpan is "hello");
     }
 }
