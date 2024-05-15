@@ -24,7 +24,7 @@ public sealed partial class StringPool
         {
             lock (_lock)
             {
-                _strings.AsSpan().Clear();
+                InlineArrayHelpers.AsSpan<Strings, string?>(ref _strings, Strings.Length).Clear();
             }
         }
 
@@ -77,14 +77,14 @@ public sealed partial class StringPool
 
         private void AddWithoutLock(string value)
         {
-            ref string? stringsReference = ref _strings.Reference;
+            ref string? stringsReference = ref InlineArrayHelpers.GetReference<Strings, string?>(ref _strings);
             SpanHelpers<string?>.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, DefaultBucketCapacity - 1);
             stringsReference = value;
         }
 
         private bool TryGetWithoutLock(ReadOnlySpan<char> span, [MaybeNullWhen(false)] out string value)
         {
-            Span<string?> strings = _strings.AsSpan();
+            Span<string?> strings = InlineArrayHelpers.AsSpan<Strings, string?>(ref _strings, Strings.Length);
             for (int i = 0; i < strings.Length; i++)
             {
                 string? str = strings[i];

@@ -26,8 +26,6 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
     private static ThreadLocalBucket t_threadLocalBucket;
 
-    private const ArrayReturnOptions DefaultReturnOptions = ArrayReturnOptions.ClearOnlyIfManagedType | ArrayReturnOptions.DisposeElements;
-
     public ArrayPool()
     {
         int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) -
@@ -131,22 +129,14 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
 
         ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
-        if (!threadLocalBucket.IsInitialized)
+        if (!threadLocalBucket.IsInitialized(arrayLength))
         {
-            threadLocalBucket = new();
-            threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
+            threadLocalBucket.SetInitialized(arrayLength);
             array = GC.AllocateUninitializedArray<T>(arrayLength, true);
             return true;
         }
 
-        if ((threadLocalBucket.BucketInitializationStatuses & arrayLength) == 0)
-        {
-            threadLocalBucket.BucketInitializationStatuses |= (uint)arrayLength;
-            array = GC.AllocateUninitializedArray<T>(arrayLength, true);
-            return true;
-        }
-
-        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.Reference, bucketIndex);
+        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex);
         if (arrayReference is not null)
         {
             array = arrayReference;
@@ -162,83 +152,63 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MustDisposeResource]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[]? array, ArrayReturnOptions returnOptions = DefaultReturnOptions)
+    public void Return(T[]? array, bool clearArray = false)
     {
         if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
         {
             return;
         }
 
-        if (TryReturnToThreadLocalBucket(array, returnOptions, pow2Length, bucketIndex))
+        if (TryReturnToThreadLocalBucket(array, pow2Length, bucketIndex, clearArray))
         {
             return;
         }
 
-        ReturnToSharedBucket(array, returnOptions, bucketIndex);
+        ReturnToSharedBucket(array, bucketIndex, clearArray);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
-    private void ReturnToSharedBucket(T[] array, ArrayReturnOptions returnOptions, int bucketIndex)
+    private void ReturnToSharedBucket(T[] array, int bucketIndex, bool clearArray)
     {
         ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
-        bucket.Return(array, returnOptions);
+        bucket.Return(array, clearArray);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
-    private static bool TryReturnToThreadLocalBucket(T[] array, ArrayReturnOptions returnOptions, int pow2Length, int bucketIndex)
+    private static bool TryReturnToThreadLocalBucket(T[] array, int pow2Length, int bucketIndex, bool clearArray)
     {
+        // TODO: check if array can still be returned if though it is not a pow2 length
         if (BitOperations.PopCount((uint)array.Length) != 1)
         {
             return false;
         }
 
         ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
-        if (!threadLocalBucket.IsInitialized)
+        if (!threadLocalBucket.IsInitialized(pow2Length))
         {
-            threadLocalBucket = new();
-            threadLocalBucket.BucketInitializationStatuses |= (uint)pow2Length;
-            Unsafe.Add(ref threadLocalBucket.Reference, bucketIndex) = array;
-
-            if (returnOptions != 0)
-            {
-                PerformReturnActions(array, returnOptions);
-            }
-
+            ClearArrayIfNeeded(array, clearArray);
+            threadLocalBucket.SetInitialized(pow2Length);
+            Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex) = array;
             return true;
         }
 
-        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.Reference, bucketIndex);
+        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex);
         if (arrayReference is not null)
         {
             return false;
         }
 
+        ClearArrayIfNeeded(array, clearArray);
         arrayReference = array;
-        threadLocalBucket.BucketInitializationStatuses |= (uint)pow2Length;
-
-        if (returnOptions != 0)
-        {
-            PerformReturnActions(array, returnOptions);
-        }
+        threadLocalBucket.SetInitialized(pow2Length);
 
         return true;
     }
 
-    private static void PerformReturnActions(T[] array, ArrayReturnOptions options)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ClearArrayIfNeeded(T[] array, bool clearArray)
     {
-        Debug.Assert(options != 0);
-
-        if (typeof(T).IsAssignableTo(typeof(IDisposable)) && (options & ArrayReturnOptions.DisposeElements) != 0)
-        {
-            for (int i = 0; i < array.Length; i++)
-            {
-                IDisposable? disposable = Unsafe.As<IDisposable?>(array[i]);
-                disposable?.Dispose();
-            }
-        }
-
-        if (((options & ArrayReturnOptions.Clear) != 0) ||
-            (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && (options & ArrayReturnOptions.ClearOnlyIfManagedType) != 0))
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || clearArray)
         {
             Array.Clear(array);
         }

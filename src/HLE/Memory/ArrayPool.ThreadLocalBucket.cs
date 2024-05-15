@@ -1,31 +1,45 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    internal struct ThreadLocalBucket : IEquatable<ThreadLocalBucket>
+    internal partial struct ThreadLocalBucket : IEquatable<ThreadLocalBucket>
     {
-        public readonly bool IsInitialized => _pool is not null;
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed")]
+        [SuppressMessage("ReSharper", "UnassignedField.Local")]
+        private Pool _pool;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
 
-        public uint BucketInitializationStatuses { get; set; }
+        private uint _bucketInitializationStatuses;
 
-        [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-        public readonly ref T[]? Reference => ref MemoryMarshal.GetArrayDataReference(_pool);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref T[]? GetPoolReference() => ref Unsafe.As<Pool, T[]?>(ref Unsafe.AsRef(ref _pool));
 
-        private readonly T[]?[] _pool = new T[ArrayPool.BucketCapacities.Length][];
-
-        public ThreadLocalBucket()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetInitialized(int arrayLength)
         {
+            Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
+            _bucketInitializationStatuses |= (uint)arrayLength;
         }
 
-        public readonly bool Equals(ThreadLocalBucket other) => ReferenceEquals(_pool, other._pool);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly bool IsInitialized(int arrayLength)
+        {
+            Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
+            return (_bucketInitializationStatuses & arrayLength) != 0;
+        }
+
+        public readonly bool Equals(ThreadLocalBucket other) => _bucketInitializationStatuses == other._bucketInitializationStatuses; // not correct
 
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ThreadLocalBucket other && Equals(other);
 
-        public override readonly int GetHashCode() => _pool.GetHashCode();
+        public override readonly int GetHashCode() => HashCode.Combine(_bucketInitializationStatuses, _pool);
 
         public static bool operator ==(ThreadLocalBucket left, ThreadLocalBucket right) => left.Equals(right);
 

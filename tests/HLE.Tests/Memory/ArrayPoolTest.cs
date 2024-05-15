@@ -139,41 +139,19 @@ public sealed class ArrayPoolTest
 
         string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
-        pool.Return(array, ArrayReturnOptions.ClearOnlyIfManagedType);
+        pool.Return(array);
         Assert.All(array, static s => Assert.Null(s));
     }
 
     [Fact]
-    public void DontClearArray_WithClearOnlyIfManagedType_ValueType()
+    public void DontClearArray_ValueType_Test()
     {
         ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
-        pool.Return(array, ArrayReturnOptions.ClearOnlyIfManagedType);
+        pool.Return(array);
         Assert.All(array, static i => Assert.Equal(int.MaxValue, i));
-    }
-
-    [Fact]
-    public void DontClearArray_ValueType_ReturnOptionNone()
-    {
-        ArrayPool<int> pool = new();
-
-        int[] array = pool.Rent(32);
-        Array.Fill(array, int.MaxValue);
-        pool.Return(array, ArrayReturnOptions.None);
-        Assert.All(array, static i => Assert.Equal(int.MaxValue, i));
-    }
-
-    [Fact]
-    public void DontClearArray_ManagedType_ReturnOptionNone()
-    {
-        ArrayPool<string> pool = new();
-
-        string[] array = pool.Rent(32);
-        Array.Fill(array, "hello");
-        pool.Return(array, ArrayReturnOptions.None);
-        Assert.All(array, static s => Assert.Same("hello", s));
     }
 
     [Fact]
@@ -183,7 +161,7 @@ public sealed class ArrayPoolTest
 
         int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
-        pool.Return(array, ArrayReturnOptions.Clear);
+        pool.Return(array, true);
         Assert.All(array, static i => Assert.Equal(0, i));
     }
 
@@ -194,7 +172,7 @@ public sealed class ArrayPoolTest
 
         string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
-        pool.Return(array, ArrayReturnOptions.Clear);
+        pool.Return(array, true);
         Assert.All(array, static s => Assert.Null(s));
     }
 

@@ -300,6 +300,7 @@ public sealed class LazyString :
         return null!;
     }
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<char>)this).GetEnumerator();
 
     [Pure]

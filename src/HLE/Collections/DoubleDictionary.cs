@@ -262,6 +262,7 @@ public sealed class DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowKeyNotFoundException(string message) => throw new KeyNotFoundException(message);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     public IEnumerator<TValue> GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

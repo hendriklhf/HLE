@@ -23,7 +23,7 @@ public sealed partial class RegexPool
         {
             lock (_lock)
             {
-                _regexes.AsSpan().Clear();
+                InlineArrayHelpers.AsSpan<Regexes, Regex?>(ref _regexes, Regexes.Length).Clear();
             }
         }
 
@@ -67,7 +67,7 @@ public sealed partial class RegexPool
 
         private void AddWithoutLock(Regex regex)
         {
-            ref Regex? source = ref _regexes.Reference;
+            ref Regex? source = ref InlineArrayHelpers.GetReference<Regexes, Regex?>(ref _regexes);
             ref Regex? destination = ref Unsafe.Add(ref source, 1);
             SpanHelpers<Regex?>.Memmove(ref destination, ref source, DefaultBucketCapacity - 1);
             source = regex;
@@ -83,7 +83,7 @@ public sealed partial class RegexPool
 
         private bool TryGetWithoutLock(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
         {
-            ref Regex? regexesReference = ref _regexes.Reference;
+            ref Regex? regexesReference = ref InlineArrayHelpers.GetReference<Regexes, Regex?>(ref _regexes);
             for (int i = 0; i < DefaultBucketCapacity; i++)
             {
                 Regex? current = Unsafe.Add(ref regexesReference, i);
@@ -118,7 +118,7 @@ public sealed partial class RegexPool
         /// </summary>
         /// <param name="indexOfMatchingRegex">The index of the matching regex in <see cref="_regexes"/>.</param>
         private void MoveRegexByFourIndices(int indexOfMatchingRegex)
-            => _regexes.AsSpan().MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
+            => InlineArrayHelpers.AsSpan<Regexes, Regex?>(ref _regexes, Regexes.Length).MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
 
         public bool Contains(Regex regex) => TryGet(regex.ToString(), regex.Options, regex.MatchTimeout, out _);
 

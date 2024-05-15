@@ -182,8 +182,10 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
         return new(array);
     }
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator IEnumerable.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();
 
     [Pure]

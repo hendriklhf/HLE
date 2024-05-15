@@ -71,7 +71,7 @@ public sealed partial class ArrayPool<T>
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Return(T[] array, ArrayReturnOptions returnOptions)
+        public void Return(T[] array, bool clearArray)
         {
             lock (_stack)
             {
@@ -81,11 +81,7 @@ public sealed partial class ArrayPool<T>
                     return;
                 }
 
-                if (returnOptions != 0)
-                {
-                    PerformReturnActions(array, returnOptions);
-                }
-
+                ClearArrayIfNeeded(array, clearArray);
                 Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), count++) = array;
                 _count = count;
             }

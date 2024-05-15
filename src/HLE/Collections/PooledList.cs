@@ -376,6 +376,7 @@ public sealed class PooledList<T>(int capacity) :
     [Pure]
     public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
