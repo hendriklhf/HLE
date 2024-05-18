@@ -358,6 +358,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 
     public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

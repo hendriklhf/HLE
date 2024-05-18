@@ -45,6 +45,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\HLE\HLE.csproj"/>
+    <ProjectReference Include="..\HLE.Test.TestUtilities\HLE.Test.TestUtilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

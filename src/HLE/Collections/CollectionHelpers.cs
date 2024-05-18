@@ -4,13 +4,15 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
+#if RELEASE
+using System.Linq;
+#endif
 
 namespace HLE.Collections;
 
@@ -152,6 +154,12 @@ public static partial class CollectionHelpers
             return true;
         }
 
+        if (TryGetMemory(enumerable, out Memory<T> mutableMemory))
+        {
+            memory = mutableMemory;
+            return true;
+        }
+
         switch (enumerable)
         {
             case ImmutableArray<T> immutableArray:
@@ -163,12 +171,6 @@ public static partial class CollectionHelpers
             case FrozenSet<T> frozenSet:
                 memory = frozenSet.Items.AsMemory();
                 return true;
-        }
-
-        if (TryGetMemory(enumerable, out Memory<T> mutableMemory))
-        {
-            memory = mutableMemory;
-            return true;
         }
 
         memory = ReadOnlyMemory<T>.Empty;
@@ -198,10 +200,12 @@ public static partial class CollectionHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
     {
+#if RELEASE // this will prevent reaching the bottom branches, so it will be removed for test runs as it is runtime code
         if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
         {
             return true;
         }
+#endif
 
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
@@ -230,19 +234,22 @@ public static partial class CollectionHelpers
     /// <param name="enumerable">The collection of items that will be tried to be copied to the destination.</param>
     /// <param name="destination">The destination of the copied items.</param>
     /// <param name="offset">The offset to the destination start.</param>
+    /// <param name="elementsCopied">The amount of elements that have been copied.</param>
     /// <typeparam name="T">The type of items that will be tried to be copied.</typeparam>
     /// <returns>True, if copying was possible, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> enumerable, T[] destination, int offset = 0)
+    public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> enumerable, T[] destination, int offset, out int elementsCopied)
     {
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             if (span.Length == 0)
             {
+                elementsCopied = 0;
                 return true;
             }
 
             span.CopyTo(destination.AsSpan(offset));
+            elementsCopied = span.Length;
             return true;
         }
 
@@ -251,15 +258,19 @@ public static partial class CollectionHelpers
             case ICollection<T> collection:
                 if (collection.Count == 0)
                 {
+                    elementsCopied = 0;
                     return true;
                 }
 
                 collection.CopyTo(destination, offset);
+                elementsCopied = collection.Count;
                 return true;
             case ICopyable<T> copyable:
                 copyable.CopyTo(destination, offset);
+                elementsCopied = copyable.Count;
                 return true;
             default:
+                elementsCopied = 0;
                 return false;
         }
     }
@@ -275,7 +286,7 @@ public static partial class CollectionHelpers
 
         switch (enumerable)
         {
-            case IList<T> list:
+            case IList<T> list: // TODO: IList<T> might implement IReadOnlyList<T> in .NET 9 so this can be deleted maybe
                 element = list[index];
                 return true;
             case IReadOnlyList<T> readOnlyList:

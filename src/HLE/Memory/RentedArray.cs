@@ -246,8 +246,9 @@ public struct RentedArray<T> :
         return new(chars);
     }
 
-    public readonly ArrayEnumerator<T> GetEnumerator() => new(Array, 0, Array.Length);
+    public readonly ArrayEnumerator<T> GetEnumerator() => new(Array);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

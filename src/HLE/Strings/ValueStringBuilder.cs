@@ -242,8 +242,6 @@ public ref partial struct ValueStringBuilder
         => throw new InvalidOperationException(
             $"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
 
-    public readonly void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
-
     public void Clear() => Length = 0;
 
     public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);

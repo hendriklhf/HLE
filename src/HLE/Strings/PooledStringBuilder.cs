@@ -223,8 +223,6 @@ public sealed partial class PooledStringBuilder(int capacity) :
     private static void ThrowMaximumFormatTriesExceeded<TSpanFormattable>(int countOfFailedTries) where TSpanFormattable : ISpanFormattable
         => throw new InvalidOperationException($"Trying to format the {typeof(TSpanFormattable)} failed {countOfFailedTries} times. The method aborted.");
 
-    public void Replace(char oldChar, char newChar) => WrittenSpan.Replace(oldChar, newChar);
-
     public void Clear() => Length = 0;
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
@@ -309,17 +307,9 @@ public sealed partial class PooledStringBuilder(int capacity) :
         copyWorker.CopyTo(destination);
     }
 
-    public void CopyTo(ref char destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref char destination) => SpanHelpers<char>.Copy(WrittenSpan, ref destination);
 
-    public unsafe void CopyTo(char* destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public unsafe void CopyTo(char* destination) => SpanHelpers<char>.Copy(WrittenSpan, destination);
 
     void ICollection<char>.Add(char item) => Append(item);
 
@@ -329,6 +319,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public ArrayEnumerator<char> GetEnumerator() => new(GetBuffer(), 0, Length);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<char> IEnumerable<char>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<char>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

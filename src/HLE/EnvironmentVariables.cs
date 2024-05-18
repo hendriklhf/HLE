@@ -11,7 +11,8 @@ namespace HLE;
 
 public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string>, ICountable, IEquatable<EnvironmentVariables>
 {
-    public string? this[string name] => _environmentVariables.GetValueOrDefault(name);
+    // ReSharper disable once CanSimplifyDictionaryTryGetValueWithGetValueOrDefault
+    public string? this[string name] => _environmentVariables.TryGetValue(name, out string? value) ? value : null;
 
     string IReadOnlyDictionary<string, string>.this[string key] => _environmentVariables[key];
 
@@ -42,6 +43,7 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
     bool IReadOnlyDictionary<string, string>.TryGetValue(string key, [MaybeNullWhen(false)] out string value)
         => _environmentVariables.TryGetValue(key, out value);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     public FrozenDictionary<string, string>.Enumerator GetEnumerator() => _environmentVariables.GetEnumerator();
 
     IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator() => GetEnumerator();

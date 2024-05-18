@@ -10,8 +10,6 @@ public sealed partial class ArrayPool<T>
 {
     internal struct Bucket(int arrayLength, int capacity) : IEquatable<Bucket>
     {
-        public readonly bool CanReturn => _count != _stack.Length;
-
         internal readonly T[][] _stack = GC.AllocateArray<T[]>(capacity, true);
         private readonly int _arrayLength = arrayLength;
         private int _count;

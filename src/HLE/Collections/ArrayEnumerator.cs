@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 
 namespace HLE.Collections;
 
@@ -25,7 +26,7 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
     {
         _array = array;
         _current = -1;
-        _end = array.Length;
+        _end = array.Length - 1;
     }
 
     public ArrayEnumerator(T[] array, int start, int length)
@@ -35,6 +36,13 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
         _array = array;
         _current = start - 1;
         _end = _current + length;
+    }
+
+    public ArrayEnumerator(List<T> list)
+    {
+        _array = ListMarshal.GetArray(list);
+        _current = -1;
+        _end = list.Count - 1;
     }
 
     public bool MoveNext() => _current++ < _end;

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace HLE.Strings;
@@ -111,11 +112,10 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
-        uint patternHash = SimpleStringHasher.Hash(pattern);
-        int hash = HashCode.Combine(patternHash, (int)options, timeout);
-        Span<Bucket> buckets = _buckets;
-        int index = (int)((uint)hash % (uint)buckets.Length);
-        return ref buckets[index];
+        uint hash = SimpleStringHasher.Hash(pattern);
+        hash = (uint)HashCode.Combine(hash, (int)options, timeout);
+        uint index = hash % DefaultPoolCapacity;
+        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), index);
     }
 
     [Pure]

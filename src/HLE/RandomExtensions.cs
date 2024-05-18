@@ -325,6 +325,9 @@ public static class RandomExtensions
         return result;
     }
 
+    public static void Fill<T>(this Random random, List<T> destination, ReadOnlySpan<T> choices)
+        => random.Fill(CollectionsMarshal.AsSpan(destination), choices);
+
     public static void Fill<T>(this Random random, T[] destination, ReadOnlySpan<T> choices)
         => random.Fill(ref MemoryMarshal.GetArrayDataReference(destination), destination.Length, choices);
 
@@ -344,6 +347,9 @@ public static class RandomExtensions
         RandomWriter randomWriter = RandomWriter.Create(choices.Length);
         randomWriter.Write(random, ref destination, destinationLength, ref MemoryMarshal.GetReference(choices), choices.Length);
     }
+
+    public static void Fill<T>(this Random random, List<T> list) where T : unmanaged
+        => random.Fill(CollectionsMarshal.AsSpan(list));
 
     public static unsafe void Fill(this Random random, Array array)
     {
@@ -459,7 +465,7 @@ public static class RandomExtensions
         if (CollectionHelpers.TryGetNonEnumeratedCount(enumerable, out int count))
         {
             items = GC.AllocateUninitializedArray<T>(count);
-            if (!enumerable.TryNonEnumeratedCopyTo(items))
+            if (!enumerable.TryNonEnumeratedCopyTo(items, 0, out _))
             {
                 enumerable.TryEnumerateInto(items, out _);
             }

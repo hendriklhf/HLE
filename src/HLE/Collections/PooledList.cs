@@ -199,7 +199,7 @@ public sealed class PooledList<T>(int capacity) :
             GrowIfNeeded(itemsCount);
             T[] buffer = GetBuffer();
             int count = Count;
-            if (items.TryNonEnumeratedCopyTo(buffer, count))
+            if (items.TryNonEnumeratedCopyTo(buffer, count, out _))
             {
                 Count = count + itemsCount;
                 return;

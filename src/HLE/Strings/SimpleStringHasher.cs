@@ -7,15 +7,9 @@ namespace HLE.Strings;
 /// <summary>
 /// Used to quickly hash a string, as this algorithm executes in constant time, because it doesn't depend on the string's length.
 /// </summary>
-/// <param name="chars">The chars of which the hashcode will be created from.</param>
-internal readonly ref struct SimpleStringHasher(ReadOnlySpan<char> chars)
+internal static class SimpleStringHasher
 {
-    private readonly ref char _chars = ref MemoryMarshal.GetReference(chars);
-    private readonly int _length = chars.Length;
-
     private static readonly uint s_seed = Random.Shared.NextUInt32();
-
-    public uint Hash() => Hash(ref _chars, _length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint Hash(ReadOnlySpan<char> chars) => Hash(ref MemoryMarshal.GetReference(chars), chars.Length);

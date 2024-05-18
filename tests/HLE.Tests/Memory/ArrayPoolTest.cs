@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using HLE.Memory;
+using HLE.Test.TestUtilities;
 using Xunit;
 
 namespace HLE.Tests.Memory;
@@ -10,7 +11,7 @@ public sealed class ArrayPoolTest
 {
     public static TheoryData<int> Pow2LengthMinimumToMaximumLengthParameters { get; } = CreatePow2LengthMinimumToMaximumLengthParameters();
 
-    public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = CreateConsecutiveValues0To4096Parameters();
+    public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = TheoryDataHelpers.CreateInclusiveRange(0, 4096);
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
@@ -238,17 +239,6 @@ public sealed class ArrayPoolTest
     {
         TheoryData<int> data = new();
         for (int i = ArrayPool.MinimumArrayLength; i <= ArrayPool.MaximumArrayLength; i <<= 1)
-        {
-            data.Add(i);
-        }
-
-        return data;
-    }
-
-    private static TheoryData<int> CreateConsecutiveValues0To4096Parameters()
-    {
-        TheoryData<int> data = new();
-        for (int i = 0; i <= 4096; i++)
         {
             data.Add(i);
         }

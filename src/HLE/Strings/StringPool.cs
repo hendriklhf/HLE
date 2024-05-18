@@ -14,7 +14,14 @@ public sealed partial class StringPool : IEquatable<StringPool>
 
     public static StringPool Shared { get; } = new();
 
+    /// <summary>
+    /// The amount of buckets in the pool.
+    /// </summary>
     private const int DefaultPoolCapacity = 4096;
+
+    /// <summary>
+    /// The amount of strings per bucket.
+    /// </summary>
     private const int DefaultBucketCapacity = 32;
 
     /// <summary>
@@ -192,12 +199,11 @@ public sealed partial class StringPool : IEquatable<StringPool>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ref Bucket GetBucket(ReadOnlySpan<char> span)
+    private ref Bucket GetBucket(ReadOnlySpan<char> str)
     {
-        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(_buckets);
-        uint hash = SimpleStringHasher.Hash(span);
-        int index = (int)(hash % (uint)_buckets.Length);
-        return ref Unsafe.Add(ref bucketReference, index);
+        uint hash = SimpleStringHasher.Hash(str);
+        uint index = hash % DefaultPoolCapacity;
+        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), index);
     }
 
     [Pure]

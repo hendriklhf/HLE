@@ -14,9 +14,9 @@ namespace HLE.Memory;
 /// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
-public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
+public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatable<ArrayPool<T>>
 {
-    public static ArrayPool<T> Shared { get; } = new();
+    public static new ArrayPool<T> Shared { get; } = new();
 
     internal readonly Bucket[] _buckets;
 
@@ -28,8 +28,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
     public ArrayPool()
     {
-        int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) -
-            BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
+        int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
         Debug.Assert(ArrayPool.BucketCapacities.Length == bucketCount);
 
         Bucket[] buckets = GC.AllocateArray<Bucket>(bucketCount, true);
@@ -46,7 +45,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [Pure]
-    public T[] Rent(int minimumLength)
+    public override T[] Rent(int minimumLength)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(minimumLength);
 
@@ -152,7 +151,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MustDisposeResource]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public void Return(T[]? array, bool clearArray = false)
+    public override void Return(T[]? array, bool clearArray = false)
     {
         if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
         {

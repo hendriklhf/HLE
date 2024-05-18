@@ -1,11 +1,12 @@
 using HLE.Strings;
+using HLE.Test.TestUtilities;
 using Xunit;
 
 namespace HLE.Tests.Strings;
 
 public sealed class SingleCharStringPoolTest
 {
-    public static TheoryData<char> GeneralPoolTestParameters { get; } = CreateCharParameters();
+    public static TheoryData<char> GeneralPoolTestParameters { get; } = TheoryDataHelpers.CreateInclusiveRange((char)0, (char)(SingleCharStringPool.AmountOfCachedSingleCharStrings * 2));
 
     [Fact]
     public void AmountOfCachedSingleCharStrings_NoRename_Test()
@@ -28,16 +29,5 @@ public sealed class SingleCharStringPoolTest
         Assert.True(SingleCharStringPool.Contains(c));
         Assert.True(SingleCharStringPool.TryGet(c, out string? test));
         Assert.Same(str, test);
-    }
-
-    private static TheoryData<char> CreateCharParameters()
-    {
-        TheoryData<char> data = new();
-        for (int i = 0; i <= SingleCharStringPool.AmountOfCachedSingleCharStrings * 2; i++)
-        {
-            data.Add((char)i);
-        }
-
-        return data;
     }
 }

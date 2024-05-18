@@ -17,13 +17,13 @@ public sealed class SimpleStringHasherTest(ITestOutputHelper testOutputHelper)
     public void HashDistributionTest(char min, char max)
     {
         const int BucketCount = 256;
-        const int LoopIterations = 4096 << 4;
+        const int LoopIterations = 65536;
+
         int[] counts = new int[BucketCount];
         for (int i = 0; i < LoopIterations; i++)
         {
             string str = Random.Shared.NextString(Random.Shared.Next(10, 1000), min, max);
-            SimpleStringHasher hasher = new(str);
-            uint hash = hasher.Hash();
+            uint hash = SimpleStringHasher.Hash(str);
             int index = (int)(hash % BucketCount);
             counts[index]++;
         }
@@ -37,8 +37,15 @@ public sealed class SimpleStringHasherTest(ITestOutputHelper testOutputHelper)
 
         int lessThanAverageCount = counts.Count(static c => c < Average);
         int greaterThanAverageCount = counts.Count(static c => c >= Average);
+
         _testOutputHelper.WriteLine($"Less than average: {lessThanAverageCount}");
         _testOutputHelper.WriteLine($"Greater than average: {greaterThanAverageCount}");
+
+        _testOutputHelper.WriteLine($"{Environment.NewLine}Graph:");
+        for (int i = 0; i < counts.Length; i++)
+        {
+            _testOutputHelper.WriteLine($"{i:0000}:\t{new('*', counts[i] / 10)}");
+        }
 
         Assert.True(Array.TrueForAll(counts, static c => c > Average * 0.125));
         Assert.True(Math.Abs(greaterThanAverageCount - lessThanAverageCount) < Average * 0.075);
