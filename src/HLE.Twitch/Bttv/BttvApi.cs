@@ -78,7 +78,6 @@ public sealed class BttvApi : IBttvApi, IEquatable<BttvApi>
             ? ValueTask.FromResult(emotes)
             : GetGlobalEmotesCoreAsync();
 
-        // ReSharper disable once InconsistentNaming
         async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesCoreAsync()
         {
             using PooledStringBuilder urlBuilder = new(100);

@@ -121,7 +121,7 @@ public sealed partial class TwitchApi
         return parameterCount switch
         {
             0 => ValueTask.FromResult(0),
-            100 => throw new ArgumentException("The endpoint allows only up to 100 parameters. You can't pass more than 100 usernames or user ids in total."),
+            > 100 => throw new ArgumentException("The endpoint allows only up to 100 parameters. You can't pass more than 100 usernames or user ids in total."),
             _ => GetStreamsCoreAsync(usernames, channelIds, destination)
         };
 

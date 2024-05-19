@@ -1,5 +1,4 @@
 ﻿using System;
-using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using Xunit;
@@ -27,25 +26,54 @@ public sealed class SpanMarshalTest
     }
 
     [Fact]
-    public void AsMemoryTest()
+    public void AsMemory_Empty_Test()
     {
-        Span<char> span = "hello".ToCharArray();
+        ReadOnlySpan<char> span = [];
+        ReadOnlyMemory<char> memory = SpanMarshal.AsMemory(span);
+        Assert.Equal(0, memory.Length);
+    }
+
+    [Fact]
+    public void AsMemory_Mutable_Empty_Test()
+    {
+        Span<char> span = [];
         Memory<char> memory = SpanMarshal.AsMemory(span);
-        Assert.True(memory.Span is "hello");
+        Assert.Equal(0, memory.Length);
+    }
+
+    [Fact]
+    public void AsMemory_String_Test()
+    {
+        ReadOnlySpan<char> span = "hello";
+        ReadOnlyMemory<char> memory = SpanMarshal.AsMemory(span);
         Assert.True(span == memory.Span);
     }
 
     [Fact]
-    public void UnsafeSliceTest()
+    public void AsMemory_CharArray_Test()
     {
-        Span<int> span = stackalloc int[50];
-        SpanHelpers.FillAscending(span);
-        Span<int> slice = span.SliceUnsafe(5, 10);
-        Assert.Equal(10, slice.Length);
-        Assert.True(slice[0] == 5 && slice[^1] == 14);
-
-        slice = span.SliceUnsafe(5..15);
-        Assert.Equal(10, slice.Length);
-        Assert.True(slice[0] == 5 && slice[^1] == 14);
+        ReadOnlySpan<char> span = "hello".ToCharArray();
+        ReadOnlyMemory<char> memory = SpanMarshal.AsMemory(span);
+        Assert.True(span == memory.Span);
     }
+
+    [Fact]
+    public void AsMemory_IntArray_Test()
+    {
+        int[] array = [0, 1, 2, 3, 4];
+        ReadOnlySpan<int> span = array;
+        ReadOnlyMemory<int> memory = SpanMarshal.AsMemory(span);
+        Assert.True(span == memory.Span);
+    }
+
+    [Fact]
+    public unsafe void AsMemory_MemoryManager_Throws_Test() =>
+        Assert.Throws<InvalidOperationException>(static () =>
+        {
+            byte* bytes = stackalloc byte[8];
+            NativeMemoryManager<byte> memoryManager = new(bytes, 8);
+            Memory<byte> memory = memoryManager.Memory;
+            Span<byte> span = memory.Span;
+            _ = SpanMarshal.AsMemory(span);
+        });
 }

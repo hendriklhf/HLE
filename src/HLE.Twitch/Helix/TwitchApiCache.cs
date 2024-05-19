@@ -68,9 +68,10 @@ public sealed class TwitchApiCache(CacheOptions options)
 
     public bool TryGetGlobalEmotes(out ImmutableArray<Emote> emotes)
     {
-        if (_globalEmoteCache.IsValid(Options.GlobalEmotesCacheDuration))
+        CacheEntry<ImmutableArray<Emote>> globalEmoteCache = _globalEmoteCache;
+        if (globalEmoteCache.IsValid(Options.GlobalEmotesCacheDuration))
         {
-            emotes = _globalEmoteCache.Value;
+            emotes = globalEmoteCache.Value;
             return true;
         }
 

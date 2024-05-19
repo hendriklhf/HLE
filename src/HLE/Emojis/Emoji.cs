@@ -33,8 +33,8 @@ public static partial class Emoji
     [Pure]
     public static bool IsEmoji(char c)
     {
-        using NativeString str = new(new ReadOnlySpan<char>(in c));
-        return IsEmoji(str.AsString());
+        string str = SingleCharStringPool.GetOrAdd(c);
+        return IsEmoji(str);
     }
 
     [Pure]

@@ -126,6 +126,7 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
     [Pure]
     public List<TValue> ToList(Range range) => _dictionary.ToList(range);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     public IEnumerator<TValue> GetEnumerator() => _dictionary.Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : _dictionary.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

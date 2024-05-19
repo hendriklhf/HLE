@@ -1,0 +1,79 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using HLE.Collections;
+using HLE.Memory;
+
+namespace HLE.Threading;
+
+public static partial class EventInvoker
+{
+    [SkipLocalsInit]
+    [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "buffer can be returned to the pool before the task is awaited")]
+    public static Task InvokeAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs>? eventHandler, TSender sender, TEventArgs args)
+    {
+        if (eventHandler is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (eventHandler.HasSingleTarget)
+        {
+            return eventHandler(sender, args);
+        }
+
+        Unsafe.SkipInit(out TaskBuffer buffer);
+        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer, TaskBuffer.Length));
+        foreach (AsyncEventHandler<TSender, TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
+        {
+            tasks.Add(target(sender, args));
+        }
+
+        return TaskHelpers.WhenAll(tasks.AsSpan());
+    }
+
+    [SuppressMessage("Performance", "HAA0303:Lambda or anonymous method in a generic method allocates a delegate instance", Justification = "yes but it is cached")]
+    public static void QueueOnThreadPool<TEventArgs>(EventHandler<TEventArgs>? eventHandler, object? sender, TEventArgs eventArgs)
+    {
+        if (eventHandler is null)
+        {
+            return;
+        }
+
+        if (eventHandler.HasSingleTarget)
+        {
+            EventHandlerState<TEventArgs> state = new(eventHandler, sender, eventArgs);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, false);
+            return;
+        }
+
+        foreach (EventHandler<TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
+        {
+            EventHandlerState<TEventArgs> state = new(target, sender, eventArgs);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, false);
+        }
+    }
+
+    public static void QueueOnThreadPool(EventHandler? eventHandler, object? sender)
+    {
+        if (eventHandler is null)
+        {
+            return;
+        }
+
+        if (eventHandler.HasSingleTarget)
+        {
+            EventHandlerState state = new(eventHandler, sender);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, EventArgs.Empty), state, false);
+            return;
+        }
+
+        foreach (EventHandler target in Delegate.EnumerateInvocationList(eventHandler))
+        {
+            EventHandlerState state = new(target, sender);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, EventArgs.Empty), state, false);
+        }
+    }
+}

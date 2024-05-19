@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.IL;
@@ -15,7 +16,18 @@ public static class ListMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetReference<T>(List<T> list)
-        => ref UnsafeIL.GetArrayReference(GetArray(list));
+    {
+        if (list.Count == 0)
+        {
+            ThrowListIsEmpty();
+        }
+
+        return ref UnsafeIL.GetArrayReference(GetArray(list));
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowListIsEmpty() => throw new InvalidOperationException("The list is empty.");
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

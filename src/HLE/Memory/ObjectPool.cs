@@ -1,9 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
-using HLE.Collections.Concurrent;
 
 namespace HLE.Memory;
 
@@ -23,13 +23,13 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory) : IEqu
     /// <summary>
     /// Gets or sets the maximum amount of items allowed in the pool.
     /// </summary>
-    public int Capacity { get; set; } = DefaultCapacity;
+    public int MaximumCapacity { get; set; } = DefaultMaximumCapacity;
 
     public IFactory Factory { get; } = factory;
 
     private readonly ConcurrentStack<T> _rentableItems = new();
 
-    private const int DefaultCapacity = 64;
+    private const int DefaultMaximumCapacity = 64;
 
     [Pure]
     public T Rent()
@@ -46,7 +46,7 @@ public sealed partial class ObjectPool<T>(ObjectPool<T>.IFactory factory) : IEqu
 
     public void Return(T obj)
     {
-        if (_rentableItems.Count >= Capacity)
+        if (_rentableItems.Count >= MaximumCapacity)
         {
             return;
         }

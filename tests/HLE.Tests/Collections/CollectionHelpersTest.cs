@@ -188,6 +188,14 @@ public sealed partial class CollectionHelpersTest
     }
 
     [Fact]
+    public void TryGetReadOnlySpan_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        bool success = enumerable.TryGetReadOnlySpan(out _);
+        Assert.False(success);
+    }
+
+    [Fact]
     public void TryGetReadOnlySpan_String_Test()
     {
         IEnumerable<char> enumerable = GetEnumerable<string, char>("hello");
@@ -280,6 +288,14 @@ public sealed partial class CollectionHelpersTest
     }
 
     [Fact]
+    public void TryGetSpan_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        bool success = enumerable.TryGetSpan(out _);
+        Assert.False(success);
+    }
+
+    [Fact]
     public void TryGetSpan_Array_Test()
     {
         int[] array = Enumerable.Range(0, 8).ToArray();
@@ -317,6 +333,14 @@ public sealed partial class CollectionHelpersTest
         Assert.True(success);
         Assert.Equal(list.Count, span.Length);
         Assert.True(Unsafe.AreSame(ref list.GetBufferReference(), ref MemoryMarshal.GetReference(span)));
+    }
+
+    [Fact]
+    public void TryGetReadOnlyMemory_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        bool success = enumerable.TryGetReadOnlyMemory(out _);
+        Assert.False(success);
     }
 
     [Fact]
@@ -412,6 +436,14 @@ public sealed partial class CollectionHelpersTest
     }
 
     [Fact]
+    public void TryGetMemory_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        bool success = enumerable.TryGetMemory(out _);
+        Assert.False(success);
+    }
+
+    [Fact]
     public void TryGetMemory_Array_Test()
     {
         int[] array = Enumerable.Range(0, 8).ToArray();
@@ -452,6 +484,14 @@ public sealed partial class CollectionHelpersTest
     }
 
     [Fact]
+    public void TryGetNonEnumeratedCount_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        bool success = CollectionHelpers.TryGetNonEnumeratedCount(enumerable, out _);
+        Assert.False(success);
+    }
+
+    [Fact]
     public void TryGetNonEnumeratedCount_Array_Test()
     {
         int[] array = new int[8];
@@ -485,6 +525,15 @@ public sealed partial class CollectionHelpersTest
 
         Assert.True(success);
         Assert.Equal(someReadOnlyCollection.Count, count);
+    }
+
+    [Fact]
+    public void TryNonEnumeratedCopyTo_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        int[] destination = new int[8];
+        bool success = enumerable.TryNonEnumeratedCopyTo(destination, 0, out _);
+        Assert.False(success);
     }
 
     [Theory]
@@ -537,6 +586,14 @@ public sealed partial class CollectionHelpersTest
         Assert.True(success);
         Assert.Equal(elementsCopied, someCopyable.Count);
         Assert.True(someCopyable.AsSpan().SequenceEqual(destination.AsSpan(writeOffset..)));
+    }
+
+    [Fact]
+    public void TryNonEnumeratedElementAt_YieldingEnumerable_Test()
+    {
+        IEnumerable<int> enumerable = GetYieldingEnumerable([0, 1, 2, 3, 4, 5, 6, 7]);
+        bool success = enumerable.TryGetNonEnumeratedElementAt(0, out _);
+        Assert.False(success);
     }
 
     [Fact]

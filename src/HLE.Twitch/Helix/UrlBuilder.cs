@@ -8,7 +8,7 @@ namespace HLE.Twitch.Helix;
 
 [DebuggerDisplay("{ToString()}")]
 [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "it implements IDisposable")]
-public struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
+internal struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
 {
     public readonly ReadOnlySpan<char> WrittenSpan => _builder.WrittenSpan;
 

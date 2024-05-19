@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 namespace HLE.Twitch;
 
 internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
+    where T : IEquatable<T>
 {
     public T? Value { get; }
 

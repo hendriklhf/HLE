@@ -23,9 +23,10 @@ public sealed class FfzApiCache(CacheOptions options) : IEquatable<FfzApiCache>
 
     public bool TryGetGlobalEmotes(out ImmutableArray<Emote> emotes)
     {
-        if (_globalEmotesCache.IsValid(Options.GlobalEmotesCacheDuration))
+        CacheEntry<ImmutableArray<Emote>> globalEmotesCache = _globalEmotesCache;
+        if (globalEmotesCache.IsValid(Options.GlobalEmotesCacheDuration))
         {
-            emotes = _globalEmotesCache.Value;
+            emotes = globalEmotesCache.Value;
             return true;
         }
 

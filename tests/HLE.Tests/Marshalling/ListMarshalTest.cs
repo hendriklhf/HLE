@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using Xunit;
 
@@ -8,42 +10,83 @@ namespace HLE.Tests.Marshalling;
 public sealed class ListMarshalTest
 {
     [Fact]
-    public void AsMemory_Int_Test()
+    public void AsMemory_Test()
     {
-        List<int> intList = [0, 1, 2, 3, 4, 5];
-        Memory<int> intMemory = ListMarshal.AsMemory(intList);
+        List<int> list = [0, 1, 2, 3, 4, 5];
+        Memory<int> memory = ListMarshal.AsMemory(list);
 
-        Assert.Equal(intList.Count, intMemory.Length);
-        Assert.True(intMemory.Span is [0, 1, 2, 3, 4, 5]);
+        Assert.Equal(list.Count, memory.Length);
+        Assert.True(memory.Span is [0, 1, 2, 3, 4, 5]);
     }
 
     [Fact]
-    public void AsMemory_String_Test()
+    public void AsMemory_Empty_Test()
     {
-        List<string> stringList = ["a", "b", "c"];
-        Memory<string> stringMemory = ListMarshal.AsMemory(stringList);
+        List<int> list = [];
+        Memory<int> memory = ListMarshal.AsMemory(list);
 
-        Assert.Equal(stringList.Count, stringMemory.Length);
-        Assert.True(stringMemory.Span is ["a", "b", "c"]);
+        Assert.Equal(list.Count, memory.Length);
+        Assert.Equal(0, memory.Length);
     }
 
     [Fact]
-    public void AsArray_Int_Test()
+    public void AsArray_Test()
     {
-        List<int> intList = [0, 1, 2, 3, 4, 5];
+        List<int> list = [0, 1, 2, 3, 4, 5];
+        int[] array = ListMarshal.GetArray(list);
+
+        Assert.Equal(list.Capacity, array.Length);
+        Assert.True(array.AsSpan(..6) is [0, 1, 2, 3, 4, 5]);
+    }
+
+    [Fact]
+    public void AsArray_Empty_Test()
+    {
+        List<int> intList = [];
         int[] intArray = ListMarshal.GetArray(intList);
 
         Assert.Equal(intList.Capacity, intArray.Length);
-        Assert.True(intArray.AsSpan(..6) is [0, 1, 2, 3, 4, 5]);
+        Assert.Empty(intArray);
     }
 
     [Fact]
-    public void AsArray_String_Test()
+    public void GetReference_Test()
     {
-        List<string> stringList = ["a", "b", "c"];
-        string[] stringArray = ListMarshal.GetArray(stringList);
+        List<int> list = [8, 1, 2, 3, 4, 5];
+        ref int reference = ref ListMarshal.GetReference(list);
 
-        Assert.Equal(stringList.Capacity, stringArray.Length);
-        Assert.True(stringArray.AsSpan(..3) is ["a", "b", "c"]);
+        Assert.Equal(8, reference);
+
+        reference = 0;
+        Assert.Equal(0, list[0]);
     }
+
+    [Fact]
+    public void GetReference_Empty_Test() =>
+        Assert.Throws<InvalidOperationException>(static () =>
+        {
+            List<int> list = [];
+            _ = ref ListMarshal.GetReference(list);
+        });
+
+    [Fact]
+    public void SetArray_Test()
+    {
+        List<int> list = [0, 1, 2, 3];
+        int[] array = new int[8];
+        Random.Shared.Fill(array);
+        ListMarshal.SetArray(list, array);
+
+        Assert.True(Unsafe.AreSame(ref MemoryMarshal.GetArrayDataReference(array), ref ListMarshal.GetReference(list)));
+        Assert.True(CollectionsMarshal.AsSpan(list).SequenceEqual(array.AsSpan(..list.Count)));
+    }
+
+    [Fact]
+    public void SetArray_ThrowsArgumentOutOfRangeException_Test() =>
+        Assert.Throws<ArgumentOutOfRangeException>(static () =>
+        {
+            List<int> list = [0, 1, 2, 3, 4, 5, 6, 7];
+            int[] array = new int[4];
+            ListMarshal.SetArray(list, array);
+        });
 }
