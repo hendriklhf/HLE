@@ -49,7 +49,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// </summary>
     public event EventHandler<Bytes>? OnBytesReceived;
 
-    internal event EventHandler? OnConnectionException;
+    internal event AsyncEventHandler<WebSocketIrcClient, EventArgs>? OnConnectionException;
 
     /// <summary>
     /// Gets the state of the websocket connection.
@@ -107,19 +107,23 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            HandleConnectionException();
+            await HandleConnectionExceptionAsync();
         }
     }
 
     private void StartListeningThread()
     {
-        Thread listeningThread = new(() => StartListeningAsync().Ignore())
+        Thread listeningThread = new(static state =>
+        {
+            WebSocketIrcClient client = Unsafe.As<WebSocketIrcClient>(state)!;
+            client.StartListeningAsync().Ignore();
+        })
         {
             IsBackground = true,
             Priority = ThreadPriority.AboveNormal
         };
 
-        listeningThread.Start();
+        listeningThread.Start(this);
     }
 
     private async Task StartListeningAsync()
@@ -157,7 +161,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            HandleConnectionException();
+            await HandleConnectionExceptionAsync();
         }
     }
 
@@ -195,7 +199,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            HandleConnectionException();
+            await HandleConnectionExceptionAsync();
         }
     }
 
@@ -207,15 +211,15 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
         catch (Exception ex) when (ex is WebSocketException or InvalidOperationException)
         {
-            HandleConnectionException();
+            await HandleConnectionExceptionAsync();
         }
     }
 
-    private void HandleConnectionException()
+    private Task HandleConnectionExceptionAsync()
     {
         _webSocket.Dispose();
         _webSocket = new();
-        OnConnectionException?.Invoke(this, EventArgs.Empty);
+        return EventInvoker.InvokeAsync(OnConnectionException, this, EventArgs.Empty);
     }
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
@@ -372,7 +376,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private void InvokeBytesReceived(ref Bytes bytes)
     {
         Debug.Assert(OnBytesReceived is not null);
-        OnBytesReceived.Invoke(this, bytes);
+        EventInvoker.QueueOnThreadPool(OnBytesReceived, this, bytes);
     }
 
     internal void CancelTasks()

@@ -23,7 +23,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     {
     }
 
-    internal Bytes(RentedArray<byte> buffer, int length)
+    private Bytes(RentedArray<byte> buffer, int length)
     {
         _buffer = buffer;
         Length = length;
@@ -36,7 +36,11 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
         SpanHelpers<byte>.Copy(data, _buffer.AsSpan());
     }
 
-    public static Bytes AsBytes(RentedArray<byte> buffer, int length) => new(buffer, length);
+    public static Bytes AsBytes(RentedArray<byte> buffer, int length)
+    {
+        Debug.Assert(length >= buffer.Length);
+        return new(buffer, length);
+    }
 
     public void Dispose() => _buffer.Dispose();
 

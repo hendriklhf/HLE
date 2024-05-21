@@ -315,8 +315,6 @@ public sealed class LazyString :
     [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = $"named alternate is {nameof(AsSpan)}")]
     public static implicit operator ReadOnlySpan<char>(LazyString lazyString) => lazyString.AsSpan();
 
-    public static implicit operator string(LazyString lazyString) => lazyString.ToString();
-
     public static bool operator ==(LazyString left, LazyString right) => Equals(left, right);
 
     public static bool operator !=(LazyString left, LazyString right) => !(left == right);

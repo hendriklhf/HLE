@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using HLE.Memory;
 
 namespace HLE.Threading;
 
@@ -29,7 +30,12 @@ public static unsafe class TaskHelpers
     [SuppressMessage("Roslynator", "RCS1046:Asynchronous method name should end with \'Async\'")]
     [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
     [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
-    private static Task WhenAllFallback(ReadOnlySpan<Task> tasks) => Task.WhenAll(tasks.ToArray());
+    private static Task WhenAllFallback(ReadOnlySpan<Task> tasks)
+    {
+        Task[] buffer = ArrayPool<Task>.Shared.RentExact(tasks.Length);
+        SpanHelpers<Task>.Copy(tasks, buffer);
+        return Task.WhenAll(buffer);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Ignore(this Task _)

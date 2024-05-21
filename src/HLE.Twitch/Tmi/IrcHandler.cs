@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Threading;
 using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
@@ -36,12 +37,12 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a RECONNECT command has been received.
     /// </summary>
-    public event EventHandler? OnReconnectReceived;
+    public event AsyncEventHandler<IrcHandler, EventArgs>? OnReconnectReceived;
 
     /// <summary>
     /// Is invoked if a PING command has been received.
     /// </summary>
-    public event EventHandler<Bytes>? OnPingReceived;
+    public event AsyncEventHandler<IrcHandler, Bytes>? OnPingReceived;
 
     /// <summary>
     /// Is invoked if a NOTICE command has been received.
@@ -155,7 +156,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        OnReconnectReceived.Invoke(this, EventArgs.Empty);
+        EventInvoker.InvokeAsync(OnReconnectReceived, this, EventArgs.Empty).Ignore();
         return true;
     }
 
@@ -166,7 +167,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        OnPingReceived.Invoke(this, new(ircMessage[6..]));
+        EventInvoker.InvokeAsync(OnPingReceived, this, new(ircMessage[6..])).Ignore();
         return true;
     }
 

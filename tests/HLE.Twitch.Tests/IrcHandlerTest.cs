@@ -41,7 +41,7 @@ public sealed class IrcHandlerTest
             Assert.Equal(0xC2, chatMessage.Color.Red);
             Assert.Equal(0x99, chatMessage.Color.Green);
             Assert.Equal(0x00, chatMessage.Color.Blue);
-            Assert.Equal("Strbhlfe", chatMessage.DisplayName);
+            Assert.Equal("Strbhlfe", chatMessage.DisplayName.ToString());
             Assert.False(chatMessage.IsFirstMessage);
             Assert.Equal(Guid.Parse("03c90865-31ff-493f-a711-dcd6d788624b"), chatMessage.Id);
             Assert.True(chatMessage.IsModerator);
@@ -50,9 +50,9 @@ public sealed class IrcHandlerTest
             Assert.Equal(1_654_020_883_875, chatMessage.TmiSentTs);
             Assert.False(chatMessage.IsTurboUser);
             Assert.Equal(87_633_910, chatMessage.UserId);
-            Assert.Equal("strbhlfe", chatMessage.Username);
+            Assert.Equal("strbhlfe", chatMessage.Username.ToString());
             Assert.Equal("lbnshlfe", chatMessage.Channel);
-            Assert.Equal("xd xd xd", chatMessage.Message);
+            Assert.Equal("xd xd xd", chatMessage.Message.ToString());
             chatMessage.Dispose();
         };
 
