@@ -11,7 +11,7 @@ public sealed class ArrayPoolTest
 {
     public static TheoryData<int> Pow2LengthMinimumToMaximumLengthParameters { get; } = CreatePow2LengthMinimumToMaximumLengthParameters();
 
-    public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = TheoryDataHelpers.CreateInclusiveRange(0, 4096);
+    public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = TheoryDataHelpers.CreateRange(0, 4096);
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()

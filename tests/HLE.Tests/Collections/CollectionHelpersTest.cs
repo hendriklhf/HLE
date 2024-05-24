@@ -18,11 +18,11 @@ namespace HLE.Tests.Collections;
 
 public sealed partial class CollectionHelpersTest
 {
-    public static TheoryData<int> ReplaceTestParameters { get; } = TheoryDataHelpers.CreateExclusiveRange(0, 256);
+    public static TheoryData<int> ReplaceTestParameters { get; } = TheoryDataHelpers.CreateRange(0, 256);
 
     public static TheoryData<int> TryNonEnumeratedCopyToParameters { get; } = new(0, 16, 32, 47);
 
-    public static TheoryData<int> ToPooledListParameters { get; } = TheoryDataHelpers.CreateExclusiveRange(0, 256);
+    public static TheoryData<int> ToPooledListParameters { get; } = TheoryDataHelpers.CreateRange(0, 256);
 
     private static bool ReplacePredicate(int i) => i == 1;
 

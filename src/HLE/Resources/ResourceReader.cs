@@ -16,7 +16,7 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Resources;
 
-public sealed unsafe class ResourceReader : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
+public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
 {
     int IReadOnlyCollection<Resource>.Count => _resources.Count;
 

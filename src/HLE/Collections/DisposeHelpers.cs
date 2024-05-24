@@ -31,7 +31,7 @@ public static class DisposeHelpers
     public static void DisposeAll<T>(Span<T> disposables) where T : IDisposable
         => DisposeAll(ref MemoryMarshal.GetReference(disposables), disposables.Length);
 
-    public static void DisposeAll<T>(ReadOnlySpan<T> disposables) where T : IDisposable
+    public static void DisposeAll<T>(params ReadOnlySpan<T> disposables) where T : IDisposable
         => DisposeAll(ref MemoryMarshal.GetReference(disposables), disposables.Length);
 
     private static void DisposeAll<T>(ref T reference, int length) where T : IDisposable

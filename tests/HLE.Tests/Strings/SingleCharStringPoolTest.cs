@@ -6,7 +6,7 @@ namespace HLE.Tests.Strings;
 
 public sealed class SingleCharStringPoolTest
 {
-    public static TheoryData<char> GeneralPoolTestParameters { get; } = TheoryDataHelpers.CreateInclusiveRange((char)0, (char)(SingleCharStringPool.AmountOfCachedSingleCharStrings * 2));
+    public static TheoryData<char> GeneralPoolTestParameters { get; } = TheoryDataHelpers.CreateRange((char)0, (char)(SingleCharStringPool.AmountOfCachedSingleCharStrings * 2));
 
     [Fact]
     public void AmountOfCachedSingleCharStrings_NoRename_Test()

@@ -9,11 +9,11 @@ public interface ICollectionBuilder<out TCollection, TItem>
 
     static abstract TCollection Create(List<TItem> items);
 
-    static abstract TCollection Create(params TItem[] items);
+    static abstract TCollection Create(TItem[] items);
 
     static abstract TCollection Create(Span<TItem> items);
 
-    static abstract TCollection Create(ReadOnlySpan<TItem> items);
+    static abstract TCollection Create(params ReadOnlySpan<TItem> items);
 
     static abstract TCollection Create(TItem item);
 

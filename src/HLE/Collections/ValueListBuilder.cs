@@ -29,7 +29,7 @@ public sealed class ValueListBuilder
 
     [Pure]
     [MustDisposeResource]
-    public static ValueList<T> Create<T>(params T[] items) => Create((ReadOnlySpan<T>)items);
+    public static ValueList<T> Create<T>(T[] items) => Create((ReadOnlySpan<T>)items);
 
     [Pure]
     [MustDisposeResource]
@@ -37,7 +37,7 @@ public sealed class ValueListBuilder
 
     [Pure]
     [MustDisposeResource]
-    public static ValueList<T> Create<T>(ReadOnlySpan<T> items)
+    public static ValueList<T> Create<T>(params ReadOnlySpan<T> items)
     {
         ValueList<T> list = new();
         list.AddRange(items);

@@ -9,4 +9,8 @@
     <PackageReference Include="xunit" Version="2.8.0"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\HLE\HLE.csproj" />
+  </ItemGroup>
+
 </Project>

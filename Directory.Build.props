@@ -10,6 +10,7 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
     <DebugType>embedded</DebugType>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -18,9 +19,9 @@
     <PackageId>$(AssemblyName)</PackageId>
     <Title>$(AssemblyName)</Title>
     <Version>2.1.8</Version>
-    <PackageVersion>2.1.8</PackageVersion>
-    <AssemblyVersion>2.1.8</AssemblyVersion>
-    <FileVersion>2.1.8</FileVersion>
+    <PackageVersion>$(Version)</PackageVersion>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
     <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

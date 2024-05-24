@@ -30,7 +30,6 @@ public ref struct ValueList<T>
 
     public readonly Span<T> this[Range range] => AsSpan(range);
 
-    [SuppressMessage("ReSharper", "StructMemberCanBeMadeReadOnly", Justification = "setter mutates")]
     public int Count
     {
         readonly get => _countAndIsStackalloced.Integer;
@@ -251,11 +250,11 @@ public ref struct ValueList<T>
 
     public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
 
-    public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(T[] items) => AddRange((ReadOnlySpan<T>)items);
 
     public void AddRange(scoped Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(scoped ReadOnlySpan<T> items)
+    public void AddRange(params scoped ReadOnlySpan<T> items)
     {
         if (items.Length == 0)
         {

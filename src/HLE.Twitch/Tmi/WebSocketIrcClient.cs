@@ -89,6 +89,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <param name="username">The username of the client.</param>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
+    [SuppressMessage("Style", "IDE0290:Use primary constructor")] // TODO: change later
     public WebSocketIrcClient(string username, OAuthToken oAuthToken, ClientOptions options)
     {
         Username = username;
@@ -96,7 +97,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         _oAuthToken = oAuthToken;
         UseSsl = options.UseSsl;
         _isVerifiedBot = options.IsVerifiedBot;
-        _connectionUri = UseSsl ? s_sslConnectionUri : s_nonSslConnectionUri;
+        _connectionUri = options.UseSsl ? s_sslConnectionUri : s_nonSslConnectionUri;
     }
 
     private async ValueTask SendAsync(ReadOnlyMemory<byte> message)

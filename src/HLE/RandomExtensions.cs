@@ -490,12 +490,15 @@ public static class RandomExtensions
     public static ref T GetItem<T>(this Random random, T[] items)
         => ref random.GetItem(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
 
+    public static ref readonly char GetItem(this Random random, string str)
+        => ref random.GetItem(ref StringMarshal.GetReference(str), str.Length);
+
     [Pure]
     public static ref T GetItem<T>(this Random random, Span<T> items)
         => ref random.GetItem(ref MemoryMarshal.GetReference(items), items.Length);
 
     [Pure]
-    public static ref T GetItem<T>(this Random random, ReadOnlySpan<T> items)
+    public static ref readonly T GetItem<T>(this Random random, ReadOnlySpan<T> items)
         => ref random.GetItem(ref MemoryMarshal.GetReference(items), items.Length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

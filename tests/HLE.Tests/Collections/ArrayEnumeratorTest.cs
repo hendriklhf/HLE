@@ -9,9 +9,9 @@ namespace HLE.Tests.Collections;
 
 public sealed class ArrayEnumeratorTest
 {
-    public static TheoryData<int> EnumerateParameters { get; } = TheoryDataHelpers.CreateExclusiveRange(1, 256);
+    public static TheoryData<int> EnumerateParameters { get; } = TheoryDataHelpers.CreateRange(1, 256);
 
-    public static TheoryData<int> EnumerateRangeParameters { get; } = TheoryDataHelpers.CreateExclusiveRange(8, 256);
+    public static TheoryData<int> EnumerateRangeParameters { get; } = TheoryDataHelpers.CreateRange(8, 256);
 
     [Theory]
     [MemberData(nameof(EnumerateParameters))]

@@ -223,11 +223,11 @@ public sealed class PooledList<T>(int capacity) :
 
     public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
 
-    public void AddRange(params T[] items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(T[] items) => AddRange((ReadOnlySpan<T>)items);
 
     public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
 
-    public void AddRange(ReadOnlySpan<T> items)
+    public void AddRange(params ReadOnlySpan<T> items)
     {
         if (items.Length == 0)
         {

@@ -163,6 +163,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
 
     public NativeMemoryEnumerator<byte> GetEnumerator() => new(_resource, Length);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<byte> IEnumerable<byte>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<byte>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
