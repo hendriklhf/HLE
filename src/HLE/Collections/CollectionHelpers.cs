@@ -200,7 +200,7 @@ public static partial class CollectionHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
     {
-#if RELEASE // this will prevent reaching the bottom branches, so it will be removed for test runs as it is runtime code
+#if RELEASE // this might prevent reaching the bottom branches, so it will be removed for test runs as it is runtime code
         if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
         {
             return true;
@@ -266,6 +266,12 @@ public static partial class CollectionHelpers
                 elementsCopied = collection.Count;
                 return true;
             case ICopyable<T> copyable:
+                if (copyable.Count == 0)
+                {
+                    elementsCopied = 0;
+                    return true;
+                }
+
                 copyable.CopyTo(destination, offset);
                 elementsCopied = copyable.Count;
                 return true;

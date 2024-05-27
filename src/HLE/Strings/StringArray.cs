@@ -272,6 +272,7 @@ public sealed class StringArray :
 
     public ArrayEnumerator<string> GetEnumerator() => new(_strings);
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<string> IEnumerable<string>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<string>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

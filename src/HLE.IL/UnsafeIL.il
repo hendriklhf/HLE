@@ -23,18 +23,6 @@
         ret
     }
 
-    .method public hidebysig static char& GetStringReference(string str) cil managed aggressiveinlining
-    {
-        .maxstack 2
-
-        ldarg.0
-        sizeof [System.Runtime]System.UIntPtr
-        add
-        ldc.i4.4
-        add
-        ret
-    }
-
     .method public hidebysig static !!T& GetArrayReference<T>(!!T[] 'array') cil managed aggressiveinlining
     {
         .maxstack 2

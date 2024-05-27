@@ -1,25 +1,11 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using Xunit;
 
 #pragma warning disable RCS1060 // Declare each type in separate file
 
 namespace HLE.Tests;
 
-[SuppressMessage("Roslynator", "RCS1154:Sort enum members")]
-public enum TestEnum
-{
-    A = 50,
-    B = 35,
-    C = 0,
-    D = 12345,
-    E = 55,
-    F = 1,
-    G = 3,
-    H = 8
-}
-
-public sealed class EnumValuesTest
+public sealed partial class EnumValuesTest
 {
     [Fact]
     public void GetValuesAsSpanTest()

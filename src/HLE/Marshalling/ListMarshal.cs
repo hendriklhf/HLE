@@ -11,18 +11,19 @@ public static class ListMarshal
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Memory<T> AsMemory<T>(List<T> list) => GetArray(list).AsMemory(0, list.Count);
+    public static Memory<T> AsMemory<T>(List<T> list) => list.Count == 0 ? Memory<T>.Empty : GetArray(list).AsMemory(0, list.Count);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetReference<T>(List<T> list)
     {
-        if (list.Count == 0)
+        T[] array = GetArray(list);
+        if (array.Length == 0)
         {
             ThrowListIsEmpty();
         }
 
-        return ref UnsafeIL.GetArrayReference(GetArray(list));
+        return ref UnsafeIL.GetArrayReference(array);
     }
 
     [DoesNotReturn]
@@ -31,12 +32,15 @@ public static class ListMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(List<T> list) => ObjectMarshal.GetField<T[]>(list, 0);
+    public static T[] GetArray<T>(List<T> list) => GetArrayCore(list);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetArray<T>(List<T> list, T[] array)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(list.Count, array.Length);
-        ObjectMarshal.GetField<T[]>(list, 0) = array;
+        GetArrayCore(list) = array;
     }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_items")]
+    private static extern ref T[] GetArrayCore<T>(List<T> list);
 }

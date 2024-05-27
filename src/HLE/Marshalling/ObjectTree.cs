@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
@@ -14,32 +15,52 @@ internal static class ObjectTree
     private static readonly ConcurrentDictionary<Type, nuint> s_valueTypeSizeCache = new();
 
     [Pure]
-    public static nuint GetAllocationSize(object obj)
+    public static nuint GetSize(object? obj)
     {
-        nuint size;
+        if (obj is null)
+        {
+            return 0;
+        }
+
         Type objectType = obj.GetType();
+        if (!ObjectMarshal.IsReferenceOrContainsReference(objectType))
+        {
+            return GetValueTypeSize(obj);
+        }
+
+        nuint size;
         if (objectType.IsValueType)
         {
-            size = GetValueTypeSize(obj);
-            if (objectType.IsPrimitive)
+            size = GetValueTypeSize(objectType);
+            if (IsInlineArray(objectType, out int length))
             {
-                return size;
+                return GetInlineArrayElementsSize(obj, length, objectType);
             }
         }
         else
         {
             size = ObjectMarshal.GetObjectSize(obj);
-            if (objectType.IsArray || objectType == typeof(string))
+            if (objectType == typeof(string))
             {
                 return size;
+            }
+
+            if (objectType.IsArray)
+            {
+                return size + GetArrayElementsSize(Unsafe.As<Array>(obj), objectType);
             }
         }
 
         ReadOnlySpan<FieldInfo> instanceFields = GetFields(objectType);
         foreach (FieldInfo field in instanceFields)
         {
+            if (!ObjectMarshal.IsReferenceOrContainsReference(field.FieldType))
+            {
+                continue;
+            }
+
             object? fieldValue = field.GetValue(obj);
-            size += fieldValue is not null ? GetAllocationSize(fieldValue) : 0;
+            size += fieldValue is not null ? GetSize(fieldValue) : 0;
         }
 
         return size;
@@ -70,5 +91,45 @@ internal static class ObjectTree
         size = (uint)(int)sizeOfMethod.Invoke(null, null)!;
         s_valueTypeSizeCache.TryAdd(valueType, size);
         return size;
+    }
+
+    private static nuint GetArrayElementsSize(Array array, Type arrayType)
+    {
+        Type elementType = arrayType.GetElementType()!;
+        if (!ObjectMarshal.IsReferenceOrContainsReference(elementType))
+        {
+            return 0;
+        }
+
+        nuint size = 0;
+        foreach (object? obj in array)
+        {
+            size += GetSize(obj);
+        }
+
+        return size;
+    }
+
+    private static bool IsInlineArray(Type type, out int arrayLength)
+    {
+        InlineArrayAttribute? attribute = type.GetCustomAttribute<InlineArrayAttribute>();
+        if (attribute is null)
+        {
+            arrayLength = 0;
+            return false;
+        }
+
+        arrayLength = attribute.Length;
+        return true;
+    }
+
+    private static nuint GetInlineArrayElementsSize(object array, int length, Type type)
+    {
+        _ = array;
+        _ = length;
+        _ = type;
+        FieldInfo inlineArrayField = GetFields(type)[0];
+        Debug.Assert(ObjectMarshal.IsReferenceOrContainsReference(inlineArrayField.FieldType));
+        return 0; // TODO: implement correct inline array calculation
     }
 }

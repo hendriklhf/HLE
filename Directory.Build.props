@@ -10,7 +10,11 @@
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
     <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LangVersion>preview</LangVersion>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
   </PropertyGroup>
 
   <PropertyGroup>

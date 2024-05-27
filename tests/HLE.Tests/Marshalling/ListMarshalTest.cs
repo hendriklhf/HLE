@@ -62,12 +62,23 @@ public sealed class ListMarshalTest
     }
 
     [Fact]
-    public void GetReference_Empty_Test() =>
+    public void GetReference_ThrowsOnEmptyArray_Test() =>
         Assert.Throws<InvalidOperationException>(static () =>
         {
             List<int> list = [];
             _ = ref ListMarshal.GetReference(list);
         });
+
+    [Fact]
+    public void GetReference_DoesntThrowOnEmptyList_Test()
+    {
+        List<int> list = [1];
+        list.Remove(1);
+        ref int i = ref ListMarshal.GetReference(list);
+        i = 5;
+        CollectionsMarshal.SetCount(list, 1);
+        Assert.Equal(5, list[0]);
+    }
 
     [Fact]
     public void SetArray_Test()

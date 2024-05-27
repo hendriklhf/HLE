@@ -10,9 +10,9 @@ namespace HLE.Strings;
 
 public sealed partial class StringPool : IEquatable<StringPool>
 {
-    private readonly Bucket[] _buckets;
-
     public static StringPool Shared { get; } = new();
+
+    private readonly Bucket[] _buckets;
 
     /// <summary>
     /// The amount of buckets in the pool.

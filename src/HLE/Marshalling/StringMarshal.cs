@@ -1,8 +1,5 @@
 using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.IL;
@@ -12,27 +9,6 @@ namespace HLE.Marshalling;
 
 public static unsafe class StringMarshal
 {
-    private static readonly delegate*<int, string> s_fastAllocateString = GetFastAllocateStringFunctionPointer();
-
-    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
-    private static delegate*<int, string> GetFastAllocateStringFunctionPointer()
-    {
-        MethodInfo? fastAllocateStringMethodInfo =
-            typeof(string).GetMethod("FastAllocateString", BindingFlags.NonPublic | BindingFlags.Static);
-
-        if (fastAllocateStringMethodInfo is not null)
-        {
-            return (delegate*<int, string>)fastAllocateStringMethodInfo
-                .MethodHandle
-                .GetFunctionPointer();
-        }
-
-        Debug.Fail($"Using {nameof(FastAllocateStringFallback)}!");
-        return &FastAllocateStringFallback;
-    }
-
-    private static string FastAllocateStringFallback(int length) => new('\0', length);
-
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string FastAllocateString(int length, out Span<char> chars)
@@ -45,10 +21,13 @@ public static unsafe class StringMarshal
 
         ArgumentOutOfRangeException.ThrowIfNegative(length); // otherwise an OutOfMemoryException will be thrown
 
-        string str = s_fastAllocateString(length);
+        string str = FastAllocateStringCore(null, length);
         chars = MemoryMarshal.CreateSpan(ref GetReference(str), length);
         return str;
     }
+
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "FastAllocateString")]
+    private static extern string FastAllocateStringCore(string? s, int length);
 
     /// <summary>
     /// Creates a mutable <see cref="Span{Char}"/> over a <see cref="string"/>.
@@ -57,8 +36,7 @@ public static unsafe class StringMarshal
     /// <returns>A <see cref="Span{Char}"/> representation of the passed-in <see cref="string"/>.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<char> AsMutableSpan(string str)
-        => MemoryMarshal.CreateSpan(ref GetReference(str), str.Length);
+    public static Span<char> AsMutableSpan(string str) => MemoryMarshal.CreateSpan(ref GetReference(str), str.Length);
 
     public static void Replace(string? str, char oldChar, char newChar) => Replace(str.AsSpan(), oldChar, newChar);
 
@@ -128,15 +106,7 @@ public static unsafe class StringMarshal
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Clear(string? str)
-    {
-        if (str is null)
-        {
-            return;
-        }
-
-        Unsafe.InitBlock(ref Unsafe.As<char, byte>(ref GetReference(str)), 0, (uint)(str.Length << 1));
-    }
+    public static void Clear(string str) => Unsafe.InitBlock(ref Unsafe.As<char, byte>(ref GetReference(str)), 0, (uint)(str.Length << 1));
 
     /// <inheritdoc cref="AsString(ReadOnlySpan{char})"/>
     [Pure]
@@ -162,5 +132,8 @@ public static unsafe class StringMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref char GetReference(string str) => ref UnsafeIL.GetStringReference(str);
+    public static ref char GetReference(string str) => ref GetReferenceCore(str);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_firstChar")]
+    private static extern ref char GetReferenceCore(string str);
 }

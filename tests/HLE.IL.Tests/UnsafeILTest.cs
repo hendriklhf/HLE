@@ -22,15 +22,6 @@ public sealed unsafe class UnsafeILTest
     }
 
     [Fact]
-    public void GetStringReferenceTest()
-    {
-        ref char expected = ref MemoryMarshal.GetReference("hello".AsSpan());
-        ref char actual = ref UnsafeIL.GetStringReference("hello");
-
-        Assert.True(Unsafe.AreSame(ref expected, ref actual));
-    }
-
-    [Fact]
     public void GetArrayReferenceTest()
     {
         int[] array = new int[2];

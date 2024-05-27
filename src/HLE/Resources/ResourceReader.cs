@@ -159,6 +159,7 @@ public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquat
     private static void ThrowStreamLengthExceedsMaxArrayLength()
         => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
 
+    // ReSharper disable once NotDisposedResourceIsReturned
     public IEnumerator<Resource> GetEnumerator() => _resources.IsEmpty ? EmptyEnumeratorCache<Resource>.Enumerator : _resources.Values.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

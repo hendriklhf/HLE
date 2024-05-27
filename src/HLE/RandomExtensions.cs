@@ -353,6 +353,8 @@ public static class RandomExtensions
 
     public static unsafe void Fill(this Random random, Array array)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(array.Rank, 1);
+
         if (ObjectMarshal.IsReferenceOrContainsReference(array.GetType().GetElementType()!))
         {
             ThrowArrayElementTypeMustBeUnmanaged();
@@ -407,7 +409,8 @@ public static class RandomExtensions
     [Pure]
     internal static unsafe TEnum NextEnumFlags<TEnum>(this Random random) where TEnum : struct, Enum
     {
-        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null, $"{typeof(Enum)} is not annotated with {typeof(FlagsAttribute)}.");
+        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null, $"{typeof(Enum)} is not annotated with {typeof(FlagsAttribute)}, " +
+                                                                                     "therefore might not be flags enum.");
 
         switch (sizeof(TEnum))
         {
