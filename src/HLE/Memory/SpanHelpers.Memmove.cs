@@ -10,8 +10,11 @@ namespace HLE.Memory;
 public static unsafe class SpanHelpers<T>
 {
     /// <summary>
-    /// <c>Memmove(ref T destination, ref T source, nuint elementCount)</c>
+    /// Memmove function pointer used for managed types and overlapping source and destination.
     /// </summary>
+    /// <remarks>
+    /// <c>Memmove(ref T destination, ref T source, nuint elementCount)</c>
+    /// </remarks>
     [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
     private static readonly delegate*<ref T, ref T, nuint, void> s_memmove = GetMemmoveFunctionPointer();
 
@@ -81,6 +84,10 @@ public static unsafe class SpanHelpers<T>
         => Memmove(ref destination, ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
     /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
+    public static void Copy(Span<T> source, T* destination)
+        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+
+    /// <inheritdoc cref="Copy(ReadOnlySpan{T},Span{T})"/>
     public static void Copy(ReadOnlySpan<T> source, T[] destination)
         => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
@@ -110,7 +117,7 @@ public static unsafe class SpanHelpers<T>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
     public static void Memmove(ref T destination, ref T source, nuint elementCount)
     {
-        if (Unsafe.AreSame(ref destination, ref source))
+        if (elementCount == 0 || Unsafe.AreSame(ref destination, ref source))
         {
             return;
         }
@@ -121,7 +128,7 @@ public static unsafe class SpanHelpers<T>
             return;
         }
 
-        SpanHelpers.Memmove(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), checked(elementCount * (uint)sizeof(T)));
+        SpanHelpers.Memcpy(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), checked(elementCount * (uint)sizeof(T)));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

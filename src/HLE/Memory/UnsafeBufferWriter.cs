@@ -36,7 +36,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
 
     public void Write(scoped Span<T> items) => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
-    public void Write(scoped ReadOnlySpan<T> items) => Write(ref MemoryMarshal.GetReference(items), items.Length);
+    public void Write(params scoped ReadOnlySpan<T> items) => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(scoped ref T source, int count)

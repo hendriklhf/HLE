@@ -9,10 +9,11 @@ public static class InlineArrayHelpers
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref TElement GetReference<TArray, TElement>(ref TArray array) => ref Unsafe.As<TArray, TElement>(ref array);
+    public static ref TElement GetReference<TArray, TElement>(ref TArray array) where TArray : struct
+        => ref Unsafe.As<TArray, TElement>(ref array);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<TElement> AsSpan<TArray, TElement>(ref TArray array, int length)
+    public static Span<TElement> AsSpan<TArray, TElement>(ref TArray array, int length) where TArray : struct
         => MemoryMarshal.CreateSpan(ref GetReference<TArray, TElement>(ref array), length);
 }

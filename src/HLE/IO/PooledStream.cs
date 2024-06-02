@@ -93,6 +93,11 @@ public sealed class PooledStream(int capacity) :
 
     public override void SetLength(long value)
     {
+        if (Length == value)
+        {
+            return;
+        }
+
         if (value > Array.MaxLength)
         {
             ThrowLengthExceedsMaximumArrayLength();

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using HLE.IL;
+using HLE.Memory;
 
 namespace HLE.Marshalling;
 
@@ -43,4 +45,13 @@ public static class ListMarshal
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_items")]
     private static extern ref T[] GetArrayCore<T>(List<T> list);
+
+    public static void ReturnArrayToPool<T>(List<T> list)
+    {
+        ref T[] array = ref GetArrayCore(list);
+        ArrayPool<T>.Shared.Return(array);
+
+        CollectionsMarshal.SetCount(list, 0);
+        array = [];
+    }
 }

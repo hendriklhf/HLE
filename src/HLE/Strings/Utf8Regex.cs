@@ -14,18 +14,18 @@ public readonly struct Utf8Regex(Regex regex) : IEquatable<Utf8Regex>
     private readonly Regex _regex = regex;
 
     [Pure]
-    public bool IsMatch(ReadOnlySpan<byte> bytes)
+    public bool IsMatch(ReadOnlySpan<byte> utf8Bytes)
     {
-        using RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(bytes.Length);
-        int charCount = Encoding.UTF8.GetChars(bytes, chars.AsSpan());
+        using RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(utf8Bytes.Length);
+        int charCount = Encoding.UTF8.GetChars(utf8Bytes, chars.AsSpan());
         return _regex.IsMatch(chars[..charCount]);
     }
 
     [Pure]
-    public int Count(ReadOnlySpan<byte> bytes)
+    public int Count(ReadOnlySpan<byte> utf8Bytes)
     {
-        using RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(bytes.Length);
-        int charCount = Encoding.UTF8.GetChars(bytes, chars.AsSpan());
+        using RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(utf8Bytes.Length);
+        int charCount = Encoding.UTF8.GetChars(utf8Bytes, chars.AsSpan());
         return _regex.Count(chars[..charCount]);
     }
 

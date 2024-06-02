@@ -12,24 +12,22 @@ public static unsafe partial class SpanHelpers
     private const nuint MemmoveAlignment = 64;
     private const nuint MemmoveAlignmentThreshold = 256;
 
-    internal static void Memmove(void* destination, void* source, nuint byteCount)
-        => Memmove(ref Unsafe.AsRef<byte>(destination), ref Unsafe.AsRef<byte>(source), byteCount);
+    internal static void Memcpy(void* destination, void* source, nuint byteCount)
+        => Memcpy(ref Unsafe.AsRef<byte>(destination), ref Unsafe.AsRef<byte>(source), byteCount);
 
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.NoInlining)]
     [SuppressMessage("Maintainability", "CA1502:Avoid excessive complexity")]
-    internal static void Memmove(ref byte destination, ref byte source, nuint byteCount)
+    internal static void Memcpy(ref byte destination, ref byte source, nuint byteCount)
     {
-        switch (byteCount)
+        Debug.Assert(byteCount != 0);
+
+        if (byteCount >= MemmoveAlignmentThreshold && !MemoryHelpers.IsAligned(ref destination, MemmoveAlignment))
         {
-            case 0:
-                return;
-            case >= MemmoveAlignmentThreshold when !MemoryHelpers.IsAligned(ref destination, MemmoveAlignment):
-                MemmoveAlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
-                destination = ref alignmentResult.Destination;
-                source = ref alignmentResult.Source;
-                byteCount = alignmentResult.ByteCount;
-                break;
+            MemmoveAlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
+            destination = ref alignmentResult.Destination;
+            source = ref alignmentResult.Source;
+            byteCount = alignmentResult.ByteCount;
         }
 
         CheckByteCount:

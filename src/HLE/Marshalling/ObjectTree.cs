@@ -14,6 +14,8 @@ internal static class ObjectTree
     private static readonly MethodInfo s_sizeOfMethod = typeof(Unsafe).GetMethod(nameof(Unsafe.SizeOf), BindingFlags.Public | BindingFlags.Static)!;
     private static readonly ConcurrentDictionary<Type, nuint> s_valueTypeSizeCache = new();
 
+    // GetSize incurs heavy boxing, which is absolutely not perfect
+
     [Pure]
     public static nuint GetSize(object? obj)
     {

@@ -32,15 +32,14 @@ public static unsafe class MemoryHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsAligned(void* pointer, nuint alignment)
-        => IsAligned(ref Unsafe.AsRef<byte>(pointer), alignment);
+    public static bool IsAligned(void* pointer, nuint alignment) => IsAligned(ref Unsafe.AsRef<byte>(pointer), alignment);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAligned<T>(ref T reference, nuint alignment)
     {
         if (BitOperations.PopCount(alignment) != 1)
         {
-            ThrowAlignmentNeedsToBePowerOfTwo();
+            ThrowAlignmentNeedsToBeNonZeroPowerOfTwo();
         }
 
         nuint value = (nuint)Unsafe.AsPointer(ref reference);
@@ -52,7 +51,7 @@ public static unsafe class MemoryHelpers
     {
         if (BitOperations.PopCount(alignment) != 1)
         {
-            ThrowAlignmentNeedsToBePowerOfTwo();
+            ThrowAlignmentNeedsToBeNonZeroPowerOfTwo();
         }
 
         nuint value = (nuint)Unsafe.AsPointer(ref reference);
@@ -70,5 +69,6 @@ public static unsafe class MemoryHelpers
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowAlignmentNeedsToBePowerOfTwo() => throw new InvalidOperationException("The alignment needs to be a power of 2.");
+    private static void ThrowAlignmentNeedsToBeNonZeroPowerOfTwo()
+        => throw new InvalidOperationException("The alignment needs to be a non-zero power of 2.");
 }

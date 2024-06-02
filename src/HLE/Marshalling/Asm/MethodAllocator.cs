@@ -49,7 +49,7 @@ internal static unsafe class MethodAllocator
         nuint newLength = BufferHelpers.GrowNativeBuffer(bufferLength, sizeHint);
         byte* newBuffer = (byte*)MemoryApi.VirtualAlloc(newLength, AllocationTypes.Commit, ProtectionTypes.ReadWrite);
         byte* oldBuffer = s_buffer;
-        SpanHelpers.Memmove(newBuffer, oldBuffer, s_bufferPosition);
+        SpanHelpers.Memcpy(newBuffer, oldBuffer, s_bufferPosition);
         MemoryApi.VirtualFree(oldBuffer, bufferLength);
         s_buffer = newBuffer;
         s_bufferLength = newLength;

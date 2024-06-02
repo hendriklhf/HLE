@@ -7,7 +7,7 @@ using HLE.Collections;
 
 namespace HLE.Strings;
 
-[SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "doesnt work because of constraints")]
+[SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "doesn't work because of constraints")]
 internal static class ToStringHelpers
 {
     private static readonly TypeFormatter s_formatter = new(new()

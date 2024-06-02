@@ -109,13 +109,13 @@ public static partial class CollectionHelpers
 
     public static int IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate, Span<int> destination)
     {
-        int length = 0;
         int spanLength = span.Length;
         if (spanLength == 0)
         {
             return 0;
         }
 
+        int length = 0;
         ref T firstItem = ref MemoryMarshal.GetReference(span);
         for (int i = 0; i < spanLength; i++)
         {
