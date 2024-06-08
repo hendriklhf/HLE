@@ -106,7 +106,7 @@ public static unsafe class SpanMarshal
     /// Span&lt;T&gt; span = [];
     /// if (span.Length == 0)
     /// {
-    ///     span = MemoryHelper.ReturnStackAlloced(stackalloc int[50]);
+    ///     span = SpanMarshal.ReturnStackAlloced(stackalloc int[50]);
     /// }
     /// </code>
     /// </example>

@@ -7,8 +7,7 @@ namespace HLE.Memory;
 public unsafe partial struct NativeMemory<T>
 {
     [Pure]
-    public static T* Alloc()
-        => (T*)NativeMemory.AlignedAlloc((uint)sizeof(T), (uint)sizeof(nuint));
+    public static T* Alloc() => (T*)NativeMemory.AlignedAlloc((uint)sizeof(T), (uint)sizeof(nuint));
 
     [Pure]
     public static T* AllocZeroed()

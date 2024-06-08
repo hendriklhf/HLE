@@ -11,6 +11,18 @@ internal static class SimpleStringHasher
 {
     private static readonly uint s_seed = Random.Shared.NextUInt32();
 
+    public static uint Hash(ref PooledInterpolatedStringHandler chars)
+    {
+        try
+        {
+            return Hash(chars.Text);
+        }
+        finally
+        {
+            chars.Dispose();
+        }
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint Hash(ReadOnlySpan<char> chars) => Hash(ref MemoryMarshal.GetReference(chars), chars.Length);
 

@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -93,25 +94,43 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public void Advance(int length) => Length += length;
 
-    public void Append(ReadOnlySpan<char> chars)
+    [SuppressMessage("Performance", "CA1822:Mark members as static")]
+    [SuppressMessage("Minor Code Smell", "S2325:Methods and properties that don't access instance data should be static")]
+    [SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
+    [SuppressMessage("ReSharper", "UnusedParameter.Global")]
+    [SuppressMessage("Style", "IDE0060:Remove unused parameter")]
+    [SuppressMessage("Roslynator", "RCS1163:Unused parameter")]
+    public void Append([InterpolatedStringHandlerArgument("")] InterpolatedStringHandler chars)
     {
-        switch (chars.Length)
+        // handler contains all the logic
+    }
+
+    public void Append(List<char> chars) => Append(ref ListMarshal.GetReference(chars), chars.Count);
+
+    public void Append(char[] chars) => Append(ref MemoryMarshal.GetArrayDataReference(chars), chars.Length);
+
+    public void Append(string str) => Append(StringMarshal.GetReference(str), str.Length);
+
+    public void Append(ReadOnlySpan<char> chars) => Append(ref MemoryMarshal.GetReference(chars), chars.Length);
+
+    private void Append(ref char chars, int length)
+    {
+        switch (length)
         {
             case 0:
                 return;
             case 1:
-                Append(chars[0]);
+                Append(chars);
                 return;
         }
 
-        GrowIfNeeded(chars.Length);
+        GrowIfNeeded(length);
 
         Debug.Assert(_buffer is not null, $"If {nameof(_buffer)} is null, some exception should have been thrown before.");
 
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
-        ref char source = ref MemoryMarshal.GetReference(chars);
-        SpanHelpers<char>.Memmove(ref destination, ref source, (uint)chars.Length);
-        Length += chars.Length;
+        SpanHelpers<char>.Memmove(ref destination, ref chars, (uint)length);
+        Length += length;
     }
 
     public void Append(char c)
@@ -199,14 +218,9 @@ public sealed partial class PooledStringBuilder(int capacity) :
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
-        do
+        int writtenChars;
+        while (!formattable.TryFormat(FreeBufferSpan, out writtenChars, format, null))
         {
-            if (formattable.TryFormat(FreeBufferSpan, out int writtenChars, format, null))
-            {
-                Advance(writtenChars);
-                return;
-            }
-
             if (++countOfFailedTries == MaximumFormattingTries)
             {
                 ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
@@ -215,7 +229,8 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
             Grow(256);
         }
-        while (true);
+
+        Advance(writtenChars);
     }
 
     [DoesNotReturn]

@@ -52,6 +52,19 @@ public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquat
     }
 
     [Pure]
+    public Resource Read(ref PooledInterpolatedStringHandler resourceName)
+    {
+        try
+        {
+            return Read(resourceName.Text);
+        }
+        finally
+        {
+            resourceName.Dispose();
+        }
+    }
+
+    [Pure]
     public Resource Read(ReadOnlySpan<char> resourceName)
     {
         string resourcePath = BuildResourcePath(resourceName);
@@ -67,6 +80,18 @@ public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquat
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowResourceDoesntExist(ReadOnlySpan<char> resourcePath)
         => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
+
+    public bool TryRead(ref PooledInterpolatedStringHandler resourceName, out Resource resource)
+    {
+        try
+        {
+            return TryRead(resourceName.Text, out resource);
+        }
+        finally
+        {
+            resourceName.Dispose();
+        }
+    }
 
     /// <summary>
     /// Tries to read a resource.

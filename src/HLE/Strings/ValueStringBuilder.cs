@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -12,7 +13,7 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Strings;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public ref partial struct ValueStringBuilder
+public unsafe ref partial struct ValueStringBuilder
 {
     public readonly ref char this[int index] => ref WrittenSpan[index];
 
@@ -81,10 +82,20 @@ public ref partial struct ValueStringBuilder
     }
 
     [MustDisposeResource]
-    public ValueStringBuilder(Span<char> buffer)
+    public ValueStringBuilder(Span<char> buffer) : this(ref MemoryMarshal.GetReference(buffer), buffer.Length)
     {
-        _buffer = ref MemoryMarshal.GetReference(buffer);
-        BufferLength = buffer.Length;
+    }
+
+    [MustDisposeResource]
+    public ValueStringBuilder(char* buffer, int length) : this(ref Unsafe.AsRef<char>(buffer), length)
+    {
+    }
+
+    [MustDisposeResource]
+    public ValueStringBuilder(ref char buffer, int length)
+    {
+        _buffer = ref buffer;
+        BufferLength = length;
         IsStackalloced = true;
     }
 
@@ -113,23 +124,32 @@ public ref partial struct ValueStringBuilder
 
     public void Advance(int length) => Length += length;
 
-    public void Append(scoped ReadOnlySpan<char> span)
+    public void Append([InterpolatedStringHandlerArgument("")] InterpolatedStringHandler chars) => this = chars.Builder;
+
+    public void Append(List<char> chars) => Append(ref ListMarshal.GetReference(chars), chars.Count);
+
+    public void Append(char[] chars) => Append(ref MemoryMarshal.GetArrayDataReference(chars), chars.Length);
+
+    public void Append(string str) => Append(ref StringMarshal.GetReference(str), str.Length);
+
+    public void Append(scoped ReadOnlySpan<char> chars) => Append(ref MemoryMarshal.GetReference(chars), chars.Length);
+
+    private void Append(scoped ref char chars, int length)
     {
-        switch (span.Length)
+        switch (length)
         {
             case 0:
                 return;
             case 1:
-                Append(span[0]);
+                Append(chars);
                 return;
         }
 
-        GrowIfNeeded(span.Length);
+        GrowIfNeeded(length);
 
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
-        ref char source = ref MemoryMarshal.GetReference(span);
-        SpanHelpers<char>.Memmove(ref destination, ref source, (uint)span.Length);
-        Length += span.Length;
+        SpanHelpers<char>.Memmove(ref destination, ref chars, (uint)length);
+        Length += length;
     }
 
     public void Append(char c)
@@ -217,14 +237,9 @@ public ref partial struct ValueStringBuilder
     {
         const int MaximumFormattingTries = 5;
         int countOfFailedTries = 0;
-        do
+        int writtenChars;
+        while (!formattable.TryFormat(FreeBufferSpan, out writtenChars, format, null))
         {
-            if (formattable.TryFormat(FreeBufferSpan, out int writtenChars, format, null))
-            {
-                Advance(writtenChars);
-                return;
-            }
-
             if (++countOfFailedTries == MaximumFormattingTries)
             {
                 ThrowMaximumFormatTriesExceeded<TSpanFormattable>(countOfFailedTries);
@@ -233,7 +248,8 @@ public ref partial struct ValueStringBuilder
 
             Grow(256);
         }
-        while (true);
+
+        Advance(writtenChars);
     }
 
     [DoesNotReturn]

@@ -127,6 +127,6 @@ public readonly unsafe ref struct CopyWorker<T>
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCopiedItemsWouldExceedMaxArrayLength()
-        => throw new InvalidOperationException("The amount of items to be copied into the List<T> would exceed " +
+        => throw new InvalidOperationException($"The amount of items to be copied into the {typeof(List<T>)} would exceed " +
                                                "the maximum array length, thus can't be copied to the destination.");
 }

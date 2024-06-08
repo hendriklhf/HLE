@@ -15,7 +15,7 @@ namespace HLE.Strings;
 
 /// <summary>
 /// An array that is specialized in storing strings by optimizing data locality,
-/// which makes search operations faster,
+/// which makes search operations significantly faster,
 /// but comes at the cost of higher memory usage and initialization time.
 /// </summary>
 public sealed class StringArray :
@@ -84,7 +84,7 @@ public sealed class StringArray :
     public StringArray(Span<string> strings) : this(strings.Length)
         => FillArray(strings);
 
-    public StringArray(ReadOnlySpan<string> strings) : this(strings.Length)
+    public StringArray(params ReadOnlySpan<string> strings) : this(strings.Length)
         => FillArray(strings);
 
     public StringArray(IEnumerable<string> strings)
@@ -172,8 +172,13 @@ public sealed class StringArray :
 
     [Pure]
     [SkipLocalsInit]
-    public int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    public unsafe int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
+        if (Length == 0)
+        {
+            return -1;
+        }
+
         ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
         ref int startsReference = ref MemoryMarshal.GetArrayDataReference(_starts);
         ReadOnlySpan<char> charBuffer = _chars;
@@ -191,7 +196,8 @@ public sealed class StringArray :
         }
         else
         {
-            indices = SpanMarshal.ReturnStackAlloced(stackalloc int[lengths.Length]);
+            int* buffer = stackalloc int[lengths.Length];
+            indices = new(buffer, lengths.Length);
         }
 
         try
@@ -254,11 +260,9 @@ public sealed class StringArray :
     {
         Debug.Assert(strings.Length == Length);
 
-        ref string stringsReference = ref MemoryMarshal.GetReference(strings);
-        int stringsLength = strings.Length;
-        for (int i = 0; i < stringsLength; i++)
+        for (int i = 0; i < strings.Length; i++)
         {
-            SetString(i, Unsafe.Add(ref stringsReference, i));
+            SetString(i, strings[i]);
         }
     }
 
@@ -328,7 +332,7 @@ public sealed class StringArray :
         {
             case > 0: // new string is longer
                 GrowBufferIfNeeded(lengthDifference);
-                chars = _chars;
+                chars = _chars; // _chars might have changed through GrowBufferIfNeeded
                 if (index != Length - 1)
                 {
                     SpanHelpers<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
@@ -350,6 +354,7 @@ public sealed class StringArray :
                 break;
             default: // new string has same length
                 Span<char> destination = chars[starts[index]..];
+                Debug.Assert(destination.Length >= str.Length);
                 SpanHelpers<char>.Copy(str, destination);
                 break;
         }
@@ -373,8 +378,11 @@ public sealed class StringArray :
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private void GrowBuffer(int sizeHint, int freeBufferSize)
     {
+        const int AssumedAverageStringLength = 8;
+
         char[]? chars = _chars;
-        int currentBufferSize = chars?.Length ?? 8;
+        int startingBufferSize = Length * AssumedAverageStringLength;
+        int currentBufferSize = chars?.Length ?? startingBufferSize;
         uint neededSize = (uint)(sizeHint - freeBufferSize);
 
         int newBufferSize = BufferHelpers.GrowArray((uint)currentBufferSize, neededSize);

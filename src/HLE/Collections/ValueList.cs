@@ -127,7 +127,7 @@ public ref struct ValueList<T>
     public readonly Span<T> AsSpan(Range range) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(range);
 
     [Pure]
-    public readonly Memory<T> AsMemory() => SpanMarshal.AsArray(GetBuffer()).AsMemory(..Count);
+    public readonly Memory<T> AsMemory() => SpanMarshal.AsArray(ref GetBufferReference()).AsMemory(..Count);
 
     [Pure]
     public readonly T[] ToArray()

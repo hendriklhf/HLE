@@ -32,6 +32,9 @@ public static unsafe partial class Interop
     public static void* VirtualAlloc(void* address, nuint size, AllocationTypes allocationTypes, ProtectionTypes protectionTypes)
         => _VirtualAlloc(address, size, allocationTypes, protectionTypes);
 
+    public static bool VirtualProtect(void* address, nuint size, ProtectionTypes protectionTypes, ProtectionTypes* oldProtectionTypes)
+        => _VirtualProtect(address, size, protectionTypes, oldProtectionTypes);
+
     public static bool VirtualFree(void* address, nuint size, FreeTypes freeTypes) => _VirtualFree(address, size, freeTypes);
 
     [LibraryImport("kernel32.dll", EntryPoint = "VirtualAlloc")]
@@ -42,6 +45,11 @@ public static unsafe partial class Interop
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool _VirtualFree(void* address, nuint size, FreeTypes freeTypes);
+
+    [LibraryImport("kernel32.dll", EntryPoint = "VirtualProtect")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool _VirtualProtect(void* address, nuint size, ProtectionTypes protectionTypes, ProtectionTypes* oldProtectionType);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("kernel32.dll", EntryPoint = "GetEnvironmentStringsW")]

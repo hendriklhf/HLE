@@ -3,7 +3,6 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using HLE.Collections;
-using HLE.IO;
 using HLE.Memory;
 using HLE.Strings;
 
@@ -73,8 +72,9 @@ public static class ChatterinoSettingsReader
 
     private static void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
     {
-        using BufferedFileReader fileReader = new(s_windowLayoutPath ??= GetWindowLayoutPath());
-        fileReader.ReadBytes(windowLayoutFileContentWriter);
+        // TODO: read file buffered
+        s_windowLayoutPath ??= GetWindowLayoutPath();
+        windowLayoutFileContentWriter.Clear();
     }
 
     private static string GetWindowLayoutPath()

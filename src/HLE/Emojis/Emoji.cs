@@ -40,6 +40,18 @@ public static partial class Emoji
     [Pure]
     public static bool IsEmoji(string text) => s_emojis.Contains(text);
 
+    public static bool IsEmoji(ref PooledInterpolatedStringHandler text)
+    {
+        try
+        {
+            return IsEmoji(text.Text);
+        }
+        finally
+        {
+            text.Dispose();
+        }
+    }
+
     [Pure]
     public static bool IsEmoji(ReadOnlySpan<char> text)
     {

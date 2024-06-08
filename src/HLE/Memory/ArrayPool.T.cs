@@ -176,7 +176,7 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryReturnToThreadLocalBucket(T[] array, int pow2Length, int bucketIndex, bool clearArray)
     {
-        // TODO: check if array can still be returned if though it is not a pow2 length
+        // TODO: check if array can still be returned even though it is not a pow2 length
         if (BitOperations.PopCount((uint)array.Length) != 1)
         {
             return false;

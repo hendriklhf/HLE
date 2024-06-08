@@ -121,12 +121,15 @@ public unsafe partial struct NativeMemory<T> :
 
     private static void ClearMemory(byte* memory, ulong byteCount)
     {
-        while (byteCount >= uint.MaxValue)
+        Debug.Assert(byteCount != 0);
+
+        do
         {
             Unsafe.InitBlock(memory, 0, uint.MaxValue);
             byteCount -= uint.MaxValue;
             memory += uint.MaxValue;
         }
+        while (byteCount >= uint.MaxValue);
 
         if (byteCount != 0)
         {

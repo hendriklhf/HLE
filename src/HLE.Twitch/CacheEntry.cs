@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
@@ -30,7 +31,7 @@ internal readonly struct CacheEntry<T> : IEquatable<CacheEntry<T>>
     public bool IsValid(TimeSpan cacheTime) => this != default && _timeOfCreation + cacheTime > DateTime.UtcNow;
 
     [Pure]
-    public bool Equals(CacheEntry<T> other) => Value?.Equals(other.Value) == true && _timeOfCreation == other._timeOfCreation;
+    public bool Equals(CacheEntry<T> other) => EqualityComparer<T>.Default.Equals(Value, other.Value) && _timeOfCreation == other._timeOfCreation;
 
     [Pure]
     public override bool Equals(object? obj) => obj is CacheEntry<T> other && Equals(other);

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Marshalling;
 using HLE.Memory;
@@ -39,12 +40,27 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         return new(format);
     }
 
+    [Pure]
+    public static StringNumberFormat Create(ref PooledInterpolatedStringHandler chars)
+    {
+        try
+        {
+            return Create(chars.Text);
+        }
+        finally
+        {
+            chars.Dispose();
+        }
+    }
+
+    [Pure]
     public static StringNumberFormat Create(ReadOnlySpan<char> chars)
     {
         ValidateChars(chars);
         return new(StringPool.Shared.GetOrAdd(chars));
     }
 
+    [Pure]
     public static StringNumberFormat Create(string chars)
     {
         ValidateChars(chars);
@@ -72,7 +88,7 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is StringNumberFormat other && Equals(other);
 
-    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+    public override int GetHashCode() => string.GetHashCode(Chars);
 
     public static bool operator ==(StringNumberFormat left, StringNumberFormat right) => left.Equals(right);
 

@@ -69,6 +69,9 @@ public sealed class LazyString :
         _string = str;
     }
 
+    public LazyString(ref PooledInterpolatedStringHandler chars) : this(chars.Text)
+        => chars.Dispose();
+
     [MustDisposeResource]
     public LazyString(ReadOnlySpan<char> chars)
     {

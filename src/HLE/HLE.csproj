@@ -30,35 +30,26 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Roslynator.Analyzers" Version="4.12.3">
+    <PackageReference Include="Roslynator.Analyzers" Version="4.12.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.3">
+    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Roslynator.CodeFixes" Version="4.12.3">
+    <PackageReference Include="Roslynator.CodeFixes" Version="4.12.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.3">
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.25.1.91650">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.26.0.92422">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x64\repmovsq.bin" />
-    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x86\repmovsd.bin" />
-    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x86\rdrand16.bin" />
-    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x86\rdrand32.bin" />
-    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x64\rdrand64.bin" />
-    <EmbeddedResource Include="Marshalling\Asm\asmhelpers\x64\ParseHexColor.bin" />
   </ItemGroup>
 
 </Project>

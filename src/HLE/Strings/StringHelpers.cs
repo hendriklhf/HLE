@@ -36,8 +36,24 @@ public static class StringHelpers
     private static readonly SearchValues<char> s_regexMetaCharsSearchValues = SearchValues.Create(RegexMetaChars);
 
     [Pure]
+    public static string TrimAll(string str) => TrimAll(str.AsSpan());
+
+    [Pure]
+    public static string TrimAll(ref PooledInterpolatedStringHandler str)
+    {
+        try
+        {
+            return TrimAll(str.Text);
+        }
+        finally
+        {
+            str.Dispose();
+        }
+    }
+
+    [Pure]
     [SkipLocalsInit]
-    public static string TrimAll(this string str)
+    public static string TrimAll(ReadOnlySpan<char> str)
     {
         if (str.Length == 0)
         {
@@ -57,9 +73,21 @@ public static class StringHelpers
         return new(buffer[..resultLength]);
     }
 
-    public static int TrimAll(this string str, Span<char> result) => TrimAll(str.AsSpan(), result);
+    public static int TrimAll(string str, Span<char> result) => TrimAll(str.AsSpan(), result);
 
-    public static int TrimAll(this ReadOnlySpan<char> span, Span<char> result)
+    public static int TrimAll(ref PooledInterpolatedStringHandler str, Span<char> result)
+    {
+        try
+        {
+            return TrimAll(str.Text, result);
+        }
+        finally
+        {
+            str.Dispose();
+        }
+    }
+
+    public static int TrimAll(ReadOnlySpan<char> span, Span<char> result)
     {
         if (span.Length == 0)
         {
@@ -157,6 +185,19 @@ public static class StringHelpers
 
     [Pure]
     public static string RegexEscape(string input) => RegexEscape(input, true);
+
+    [Pure]
+    public static string RegexEscape(ref PooledInterpolatedStringHandler input)
+    {
+        try
+        {
+            return RegexEscape(input.Text, false);
+        }
+        finally
+        {
+            input.Dispose();
+        }
+    }
 
     [Pure]
     public static string RegexEscape(ReadOnlySpan<char> input) => RegexEscape(input, false);
@@ -287,6 +328,18 @@ public static class StringHelpers
         return resultLength + lastString.Length;
     }
 
+    public static int Join(ref PooledInterpolatedStringHandler separator, ReadOnlySpan<string> strings, Span<char> destination)
+    {
+        try
+        {
+            return Join(separator.Text, strings, destination);
+        }
+        finally
+        {
+            separator.Dispose();
+        }
+    }
+
     public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<string> strings, Span<char> destination)
     {
         if (strings.Length == 0)
@@ -309,6 +362,18 @@ public static class StringHelpers
         string lastString = Unsafe.Add(ref stringsReference, stringsLengthMinus1);
         lastString.CopyTo(destination[resultLength..]);
         return resultLength + lastString.Length;
+    }
+
+    public static int Join(ref PooledInterpolatedStringHandler separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
+    {
+        try
+        {
+            return Join(separator.Text, strings, destination);
+        }
+        finally
+        {
+            separator.Dispose();
+        }
     }
 
     public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
@@ -353,6 +418,18 @@ public static class StringHelpers
 
         destination[resultLength++] = Unsafe.Add(ref charsReference, charsLengthMinus1);
         return resultLength;
+    }
+
+    public static int Join(ref PooledInterpolatedStringHandler separator, ReadOnlySpan<char> chars, Span<char> destination)
+    {
+        try
+        {
+            return Join(separator.Text, chars, destination);
+        }
+        finally
+        {
+            separator.Dispose();
+        }
     }
 
     public static int Join(ReadOnlySpan<char> separator, ReadOnlySpan<char> chars, Span<char> destination)

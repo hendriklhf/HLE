@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.IL;
 using HLE.Memory;
+using HLE.Strings;
 
 namespace HLE.Marshalling;
 
@@ -40,6 +41,8 @@ public static unsafe class StringMarshal
 
     public static void Replace(string? str, char oldChar, char newChar) => Replace(str.AsSpan(), oldChar, newChar);
 
+    public static void Replace(ref PooledInterpolatedStringHandler span, char oldChar, char newChar) => Replace(span.Text, oldChar, newChar);
+
     public static void Replace(ReadOnlySpan<char> span, char oldChar, char newChar) => Replace(SpanMarshal.AsMutableSpan(span), oldChar, newChar);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -54,6 +57,8 @@ public static unsafe class StringMarshal
     }
 
     public static void ToLower(string? str) => ToLower(str.AsSpan());
+
+    public static void ToLower(ref PooledInterpolatedStringHandler span) => ToLower(span.Text);
 
     public static void ToLower(ReadOnlySpan<char> span) => ToLower(SpanMarshal.AsMutableSpan(span));
 
@@ -80,6 +85,8 @@ public static unsafe class StringMarshal
     }
 
     public static void ToUpper(string? str) => ToUpper(str.AsSpan());
+
+    public static void ToUpper(ref PooledInterpolatedStringHandler span) => ToUpper(span.Text);
 
     public static void ToUpper(ReadOnlySpan<char> span) => ToUpper(SpanMarshal.AsMutableSpan(span));
 
