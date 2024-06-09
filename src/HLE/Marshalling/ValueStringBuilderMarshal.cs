@@ -1,5 +1,5 @@
 using System;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Marshalling;
 

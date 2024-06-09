@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.IO;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.IO;
 

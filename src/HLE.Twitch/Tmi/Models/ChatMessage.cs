@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Memory;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 

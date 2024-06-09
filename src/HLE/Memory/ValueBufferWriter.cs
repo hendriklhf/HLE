@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Marshalling;
-using HLE.Strings;
+using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 

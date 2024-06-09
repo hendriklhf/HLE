@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using System.Text;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 

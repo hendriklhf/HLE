@@ -6,8 +6,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
-using HLE.Strings;
+using HLE.Text;
 using HLE.Twitch.JsonConverters;
+using ValueStringBuilder = HLE.Text.ValueStringBuilder;
 
 namespace HLE.Twitch.Helix.Models;
 

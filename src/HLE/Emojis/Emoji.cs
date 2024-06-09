@@ -5,7 +5,8 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using HLE.Strings;
+using HLE.Text;
+using SingleCharStringPool = HLE.Text.SingleCharStringPool;
 
 namespace HLE.Emojis;
 

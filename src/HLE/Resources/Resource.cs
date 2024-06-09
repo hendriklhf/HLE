@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Resources;
 

@@ -29,7 +29,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
 
         StringBuilder sourceBuilder = new();
         sourceBuilder.AppendLine("using System;").AppendLine();
-        sourceBuilder.AppendLine("namespace HLE.Strings;").AppendLine();
+        sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
         sourceBuilder.AppendLine("public static partial class SingleCharStringPool").AppendLine("{");
         sourceBuilder.Append(Indentation).AppendLine("internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings() => new[]");
         sourceBuilder.Append(Indentation).Append('{');
@@ -50,7 +50,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
 
         sourceBuilder.AppendLine().Append(Indentation).AppendLine("};");
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Strings.SingleCharStringPool.g.cs", sourceBuilder.ToString());
+        context.AddSource("HLE.Text.SingleCharStringPool.g.cs", sourceBuilder.ToString());
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

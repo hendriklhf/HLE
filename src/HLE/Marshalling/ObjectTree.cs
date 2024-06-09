@@ -11,49 +11,56 @@ namespace HLE.Marshalling;
 internal static class ObjectTree
 {
     private static readonly ConcurrentDictionary<Type, FieldInfo[]> s_fieldInfoCache = new();
-    private static readonly MethodInfo s_sizeOfMethod = typeof(Unsafe).GetMethod(nameof(Unsafe.SizeOf), BindingFlags.Public | BindingFlags.Static)!;
-    private static readonly ConcurrentDictionary<Type, nuint> s_valueTypeSizeCache = new();
-
-    // GetSize incurs heavy boxing, which is absolutely not perfect
 
     [Pure]
-    public static nuint GetSize(object? obj)
+    public static unsafe nuint GetSize<T>(T obj)
     {
+        if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            return (uint)sizeof(T);
+        }
+
         if (obj is null)
         {
             return 0;
         }
 
-        Type objectType = obj.GetType();
-        if (!ObjectMarshal.IsReferenceOrContainsReference(objectType))
-        {
-            return GetValueTypeSize(obj);
-        }
-
         nuint size;
-        if (objectType.IsValueType)
+        if (typeof(T).IsValueType)
         {
-            size = GetValueTypeSize(objectType);
-            if (IsInlineArray(objectType, out int length))
+            size = (uint)sizeof(T);
+            if (IsInlineArray<T>(out int length))
             {
-                return GetInlineArrayElementsSize(obj, length, objectType);
+                return size + GetInlineArrayElementsSize(obj, length);
             }
         }
         else
         {
             size = ObjectMarshal.GetObjectSize(obj);
-            if (objectType == typeof(string))
+            if (typeof(T) == typeof(string))
             {
                 return size;
             }
 
-            if (objectType.IsArray)
+            if (typeof(T).IsArray)
             {
-                return size + GetArrayElementsSize(Unsafe.As<Array>(obj), objectType);
+                Type elementType = typeof(T).GetElementType()!;
+                if (!ObjectMarshal.IsReferenceOrContainsReference(elementType))
+                {
+                    return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
+                }
+
+                return size;
             }
         }
 
-        ReadOnlySpan<FieldInfo> instanceFields = GetFields(objectType);
+        return size + GetFieldsSize(obj, typeof(T));
+    }
+
+    private static nuint GetFieldsSize<T>(T obj, Type type)
+    {
+        nuint size = 0;
+        ReadOnlySpan<FieldInfo> instanceFields = GetFields(type);
         foreach (FieldInfo field in instanceFields)
         {
             if (!ObjectMarshal.IsReferenceOrContainsReference(field.FieldType))
@@ -61,7 +68,7 @@ internal static class ObjectTree
                 continue;
             }
 
-            object? fieldValue = field.GetValue(obj);
+            object? fieldValue = field.GetValue(obj); // TODO: boxes obj and the field's value
             size += fieldValue is not null ? GetSize(fieldValue) : 0;
         }
 
@@ -81,40 +88,32 @@ internal static class ObjectTree
         return fieldInfos;
     }
 
-    private static nuint GetValueTypeSize(object obj)
+    private static nuint GetArrayElementsSize(Array array, Type elementType)
     {
-        Type valueType = obj.GetType();
-        if (s_valueTypeSizeCache.TryGetValue(valueType, out nuint size))
-        {
-            return size;
-        }
-
-        MethodInfo sizeOfMethod = s_sizeOfMethod.MakeGenericMethod(valueType);
-        size = (uint)(int)sizeOfMethod.Invoke(null, null)!;
-        s_valueTypeSizeCache.TryAdd(valueType, size);
-        return size;
-    }
-
-    private static nuint GetArrayElementsSize(Array array, Type arrayType)
-    {
-        Type elementType = arrayType.GetElementType()!;
-        if (!ObjectMarshal.IsReferenceOrContainsReference(elementType))
-        {
-            return 0;
-        }
+        Debug.Assert(ObjectMarshal.IsReferenceOrContainsReference(array.GetType().GetElementType()!));
 
         nuint size = 0;
-        foreach (object? obj in array)
+        if (!elementType.IsValueType)
         {
-            size += GetSize(obj);
+            foreach (object? obj in array)
+            {
+                size += GetSize(obj);
+            }
+        }
+        else
+        {
+            foreach (object? obj in array) // boxes the array elements
+            {
+                size += GetFieldsSize(obj, elementType);
+            }
         }
 
         return size;
     }
 
-    private static bool IsInlineArray(Type type, out int arrayLength)
+    private static bool IsInlineArray<T>(out int arrayLength)
     {
-        InlineArrayAttribute? attribute = type.GetCustomAttribute<InlineArrayAttribute>();
+        InlineArrayAttribute? attribute = typeof(T).GetCustomAttribute<InlineArrayAttribute>();
         if (attribute is null)
         {
             arrayLength = 0;
@@ -125,13 +124,12 @@ internal static class ObjectTree
         return true;
     }
 
-    private static nuint GetInlineArrayElementsSize(object array, int length, Type type)
+    private static nuint GetInlineArrayElementsSize<T>(T array, int length)
     {
         _ = array;
         _ = length;
-        _ = type;
-        FieldInfo inlineArrayField = GetFields(type)[0];
-        Debug.Assert(ObjectMarshal.IsReferenceOrContainsReference(inlineArrayField.FieldType));
+        FieldInfo inlineArrayField = GetFields(typeof(T))[0];
+        _ = inlineArrayField;
         return 0; // TODO: implement correct inline array calculation
     }
 }

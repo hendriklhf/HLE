@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 

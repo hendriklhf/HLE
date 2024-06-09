@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
-using HLE.Strings;
+using HLE.Text;
 using HLE.Twitch.Bttv.Models;
 using HLE.Twitch.Bttv.Models.Responses;
 

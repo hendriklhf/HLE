@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using HLE.Marshalling.Windows;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE;
 

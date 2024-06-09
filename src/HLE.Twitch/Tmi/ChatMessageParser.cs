@@ -8,7 +8,7 @@ using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
-using HLE.Strings;
+using HLE.Text;
 using HLE.Twitch.Tmi.Models;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;

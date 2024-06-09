@@ -1,7 +1,7 @@
 using System;
 using System.Buffers;
 using System.Text;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Memory;
 

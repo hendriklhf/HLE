@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Memory;
 

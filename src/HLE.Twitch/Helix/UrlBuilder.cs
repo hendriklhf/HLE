@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Twitch.Helix;
 

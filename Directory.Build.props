@@ -1,6 +1,10 @@
 <Project>
 
   <PropertyGroup>
+    <DefaultTargetFramework>net9.0</DefaultTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

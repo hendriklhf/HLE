@@ -20,7 +20,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private const string CharArgumentNamePrefix = "c";
     private const string ReadOnlySpanArgumentType = "scoped global::System.ReadOnlySpan<char>";
     private const string CharArgumentType = "char";
-    private const string StringBuilderNamespace = "HLE.Strings";
+    private const string StringBuilderNamespace = "HLE.Text";
     private const string ValueStringBuilderClassName = "ValueStringBuilder";
     private const string PooledStringBuilderClassName = "PooledStringBuilder";
 

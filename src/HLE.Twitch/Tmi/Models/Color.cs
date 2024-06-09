@@ -4,7 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 

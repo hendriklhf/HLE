@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using HLE.Memory;
 using HLE.Numerics;
-using HLE.Strings;
+using HLE.Text;
 using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;

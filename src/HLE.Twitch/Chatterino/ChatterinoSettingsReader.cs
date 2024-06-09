@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using HLE.Collections;
 using HLE.Memory;
-using HLE.Strings;
+using HLE.Text;
 
 namespace HLE.Twitch.Chatterino;
 

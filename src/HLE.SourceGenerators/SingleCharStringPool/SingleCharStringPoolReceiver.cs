@@ -21,7 +21,7 @@ public sealed class SingleCharStringPoolReceiver : ISyntaxReceiver
                     }
                 }
             } equalsValue ||
-            namespaceDeclaration.Name.ToString() != "HLE.Strings")
+            namespaceDeclaration.Name.ToString() != "HLE.Text")
         {
             return;
         }
