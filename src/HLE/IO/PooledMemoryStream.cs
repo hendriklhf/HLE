@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.IL;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.IO;
@@ -415,19 +416,7 @@ public sealed class PooledMemoryStream(int capacity) :
     public byte[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<byte> ToList()
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return [];
-        }
-
-        CopyWorker<byte> copyWorker = new(source);
-        List<byte> result = new(source.Length);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public List<byte> ToList() => _length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [Pure]
     public List<byte> ToList(int start) => AsSpan().ToList(start..);

@@ -134,19 +134,7 @@ public sealed class StringArray :
     public string[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<string> ToList()
-    {
-        int length = Length;
-        if (length == 0)
-        {
-            return [];
-        }
-
-        List<string> result = new(length);
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public List<string> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [Pure]
     public List<string> ToList(int start) => AsSpan().ToList(start);

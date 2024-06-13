@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -158,16 +159,8 @@ public struct RentedArray<T> :
     [Pure]
     public readonly List<T> ToList()
     {
-        T[] array = Array;
-        if (array.Length == 0)
-        {
-            return [];
-        }
-
-        List<T> result = new(array.Length);
-        CopyWorker<T> copyWorker = new(array);
-        copyWorker.CopyTo(result);
-        return result;
+        Span<T> source = AsSpan();
+        return source.Length == 0 ? [] : ListMarshal.ConstructList(source);
     }
 
     [Pure]

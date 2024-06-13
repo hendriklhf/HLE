@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
@@ -30,7 +29,7 @@ public ref struct MemoryEnumerator<T>
         => Unsafe.AreSame(ref _memory, ref other._memory) && _current == other._current && _end == other._end;
 
     [Pure]
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
+    public override readonly bool Equals(object? obj) => false;
 
     [Pure]
     public override readonly unsafe int GetHashCode() => HashCode.Combine((nuint)Unsafe.AsPointer(ref _memory), _current, _end);

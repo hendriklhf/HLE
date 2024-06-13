@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.10.0" />
     <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
   </ItemGroup>
 
@@ -28,7 +28,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.26.0.92422">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.27.0.93347">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

@@ -5,6 +5,6 @@
     "allowPrerelease": true
   },
   "msbuild-sdks": {
-    "Microsoft.NET.Sdk.IL": "9.0.0-preview.4.24266.19"
+    "Microsoft.NET.Sdk.IL": "9.0.0-preview.5.24306.7"
   }
 }

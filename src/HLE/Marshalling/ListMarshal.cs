@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -25,7 +25,7 @@ public static class ListMarshal
             ThrowListIsEmpty();
         }
 
-        return ref UnsafeIL.GetArrayReference(array);
+        return ref MemoryMarshal.GetArrayDataReference(array);
     }
 
     [DoesNotReturn]
@@ -46,12 +46,38 @@ public static class ListMarshal
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_items")]
     private static extern ref T[] GetArrayCore<T>(List<T> list);
 
-    public static void ReturnArrayToPool<T>(List<T> list)
-    {
-        ref T[] array = ref GetArrayCore(list);
-        ArrayPool<T>.Shared.Return(array);
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_size")]
+    private static extern ref int GetCount<T>(List<T> list);
 
-        CollectionsMarshal.SetCount(list, 0);
-        array = [];
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void SetCount<T>(List<T> list, int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(count, list.Capacity);
+        GetCount(list) = count;
+    }
+
+    [Pure]
+    public static List<T> ConstructList<T>(List<T> items) => ConstructList(CollectionsMarshal.AsSpan(items));
+
+    [Pure]
+    public static List<T> ConstructList<T>(T[] items) => ConstructList(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
+
+    [Pure]
+    public static List<T> ConstructList<T>(Span<T> items) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length);
+
+    [Pure]
+    public static List<T> ConstructList<T>(ReadOnlySpan<T> items) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length);
+
+    [Pure]
+    public static List<T> ConstructList<T>(ref T items, int length)
+    {
+        Debug.Assert(length != 0);
+
+        List<T> list = [];
+        T[] array = GC.AllocateUninitializedArray<T>(length);
+        SpanHelpers<T>.Memmove(ref MemoryMarshal.GetArrayDataReference(array), ref items, (uint)length);
+        SetArray(list, array);
+        SetCount(list, length);
+        return list;
     }
 }

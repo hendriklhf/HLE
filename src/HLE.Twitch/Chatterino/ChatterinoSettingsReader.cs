@@ -19,7 +19,7 @@ public static class ChatterinoSettingsReader
 {
     private static readonly string s_windowLayoutPath = GetWindowLayoutPath();
 
-    private const string WindowLayoutFile = "window-layout.json";
+    private const string WindowLayoutFileName = "window-layout.json";
 
     /// <summary>
     /// Gets all distinct channels of all your tabs from the Chatterino settings.
@@ -27,7 +27,7 @@ public static class ChatterinoSettingsReader
     /// <returns>A string array of all channels.</returns>
     public static string[] GetChannels()
     {
-        using PooledBufferWriter<byte> windowLayoutFileContentWriter = new(64_000);
+        using PooledBufferWriter<byte> windowLayoutFileContentWriter = new();
         ReadWindowLayoutFile(windowLayoutFileContentWriter);
 
         Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
@@ -73,39 +73,36 @@ public static class ChatterinoSettingsReader
 
     private static void ReadWindowLayoutFile(PooledBufferWriter<byte> bufferWriter)
     {
-        const int BufferSize = 32768;
-
         using FileStream fileStream = File.OpenRead(s_windowLayoutPath);
-        if (fileStream.Length == 0)
+        long fileSize = fileStream.Length;
+        if (fileSize == 0)
         {
             return;
         }
 
-        int bytesRead;
-        do
-        {
-            Span<byte> buffer = bufferWriter.GetSpan(BufferSize);
-            bytesRead = fileStream.Read(buffer);
-            bufferWriter.Advance(bytesRead);
-        }
-        while (bytesRead == BufferSize);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(fileSize, Array.MaxLength);
+
+        int fileSize32 = (int)fileSize;
+        Span<byte> buffer = bufferWriter.GetSpan(fileSize32).SliceUnsafe(..fileSize32);
+        fileStream.ReadExactly(buffer);
+        bufferWriter.Advance(fileSize32);
     }
 
     private static string GetWindowLayoutPath()
     {
         if (OperatingSystem.IsWindows())
         {
-            return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Chatterino2\Settings\" + WindowLayoutFile;
+            return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Chatterino2\Settings\" + WindowLayoutFileName;
         }
 
         if (OperatingSystem.IsLinux())
         {
-            return $"~/.local/share/chatterino/Settings/{WindowLayoutFile}";
+            return $"~/.local/share/chatterino/Settings/{WindowLayoutFileName}";
         }
 
         if (OperatingSystem.IsMacOS())
         {
-            return $"~/Library/Application Support/chatterino/Settings/{WindowLayoutFile}";
+            return $"~/Library/Application Support/chatterino/Settings/{WindowLayoutFileName}";
         }
 
         ThrowHelper.ThrowOperatingSystemNotSupported();

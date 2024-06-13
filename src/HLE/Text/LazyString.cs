@@ -179,18 +179,7 @@ public sealed class LazyString :
     public char[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<char> ToList()
-    {
-        if (Length == 0)
-        {
-            return [];
-        }
-
-        List<char> result = new(Length);
-        CopyWorker<char> copyWorker = new(ref GetReference(), (uint)Length);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public List<char> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [Pure]
     public List<char> ToList(int start) => AsSpan().ToList(start);

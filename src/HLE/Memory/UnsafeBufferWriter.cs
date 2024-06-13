@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
@@ -64,7 +63,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
 
     public readonly bool Equals(UnsafeBufferWriter<T> other) => Count == other.Count && Unsafe.AreSame(ref _buffer, ref other._buffer);
 
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
+    public override readonly bool Equals(object? obj) => false;
 
     public override readonly int GetHashCode() => ((nuint)Unsafe.AsPointer(ref _buffer)).GetHashCode();
 

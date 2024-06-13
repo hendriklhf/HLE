@@ -206,19 +206,7 @@ public ref struct ValueBufferWriter<T>
     public readonly T[] ToArray(Range range) => WrittenSpan.ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList()
-    {
-        Span<T> writtenSpan = WrittenSpan;
-        if (writtenSpan.Length == 0)
-        {
-            return [];
-        }
-
-        List<T> result = new(writtenSpan.Length);
-        CopyWorker<T> copyWorker = new(writtenSpan);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public readonly List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(WrittenSpan);
 
     /// <summary>
     /// Trims unused buffer size.<br/>

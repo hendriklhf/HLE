@@ -153,19 +153,7 @@ public ref struct ValueList<T>
     public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList()
-    {
-        Span<T> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return [];
-        }
-
-        List<T> result = new(source.Length);
-        CopyWorker<T> copyWorker = new(source);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public readonly List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowIfNeeded(int sizeHint)

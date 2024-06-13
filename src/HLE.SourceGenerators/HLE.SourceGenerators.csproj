@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="9.0.0-preview.4.24266.19" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.9.2" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.10.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,7 +37,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.26.0.92422">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.27.0.93347">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

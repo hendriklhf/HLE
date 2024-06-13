@@ -111,4 +111,14 @@
         ldarg.0
         ret
     }
+
+    .method public hidebysig static !!T& Unbox<T>(object obj) cil managed aggressiveinlining
+    {
+        .maxstack 2
+
+        ldarg.0
+        sizeof [System.Runtime]System.UIntPtr
+        add
+        ret
+    }
 }

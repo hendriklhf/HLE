@@ -123,4 +123,8 @@ public static unsafe class StructMarshal
            typeof(T) == typeof(RangeEnumerator) ||
            typeof(T).IsEnum ||
            typeof(T).IsAssignableTo(typeof(IBitwiseEquatable<T>));
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref T Unbox<T>(object obj) => ref UnsafeIL.Unbox<T>(obj);
 }

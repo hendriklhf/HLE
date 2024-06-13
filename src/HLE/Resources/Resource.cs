@@ -7,6 +7,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Text;
 
@@ -91,18 +92,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     public byte[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<byte> ToList()
-    {
-        if (Length == 0)
-        {
-            return [];
-        }
-
-        List<byte> result = new(Length);
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public List<byte> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [Pure]
     public List<byte> ToList(int start) => AsSpan().ToList(start);

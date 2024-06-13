@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -244,20 +245,7 @@ public unsafe partial struct NativeMemory<T> :
     public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList()
-    {
-        int length = Length;
-        if (length == 0)
-        {
-            return [];
-        }
-
-        T* source = Pointer;
-        List<T> result = new(length);
-        CopyWorker<T> copyWorker = new(source, length);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public readonly List<T> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [Pure]
     public readonly List<T> ToList(int start) => AsSpan().ToList(start);

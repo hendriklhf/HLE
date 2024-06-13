@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 
 namespace HLE.Memory;
 
@@ -60,33 +61,11 @@ public static class SpanExtensions
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToList<T>(this Span<T> span)
-    {
-        if (span.Length == 0)
-        {
-            return [];
-        }
-
-        List<T> result = new(span.Length);
-        CopyWorker<T> copyWorker = new(span);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public static List<T> ToList<T>(this Span<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToList<T>(this ReadOnlySpan<T> span)
-    {
-        if (span.Length == 0)
-        {
-            return [];
-        }
-
-        List<T> result = new(span.Length);
-        CopyWorker<T> copyWorker = new(span);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public static List<T> ToList<T>(this ReadOnlySpan<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,10 +110,6 @@ public static class SpanExtensions
         }
 
         ref T source = ref Slicer<T>.GetStart(ref span, spanLength, start, length);
-
-        List<T> result = new(length);
-        CopyWorker<T> copyWorker = new(ref source, length);
-        copyWorker.CopyTo(result);
-        return result;
+        return ListMarshal.ConstructList(ref source, length);
     }
 }

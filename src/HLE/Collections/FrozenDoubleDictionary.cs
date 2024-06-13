@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -111,19 +112,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     }
 
     [Pure]
-    public List<TValue> ToList()
-    {
-        int count = Count;
-        if (count == 0)
-        {
-            return [];
-        }
-
-        List<TValue> result = new(count);
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public List<TValue> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(Values.AsSpan());
 
     [Pure]
     public List<TValue> ToList(int start) => Values.AsSpan().ToList(start);

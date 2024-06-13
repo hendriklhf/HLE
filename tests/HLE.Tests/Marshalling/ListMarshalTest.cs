@@ -100,4 +100,89 @@ public sealed class ListMarshalTest
             int[] array = new int[4];
             ListMarshal.SetArray(list, array);
         });
+
+    [Fact]
+    public void ListsDefaultArrayIsEmptyAndAlwaysSameInstance()
+    {
+        // this is testing external code, but current implementations assert that
+        // no new array is allocated for an empty list and the same empty array is used every time
+
+        List<int> l1 = [];
+        List<int> l2 = [];
+
+        int[] a1 = ListMarshal.GetArray(l1);
+        int[] a2 = ListMarshal.GetArray(l2);
+
+        Assert.Empty(a1);
+        Assert.Empty(a2);
+        Assert.Same(a1, a2);
+    }
+
+    [Fact]
+    public void SetCount_Test()
+    {
+        List<int> list = [];
+        ListMarshal.SetArray(list, new int[8]);
+        ListMarshal.SetCount(list, 8);
+
+        Assert.Equal(8, list.Count);
+        Assert.Equal(8, list.Capacity);
+    }
+
+    [Fact]
+    public void SetCount_ThrowsArgumentOutOfRangeException_Test()
+    {
+        List<int> list = [];
+        Assert.Throws<ArgumentOutOfRangeException>(() => ListMarshal.SetCount(list, 1));
+    }
+
+    [Fact]
+    public void ConstructList_ReadOnlySpan_Test()
+    {
+        ReadOnlySpan<int> items = [0, 1, 2, 3, 4];
+        List<int> list = ListMarshal.ConstructList(items);
+
+        Assert.True(items.SequenceEqual(CollectionsMarshal.AsSpan(list)));
+        Assert.True(list.Capacity >= items.Length);
+    }
+
+    [Fact]
+    public void ConstructList_Span_Test()
+    {
+        Span<int> items = [0, 1, 2, 3, 4];
+        List<int> list = ListMarshal.ConstructList(items);
+
+        Assert.True(items.SequenceEqual(CollectionsMarshal.AsSpan(list)));
+        Assert.True(list.Capacity >= items.Length);
+    }
+
+    [Fact]
+    public void ConstructList_Array_Test()
+    {
+        int[] items = [0, 1, 2, 3, 4];
+        List<int> list = ListMarshal.ConstructList(items);
+
+        Assert.True(items.AsSpan().SequenceEqual(CollectionsMarshal.AsSpan(list)));
+        Assert.True(list.Capacity >= items.Length);
+    }
+
+    [Fact]
+    public void ConstructList_List_Test()
+    {
+        List<int> items = [0, 1, 2, 3, 4];
+        List<int> list = ListMarshal.ConstructList(items);
+
+        Assert.True(CollectionsMarshal.AsSpan(items).SequenceEqual(CollectionsMarshal.AsSpan(list)));
+        Assert.True(list.Capacity >= items.Count);
+    }
+
+    [Fact]
+    public void ConstructList_Ref_Test()
+    {
+        ReadOnlySpan<int> items = [0, 1, 2, 3, 4];
+        List<int> list = ListMarshal.ConstructList(ref MemoryMarshal.GetReference(items), items.Length);
+
+        Assert.True(items.SequenceEqual(CollectionsMarshal.AsSpan(list)));
+        Assert.True(list.Capacity >= items.Length);
+    }
 }

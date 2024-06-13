@@ -14,7 +14,7 @@ public sealed class EmojiFileTest
         foreach (FieldInfo field in fields)
         {
             object? value = field.GetValue(null);
-            Assert.True(value is string { Length: > 0 });
+            Assert.True(value is string { Length: not 0 });
         }
     }
 }

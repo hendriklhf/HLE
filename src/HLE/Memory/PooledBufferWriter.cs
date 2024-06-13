@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -191,19 +192,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public T[] ToArray(Range range) => WrittenSpan.ToArray(range);
 
     [Pure]
-    public List<T> ToList()
-    {
-        Span<T> writtenSpan = WrittenSpan;
-        if (writtenSpan.Length == 0)
-        {
-            return [];
-        }
-
-        List<T> result = new(writtenSpan.Length);
-        CopyWorker<T> copyWorker = new(writtenSpan);
-        copyWorker.CopyTo(result);
-        return result;
-    }
+    public List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(WrittenSpan);
 
     [Pure]
     public List<T> ToList(int start) => WrittenSpan.ToList(start);

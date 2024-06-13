@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -14,6 +15,7 @@ internal static class ObjectTree
     private static readonly ConcurrentDictionary<Type, FieldInfo[]> s_fieldInfoCache = new();
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getInlineArrayElementsSizeCache = new();
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getArrayElementsSizeCache = new();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> s_getSizeCache = new();
 
     [Pure]
     public static unsafe nuint GetSize<T>(ref T obj)
@@ -50,7 +52,7 @@ internal static class ObjectTree
                 if (typeof(T).IsSZArray)
                 {
                     Type elementType = typeof(T).GetElementType()!;
-                    if (!ObjectMarshal.IsReferenceOrContainsReference(elementType))
+                    if (ObjectMarshal.IsReferenceOrContainsReference(elementType))
                     {
                         return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
                     }
@@ -69,6 +71,7 @@ internal static class ObjectTree
     {
         nuint size = 0;
         ReadOnlySpan<FieldInfo> instanceFields = GetFields(typeof(T));
+        object o = obj!; // boxing into a local to only box once and not for each loop iteration
         foreach (FieldInfo field in instanceFields)
         {
             if (!ObjectMarshal.IsReferenceOrContainsReference(field.FieldType))
@@ -76,11 +79,26 @@ internal static class ObjectTree
                 continue;
             }
 
-            object? fieldValue = field.GetValue(obj); // TODO: boxes 'obj' and the field's value
-            size += fieldValue is not null ? GetSize(ref fieldValue) : 0; // TODO: 'GetSize' can't be call with 'object' as generic type
+            object? fieldValue = field.GetValue(o); // TODO: boxes 'obj' and the field's value
+            size += fieldValue is not null ? GetSizeNonGeneric(fieldValue, field.FieldType) : 0;
         }
 
         return size;
+    }
+
+    private static unsafe nuint GetSizeNonGeneric(object? obj, Type type)
+    {
+        Debug.Assert(obj is not null);
+
+        if (!s_getSizeCache.TryGetValue(type, out MethodInfo? method))
+        {
+            MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetSize), BindingFlags.Public | BindingFlags.Static)!;
+            method = nonGenericMethod.MakeGenericMethod(type);
+            s_getSizeCache.TryAdd(type, method);
+        }
+
+        delegate*<ref byte, nuint> getSize = (delegate*<ref byte, nuint>)method.MethodHandle.GetFunctionPointer();
+        return type.IsValueType ? getSize(ref UnsafeIL.Unbox<byte>(obj)) : getSize(ref Unsafe.As<object, byte>(ref obj));
     }
 
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
