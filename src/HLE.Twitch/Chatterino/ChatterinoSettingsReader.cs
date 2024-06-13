@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -16,7 +17,7 @@ namespace HLE.Twitch.Chatterino;
 [SupportedOSPlatform("macos")]
 public static class ChatterinoSettingsReader
 {
-    private static string? s_windowLayoutPath;
+    private static readonly string s_windowLayoutPath = GetWindowLayoutPath();
 
     private const string WindowLayoutFile = "window-layout.json";
 
@@ -70,11 +71,24 @@ public static class ChatterinoSettingsReader
         return channels.ToArray();
     }
 
-    private static void ReadWindowLayoutFile(PooledBufferWriter<byte> windowLayoutFileContentWriter)
+    private static void ReadWindowLayoutFile(PooledBufferWriter<byte> bufferWriter)
     {
-        // TODO: read file buffered
-        s_windowLayoutPath ??= GetWindowLayoutPath();
-        windowLayoutFileContentWriter.Clear();
+        const int BufferSize = 32768;
+
+        using FileStream fileStream = File.OpenRead(s_windowLayoutPath);
+        if (fileStream.Length == 0)
+        {
+            return;
+        }
+
+        int bytesRead;
+        do
+        {
+            Span<byte> buffer = bufferWriter.GetSpan(BufferSize);
+            bytesRead = fileStream.Read(buffer);
+            bufferWriter.Advance(bytesRead);
+        }
+        while (bytesRead == BufferSize);
     }
 
     private static string GetWindowLayoutPath()

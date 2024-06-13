@@ -501,6 +501,8 @@ public sealed class StringArrayTest
         Assert.Equal(1, index);
     }
 
+    // TODO: add missing tests
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static TTo Convert<TFrom, TTo>(TFrom from) => UnsafeIL.As<TFrom, TTo>(from);
 

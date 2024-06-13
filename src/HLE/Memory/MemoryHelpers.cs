@@ -31,9 +31,10 @@ public static unsafe class MemoryHelpers
         return totalByteSize <= s_maximumStackallocSize;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [Pure]
     public static bool IsAligned(void* pointer, nuint alignment) => IsAligned(ref Unsafe.AsRef<byte>(pointer), alignment);
 
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAligned<T>(ref T reference, nuint alignment)
     {
@@ -46,6 +47,10 @@ public static unsafe class MemoryHelpers
         return (value & (alignment - 1)) == 0;
     }
 
+    [Pure]
+    public static T* Align<T>(T* pointer, nuint alignment, AlignmentMethod method) => (T*)Unsafe.AsPointer(ref Align(ref Unsafe.AsRef<T>(pointer), alignment, method));
+
+    [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T Align<T>(ref T reference, nuint alignment, AlignmentMethod method)
     {

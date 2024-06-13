@@ -17,7 +17,6 @@ public sealed partial class ArrayPool<T>
         [Pure]
         public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength, true);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
             lock (_stack)
@@ -68,7 +67,6 @@ public sealed partial class ArrayPool<T>
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Return(T[] array, bool clearArray)
         {
             lock (_stack)
@@ -85,7 +83,6 @@ public sealed partial class ArrayPool<T>
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
             lock (_stack)

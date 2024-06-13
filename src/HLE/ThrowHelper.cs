@@ -43,4 +43,8 @@ internal static class ThrowHelper
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowOperatingSystemNotSupported()
         => throw new NotSupportedException("The current operating system is not yet supported.");
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowNotSupportedException(string message) => throw new NotSupportedException(message);
 }

@@ -246,11 +246,7 @@ public static class StringHelpers
     private static int RegexEscape(ReadOnlySpan<char> input, Span<char> destination, int indexOfMetaChar)
     {
         Debug.Assert(indexOfMetaChar >= 0, "This method should only be called if the input contains a meta char.");
-
-        if (input.Length == 0)
-        {
-            return 0;
-        }
+        Debug.Assert(input.Length != 0, $"If {nameof(indexOfMetaChar)} >= 0, the length of the input can't be 0.");
 
         SearchValues<char> regexMetaCharsSearchValues = s_regexMetaCharsSearchValues;
         int resultLength = 0;

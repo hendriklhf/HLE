@@ -14,9 +14,9 @@ using HLE.Memory;
 
 namespace HLE.IO;
 
-public sealed class PooledStream(int capacity) :
+public sealed class PooledMemoryStream(int capacity) :
     Stream,
-    IEquatable<PooledStream>,
+    IEquatable<PooledMemoryStream>,
     IMemoryProvider<byte>,
     ISpanProvider<byte>,
     ICollectionProvider<byte>,
@@ -64,11 +64,11 @@ public sealed class PooledStream(int capacity) :
     private int _length;
     private int _position;
 
-    public PooledStream() : this(0)
+    public PooledMemoryStream() : this(0)
     {
     }
 
-    public PooledStream(ReadOnlySpan<byte> bytes) : this(bytes.Length)
+    public PooledMemoryStream(ReadOnlySpan<byte> bytes) : this(bytes.Length)
     {
         SpanHelpers<byte>.Copy(bytes, _buffer.AsSpan());
         _length = bytes.Length;
@@ -310,7 +310,7 @@ public sealed class PooledStream(int capacity) :
         byte[]? buffer = _buffer;
         if (buffer is null)
         {
-            ThrowHelper.ThrowObjectDisposedException<PooledStream>();
+            ThrowHelper.ThrowObjectDisposedException<PooledMemoryStream>();
         }
 
         return buffer;
@@ -453,7 +453,7 @@ public sealed class PooledStream(int capacity) :
     Span<byte> ISpanProvider<byte>.GetSpan() => AsSpan();
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] PooledStream? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] PooledMemoryStream? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
@@ -461,7 +461,7 @@ public sealed class PooledStream(int capacity) :
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(PooledStream? left, PooledStream? right) => Equals(left, right);
+    public static bool operator ==(PooledMemoryStream? left, PooledMemoryStream? right) => Equals(left, right);
 
-    public static bool operator !=(PooledStream? left, PooledStream? right) => !(left == right);
+    public static bool operator !=(PooledMemoryStream? left, PooledMemoryStream? right) => !(left == right);
 }

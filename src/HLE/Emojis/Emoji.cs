@@ -6,11 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HLE.Text;
-using SingleCharStringPool = HLE.Text.SingleCharStringPool;
 
 namespace HLE.Emojis;
-
-#pragma warning disable CA1708
 
 /// <summary>
 /// A class that contains (almost) all existing emojis.
@@ -41,6 +38,7 @@ public static partial class Emoji
     [Pure]
     public static bool IsEmoji(string text) => s_emojis.Contains(text);
 
+    [Pure]
     public static bool IsEmoji(ref PooledInterpolatedStringHandler text)
     {
         try

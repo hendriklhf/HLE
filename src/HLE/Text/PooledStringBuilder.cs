@@ -109,7 +109,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public void Append(char[] chars) => Append(ref MemoryMarshal.GetArrayDataReference(chars), chars.Length);
 
-    public void Append(string str) => Append(StringMarshal.GetReference(str), str.Length);
+    public void Append(string str) => Append(ref StringMarshal.GetReference(str), str.Length);
 
     public void Append(ReadOnlySpan<char> chars) => Append(ref MemoryMarshal.GetReference(chars), chars.Length);
 

@@ -289,38 +289,14 @@ public sealed class PooledList<T>(int capacity) :
     [Pure]
     public bool Contains(T item) => IndexOf(item) >= 0;
 
-    public bool Remove(T item)
-    {
-        int index = IndexOf(item);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        T[] buffer = GetBuffer();
-        buffer.AsSpan((index + 1)..).CopyTo(buffer.AsSpan(index..));
-        Count--;
-        return true;
-    }
+    public bool Remove(T item) => throw new NotSupportedException(); // TODO: implement
 
     [Pure]
     public int IndexOf(T item) => Array.IndexOf(GetBuffer(), item, 0, Count);
 
-    public void Insert(int index, T item)
-    {
-        GrowIfNeeded(1);
-        Count++;
-        Span<T> buffer = AsSpan();
-        buffer[index..^1].CopyTo(buffer[(index + 1)..]);
-        buffer[index] = item;
-    }
+    public void Insert(int index, T item) => throw new NotSupportedException(); // TODO: implement
 
-    public void RemoveAt(int index)
-    {
-        Span<T> buffer = AsSpan();
-        buffer[(index + 1)..].CopyTo(buffer[index..]);
-        Count--;
-    }
+    public void RemoveAt(int index) => throw new NotSupportedException(); // TODO: implement
 
     public void CopyTo(List<T> destination, int offset = 0)
     {

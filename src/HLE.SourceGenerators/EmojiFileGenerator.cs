@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
 namespace HLE.SourceGenerators;
@@ -13,20 +14,18 @@ namespace HLE.SourceGenerators;
 [SuppressMessage("ReSharper", "ReplaceSliceWithRangeIndexer")]
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
-    private byte[]? _emojiJsonBytes;
+    private Emoji[]? _emojis;
 
-    private static readonly Dictionary<string, string> s_illegalEmojiNameReplacements = new(12)
+    private static readonly Dictionary<string, string> s_illegalEmojiNameReplacements = new()
     {
-        { "100", "Hundred" },
-        { "+1", "ThumbUp" },
-        { "-1", "ThumbDown" },
-        { "T-rex", "TRex" },
+        { "+1", "ThumbsUp" },
+        { "-1", "ThumbsDown" },
         { "1st_place_medal", "FirstPlaceMedal" },
         { "2nd_place_medal", "SecondPlaceMedal" },
         { "3rd_place_medal", "ThirdPlaceMedal" },
         { "8ball", "EightBall" },
-        { "Non-potable_water", "NonPotableWater" },
         { "1234", "OneTwoThreeFour" },
+        { "100", "OneHundred" },
         { "icecream", "SoftIceCream" },
         { "ice_cream", "IceCream" }
     };
@@ -41,36 +40,35 @@ public sealed class EmojiFileGenerator : ISourceGenerator
     [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
     public async void Initialize(GeneratorInitializationContext _)
     {
-        byte[]? emojiJsonBytes = _emojiJsonBytes;
-        if (emojiJsonBytes is not null)
-        {
-            return;
-        }
+        using Stream emojiJsonBytes = await GetEmojiJsonBytesAsync();
+        _emojis = await JsonSerializer.DeserializeAsync<Emoji[]>(emojiJsonBytes);
+    }
 
-        if (TryGetEmojiJsonBytesFromCache(out emojiJsonBytes))
-        {
-            _emojiJsonBytes = emojiJsonBytes;
-            return;
-        }
+    private static ValueTask<Stream> GetEmojiJsonBytesAsync()
+    {
+        return TryGetEmojiJsonBytesFromCache(out Stream? emojiJsonBytes) ? new(emojiJsonBytes!) : GetEmojiJsonBytesCoreAsync();
 
-        using HttpClient httpClient = new();
-        emojiJsonBytes = await httpClient.GetByteArrayAsync(HttpRequestUrl);
-        WriteBytesToCacheFile(emojiJsonBytes);
-        _emojiJsonBytes = emojiJsonBytes;
+        static async ValueTask<Stream> GetEmojiJsonBytesCoreAsync()
+        {
+            using HttpClient httpClient = new();
+            Stream? emojiJsonBytes = await httpClient.GetStreamAsync(HttpRequestUrl);
+            await WriteBytesToCacheFileAsync(emojiJsonBytes);
+            return emojiJsonBytes;
+        }
     }
 
     public void Execute(GeneratorExecutionContext context)
     {
-        StringBuilder sourceBuilder = new(64_000);
+        StringBuilder sourceBuilder = new(65536);
         sourceBuilder.AppendLine("namespace HLE.Emojis;").AppendLine();
         sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
-        AppendEmojis(sourceBuilder);
+        AppendEmojis(sourceBuilder, _emojis);
         sourceBuilder.AppendLine("}");
         context.AddSource("HLE.Emojis.Emoji.g.cs", sourceBuilder.ToString());
     }
 
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
-    private static bool TryGetEmojiJsonBytesFromCache(out byte[]? emojiJsonBytes)
+    private static bool TryGetEmojiJsonBytesFromCache(out Stream? emojiJsonBytes)
     {
         string cacheDirectory = Path.Combine(Path.GetTempPath(), CacheDirectory);
         if (!Directory.Exists(cacheDirectory))
@@ -94,12 +92,12 @@ public sealed class EmojiFileGenerator : ISourceGenerator
             return false;
         }
 
-        emojiJsonBytes = File.ReadAllBytes(emojiFilePath);
+        emojiJsonBytes = File.OpenRead(emojiFilePath);
         return true;
     }
 
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
-    private static void WriteBytesToCacheFile(byte[] emojiJsonBytes)
+    private static async Task WriteBytesToCacheFileAsync(Stream emojiJsonBytes)
     {
         string cacheDirectory = Path.Combine(Path.GetTempPath(), CacheDirectory);
         if (!Directory.Exists(cacheDirectory))
@@ -108,82 +106,51 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
 
         string emojiJsonPath = Path.Combine(cacheDirectory, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
-        File.WriteAllBytes(emojiJsonPath, emojiJsonBytes);
+        using FileStream jsonFile = File.OpenWrite(emojiJsonPath);
+        await emojiJsonBytes.CopyToAsync(jsonFile);
     }
 
-    private void AppendEmojis(StringBuilder sourceBuilder)
+    private static void AppendEmojis(StringBuilder sourceBuilder, ReadOnlySpan<Emoji> emojis)
     {
-        JsonReaderOptions options = new()
+        for (int i = 0; i < emojis.Length; i++)
         {
-            CommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true
-        };
-        Utf8JsonReader jsonReader = new(_emojiJsonBytes, options);
-
-        char[] emojiBuffer = new char[100];
-        int emojiLength = 0;
-        char[] nameBuffer = new char[100];
-
-        while (jsonReader.Read())
-        {
-            switch (jsonReader.TokenType)
-            {
-                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals("emoji"u8):
-                    GetEmoji(ref jsonReader, emojiBuffer, out emojiLength);
-                    break;
-                case JsonTokenType.PropertyName when jsonReader.ValueTextEquals("aliases"u8):
-                    AppendEmojiName(sourceBuilder, ref jsonReader, nameBuffer, emojiBuffer, emojiLength);
-                    break;
-                default:
-                    continue;
-            }
+            Emoji emoji = emojis[i];
+            sourceBuilder.Append(Indentation).Append("public const string ").Append(NormalizeName(emoji.Name)).Append(" = ");
+            sourceBuilder.Append('"').Append(emoji.Value).AppendLine("\";");
         }
     }
 
-    private static void GetEmoji(ref Utf8JsonReader jsonReader, char[] emojiBuffer, out int emojiLength)
+    private static string NormalizeName(string name)
     {
-        jsonReader.Read();
-        ReadOnlySpan<byte> emojiBytes = jsonReader.ValueSpan;
-        emojiLength = Encoding.UTF8.GetChars(emojiBytes.ToArray(), 0, emojiBytes.Length, emojiBuffer, 0);
-    }
-
-    private static void AppendEmojiName(StringBuilder sourceBuilder, ref Utf8JsonReader jsonReader, char[] nameBuffer, char[] emojiBuffer, int emojiLength)
-    {
-        jsonReader.Read();
-        jsonReader.Read();
-        ReadOnlySpan<byte> nameBytes = jsonReader.ValueSpan;
-        int nameLength = Encoding.UTF8.GetChars(nameBytes.ToArray(), 0, nameBytes.Length, nameBuffer, 0);
-        nameBuffer[0] = char.ToUpper(nameBuffer[0]);
-        CheckForIllegalName(nameBuffer, ref nameLength);
-        sourceBuilder.Append(Indentation).Append("public const string ").Append(nameBuffer.AsSpan().Slice(0, nameLength).ToArray()).Append(' ');
-        sourceBuilder.Append("= \"").Append(emojiBuffer.AsSpan().Slice(0, emojiLength).ToArray()).AppendLine("\";");
-    }
-
-    private static void CheckForIllegalName(Span<char> name, ref int nameLength)
-    {
-        ReadOnlySpan<char> readOnlyName = name.Slice(0, nameLength);
-        foreach (KeyValuePair<string, string> illegalVariableName in s_illegalEmojiNameReplacements)
+        if (s_illegalEmojiNameReplacements.TryGetValue(name, out string replacement))
         {
-            if (!readOnlyName.SequenceEqual(illegalVariableName.Key.AsSpan()))
+            return replacement;
+        }
+
+        bool neededNormalization = false;
+        Span<char> buffer = stackalloc char[name.Length];
+        name.AsSpan().CopyTo(buffer);
+        char firstChar = buffer[0];
+        if (char.IsLower(firstChar))
+        {
+            buffer[0] = char.ToUpper(firstChar);
+            neededNormalization = true;
+        }
+
+        for (int i = 1; i < buffer.Length; i++)
+        {
+            char c = buffer[i];
+            if (c is not '_' and not ' ' and not '-')
             {
                 continue;
             }
 
-            illegalVariableName.Value.AsSpan().CopyTo(name);
-            nameLength = illegalVariableName.Value.Length;
-            return;
+            buffer.Slice(i + 1).CopyTo(buffer.Slice(i));
+            buffer = buffer.Slice(0, buffer.Length - 1);
+            buffer[i] = char.ToUpper(buffer[i]);
+            neededNormalization = true;
         }
 
-        for (int i = 0; i < nameLength; i++)
-        {
-            if (name[i] != '_')
-            {
-                continue;
-            }
-
-            name.Slice(i + 1, nameLength).CopyTo(name.Slice(i));
-            nameLength--;
-            name[i] = char.ToUpper(name[i]);
-        }
+        return neededNormalization ? buffer.ToString() : name;
     }
 }
