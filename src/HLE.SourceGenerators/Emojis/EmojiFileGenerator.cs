@@ -8,7 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
-namespace HLE.SourceGenerators;
+namespace HLE.SourceGenerators.Emojis;
 
 [Generator]
 [SuppressMessage("ReSharper", "ReplaceSliceWithRangeIndexer")]

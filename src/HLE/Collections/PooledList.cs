@@ -66,7 +66,7 @@ public sealed class PooledList<T>(int capacity) :
     [MustDisposeResource]
     public PooledList(ReadOnlySpan<T> items) : this(items.Length)
     {
-        SpanHelpers<T>.Copy(items, _buffer.AsSpan());
+        SpanHelpers.Copy(items, _buffer.AsSpan());
         Count = items.Length;
     }
 
@@ -107,7 +107,7 @@ public sealed class PooledList<T>(int capacity) :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(source.Length);
-        SpanHelpers<T>.Copy(source, result);
+        SpanHelpers.Copy(source, result);
         return result;
     }
 
@@ -141,19 +141,42 @@ public sealed class PooledList<T>(int capacity) :
     ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => AsMemory();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    private ref T GetDestination(int sizeHint)
+    {
+        Debug.Assert(sizeHint > 0);
+
+        T[]? buffer = _buffer;
+        if (buffer is null)
+        {
+            ThrowHelper.ThrowObjectDisposedException<PooledList<T>>();
+        }
+
+        int count = Count;
+        int freeBufferSpace = buffer.Length - count;
+        if (freeBufferSpace >= sizeHint)
+        {
+            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buffer), count);
+        }
+
+        return ref GrowAndGetDestination(sizeHint - freeBufferSpace);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowIfNeeded(int sizeHint)
     {
+        Debug.Assert(sizeHint > 0);
+
         int freeSpace = Capacity - Count;
         if (freeSpace >= sizeHint)
         {
             return;
         }
 
-        Grow(sizeHint - freeSpace);
+        GrowAndGetDestination(sizeHint - freeSpace);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
-    private void Grow(int neededSize)
+    private ref T GrowAndGetDestination(int neededSize)
     {
         Debug.Assert(neededSize >= 0);
 
@@ -163,17 +186,18 @@ public sealed class PooledList<T>(int capacity) :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(newSize);
         if (count != 0)
         {
-            SpanHelpers<T>.Copy(oldBuffer.AsSpan(..count), newBuffer);
+            SpanHelpers.Copy(oldBuffer.AsSpan(..count), newBuffer);
         }
 
         ArrayPool<T>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
+        return ref MemoryMarshal.GetArrayDataReference(newBuffer);
     }
 
     public void Add(T item)
     {
-        GrowIfNeeded(1);
-        Unsafe.Add(ref GetBufferReference(), Count++) = item;
+        GetDestination(1) = item;
+        Count++;
     }
 
     public void AddRange(IEnumerable<T> items)
@@ -186,7 +210,9 @@ public sealed class PooledList<T>(int capacity) :
             }
 
             GrowIfNeeded(itemsCount);
-            T[] buffer = GetBuffer();
+            AssertBufferNotNull();
+            T[] buffer = _buffer;
+
             int count = Count;
             if (items.TryNonEnumeratedCopyTo(buffer, count, out _))
             {
@@ -223,11 +249,8 @@ public sealed class PooledList<T>(int capacity) :
             return;
         }
 
-        GrowIfNeeded(items.Length);
-        int count = Count;
-        ref T destination = ref Unsafe.Add(ref GetBufferReference(), count);
-        SpanHelpers<T>.Copy(items, ref destination);
-        Count = count + items.Length;
+        SpanHelpers.Copy(items, ref GetDestination(items.Length));
+        Count += items.Length;
     }
 
     /// <summary>
@@ -259,7 +282,7 @@ public sealed class PooledList<T>(int capacity) :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
         ref T source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-        SpanHelpers<T>.Memmove(ref destination, ref source, (uint)count);
+        SpanHelpers.Memmove(ref destination, ref source, (uint)count);
         _buffer = newBuffer;
     }
 
@@ -278,14 +301,60 @@ public sealed class PooledList<T>(int capacity) :
     [Pure]
     public bool Contains(T item) => IndexOf(item) >= 0;
 
-    public bool Remove(T item) => throw new NotSupportedException(); // TODO: implement
+    public bool Remove(T item)
+    {
+        int index = IndexOf(item);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        RemoveAt(index);
+        return true;
+    }
 
     [Pure]
     public int IndexOf(T item) => Array.IndexOf(GetBuffer(), item, 0, Count);
 
-    public void Insert(int index, T item) => throw new NotSupportedException(); // TODO: implement
+    public void Insert(int index, T item)
+    {
+        GrowIfNeeded(1);
 
-    public void RemoveAt(int index) => throw new NotSupportedException(); // TODO: implement
+        int count = Count;
+        AssertBufferNotNull();
+        ref T buffer = ref MemoryMarshal.GetArrayDataReference(_buffer);
+        ref T destination = ref Unsafe.Add(ref buffer, index);
+
+        if (index != count)
+        {
+            SpanHelpers.Memmove(ref Unsafe.Add(ref buffer, index + 1), ref destination, (uint)(count - index - 1));
+        }
+
+        destination = item;
+        Count = count + 1;
+    }
+
+    public void RemoveAt(int index)
+    {
+        int count = Count;
+        int lastIndex = count - 1;
+        ref T buffer = ref GetBufferReference();
+
+        if (index != lastIndex)
+        {
+            ref T source = ref Unsafe.Add(ref buffer, index + 1);
+            ref T destination = ref Unsafe.Add(ref buffer, index);
+            SpanHelpers.Memmove(ref destination, ref source, (uint)(count - index - 1));
+        }
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            ref T lastItem = ref Unsafe.Add(ref buffer, lastIndex);
+            lastItem = default!; // remove reference from list
+        }
+
+        Count = lastIndex;
+    }
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
@@ -337,6 +406,10 @@ public sealed class PooledList<T>(int capacity) :
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref T GetBufferReference() => ref MemoryMarshal.GetArrayDataReference(GetBuffer());
+
+    [Conditional("DEBUG")]
+    [MemberNotNull(nameof(_buffer))]
+    private void AssertBufferNotNull() => Debug.Assert(_buffer is not null, $"{nameof(_buffer)} can't be null. An exception should have been thrown before.");
 
     [Pure]
     public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);

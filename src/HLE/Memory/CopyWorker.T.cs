@@ -115,7 +115,7 @@ public readonly unsafe ref struct CopyWorker<T>
         CopyTo(ref MemoryMarshal.GetReference(destination));
     }
 
-    public void CopyTo(scoped ref T destination) => SpanHelpers<T>.Memmove(ref destination, ref _source, _length);
+    public void CopyTo(scoped ref T destination) => SpanHelpers.Memmove(ref destination, ref _source, _length);
 
     public void CopyTo(T* destination) => CopyTo(ref Unsafe.AsRef<T>(destination));
 

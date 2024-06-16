@@ -13,7 +13,6 @@ public abstract class StringBuilderMethodBuilder(StringBuilder builder)
     private protected const string Indentation = "    ";
     private protected const string HleMemoryNamespace = "HLE.Memory";
     private protected const string SpanHelpersTypeName = "SpanHelpers";
-    private protected const string SpanHelpersGenericParameter = "<char>";
     private protected const string CopyMethodName = "Copy";
     private protected const string FreeBufferSpanPropertyName = "FreeBufferSpan";
     private protected const string SystemRuntimeCompilerServicesNamespace = "System.Runtime.CompilerServices";
@@ -44,7 +43,7 @@ public abstract class StringBuilderMethodBuilder(StringBuilder builder)
     {
         _builder.Append(Indentation + Indentation);
         _builder.Append("global::").Append(HleMemoryNamespace).Append('.').Append(SpanHelpersTypeName);
-        _builder.Append(SpanHelpersGenericParameter).Append('.').Append(CopyMethodName).Append('(');
+        _builder.Append('.').Append(CopyMethodName).Append('(');
         _builder.Append(argument).Append(", ").Append(FreeBufferSpanPropertyName).AppendLine(");");
         _builder.Append(Indentation + Indentation);
         _builder.Append(LengthPropertyName).Append(" += ").Append(argument).Append('.').Append(LengthPropertyName).Append(';').AppendLine();

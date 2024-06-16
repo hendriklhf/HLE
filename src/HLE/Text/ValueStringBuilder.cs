@@ -139,12 +139,13 @@ public unsafe ref partial struct ValueStringBuilder
     {
         GrowIfNeeded(length);
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
-        SpanHelpers<char>.Memmove(ref destination, ref chars, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref chars, (uint)length);
         Length += length;
     }
 
     public void Append(char c)
     {
+        // TODO: optimize buffer retrieving like in PooledList
         GrowIfNeeded(1);
         Unsafe.Add(ref GetBufferReference(), Length++) = c;
     }
@@ -310,7 +311,7 @@ public unsafe ref partial struct ValueStringBuilder
         int length = Length;
         if (length != 0)
         {
-            SpanHelpers<char>.Copy(oldBuffer.SliceUnsafe(..length), newBuffer);
+            SpanHelpers.Copy(oldBuffer.SliceUnsafe(..length), newBuffer);
         }
 
         _buffer = ref MemoryMarshal.GetReference(newBuffer);

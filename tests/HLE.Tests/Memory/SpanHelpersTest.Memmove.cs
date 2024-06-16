@@ -19,7 +19,7 @@ public sealed partial class SpanHelpersTest
         Random.Shared.Fill(source);
         Span<byte> destination = GC.AllocateUninitializedArray<byte>(byteCount);
 
-        SpanHelpers<byte>.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
         Assert.True(destination.SequenceEqual(source));
     }
 
@@ -31,7 +31,7 @@ public sealed partial class SpanHelpersTest
         FillWithRandomStrings(source);
         Span<string> destination = new string[stringCount];
 
-        SpanHelpers<string>.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
         for (int i = 0; i < source.Length; i++)
         {
@@ -52,7 +52,7 @@ public sealed partial class SpanHelpersTest
         Span<byte> destination = GC.AllocateUninitializedArray<byte>(byteCount);
         destination = destination[elementsToSkip..];
 
-        SpanHelpers<byte>.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
         Assert.True(destination.SequenceEqual(source));
     }
 
@@ -67,7 +67,7 @@ public sealed partial class SpanHelpersTest
         Span<byte> destination = source[elementsToSkip..];
 
         Span<byte> expectedItems = source[..destination.Length].ToArray();
-        SpanHelpers<byte>.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)destination.Length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)destination.Length);
         Assert.True(destination.SequenceEqual(expectedItems));
     }
 

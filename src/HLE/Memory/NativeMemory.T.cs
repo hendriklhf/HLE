@@ -231,7 +231,7 @@ public unsafe partial struct NativeMemory<T> :
 
         ref T source = ref Reference;
         T[] result = GC.AllocateUninitializedArray<T>(length);
-        SpanHelpers<T>.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref source, (uint)length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref source, (uint)length);
         return result;
     }
 

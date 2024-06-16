@@ -11,7 +11,6 @@ public sealed partial class RegexPool
 {
     private partial struct Bucket : IEquatable<Bucket>
     {
-        [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "InlineArray")]
         private Regexes _regexes;
         private readonly object _lock = new();
 
@@ -69,7 +68,7 @@ public sealed partial class RegexPool
         {
             ref Regex? source = ref InlineArrayHelpers.GetReference<Regexes, Regex?>(ref _regexes);
             ref Regex? destination = ref Unsafe.Add(ref source, 1);
-            SpanHelpers<Regex?>.Memmove(ref destination, ref source, DefaultBucketCapacity - 1);
+            SpanHelpers.Memmove(ref destination, ref source, DefaultBucketCapacity - 1);
             source = regex;
         }
 

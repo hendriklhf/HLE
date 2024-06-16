@@ -71,7 +71,7 @@ public sealed class PooledMemoryStream(int capacity) :
 
     public PooledMemoryStream(ReadOnlySpan<byte> bytes) : this(bytes.Length)
     {
-        SpanHelpers<byte>.Copy(bytes, _buffer.AsSpan());
+        SpanHelpers.Copy(bytes, _buffer.AsSpan());
         _length = bytes.Length;
         _position = bytes.Length;
     }
@@ -107,7 +107,7 @@ public sealed class PooledMemoryStream(int capacity) :
         int length = (int)value;
         byte[] oldBuffer = GetBuffer();
         byte[] newBuffer = ArrayPool<byte>.Shared.Rent(length);
-        SpanHelpers<byte>.Copy(oldBuffer.AsSpanUnsafe(.._length), newBuffer);
+        SpanHelpers.Copy(oldBuffer.AsSpanUnsafe(.._length), newBuffer);
         ArrayPool<byte>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
         _length = length;
@@ -158,7 +158,7 @@ public sealed class PooledMemoryStream(int capacity) :
         }
 
         Span<byte> bufferToCopy = positionalBuffer.Length > buffer.Length ? positionalBuffer[..buffer.Length] : positionalBuffer;
-        SpanHelpers<byte>.Copy(bufferToCopy, buffer);
+        SpanHelpers.Copy(bufferToCopy, buffer);
         int bytesCopied = bufferToCopy.Length;
         _position += bytesCopied;
         return bytesCopied;
@@ -206,12 +206,12 @@ public sealed class PooledMemoryStream(int capacity) :
         Span<byte> positionalBuffer = GetPositionalBuffer();
         if (positionalBuffer.Length >= buffer.Length)
         {
-            SpanHelpers<byte>.Copy(buffer, positionalBuffer);
+            SpanHelpers.Copy(buffer, positionalBuffer);
         }
         else
         {
             GrowBuffer((uint)buffer.Length);
-            SpanHelpers<byte>.Copy(buffer, GetPositionalBuffer());
+            SpanHelpers.Copy(buffer, GetPositionalBuffer());
         }
 
         int position = _position + buffer.Length;
@@ -300,7 +300,7 @@ public sealed class PooledMemoryStream(int capacity) :
         uint currentLength = (uint)currentBuffer.Length;
         int newLength = BufferHelpers.GrowArray(currentLength, (uint)_position + sizeHint - currentLength);
         byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newLength);
-        SpanHelpers<byte>.Copy(currentBuffer, newBuffer);
+        SpanHelpers.Copy(currentBuffer, newBuffer);
         ArrayPool<byte>.Shared.Return(currentBuffer);
         _buffer = newBuffer;
     }
@@ -378,7 +378,7 @@ public sealed class PooledMemoryStream(int capacity) :
             return;
         }
 
-        SpanHelpers<byte>.Copy(source, ref destination);
+        SpanHelpers.Copy(source, ref destination);
     }
 
     public unsafe void CopyTo(byte* destination)
@@ -389,7 +389,7 @@ public sealed class PooledMemoryStream(int capacity) :
             return;
         }
 
-        SpanHelpers<byte>.Copy(source, destination);
+        SpanHelpers.Copy(source, destination);
     }
 
     [Pure]
@@ -402,7 +402,7 @@ public sealed class PooledMemoryStream(int capacity) :
         }
 
         byte[] result = GC.AllocateUninitializedArray<byte>(source.Length);
-        SpanHelpers<byte>.Copy(source, result);
+        SpanHelpers.Copy(source, result);
         return result;
     }
 

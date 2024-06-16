@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Text.Json.Serialization;
 
-namespace HLE.SourceGenerators;
+namespace HLE.SourceGenerators.Emojis;
 
 public struct Emoji : IEquatable<Emoji>
 {

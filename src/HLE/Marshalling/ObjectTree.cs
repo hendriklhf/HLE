@@ -41,7 +41,9 @@ internal static class ObjectTree
                 return 0;
             }
 
+#pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
             size = ObjectMarshal.GetObjectSize(obj);
+#pragma warning restore HAA0601
             if (typeof(T) == typeof(string))
             {
                 return size;
@@ -54,7 +56,9 @@ internal static class ObjectTree
                     Type elementType = typeof(T).GetElementType()!;
                     if (ObjectMarshal.IsReferenceOrContainsReference(elementType))
                     {
+#pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
                         return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
+#pragma warning restore HAA0601
                     }
 
                     return size;
@@ -71,7 +75,9 @@ internal static class ObjectTree
     {
         nuint size = 0;
         ReadOnlySpan<FieldInfo> instanceFields = GetFields(typeof(T));
+#pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
         object o = obj!; // boxing into a local to only box once and not for each loop iteration
+#pragma warning restore HAA0601
         foreach (FieldInfo field in instanceFields)
         {
             if (!ObjectMarshal.IsReferenceOrContainsReference(field.FieldType))
@@ -93,7 +99,9 @@ internal static class ObjectTree
         if (!s_getSizeCache.TryGetValue(type, out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetSize), BindingFlags.Public | BindingFlags.Static)!;
+#pragma warning disable HAA0101
             method = nonGenericMethod.MakeGenericMethod(type);
+#pragma warning restore HAA0101
             s_getSizeCache.TryAdd(type, method);
         }
 
@@ -123,7 +131,9 @@ internal static class ObjectTree
         if (!s_getArrayElementsSizeCache.TryGetValue(elementType, out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetArrayElementsSizeCore), BindingFlags.NonPublic | BindingFlags.Static)!;
+#pragma warning disable HAA0101
             method = nonGenericMethod.MakeGenericMethod(elementType);
+#pragma warning restore HAA0101
             s_getArrayElementsSizeCache.TryAdd(elementType, method);
         }
 
@@ -179,7 +189,9 @@ internal static class ObjectTree
         if (!s_getInlineArrayElementsSizeCache.TryGetValue(typeof(T), out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetInlineArrayElementsSizeCore), BindingFlags.Static | BindingFlags.NonPublic)!;
+#pragma warning disable HAA0101
             method = nonGenericMethod.MakeGenericMethod(typeof(T), arrayElementType);
+#pragma warning restore HAA0101
             s_getInlineArrayElementsSizeCache.TryAdd(typeof(T), method);
         }
 

@@ -143,7 +143,7 @@ public struct RentedArray<T> :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(array.Length);
-        SpanHelpers<T>.Copy(array, result);
+        SpanHelpers.Copy(array, result);
         return result;
     }
 

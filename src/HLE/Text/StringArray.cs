@@ -120,7 +120,7 @@ public sealed class StringArray :
         }
 
         string[] result = new string[length];
-        SpanHelpers<string>.Copy(_strings, result);
+        SpanHelpers.Copy(_strings, result);
         return result;
     }
 
@@ -167,39 +167,35 @@ public sealed class StringArray :
             return -1;
         }
 
-        ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
-        ref int startsReference = ref MemoryMarshal.GetArrayDataReference(_starts);
-        ReadOnlySpan<char> charBuffer = _chars;
-        ReadOnlySpan<int> stringLengths = _lengths;
-
-        ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        ReadOnlySpan<int> lengths = stringLengths[startIndex..];
-
-        Span<int> indices;
+        ReadOnlySpan<int> lengths = _lengths.AsSpan(startIndex..);
+        Span<int> indicesBuffer;
         int[]? rentedIndices = null;
-        if (!MemoryHelpers.UseStackalloc<int>(lengths.Length))
+        if (MemoryHelpers.UseStackalloc<int>(lengths.Length))
         {
-            rentedIndices = ArrayPool<int>.Shared.Rent(lengths.Length);
-            indices = rentedIndices.AsSpan(..lengths.Length);
+            int* buffer = stackalloc int[lengths.Length];
+            indicesBuffer = new(buffer, lengths.Length);
         }
         else
         {
-            int* buffer = stackalloc int[lengths.Length];
-            indices = new(buffer, lengths.Length);
+            rentedIndices = ArrayPool<int>.Shared.Rent(lengths.Length);
+            indicesBuffer = rentedIndices.AsSpan(..lengths.Length);
         }
 
         try
         {
             // TODO: maybe partition it, so not every index of the right length has to be found,
             // slow if the index is at the beginning and the whole array will be scanned
-            int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(stringLengths), stringLengths.Length, chars.Length, ref MemoryMarshal.GetReference(indices));
+            int indicesLength = SpanHelpers.IndicesOf(ref MemoryMarshal.GetReference(lengths), lengths.Length, chars.Length, ref MemoryMarshal.GetReference(indicesBuffer));
             if (indicesLength == 0)
             {
                 return -1;
             }
 
-            indices = indices.SliceUnsafe(..indicesLength);
-
+            ref char charsReference = ref MemoryMarshal.GetReference(chars);
+            ref string stringsReference = ref MemoryMarshal.GetArrayDataReference(_strings);
+            ref int startsReference = ref MemoryMarshal.GetArrayDataReference(_starts);
+            ReadOnlySpan<char> charBuffer = _chars;
+            ReadOnlySpan<int> indices = indicesBuffer.SliceUnsafe(..indicesLength);
             for (int i = 0; i < indices.Length; i++)
             {
                 int actualIndex = indices[i] + startIndex;
@@ -323,27 +319,27 @@ public sealed class StringArray :
                 chars = _chars; // _chars might have changed through GrowBufferIfNeeded
                 if (index != Length - 1)
                 {
-                    SpanHelpers<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
+                    SpanHelpers.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
                 }
 
-                SpanHelpers<char>.Copy(str, chars[starts[index]..]);
+                SpanHelpers.Copy(str, chars[starts[index]..]);
                 SpanHelpers.Add(starts[(index + 1)..], lengthDifference);
                 lengths[index] = str.Length;
                 break;
             case < 0: // new string is shorter
                 if (index != Length - 1)
                 {
-                    SpanHelpers<char>.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
+                    SpanHelpers.Copy(chars[starts[index + 1]..^_freeBufferSize], chars[(starts[index + 1] + lengthDifference)..]);
                 }
 
-                SpanHelpers<char>.Copy(str, chars[starts[index]..]);
+                SpanHelpers.Copy(str, chars[starts[index]..]);
                 SpanHelpers.Add(starts[(index + 1)..], lengthDifference);
                 lengths[index] = str.Length;
                 break;
             default: // new string has same length
                 Span<char> destination = chars[starts[index]..];
                 Debug.Assert(destination.Length >= str.Length);
-                SpanHelpers<char>.Copy(str, destination);
+                SpanHelpers.Copy(str, destination);
                 break;
         }
 
@@ -379,7 +375,7 @@ public sealed class StringArray :
 
         if (oldBuffer is not null)
         {
-            SpanHelpers<char>.Copy(oldBuffer.AsSpan(..^freeBufferSize), chars);
+            SpanHelpers.Copy(oldBuffer.AsSpan(..^freeBufferSize), chars);
             ArrayPool<char>.Shared.Return(oldBuffer);
         }
 

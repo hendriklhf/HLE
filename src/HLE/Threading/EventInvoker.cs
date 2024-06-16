@@ -31,10 +31,11 @@ public static partial class EventInvoker
             tasks.Add(target(sender, args));
         }
 
+#pragma warning disable HAA0101
         return Task.WhenAll(tasks.AsSpan());
+#pragma warning restore HAA0101
     }
 
-    [SuppressMessage("Performance", "HAA0303:Lambda or anonymous method in a generic method allocates a delegate instance", Justification = "yes but it is cached")]
     public static void QueueOnThreadPool<TEventArgs>(EventHandler<TEventArgs>? eventHandler, object? sender, TEventArgs eventArgs)
     {
         if (eventHandler is null)
@@ -45,14 +46,14 @@ public static partial class EventInvoker
         if (eventHandler.HasSingleTarget)
         {
             EventHandlerState<TEventArgs> state = new(eventHandler, sender, eventArgs);
-            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
+            ThreadPool.QueueUserWorkItem(DelegateCache<TEventArgs>.QueueUserWorkItem, state, true);
             return;
         }
 
         foreach (EventHandler<TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {
             EventHandlerState<TEventArgs> state = new(target, sender, eventArgs);
-            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
+            ThreadPool.QueueUserWorkItem(DelegateCache<TEventArgs>.QueueUserWorkItem, state, true);
         }
     }
 

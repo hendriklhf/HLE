@@ -75,7 +75,7 @@ public static class ListMarshal
 
         List<T> list = [];
         T[] array = GC.AllocateUninitializedArray<T>(length);
-        SpanHelpers<T>.Memmove(ref MemoryMarshal.GetArrayDataReference(array), ref items, (uint)length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(array), ref items, (uint)length);
         SetArray(list, array);
         SetCount(list, length);
         return list;

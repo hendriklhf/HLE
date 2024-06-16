@@ -44,7 +44,9 @@ public static unsafe class ObjectMarshal
             return isReferenceOrContainsReference;
         }
 
+#pragma warning disable HAA0101
         isReferenceOrContainsReference = (bool)s_isReferenceOrContainsReferenceMethod.MakeGenericMethod(type).Invoke(null, null)!;
+#pragma warning restore HAA0101
         s_isReferenceOrContainsReferenceCache.AddOrSet(type, isReferenceOrContainsReference);
         return isReferenceOrContainsReference;
     }

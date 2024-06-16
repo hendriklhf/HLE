@@ -109,13 +109,13 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
         if (!MemoryHelpers.UseStackalloc<char>(typeNamespace.Length))
         {
             using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(typeNamespace.Length);
-            SpanHelpers<char>.Copy(typeNamespace, rentedBuffer.AsSpan());
+            SpanHelpers.Copy(typeNamespace, rentedBuffer.AsSpan());
             builder.Append(rentedBuffer.AsSpan(..typeNamespace.Length));
         }
         else
         {
             Span<char> buffer = stackalloc char[typeNamespace.Length];
-            SpanHelpers<char>.Copy(typeNamespace, buffer);
+            SpanHelpers.Copy(typeNamespace, buffer);
             builder.Append(buffer[..typeNamespace.Length]);
         }
 

@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Memory;
 
@@ -12,7 +11,7 @@ public sealed partial class StringPool : IEquatable<StringPool>
 {
     public static StringPool Shared { get; } = new();
 
-    private readonly Bucket[] _buckets;
+    private Buckets _buckets;
 
     /// <summary>
     /// The amount of buckets in the pool.
@@ -29,18 +28,16 @@ public sealed partial class StringPool : IEquatable<StringPool>
     /// </summary>
     public StringPool()
     {
-        Bucket[] buckets = GC.AllocateArray<Bucket>(DefaultPoolCapacity, true);
+        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
         }
-
-        _buckets = buckets;
     }
 
     public void Clear()
     {
-        Span<Bucket> buckets = _buckets;
+        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i].Clear();
@@ -241,7 +238,7 @@ public sealed partial class StringPool : IEquatable<StringPool>
     {
         uint hash = SimpleStringHasher.Hash(str);
         uint index = hash % DefaultPoolCapacity;
-        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), index);
+        return ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Buckets, Bucket>(ref _buckets), index);
     }
 
     [Pure]

@@ -65,7 +65,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
         Debug.Assert(_buffer is not null);
-        SpanHelpers<T>.Copy(data, _buffer);
+        SpanHelpers.Copy(data, _buffer);
         Count = data.Length;
     }
 
@@ -150,7 +150,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public void Write(ref T data, int length)
     {
         ref T destination = ref GetReference(length);
-        SpanHelpers<T>.Memmove(ref destination, ref data, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref data, (uint)length);
         Count += length;
     }
 
@@ -178,7 +178,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
         }
 
         T[] result = GC.AllocateUninitializedArray<T>(writtenSpan.Length);
-        SpanHelpers<T>.Copy(writtenSpan, result);
+        SpanHelpers.Copy(writtenSpan, result);
         return result;
     }
 
@@ -231,7 +231,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
             }
 
             T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
-            SpanHelpers<T>.Copy(oldBuffer, newBuffer);
+            SpanHelpers.Copy(oldBuffer, newBuffer);
             _buffer = newBuffer;
         }
         finally
@@ -271,7 +271,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
         if (Count != 0)
         {
-            SpanHelpers<T>.Copy(oldBuffer, newBuffer);
+            SpanHelpers.Copy(oldBuffer, newBuffer);
         }
 
         ArrayPool<T>.Shared.Return(oldBuffer);

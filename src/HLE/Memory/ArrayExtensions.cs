@@ -11,8 +11,8 @@ public static class ArrayExtensions
     }
 
     public static void CopyTo<T>(this T[] source, ref T destination)
-        => SpanHelpers<T>.Copy(source, ref destination);
+        => SpanHelpers.Copy(source, ref destination);
 
     public static unsafe void CopyTo<T>(this T[] source, T* destination)
-        => SpanHelpers<T>.Copy(source, destination);
+        => SpanHelpers.Copy(source, destination);
 }

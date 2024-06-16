@@ -110,8 +110,8 @@ public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquat
     {
         string assemblyName = _assemblyName;
         Span<char> buffer = stackalloc char[assemblyName.Length + resourceName.Length];
-        SpanHelpers<char>.Copy(assemblyName, buffer);
-        SpanHelpers<char>.Copy(resourceName, buffer.SliceUnsafe(assemblyName.Length));
+        SpanHelpers.Copy(assemblyName, buffer);
+        SpanHelpers.Copy(resourceName, buffer.SliceUnsafe(assemblyName.Length));
 
         return StringPool.Shared.GetOrAdd(buffer);
     }

@@ -63,12 +63,14 @@ public sealed class LazyString :
         _string = string.Empty;
     }
 
+    [MustDisposeResource]
     private LazyString(string str)
     {
         _chars = null;
         _string = str;
     }
 
+    [MustDisposeResource]
     public LazyString(ref PooledInterpolatedStringHandler chars) : this(chars.Text)
         => chars.Dispose();
 
@@ -83,7 +85,7 @@ public sealed class LazyString :
         }
 
         char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length);
-        SpanHelpers<char>.Copy(chars, buffer);
+        SpanHelpers.Copy(chars, buffer);
         _chars = buffer;
         Length = chars.Length;
     }
@@ -98,6 +100,7 @@ public sealed class LazyString :
     }
 
     [Pure]
+    [MustDisposeResource]
     public static LazyString FromString(string str) => str.Length == 0 ? Empty : new(str);
 
     public void Dispose()
@@ -165,7 +168,7 @@ public sealed class LazyString :
 
         ref char chars = ref GetReference();
         char[] result = GC.AllocateUninitializedArray<char>(Length);
-        SpanHelpers<char>.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref chars, (uint)Length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref chars, (uint)Length);
         return result;
     }
 

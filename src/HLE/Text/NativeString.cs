@@ -119,7 +119,7 @@ public unsafe struct NativeString :
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
         rawStringData->MethodTable = ObjectMarshal.GetMethodTable<string>();
         rawStringData->Length = chars.Length;
-        SpanHelpers<char>.Copy(chars, &rawStringData->FirstChar);
+        SpanHelpers.Copy(chars, &rawStringData->FirstChar);
 
         Length = chars.Length;
         _buffer = buffer;

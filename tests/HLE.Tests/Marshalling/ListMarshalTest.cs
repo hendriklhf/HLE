@@ -113,9 +113,9 @@ public sealed class ListMarshalTest
         int[] a1 = ListMarshal.GetArray(l1);
         int[] a2 = ListMarshal.GetArray(l2);
 
-        Assert.Empty(a1);
-        Assert.Empty(a2);
         Assert.Same(a1, a2);
+        Assert.Empty(a1);
+        Assert.Empty(a2); // actually just one array has to be tested to be empty, if Assert.Same already succeeded
     }
 
     [Fact]

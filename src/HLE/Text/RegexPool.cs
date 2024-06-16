@@ -2,34 +2,32 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using HLE.Memory;
 
 namespace HLE.Text;
 
 public sealed partial class RegexPool : IEquatable<RegexPool>
 {
-    private readonly Bucket[] _buckets;
-
     public static RegexPool Shared { get; } = new();
+
+    private Buckets _buckets;
 
     private const int DefaultPoolCapacity = 4096;
     private const int DefaultBucketCapacity = 32;
 
     public RegexPool()
     {
-        Bucket[] buckets = GC.AllocateArray<Bucket>(DefaultPoolCapacity, true);
+        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
         }
-
-        _buckets = buckets;
     }
 
     public void Clear()
     {
-        Span<Bucket> buckets = _buckets;
+        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i].Clear();
@@ -181,7 +179,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
         uint hash = SimpleStringHasher.Hash(pattern);
         hash = (uint)HashCode.Combine(hash, (int)options, timeout);
         uint index = hash % DefaultPoolCapacity;
-        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), index);
+        return ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Buckets, Bucket>(ref _buckets), index);
     }
 
     [Pure]

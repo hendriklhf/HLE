@@ -10,7 +10,6 @@ public sealed partial class StringPool
 {
     private partial struct Bucket : IEquatable<Bucket>
     {
-        [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "InlineArray")]
         private Strings _strings;
         private readonly object _lock = new();
 
@@ -78,7 +77,7 @@ public sealed partial class StringPool
         private void AddWithoutLock(string value)
         {
             ref string? stringsReference = ref InlineArrayHelpers.GetReference<Strings, string?>(ref _strings);
-            SpanHelpers<string?>.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, DefaultBucketCapacity - 1);
+            SpanHelpers.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, DefaultBucketCapacity - 1);
             stringsReference = value;
         }
 

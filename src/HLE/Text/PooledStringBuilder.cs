@@ -66,7 +66,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
     {
         Debug.Assert(_buffer is not null);
-        SpanHelpers<char>.Copy(str, _buffer);
+        SpanHelpers.Copy(str, _buffer);
         Length = str.Length;
     }
 
@@ -118,12 +118,13 @@ public sealed partial class PooledStringBuilder(int capacity) :
     {
         GrowIfNeeded(length);
         ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
-        SpanHelpers<char>.Memmove(ref destination, ref chars, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref chars, (uint)length);
         Length += length;
     }
 
     public void Append(char c)
     {
+        // TODO: optimize buffer retrieving like in PooledList
         GrowIfNeeded(1);
         Unsafe.Add(ref GetBufferReference(), Length++) = c;
     }
@@ -276,7 +277,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
         {
             ref char source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
             ref char destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-            SpanHelpers<char>.Memmove(ref destination, ref source, (uint)Length);
+            SpanHelpers.Memmove(ref destination, ref source, (uint)Length);
         }
 
         ArrayPool<char>.Shared.Return(oldBuffer);
@@ -346,9 +347,9 @@ public sealed partial class PooledStringBuilder(int capacity) :
         copyWorker.CopyTo(destination);
     }
 
-    public void CopyTo(ref char destination) => SpanHelpers<char>.Copy(WrittenSpan, ref destination);
+    public void CopyTo(ref char destination) => SpanHelpers.Copy(WrittenSpan, ref destination);
 
-    public unsafe void CopyTo(char* destination) => SpanHelpers<char>.Copy(WrittenSpan, destination);
+    public unsafe void CopyTo(char* destination) => SpanHelpers.Copy(WrittenSpan, destination);
 
     void ICollection<char>.Add(char item) => Append(item);
 

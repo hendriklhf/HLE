@@ -27,14 +27,14 @@ internal static class ArrayPool
         8, 8, 8
     ];
 
-    public const int MinimumArrayLength = 0x10; // has to be pow of 2
-    public const int MaximumArrayLength = 0x800000; // has to be pow of 2
-
     public static int BucketIndexOffset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => BitOperations.TrailingZeroCount(MinimumArrayLength);
     }
+
+    public const int MinimumArrayLength = 0x10; // has to be pow of 2
+    public const int MaximumArrayLength = 0x800000; // has to be pow of 2
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

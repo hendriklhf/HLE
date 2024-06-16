@@ -91,7 +91,6 @@ public static partial class CollectionHelpers
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out ReadOnlySpan<T> span)
     {
         if (typeof(T) == typeof(char) && enumerable is string str)
@@ -124,7 +123,6 @@ public static partial class CollectionHelpers
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out Span<T> span)
     {
         switch (enumerable)
@@ -144,7 +142,6 @@ public static partial class CollectionHelpers
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> enumerable, out ReadOnlyMemory<T> memory)
     {
         if (typeof(T) == typeof(char) && enumerable is string str)
@@ -177,7 +174,6 @@ public static partial class CollectionHelpers
         return false;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> enumerable, out Memory<T> memory)
     {
         switch (enumerable)
@@ -197,7 +193,6 @@ public static partial class CollectionHelpers
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
     {
 #if RELEASE // this might prevent reaching the bottom branches, so it will be removed for test runs as it is runtime code
@@ -237,7 +232,6 @@ public static partial class CollectionHelpers
     /// <param name="elementsCopied">The amount of elements that have been copied.</param>
     /// <typeparam name="T">The type of items that will be tried to be copied.</typeparam>
     /// <returns>True, if copying was possible, otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> enumerable, T[] destination, int offset, out int elementsCopied)
     {
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
@@ -281,7 +275,6 @@ public static partial class CollectionHelpers
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetNonEnumeratedElementAt<T>([NoEnumeration] this IEnumerable<T> enumerable, int index, [MaybeNullWhen(false)] out T element)
     {
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
@@ -364,7 +357,6 @@ public static partial class CollectionHelpers
     /// <param name="writtenElements">The amount of written elements.</param>
     /// <typeparam name="T">The type of elements in the <see cref="IEnumerable{T}"/>.</typeparam>
     /// <returns>True, if a full enumeration into the buffer was possible, otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryEnumerateInto<T>(this IEnumerable<T> enumerable, Span<T> destination, out int writtenElements)
     {
         if (enumerable.TryGetNonEnumeratedCount(out int elementCount))
@@ -433,7 +425,7 @@ public static partial class CollectionHelpers
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             array = ArrayPool<T>.Shared.RentExact(span.Length);
-            SpanHelpers<T>.Copy(span, array);
+            SpanHelpers.Copy(span, array);
             return new(array, ArrayPool<T>.Shared);
         }
 
@@ -451,7 +443,7 @@ public static partial class CollectionHelpers
 
         using PooledList<T> list = enumerable.ToPooledList();
         array = ArrayPool<T>.Shared.RentExact(list.Count);
-        SpanHelpers<T>.Copy(list.AsSpan(), array);
+        SpanHelpers.Copy(list.AsSpan(), array);
         return new(array, ArrayPool<T>.Shared);
     }
 }

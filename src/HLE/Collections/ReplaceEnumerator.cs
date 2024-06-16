@@ -32,7 +32,9 @@ public readonly struct ReplaceEnumerator<T>(IEnumerator<T> enumerator, Func<T, b
 
     [Pure]
     public bool Equals(ReplaceEnumerator<T> other) =>
-        ReferenceEquals(_enumerator, other._enumerator) && ReferenceEquals(_predicate, other._predicate) && Equals(_replacement, other._replacement);
+        ReferenceEquals(_enumerator, other._enumerator) &&
+        ReferenceEquals(_predicate, other._predicate) &&
+        _replacement?.Equals(other._replacement) == true;
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ReplaceEnumerator<T> other && Equals(other);
