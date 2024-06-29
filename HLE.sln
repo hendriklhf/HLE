@@ -1,15 +1,14 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31313.79
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35017.193
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE", "src\HLE\HLE.csproj", "{BF550353-87F8-43E7-BC16-C0DCA4635B01}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.Debug", "debug\HLE.Debug\HLE.Debug.csproj", "{11B9B476-AD36-459B-B1AF-4474E0FED677}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.Tests", "tests\HLE.Tests\HLE.Tests.csproj", "{6D5301A1-B1CA-4152-8D68-841D9E74165A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.Tests", "tests\HLE.Tests\HLE.Tests.csproj", "{6D5301A1-B1CA-4152-8D68-841D9E74165A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.SourceGenerators", "src\HLE.SourceGenerators\HLE.SourceGenerators.csproj", "{A7A70C15-972C-4F31-9754-A01C642EC568}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.SourceGenerators", "src\HLE.SourceGenerators\HLE.SourceGenerators.csproj", "{A7A70C15-972C-4F31-9754-A01C642EC568}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}"
 EndProject
@@ -17,15 +16,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CDE88CDD
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "debug", "debug", "{BB652E74-A6D6-42FD-AF0A-3A0A2D3090C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.Twitch", "src\HLE.Twitch\HLE.Twitch.csproj", "{9FEFD5AC-D390-4D7A-87DF-F7054B23D448}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.Twitch", "src\HLE.Twitch\HLE.Twitch.csproj", "{9FEFD5AC-D390-4D7A-87DF-F7054B23D448}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.Twitch.Tests", "tests\HLE.Twitch.Tests\HLE.Twitch.Tests.csproj", "{CBDA20E4-C6E6-4A6E-AC7B-AA8B4D9E4B4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.Twitch.Tests", "tests\HLE.Twitch.Tests\HLE.Twitch.Tests.csproj", "{CBDA20E4-C6E6-4A6E-AC7B-AA8B4D9E4B4C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.IL", "src\HLE.IL\HLE.IL.ilproj", "{F992373B-062A-4F2A-BBF4-A290631E05BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.IL.Tests", "tests\HLE.IL.Tests\HLE.IL.Tests.csproj", "{19735F96-8F13-4FD7-BAA5-EB3921F87769}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.IL.Tests", "tests\HLE.IL.Tests\HLE.IL.Tests.csproj", "{19735F96-8F13-4FD7-BAA5-EB3921F87769}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.Test.TestUtilities", "tests\HLE.Test.TestUtilities\HLE.Test.TestUtilities.csproj", "{2AAF6273-E7D6-4588-BE2E-34028F129A77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HLE.Test.TestUtilities", "tests\HLE.Test.TestUtilities\HLE.Test.TestUtilities.csproj", "{2AAF6273-E7D6-4588-BE2E-34028F129A77}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C7E12312-54CE-49C6-8AD4-0F93405755E2}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		global.json = global.json
+		tests\HLE.runsettings = tests\HLE.runsettings
+		Directory.Build.targets = Directory.Build.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,18 +81,18 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {D0295567-7264-490C-9A29-2BF4F5AA36B3}
-	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BF550353-87F8-43E7-BC16-C0DCA4635B01} = {6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}
-		{A7A70C15-972C-4F31-9754-A01C642EC568} = {6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}
-		{6D5301A1-B1CA-4152-8D68-841D9E74165A} = {CDE88CDD-7EA1-47F2-A7C7-C8923DE5E09E}
 		{11B9B476-AD36-459B-B1AF-4474E0FED677} = {BB652E74-A6D6-42FD-AF0A-3A0A2D3090C3}
+		{6D5301A1-B1CA-4152-8D68-841D9E74165A} = {CDE88CDD-7EA1-47F2-A7C7-C8923DE5E09E}
+		{A7A70C15-972C-4F31-9754-A01C642EC568} = {6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}
 		{9FEFD5AC-D390-4D7A-87DF-F7054B23D448} = {6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}
 		{CBDA20E4-C6E6-4A6E-AC7B-AA8B4D9E4B4C} = {CDE88CDD-7EA1-47F2-A7C7-C8923DE5E09E}
 		{F992373B-062A-4F2A-BBF4-A290631E05BC} = {6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}
 		{19735F96-8F13-4FD7-BAA5-EB3921F87769} = {CDE88CDD-7EA1-47F2-A7C7-C8923DE5E09E}
 		{2AAF6273-E7D6-4588-BE2E-34028F129A77} = {CDE88CDD-7EA1-47F2-A7C7-C8923DE5E09E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D0295567-7264-490C-9A29-2BF4F5AA36B3}
 	EndGlobalSection
 EndGlobal

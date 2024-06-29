@@ -12,7 +12,7 @@ public sealed partial class ArrayPool<T>
     {
         internal readonly T[][] _stack = GC.AllocateArray<T[]>(capacity, true);
         private readonly int _arrayLength = arrayLength;
-        private int _count;
+        private uint _count;
 
         [Pure]
         public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength, true);
@@ -21,7 +21,7 @@ public sealed partial class ArrayPool<T>
         {
             lock (_stack)
             {
-                int count = _count;
+                uint count = _count;
                 if (count == 0)
                 {
                     array = null;
@@ -40,7 +40,7 @@ public sealed partial class ArrayPool<T>
         {
             lock (_stack)
             {
-                int count = _count;
+                uint count = _count;
                 if (count == 0)
                 {
                     array = null;
@@ -57,7 +57,7 @@ public sealed partial class ArrayPool<T>
                     }
 
                     array = currentRef;
-                    SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), (uint)count - i - 1);
+                    SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), count - i - 1);
                     _count = count - 1;
                     return true;
                 }
@@ -71,7 +71,7 @@ public sealed partial class ArrayPool<T>
         {
             lock (_stack)
             {
-                int count = _count;
+                uint count = _count;
                 if (count == _stack.Length)
                 {
                     return;

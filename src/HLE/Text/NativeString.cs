@@ -51,19 +51,6 @@ public unsafe struct NativeString :
 
     public static NativeString Empty => new();
 
-    // object header + method table pointer + string length
-    internal static uint FirstCharByteOffset
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => ObjectMarshal.BaseObjectSize + sizeof(int);
-    }
-
-    public static uint MaximumLength
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int.MaxValue - ObjectMarshal.BaseObjectSize - sizeof(int) - sizeof(char)) / sizeof(char);
-    }
-
     public NativeString()
     {
     }
@@ -79,10 +66,6 @@ public unsafe struct NativeString :
         }
 
         ArgumentOutOfRangeException.ThrowIfNegative(length);
-        if (length > MaximumLength)
-        {
-            ThrowLengthExceedsMaximumLength(length);
-        }
 
         nuint neededBufferSize = ObjectMarshal.GetRawStringSize(length);
         byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
@@ -107,11 +90,6 @@ public unsafe struct NativeString :
             return;
         }
 
-        if (chars.Length > MaximumLength)
-        {
-            ThrowLengthExceedsMaximumLength(chars.Length);
-        }
-
         nuint neededBufferSize = ObjectMarshal.GetRawStringSize(chars.Length);
         byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
 
@@ -124,11 +102,6 @@ public unsafe struct NativeString :
         Length = chars.Length;
         _buffer = buffer;
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowLengthExceedsMaximumLength(int length, [CallerArgumentExpression(nameof(length))] string? paramName = null)
-        => throw new ArgumentOutOfRangeException(paramName, length, $"The provided length exceeds the maximum {nameof(NativeString)} length.");
 
     public void Dispose()
     {
@@ -143,16 +116,10 @@ public unsafe struct NativeString :
     }
 
     [Pure]
-    public readonly string AsString()
-    {
-        if (Length == 0)
-        {
-            return string.Empty;
-        }
+    public readonly RawStringData* AsRawStringData() => (RawStringData*)(_buffer + sizeof(nuint));
 
-        byte* methodTablePointer = _buffer + sizeof(nuint);
-        return ObjectMarshal.ReadObject<string>(methodTablePointer);
-    }
+    [Pure]
+    public readonly string AsString() => Length == 0 ? string.Empty : ObjectMarshal.ReadObject<string>(AsRawStringData());
 
     [Pure]
     public readonly Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref GetCharsReference(), Length);
@@ -167,7 +134,7 @@ public unsafe struct NativeString :
     public readonly Span<char> AsSpan(Range range) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(range);
 
     [Pure]
-    public readonly Memory<char> AsMemory() => new NativeMemoryManager<char>((char*)Unsafe.AsPointer(ref GetCharsReference()), Length).Memory;
+    public readonly Memory<char> AsMemory() => new NativeMemoryManager<char>(&AsRawStringData()->FirstChar, Length).Memory;
 
     readonly Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
 
@@ -178,11 +145,7 @@ public unsafe struct NativeString :
     readonly ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly ref char GetCharsReference()
-    {
-        char* firstChar = (char*)(_buffer + FirstCharByteOffset);
-        return ref Unsafe.AsRef<char>(firstChar);
-    }
+    private readonly ref char GetCharsReference() => ref Unsafe.AsRef<char>(&AsRawStringData()->FirstChar);
 
     [Pure]
     // ReSharper disable once NotDisposedResource

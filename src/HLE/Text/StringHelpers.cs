@@ -104,30 +104,35 @@ public static class StringHelpers
         span.CopyTo(result);
         result = result.SliceUnsafe(0, span.Length);
 
-        int indexOfWhitespaces = result.IndexOf("  ");
-        while (indexOfWhitespaces >= 0)
+        int resultLength = result.Length;
+        int indexOfWhitespace = result.IndexOf(' ');
+        while (indexOfWhitespace >= 0)
         {
-            int endOfWhitespaces = result.SliceUnsafe(indexOfWhitespaces).IndexOfAnyExcept(' ');
-            if (endOfWhitespaces < 1)
+            result = result.SliceUnsafe(indexOfWhitespace);
+            int whiteSpaceLength = result.IndexOfAnyExcept(' ');
+            if (whiteSpaceLength < 0)
             {
-                result = result.SliceUnsafe(0, indexOfWhitespaces);
+                resultLength -= result.Length;
                 break;
             }
 
-            Span<char> source = result.SliceUnsafe(indexOfWhitespaces + endOfWhitespaces);
-            Span<char> destination = result.SliceUnsafe(indexOfWhitespaces + 1);
+            if (whiteSpaceLength == 1)
+            {
+                result = result.SliceUnsafe(1);
+                indexOfWhitespace = result.IndexOf(' ');
+                continue;
+            }
+
+            Span<char> source = result.SliceUnsafe(whiteSpaceLength..);
+            Span<char> destination = result.SliceUnsafe(1..);
             source.CopyTo(destination);
+            resultLength -= whiteSpaceLength - 1;
+            result = result.SliceUnsafe(2..^(whiteSpaceLength - 1));
 
-            result = result.SliceUnsafe(..^(endOfWhitespaces - 1));
-            indexOfWhitespaces = result.IndexOf("  ");
+            indexOfWhitespace = result.IndexOf(' ');
         }
 
-        if (result[^1] == ' ')
-        {
-            result = result[..^1];
-        }
-
-        return result.Length;
+        return resultLength;
     }
 
     [Pure]

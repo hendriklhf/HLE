@@ -120,7 +120,7 @@ public static partial class SpanHelpers
             return;
         }
 
-        RemainderLoop:
+    RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) ^= mask;
@@ -247,7 +247,7 @@ public static partial class SpanHelpers
             return;
         }
 
-        RemainderLoop:
+    RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) ^= Unsafe.Add(ref mask, i);

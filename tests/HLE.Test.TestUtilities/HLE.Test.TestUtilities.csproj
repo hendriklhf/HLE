@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
-    <IsPackable>false</IsPackable>
+    <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
   </PropertyGroup>
 
   <ItemGroup>

@@ -15,7 +15,8 @@ public static class PathHelpers
     });
 
     [Pure]
-    public static string TypeNameToPath<T>() => TypeNameToPath(typeof(T));
+    public static string TypeNameToPath<T>() where T : allows ref struct
+        => TypeNameToPath(typeof(T));
 
     [Pure]
     public static string TypeNameToPath(Type type) => s_typeToPathFormatter.Format(type);

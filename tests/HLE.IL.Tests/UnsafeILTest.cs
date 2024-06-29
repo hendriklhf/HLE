@@ -123,4 +123,21 @@ public sealed unsafe class UnsafeILTest
         Assert.True(ObjectMarshal.GetMethodTable<string>() == data.MethodTable);
         Assert.Equal(data.FirstChar, str[0]);
     }
+
+    [Fact]
+    public void UnboxTest()
+    {
+        const int Value = int.MaxValue;
+        object box = Box(Value);
+
+        // should not throw as byte != int
+        ref byte unbox = ref UnsafeIL.Unbox<byte>(box);
+
+        int unboxedValue = Unsafe.As<byte, int>(ref unbox);
+        Assert.Equal(Value, unboxedValue);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static object Box<T>(T value) where T : struct
+        => value;
 }

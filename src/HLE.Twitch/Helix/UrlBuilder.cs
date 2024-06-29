@@ -38,7 +38,7 @@ internal struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
         _builder.Append(value);
     }
 
-    public void AppendParameter<T>(ReadOnlySpan<char> key, T value) where T : ISpanFormattable
+    public void AppendParameter<T>(ReadOnlySpan<char> key, T value)
     {
         _builder.Append(ParameterCount++ == 0 ? '?' : '&');
         _builder.Append(key);

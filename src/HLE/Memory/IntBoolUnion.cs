@@ -47,8 +47,10 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
 
     private T _value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public IntBoolUnion(T integer, bool boolean)
     {
+        EnsureValidIntegerType();
         Integer = integer;
         Bool = boolean;
     }
@@ -56,6 +58,7 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetIntegerUnsafe(T value)
     {
+        EnsureValidIntegerType();
         Debug.Assert(value >= T.Zero);
         _value = (_value & GetBooleanMask()) | value;
     }

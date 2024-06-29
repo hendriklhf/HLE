@@ -5,7 +5,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.IL;
 using HLE.Text;
 using Xunit;
 
@@ -185,7 +184,7 @@ public sealed class StringArrayTest
     public void ICountable_Count_Test()
     {
         StringArray array = new(8);
-        ICountable countable = Convert<StringArray, ICountable>(array);
+        ICountable countable = CastDownReliably<StringArray, ICountable>(array);
         Assert.Equal(array.Length, countable.Count);
     }
 
@@ -193,7 +192,7 @@ public sealed class StringArrayTest
     public void ICollection_Count_Test()
     {
         StringArray array = new(8);
-        ICollection<string> collection = Convert<StringArray, ICollection<string>>(array);
+        ICollection<string> collection = CastDownReliably<StringArray, ICollection<string>>(array);
         Assert.Equal(array.Length, collection.Count);
     }
 
@@ -201,7 +200,7 @@ public sealed class StringArrayTest
     public void ICollection_IsReadOnly_Test()
     {
         StringArray array = new(8);
-        ICollection<string> collection = Convert<StringArray, ICollection<string>>(array);
+        ICollection<string> collection = CastDownReliably<StringArray, ICollection<string>>(array);
         Assert.False(collection.IsReadOnly);
     }
 
@@ -209,7 +208,7 @@ public sealed class StringArrayTest
     public void IReadOnlyCollection_Count_Test()
     {
         StringArray array = new(8);
-        IReadOnlyCollection<string> readOnlyCollection = Convert<StringArray, IReadOnlyCollection<string>>(array);
+        IReadOnlyCollection<string> readOnlyCollection = CastDownReliably<StringArray, IReadOnlyCollection<string>>(array);
         Assert.Equal(array.Length, readOnlyCollection.Count);
     }
 
@@ -271,7 +270,7 @@ public sealed class StringArrayTest
     [MemberData(nameof(StringArrayParameters))]
     public void Ctor_Enumerable_Test(string[] strings)
     {
-        IEnumerable<string> enumerable = Convert<string[], IEnumerable<string>>(strings);
+        IEnumerable<string> enumerable = CastDownReliably<string[], IEnumerable<string>>(strings);
         StringArray array = new(enumerable);
 
         Assert.Equal(strings.Length, array.Length);
@@ -459,7 +458,7 @@ public sealed class StringArrayTest
     {
         ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
         StringArray array = new(strings);
-        IReadOnlySpanProvider<string> spanProvider = Convert<StringArray, IReadOnlySpanProvider<string>>(array);
+        IReadOnlySpanProvider<string> spanProvider = CastDownReliably<StringArray, IReadOnlySpanProvider<string>>(array);
 
         Assert.True(spanProvider.GetReadOnlySpan().SequenceEqual(array.AsSpan()));
     }
@@ -469,14 +468,14 @@ public sealed class StringArrayTest
     {
         ReadOnlySpan<string> strings = ["hello", "abc", "xd"];
         StringArray array = new(strings);
-        IReadOnlyMemoryProvider<string> spanProvider = Convert<StringArray, IReadOnlyMemoryProvider<string>>(array);
+        IReadOnlyMemoryProvider<string> spanProvider = CastDownReliably<StringArray, IReadOnlyMemoryProvider<string>>(array);
 
         Assert.True(spanProvider.GetReadOnlyMemory().Span.SequenceEqual(array.AsSpan()));
     }
 
     [Theory]
     [MemberData(nameof(StringArrayParameters))]
-    public void IndexOf_ReadOnlySpan_Test(string[] strings)
+    public void IndexOf_String_Test(string[] strings)
     {
         StringArray array = new(strings);
         if (array.Length == 0)
@@ -493,18 +492,195 @@ public sealed class StringArrayTest
         Assert.Equal(expected, actual);
     }
 
+    [Theory]
+    [MemberData(nameof(StringArrayParameters))]
+    public void IndexOf_ReadOnlySpan_Test(string[] strings)
+    {
+        StringArray array = new(strings);
+        if (array.Length == 0)
+        {
+            Assert.Equal(-1, array.IndexOf("hello".AsSpan()));
+            return;
+        }
+
+        string needle = Random.Shared.GetItem(strings);
+
+        int actual = strings.AsSpan().IndexOf(needle);
+        int expected = array.IndexOf(needle.AsSpan());
+
+        Assert.Equal(expected, actual);
+    }
+
     [Fact]
-    public void IndexOf_ReadOnlySpan_StringComparision_Test()
+    public void IndexOf_String_StringComparision_Test()
     {
         StringArray array = new("hello", "ABc", "abc");
         int index = array.IndexOf("abc", StringComparison.OrdinalIgnoreCase);
         Assert.Equal(1, index);
     }
 
+    [Fact]
+    public void IndexOf_String_StringComparision_StartIndex_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("abc", StringComparison.OrdinalIgnoreCase, 1);
+        Assert.Equal(1, index);
+    }
+
+    [Fact]
+    public void IndexOf_ReadOnlySpan_StringComparision_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("abc".AsSpan(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, index);
+    }
+
+    [Fact]
+    public void IndexOf_ReadOnlySpan_StringComparision_StartIndex_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("abc".AsSpan(), StringComparison.OrdinalIgnoreCase, 1);
+        Assert.Equal(1, index);
+    }
+
+    [Fact]
+    public void IndexOf_String_StringComparision_DoesntContain_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("xd", StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(-1, index);
+    }
+
+    [Fact]
+    public void IndexOf_String_StringComparision_StartIndex_DoesntContain_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("xd", StringComparison.OrdinalIgnoreCase, 1);
+        Assert.Equal(-1, index);
+    }
+
+    [Fact]
+    public void IndexOf_ReadOnlySpan_StringComparision_DoesntContain_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("xd".AsSpan(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(-1, index);
+    }
+
+    [Fact]
+    public void IndexOf_ReadOnlySpan_StringComparision_StartIndex_DoesntContain_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        int index = array.IndexOf("xd".AsSpan(), StringComparison.OrdinalIgnoreCase, 1);
+        Assert.Equal(-1, index);
+    }
+
+    [Theory]
+    [MemberData(nameof(StringArrayParameters))]
+    [SuppressMessage("Minor Code Smell", "S4058:Overloads with a \"StringComparison\" parameter should be used")]
+    public void IndexOf_ReadOnlySpan_StartingIndex_Test(string[] strings)
+    {
+        StringArray array = new(strings);
+        if (array.Length == 0)
+        {
+            Assert.Equal(-1, array.IndexOf("hello"));
+            return;
+        }
+
+        string needle = Random.Shared.GetItem(strings);
+
+        int start = strings.Length >>> 2;
+        int actual = Array.IndexOf(strings, needle, start);
+        int expected = array.IndexOf(needle, start);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [MemberData(nameof(StringArrayParameters))]
+    [SuppressMessage("Minor Code Smell", "S4058:Overloads with a \"StringComparison\" parameter should be used")]
+    [SuppressMessage("Assertions", "xUnit2017:Do not use Contains() to check if a value exists in a collection")]
+    public void Contains_String_Test(string[] strings)
+    {
+        StringArray array = new(strings);
+        if (array.Length == 0)
+        {
+            Assert.False(array.Contains("hello"));
+            return;
+        }
+
+        string needle = Random.Shared.GetItem(strings);
+        bool contains = array.Contains(needle);
+        Assert.True(contains);
+    }
+
+    [Theory]
+    [MemberData(nameof(StringArrayParameters))]
+    public void Contains_ReadOnlySpan_Test(string[] strings)
+    {
+        StringArray array = new(strings);
+        if (array.Length == 0)
+        {
+            Assert.False(array.Contains("hello".AsSpan()));
+            return;
+        }
+
+        string needle = Random.Shared.GetItem(strings);
+        bool contains = array.Contains(needle.AsSpan());
+        Assert.True(contains);
+    }
+
+    [Fact]
+    public void Contains_String_StringComparision_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        bool contains = array.Contains("abc", StringComparison.OrdinalIgnoreCase);
+        Assert.True(contains);
+    }
+
+    [Fact]
+    public void Contains_ReadOnlySpan_StringComparision_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        bool contains = array.Contains("abc".AsSpan(), StringComparison.OrdinalIgnoreCase);
+        Assert.True(contains);
+    }
+
+    [Fact]
+    public void Contains_String_StringComparision_DoesntContain_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        bool contains = array.Contains("xd", StringComparison.OrdinalIgnoreCase);
+        Assert.False(contains);
+    }
+
+    [Fact]
+    public void Contains_ReadOnlySpan_StringComparision_DoesntContain_Test()
+    {
+        StringArray array = new("hello", "ABc", "abc");
+        bool contains = array.Contains("xd".AsSpan(), StringComparison.OrdinalIgnoreCase);
+        Assert.False(contains);
+    }
+
+    [Fact]
+    public void Add_Throws_NotSupportedException_Test()
+    {
+        ICollection<string> collection = CastDownReliably<StringArray, ICollection<string>>(new(4));
+        Assert.Throws<NotSupportedException>(() => collection.Add("abc"));
+    }
+
+    [Fact]
+    public void Remove_Throws_NotSupportedException_Test()
+    {
+        ICollection<string> collection = CastDownReliably<StringArray, ICollection<string>>(new(4));
+        Assert.Throws<NotSupportedException>(() => collection.Remove("abc"));
+    }
+
     // TODO: add missing tests
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static TTo Convert<TFrom, TTo>(TFrom from) => UnsafeIL.As<TFrom, TTo>(from);
+    private static TTo CastDownReliably<TFrom, TTo>(TFrom from) where TFrom : TTo
+        => from;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static IEnumerable<string> AsYieldingEnumerable(string[] array)

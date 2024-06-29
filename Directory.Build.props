@@ -1,18 +1,16 @@
 <Project>
 
   <PropertyGroup>
-    <DefaultTargetFramework>net9.0</DefaultTargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <NeutralLanguage>en-US</NeutralLanguage>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
-    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
@@ -21,30 +19,14 @@
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <Authors>Hendrik</Authors>
-    <Product>$(AssemblyName)</Product>
-    <PackageId>$(AssemblyName)</PackageId>
-    <Title>$(AssemblyName)</Title>
-    <Version>2.1.8</Version>
-    <PackageVersion>$(Version)</PackageVersion>
-    <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>$(Version)</FileVersion>
-    <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
-
   <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <NoWarn>IDE0005</NoWarn>
+    <NoWarn>$(NoWarn);IDE0005</NoWarn>
   </PropertyGroup>
 
 </Project>

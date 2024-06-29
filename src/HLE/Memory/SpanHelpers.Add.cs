@@ -82,7 +82,7 @@ public static partial class SpanHelpers
             }
         }
 
-        RemainderLoop:
+    RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref numbers, i) += addition;

@@ -32,7 +32,8 @@ public static unsafe class MemoryHelpers
     }
 
     [Pure]
-    public static bool IsAligned(void* pointer, nuint alignment) => IsAligned(ref Unsafe.AsRef<byte>(pointer), alignment);
+    public static bool IsAligned(void* pointer, nuint alignment)
+        => IsAligned(ref Unsafe.AsRef<byte>(pointer), alignment);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

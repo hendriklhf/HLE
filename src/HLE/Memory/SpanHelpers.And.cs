@@ -119,7 +119,7 @@ public static partial class SpanHelpers
             return;
         }
 
-        RemainderLoop:
+    RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) &= mask;

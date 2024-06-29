@@ -12,6 +12,7 @@ namespace HLE.SourceGenerators.Emojis;
 
 [Generator]
 [SuppressMessage("ReSharper", "ReplaceSliceWithRangeIndexer")]
+[SuppressMessage("Major Code Smell", "S6354:Use a testable date/time provider")]
 public sealed class EmojiFileGenerator : ISourceGenerator
 {
     private Emoji[]? _emojis;

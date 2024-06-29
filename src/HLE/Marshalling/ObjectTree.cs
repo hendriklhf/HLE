@@ -10,7 +10,7 @@ using HLE.Memory;
 
 namespace HLE.Marshalling;
 
-internal static class ObjectTree
+internal static unsafe class ObjectTree
 {
     private static readonly ConcurrentDictionary<Type, FieldInfo[]> s_fieldInfoCache = new();
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getInlineArrayElementsSizeCache = new();
@@ -18,7 +18,9 @@ internal static class ObjectTree
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getSizeCache = new();
 
     [Pure]
-    public static unsafe nuint GetSize<T>(ref T obj)
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    public static nuint GetSize<T>(ref T obj)
     {
         if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
@@ -54,7 +56,7 @@ internal static class ObjectTree
                 if (typeof(T).IsSZArray)
                 {
                     Type elementType = typeof(T).GetElementType()!;
-                    if (ObjectMarshal.IsReferenceOrContainsReference(elementType))
+                    if (ObjectMarshal.GetMethodTable(elementType)->ContainsManagedPointers)
                     {
 #pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
                         return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
@@ -71,16 +73,20 @@ internal static class ObjectTree
         return size + GetFieldsSize(ref obj);
     }
 
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     private static nuint GetFieldsSize<T>(ref T obj)
     {
         nuint size = 0;
         ReadOnlySpan<FieldInfo> instanceFields = GetFields(typeof(T));
+
 #pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
         object o = obj!; // boxing into a local to only box once and not for each loop iteration
 #pragma warning restore HAA0601
+
         foreach (FieldInfo field in instanceFields)
         {
-            if (!ObjectMarshal.IsReferenceOrContainsReference(field.FieldType))
+            if (!ObjectMarshal.GetMethodTable(field.FieldType)->ContainsManagedPointers)
             {
                 continue;
             }
@@ -92,16 +98,16 @@ internal static class ObjectTree
         return size;
     }
 
-    private static unsafe nuint GetSizeNonGeneric(object? obj, Type type)
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    private static nuint GetSizeNonGeneric(object? obj, Type type)
     {
         Debug.Assert(obj is not null);
 
         if (!s_getSizeCache.TryGetValue(type, out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetSize), BindingFlags.Public | BindingFlags.Static)!;
-#pragma warning disable HAA0101
             method = nonGenericMethod.MakeGenericMethod(type);
-#pragma warning restore HAA0101
             s_getSizeCache.TryAdd(type, method);
         }
 
@@ -110,7 +116,7 @@ internal static class ObjectTree
     }
 
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
-    private static ReadOnlySpan<FieldInfo> GetFields(Type type)
+    private static ReadOnlySpan<FieldInfo> GetFields([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] Type type)
     {
         if (s_fieldInfoCache.TryGetValue(type, out FieldInfo[]? fieldInfos))
         {
@@ -122,18 +128,18 @@ internal static class ObjectTree
         return fieldInfos;
     }
 
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
-    private static unsafe nuint GetArrayElementsSize(Array array, Type elementType)
+    private static nuint GetArrayElementsSize(Array array, Type elementType)
     {
         Debug.Assert(array.Rank == 1);
-        Debug.Assert(ObjectMarshal.IsReferenceOrContainsReference(array.GetType().GetElementType()!));
+        Debug.Assert(ObjectMarshal.GetMethodTable(array.GetType().GetElementType()!)->ContainsManagedPointers);
 
         if (!s_getArrayElementsSizeCache.TryGetValue(elementType, out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetArrayElementsSizeCore), BindingFlags.NonPublic | BindingFlags.Static)!;
-#pragma warning disable HAA0101
             method = nonGenericMethod.MakeGenericMethod(elementType);
-#pragma warning restore HAA0101
             s_getArrayElementsSizeCache.TryAdd(elementType, method);
         }
 
@@ -141,6 +147,8 @@ internal static class ObjectTree
         return getArrayElementsSize(array);
     }
 
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     private static nuint GetArrayElementsSizeCore<T>(T[] array)
     {
         nuint size = 0;
@@ -175,8 +183,10 @@ internal static class ObjectTree
         return true;
     }
 
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
-    private static unsafe nuint GetInlineArrayElementsSize<T>(ref T array, int length)
+    private static nuint GetInlineArrayElementsSize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(ref T array, int length)
     {
         Debug.Assert(typeof(T).IsValueType);
 
@@ -189,9 +199,7 @@ internal static class ObjectTree
         if (!s_getInlineArrayElementsSizeCache.TryGetValue(typeof(T), out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetInlineArrayElementsSizeCore), BindingFlags.Static | BindingFlags.NonPublic)!;
-#pragma warning disable HAA0101
             method = nonGenericMethod.MakeGenericMethod(typeof(T), arrayElementType);
-#pragma warning restore HAA0101
             s_getInlineArrayElementsSizeCache.TryAdd(typeof(T), method);
         }
 
@@ -199,6 +207,8 @@ internal static class ObjectTree
         return getInlineArrayElementsSize(ref array, length);
     }
 
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     private static nuint GetInlineArrayElementsSizeCore<TArray, TElement>(ref TArray array, int length) where TArray : struct
     {
         Debug.Assert(RuntimeHelpers.IsReferenceOrContainsReferences<TElement>());

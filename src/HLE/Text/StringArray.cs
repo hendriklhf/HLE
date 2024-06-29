@@ -60,20 +60,7 @@ public sealed class StringArray :
 
     public static StringArray Empty { get; } = new(0);
 
-    public StringArray(int length)
-    {
-        if (length == 0)
-        {
-            _strings = [];
-            _lengths = [];
-            _starts = [];
-            return;
-        }
-
-        _strings = new string[length];
-        _lengths = new int[length];
-        _starts = new int[length];
-    }
+    public StringArray(int length) => StringArrayConstructorCore(length, out _strings, out _lengths, out _starts);
 
     public StringArray(List<string> strings) : this(strings.Count)
         => FillArray(CollectionsMarshal.AsSpan(strings));
@@ -89,11 +76,33 @@ public sealed class StringArray :
 
     public StringArray(IEnumerable<string> strings)
     {
+        if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string> span))
+        {
+            StringArrayConstructorCore(span.Length, out _strings, out _lengths, out _starts);
+            FillArray(span);
+            return;
+        }
+
         _strings = strings.ToArray();
         _lengths = new int[_strings.Length];
         _starts = new int[_strings.Length];
 
         FillArray(_strings);
+    }
+
+    private static void StringArrayConstructorCore(int length, out string[] strings, out int[] lengths, out int[] starts)
+    {
+        if (length == 0)
+        {
+            strings = [];
+            lengths = [];
+            starts = [];
+            return;
+        }
+
+        strings = new string[length];
+        lengths = new int[length];
+        starts = new int[length];
     }
 
     [Pure]
@@ -102,7 +111,16 @@ public sealed class StringArray :
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<char> GetChars(int index) => _chars is null ? [] : _chars.AsSpanUnsafe(_starts[index], _lengths[index]);
+    public ReadOnlySpan<char> GetChars(int index)
+    {
+        if (_chars is null)
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)index, (uint)Length); // TODO: should be IndexOutOfRangeException
+            return [];
+        }
+
+        return _chars.AsSpanUnsafe(_starts[index], _lengths[index]);
+    }
 
     [Pure]
     public ReadOnlySpan<string> AsSpan() => _strings;
@@ -166,6 +184,8 @@ public sealed class StringArray :
         {
             return -1;
         }
+
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)startIndex, (uint)Length);
 
         ReadOnlySpan<int> lengths = _lengths.AsSpan(startIndex..);
         Span<int> indicesBuffer;

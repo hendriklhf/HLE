@@ -26,6 +26,7 @@ public sealed class EventInvokerTest
         await EventInvoker.InvokeAsync(eventHandler, this, "hello");
 
         int invocationListLength = eventHandler?.GetInvocationList().Length ?? 0;
+        Assert.Equal(targetCount, invocationListLength);
         Assert.Equal(invocationListLength, _counter);
     }
 
@@ -43,6 +44,7 @@ public sealed class EventInvokerTest
         await Task.Delay(1_024);
 
         int invocationListLength = eventHandler?.GetInvocationList().Length ?? 0;
+        Assert.Equal(targetCount, invocationListLength);
         Assert.Equal(invocationListLength, _counter);
     }
 
@@ -51,7 +53,7 @@ public sealed class EventInvokerTest
         Assert.Same(this, sender);
         Assert.Same("hello", args);
         Interlocked.Increment(ref _counter);
-        return Task.Delay(Random.Shared.Next(64, 512));
+        return Task.Delay(Random.Shared.Next(8, 32));
     }
 
     private void OnSomething(object? sender, string args)
@@ -59,6 +61,6 @@ public sealed class EventInvokerTest
         Assert.Same(this, sender);
         Assert.Same("hello", args);
         Interlocked.Increment(ref _counter);
-        Thread.Sleep(Random.Shared.Next(64, 512));
+        Thread.Sleep(Random.Shared.Next(8, 32));
     }
 }

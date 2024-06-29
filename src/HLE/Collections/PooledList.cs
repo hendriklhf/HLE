@@ -255,7 +255,7 @@ public sealed class PooledList<T>(int capacity) :
 
     /// <summary>
     /// Trims unused buffer size.<br/>
-    /// This method should ideally be called, when <see cref="Capacity"/> of the <see cref="PooledList{T}"/> is much larger than <see cref="Count"/>.
+    /// This method should ideally be called, when <see cref="Capacity"/> is much larger than <see cref="Count"/>.
     /// </summary>
     /// <example>
     /// After having removed a lot of items from the <see cref="PooledList{T}"/> <see cref="Capacity"/> will be much larger than <see cref="Count"/>.

@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.IL">
 
     <PropertyGroup>
-        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
-        <OutputType>Library</OutputType>
+      <OutputType>Library</OutputType>
     </PropertyGroup>
 
     <ItemGroup>

@@ -30,7 +30,7 @@ public static unsafe partial class SpanHelpers
             byteCount = alignmentResult.ByteCount;
         }
 
-        CheckByteCount:
+    CheckByteCount:
         switch (BitOperations.LeadingZeroCount((ulong)byteCount))
         {
             case <= 47: // >= 65536

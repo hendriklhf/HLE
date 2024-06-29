@@ -23,20 +23,24 @@ public static unsafe partial class SpanHelpers
         [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
         private static delegate*<ref T, ref T, nuint, void> GetMemmoveFunctionPointer()
         {
-            MethodInfo? memmove = Array.Find(
-                typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static),
-                static m => m is { Name: "Memmove", IsGenericMethod: true }
-            );
-
-            if (memmove is not null)
+            if (RuntimeFeature.IsDynamicCodeCompiled) // if !AOT
             {
-#pragma warning disable HAA0101
-                return (delegate*<ref T, ref T, nuint, void>)memmove
-                    .MakeGenericMethod(typeof(T)).MethodHandle.GetFunctionPointer();
-#pragma warning restore HAA0101
+                MethodInfo? memmove = Array.Find(
+                    typeof(Buffer).GetMethods(BindingFlags.NonPublic | BindingFlags.Static),
+                    static m => m is { Name: "Memmove", IsGenericMethod: true }
+                );
+
+                if (memmove is not null)
+                {
+#pragma warning disable IL2060
+                    return (delegate*<ref T, ref T, nuint, void>)memmove
+                        .MakeGenericMethod(typeof(T)).MethodHandle.GetFunctionPointer();
+#pragma warning restore IL2060
+                }
+
+                Debug.Fail($"Using {nameof(MemmoveFallback)} method.");
             }
 
-            Debug.Fail($"Using {nameof(MemmoveFallback)} method.");
             return &MemmoveFallback;
         }
 

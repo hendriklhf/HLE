@@ -128,7 +128,7 @@ public static partial class SpanHelpers
             sum = Vector128.Sum(vectorSum);
         }
 
-        Loop:
+    Loop:
         for (int i = 0; i < length; i++)
         {
             sum += Unsafe.Add(ref items, i);

@@ -170,7 +170,7 @@ public static partial class SpanHelpers
 
         return IndicesOfNonOptimizedFallback(MemoryMarshal.CreateReadOnlySpan(ref items, length), item, MemoryMarshal.CreateSpan(ref destination, length));
 
-        RemainderLoop:
+    RemainderLoop:
         ref T remainingItemsReference = ref Unsafe.Add(ref items, startIndex);
         int remainingLength = length - startIndex;
         for (int i = 0; i < remainingLength; i++)

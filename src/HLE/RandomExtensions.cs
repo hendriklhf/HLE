@@ -351,11 +351,14 @@ public static class RandomExtensions
     public static void Fill<T>(this Random random, List<T> list) where T : unmanaged
         => random.Fill(CollectionsMarshal.AsSpan(list));
 
+    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
+    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     public static unsafe void Fill(this Random random, Array array)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(array.Rank, 1);
 
-        if (ObjectMarshal.IsReferenceOrContainsReference(array.GetType().GetElementType()!))
+        Type elementType = array.GetType().GetElementType()!;
+        if (ObjectMarshal.GetMethodTable(elementType)->ContainsManagedPointers)
         {
             ThrowArrayElementTypeMustBeUnmanaged();
         }

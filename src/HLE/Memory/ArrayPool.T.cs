@@ -26,6 +26,12 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
     private static ThreadLocalBucket t_threadLocalBucket;
 
+    [ThreadStatic]
+    [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
+    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
+    [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
+    private static SmallArrayPool t_smallArrayPool;
+
     public ArrayPool()
     {
         int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
@@ -55,8 +61,8 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
             case > ArrayPool.MaximumArrayLength:
                 return GC.AllocateUninitializedArray<T>(length);
             case < ArrayPool.MinimumArrayLength:
-                length = ArrayPool.MinimumArrayLength;
-                break;
+                ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
+                return smallArrayPool.Rent(minimumLength);
         }
 
         Debug.Assert(BitOperations.PopCount((uint)length) == 1);
@@ -75,7 +81,8 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
             case > ArrayPool.MaximumArrayLength:
                 return GC.AllocateUninitializedArray<T>(length);
             case < ArrayPool.MinimumArrayLength:
-                return length == 0 ? [] : new T[length];
+                ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
+                return smallArrayPool.Rent(length);
         }
 
         T[]? array;
@@ -95,6 +102,14 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
 
         Bucket bucket = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
         return bucket.TryRentExact(length, out array) ? array : GC.AllocateUninitializedArray<T>(length, true);
+    }
+
+    [Pure]
+    public T[] RentFor(params ReadOnlySpan<T> items)
+    {
+        T[] array = RentExact(items.Length);
+        SpanHelpers.Copy(items, array);
+        return array;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
@@ -119,6 +134,7 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
         }
         while (tryCount < MaximumTryCount && bucketIndex < bucketsLength);
 
+        Debug.Assert(tryCount == MaximumTryCount);
         return Unsafe.Subtract(ref bucket, MaximumTryCount).Rent();
     }
 
@@ -153,6 +169,12 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
 
     public override void Return(T[]? array, bool clearArray = false)
     {
+        if (array is { Length: < ArrayPool.MinimumArrayLength })
+        {
+            ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
+            smallArrayPool.Return(array);
+        }
+
         if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
         {
             return;
