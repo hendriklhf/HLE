@@ -349,30 +349,28 @@ public static class RandomExtensions
     }
 
     public static void Fill<T>(this Random random, List<T> list) where T : unmanaged
-        => random.Fill(CollectionsMarshal.AsSpan(list));
+        => random.Write(ref ListMarshal.GetReference(list), (uint)list.Count);
 
     [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
     [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     public static unsafe void Fill(this Random random, Array array)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(array.Rank, 1);
-
         Type elementType = array.GetType().GetElementType()!;
-        if (ObjectMarshal.GetMethodTable(elementType)->ContainsManagedPointers)
+        if (ObjectMarshal.GetMethodTable(elementType)->IsReferenceOrContainsReferences)
         {
             ThrowArrayElementTypeMustBeUnmanaged();
         }
 
         ushort componentSize = ObjectMarshal.GetMethodTable(array)->ComponentSize;
         ref byte reference = ref MemoryMarshal.GetArrayDataReference(array);
-        random.Write(ref reference, componentSize * array.Length);
+        random.Write(ref reference, checked(componentSize * nuint.CreateChecked(array.LongLength)));
     }
 
     public static void Fill<T>(this Random random, T[] array) where T : unmanaged
-        => random.Fill(array.AsSpan());
+        => random.Write(ref MemoryMarshal.GetArrayDataReference(array), (uint)array.Length);
 
     public static void Fill<T>(this Random random, Span<T> span) where T : unmanaged
-        => random.Write(ref MemoryMarshal.GetReference(span), span.Length);
+        => random.Write(ref MemoryMarshal.GetReference(span), (uint)span.Length);
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -447,7 +445,7 @@ public static class RandomExtensions
                 int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
                 ulong mask = random.NextStruct<ulong>();
                 ulong flags = LeadingZeroFlagMaskValues[leadingZeroCount] & mask;
-                return UnsafeIL.As<uint, TEnum>((uint)flags);
+                return UnsafeIL.As<ulong, TEnum>(flags);
             }
             default:
                 ThrowHelper.ThrowUnreachableException();
@@ -455,13 +453,22 @@ public static class RandomExtensions
         }
     }
 
-    public static unsafe void Write<T>(this Random random, T* destination, int elementCount) where T : unmanaged
+    public static unsafe void Write<T>(this Random random, T* destination, nuint elementCount) where T : unmanaged
         => random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
 
-    public static unsafe void Write<T>(this Random random, ref T destination, int elementCount) where T : unmanaged
+    public static unsafe void Write<T>(this Random random, ref T destination, nuint elementCount) where T : unmanaged
     {
-        Span<byte> span = MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref destination), elementCount * sizeof(T));
-        random.NextBytes(span);
+        ref byte byteDestination = ref Unsafe.As<T, byte>(ref destination);
+        nuint byteCount = checked((uint)sizeof(T) * elementCount);
+        while (byteCount >= int.MaxValue)
+        {
+            Span<byte> bytes = MemoryMarshal.CreateSpan(ref byteDestination, int.MaxValue);
+            random.NextBytes(bytes);
+            byteCount -= int.MaxValue;
+        }
+
+        Span<byte> remainder = MemoryMarshal.CreateSpan(ref byteDestination, (int)byteCount);
+        random.NextBytes(remainder);
     }
 
     [Pure]

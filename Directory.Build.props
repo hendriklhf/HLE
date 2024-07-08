@@ -6,7 +6,6 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <NeutralLanguage>en-US</NeutralLanguage>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <WarningsAsErrors>Nullable</WarningsAsErrors>

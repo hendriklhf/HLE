@@ -15,7 +15,7 @@ public sealed partial class StringPool
         [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]
         [SuppressMessage("Style", "IDE0044:Add readonly modifier")]
         [SuppressMessage("Roslynator", "RCS1213:Remove unused member declaration")]
-        private struct Strings
+        internal struct Strings
         {
             private string? _strings;
 

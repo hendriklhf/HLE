@@ -32,10 +32,18 @@ public static unsafe partial class SpanHelpers
 
                 if (memmove is not null)
                 {
+                    Type[] types = ArrayPool<Type>.Shared.RentFor(typeof(T));
+                    try
+                    {
 #pragma warning disable IL2060
-                    return (delegate*<ref T, ref T, nuint, void>)memmove
-                        .MakeGenericMethod(typeof(T)).MethodHandle.GetFunctionPointer();
+                        return (delegate*<ref T, ref T, nuint, void>)memmove
+                            .MakeGenericMethod(types).MethodHandle.GetFunctionPointer();
 #pragma warning restore IL2060
+                    }
+                    finally
+                    {
+                        ArrayPool<Type>.Shared.Return(types);
+                    }
                 }
 
                 Debug.Fail($"Using {nameof(MemmoveFallback)} method.");

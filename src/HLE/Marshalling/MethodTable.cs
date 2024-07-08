@@ -15,11 +15,18 @@ public readonly struct MethodTable
     /// </summary>
     public ushort ComponentSize => _componentSize;
 
-    public bool ContainsManagedPointers => (_flags & 0x01000000) != 0;
+    public bool IsValueType => (_flags & IsValueTypeFlag) != 0;
+
+    public bool ContainsManagedPointers => (_flags & ContainsManagedPointersFlag) != 0;
+
+    public bool IsReferenceOrContainsReferences => !IsValueType || ContainsManagedPointers;
 
     [FieldOffset(0)]
     private readonly ushort _componentSize;
 
     [FieldOffset(0)]
     private readonly uint _flags;
+
+    private const uint ContainsManagedPointersFlag = 0x1000000;
+    private const uint IsValueTypeFlag = 0x00040000;
 }

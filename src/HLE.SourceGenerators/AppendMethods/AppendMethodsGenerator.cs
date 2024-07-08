@@ -25,6 +25,7 @@ public sealed class AppendMethodsGenerator : ISourceGenerator
     private const string PooledStringBuilderClassName = "PooledStringBuilder";
 
     [SuppressMessage("ReSharper", "UseCollectionExpression")]
+    [SuppressMessage("Performance", "HAA0601:Value type to reference type conversion causing boxing allocation")]
     public void Initialize(GeneratorInitializationContext _)
     {
         for (int argumentCount = MinimumAmountOfArguments; argumentCount <= MaximumAmountOfArguments; argumentCount++)

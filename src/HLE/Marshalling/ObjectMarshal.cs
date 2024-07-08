@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
@@ -142,4 +143,14 @@ public static unsafe class ObjectMarshal
         BaseObjectSize +
         (nuint)sizeof(nuint) /* array length */ +
         (uint)arrayLength * (uint)sizeof(T); /* items */
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static object BoxOnStack<T>(ref T value, out Box<T> box)
+    {
+        Debug.Assert(typeof(T).IsValueType);
+
+        box = new(ref value);
+        return UnsafeIL.RefAs<Box<T>, object>(ref box);
+    }
 }

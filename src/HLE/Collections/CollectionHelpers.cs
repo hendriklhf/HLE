@@ -195,7 +195,7 @@ public static partial class CollectionHelpers
 
     public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
     {
-#if RELEASE // this might prevent reaching the bottom branches, so it will be removed for test runs as it is runtime code
+#if RELEASE // this might prevent the tests from reaching the bottom branches, so it will be removed for test runs as it is runtime code
         if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
         {
             return true;

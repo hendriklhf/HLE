@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -13,6 +14,7 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
     public void Initialize(GeneratorInitializationContext context)
         => context.RegisterForSyntaxNotifications(static () => new SingleCharStringPoolReceiver());
 
+    [SuppressMessage("Performance", "HAA0601:Value type to reference type conversion causing boxing allocation")]
     public void Execute(GeneratorExecutionContext context)
     {
         SingleCharStringPoolReceiver receiver = (SingleCharStringPoolReceiver)context.SyntaxReceiver!;
@@ -55,5 +57,11 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowAmountLessThanZero(SingleCharStringPoolReceiver receiver)
-        => throw new ArgumentOutOfRangeException($"{nameof(receiver)}.{nameof(receiver.AmountOfCachedSingleCharStrings)}", receiver.AmountOfCachedSingleCharStrings, "Amount of cached single char strings is below zero.");
+    {
+#pragma warning disable HAA0601
+        object paramValue = receiver.AmountOfCachedSingleCharStrings; // boxes, as ArgumentOutOfRangeException's constructor takes an object
+#pragma warning restore HAA0601
+
+        throw new ArgumentOutOfRangeException($"{nameof(receiver)}.{nameof(receiver.AmountOfCachedSingleCharStrings)}", paramValue, "Amount of cached single char strings is below zero.");
+    }
 }

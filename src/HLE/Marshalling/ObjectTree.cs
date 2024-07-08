@@ -44,6 +44,7 @@ internal static unsafe class ObjectTree
             }
 
 #pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
+            // doesn't box, obj is a reference type
             size = ObjectMarshal.GetObjectSize(obj);
 #pragma warning restore HAA0601
             if (typeof(T) == typeof(string))
@@ -56,9 +57,10 @@ internal static unsafe class ObjectTree
                 if (typeof(T).IsSZArray)
                 {
                     Type elementType = typeof(T).GetElementType()!;
-                    if (ObjectMarshal.GetMethodTable(elementType)->ContainsManagedPointers)
+                    if (ObjectMarshal.GetMethodTable(elementType)->IsReferenceOrContainsReferences)
                     {
 #pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
+                        // doesn't box, obj is a reference type
                         return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
 #pragma warning restore HAA0601
                     }
@@ -73,6 +75,7 @@ internal static unsafe class ObjectTree
         return size + GetFieldsSize(ref obj);
     }
 
+    [SkipLocalsInit]
     [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
     [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     private static nuint GetFieldsSize<T>(ref T obj)
@@ -80,18 +83,16 @@ internal static unsafe class ObjectTree
         nuint size = 0;
         ReadOnlySpan<FieldInfo> instanceFields = GetFields(typeof(T));
 
-#pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
-        object o = obj!; // boxing into a local to only box once and not for each loop iteration
-#pragma warning restore HAA0601
+        object o = ObjectMarshal.BoxOnStack(ref obj, out _);
 
         foreach (FieldInfo field in instanceFields)
         {
-            if (!ObjectMarshal.GetMethodTable(field.FieldType)->ContainsManagedPointers)
+            if (!ObjectMarshal.GetMethodTable(field.FieldType)->IsReferenceOrContainsReferences)
             {
                 continue;
             }
 
-            object? fieldValue = field.GetValue(o); // TODO: boxes 'obj' and the field's value
+            object? fieldValue = field.GetValue(o); // TODO: boxes the field's value
             size += fieldValue is not null ? GetSizeNonGeneric(fieldValue, field.FieldType) : 0;
         }
 
@@ -107,8 +108,17 @@ internal static unsafe class ObjectTree
         if (!s_getSizeCache.TryGetValue(type, out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetSize), BindingFlags.Public | BindingFlags.Static)!;
-            method = nonGenericMethod.MakeGenericMethod(type);
-            s_getSizeCache.TryAdd(type, method);
+
+            Type[] types = ArrayPool<Type>.Shared.RentFor(type);
+            try
+            {
+                method = nonGenericMethod.MakeGenericMethod(types);
+                s_getSizeCache.TryAdd(type, method);
+            }
+            finally
+            {
+                ArrayPool<Type>.Shared.Return(types);
+            }
         }
 
         delegate*<ref byte, nuint> getSize = (delegate*<ref byte, nuint>)method.MethodHandle.GetFunctionPointer();
@@ -134,13 +144,22 @@ internal static unsafe class ObjectTree
     private static nuint GetArrayElementsSize(Array array, Type elementType)
     {
         Debug.Assert(array.Rank == 1);
-        Debug.Assert(ObjectMarshal.GetMethodTable(array.GetType().GetElementType()!)->ContainsManagedPointers);
+        Debug.Assert(ObjectMarshal.GetMethodTable(array.GetType().GetElementType()!)->IsReferenceOrContainsReferences);
 
         if (!s_getArrayElementsSizeCache.TryGetValue(elementType, out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetArrayElementsSizeCore), BindingFlags.NonPublic | BindingFlags.Static)!;
-            method = nonGenericMethod.MakeGenericMethod(elementType);
-            s_getArrayElementsSizeCache.TryAdd(elementType, method);
+
+            Type[] types = ArrayPool<Type>.Shared.RentFor(elementType);
+            try
+            {
+                method = nonGenericMethod.MakeGenericMethod(types);
+                s_getArrayElementsSizeCache.TryAdd(elementType, method);
+            }
+            finally
+            {
+                ArrayPool<Type>.Shared.Return(types);
+            }
         }
 
         delegate*<Array, nuint> getArrayElementsSize = (delegate*<Array, nuint>)method.MethodHandle.GetFunctionPointer();
@@ -199,8 +218,17 @@ internal static unsafe class ObjectTree
         if (!s_getInlineArrayElementsSizeCache.TryGetValue(typeof(T), out MethodInfo? method))
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetInlineArrayElementsSizeCore), BindingFlags.Static | BindingFlags.NonPublic)!;
-            method = nonGenericMethod.MakeGenericMethod(typeof(T), arrayElementType);
-            s_getInlineArrayElementsSizeCache.TryAdd(typeof(T), method);
+
+            Type[] types = ArrayPool<Type>.Shared.RentFor(typeof(T), arrayElementType);
+            try
+            {
+                method = nonGenericMethod.MakeGenericMethod(types);
+                s_getInlineArrayElementsSizeCache.TryAdd(typeof(T), method);
+            }
+            finally
+            {
+                ArrayPool<Type>.Shared.Return(types);
+            }
         }
 
         delegate*<ref T, int, nuint> getInlineArrayElementsSize = (delegate*<ref T, int, nuint>)method.MethodHandle.GetFunctionPointer();

@@ -22,12 +22,12 @@ public sealed partial class ArrayPool<T>
                 return [];
             }
 
-            ref SmallPool.SmallBucket bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<SmallPool, SmallPool.SmallBucket>(ref _pool), length);
+            ref SmallPool.SmallBucket bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<SmallPool, SmallPool.SmallBucket>(ref _pool), length - 1);
             ref T[]? arrays = ref InlineArrayHelpers.GetReference<SmallPool.SmallBucket, T[]?>(ref bucket);
 
             if (arrays is null)
             {
-                return new T[length];
+                return GC.AllocateUninitializedArray<T>(length, true);
             }
 
             for (int i = 1; i < SmallPool.SmallBucket.Length; i++)
@@ -39,16 +39,18 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
-                ref T[] array = ref Unsafe.Add(ref current, -1)!;
-                T[] correctArray = array;
+                ref T[]? array = ref Unsafe.Add(ref current, -1);
+                T[]? correctArray = array;
                 array = null!; // remove reference from pool
+
+                Debug.Assert(correctArray is not null);
                 return correctArray;
             }
 
             return GC.AllocateUninitializedArray<T>(length, true);
         }
 
-        public void Return(T[] array)
+        public void Return(T[] array, bool clearArray)
         {
             int arrayLength = array.Length;
             Debug.Assert(arrayLength is >= 0 and < ArrayPool.MinimumArrayLength);
@@ -58,7 +60,7 @@ public sealed partial class ArrayPool<T>
                 return;
             }
 
-            ref SmallPool.SmallBucket bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<SmallPool, SmallPool.SmallBucket>(ref _pool), arrayLength);
+            ref SmallPool.SmallBucket bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<SmallPool, SmallPool.SmallBucket>(ref _pool), arrayLength - 1);
             ref T[]? arrays = ref InlineArrayHelpers.GetReference<SmallPool.SmallBucket, T[]?>(ref bucket);
 
             for (int i = 0; i < SmallPool.SmallBucket.Length; i++)
@@ -69,6 +71,7 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
+                ClearArrayIfNeeded(array, clearArray);
                 current = array;
                 return;
             }

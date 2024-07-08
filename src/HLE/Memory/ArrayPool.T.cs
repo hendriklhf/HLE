@@ -55,14 +55,16 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     {
         ArgumentOutOfRangeException.ThrowIfNegative(minimumLength);
 
-        int length = minimumLength >= 1 << 30 ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
-        switch (length)
+        if (minimumLength < ArrayPool.MinimumArrayLength)
         {
-            case > ArrayPool.MaximumArrayLength:
-                return GC.AllocateUninitializedArray<T>(length);
-            case < ArrayPool.MinimumArrayLength:
-                ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
-                return smallArrayPool.Rent(minimumLength);
+            ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
+            return smallArrayPool.Rent(minimumLength);
+        }
+
+        int length = minimumLength >= 1 << 30 ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
+        if (length > ArrayPool.MaximumArrayLength)
+        {
+            return GC.AllocateUninitializedArray<T>(length);
         }
 
         Debug.Assert(BitOperations.PopCount((uint)length) == 1);
@@ -105,9 +107,48 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     }
 
     [Pure]
+    public T[] RentFor(T item)
+    {
+        T[] array = RentExact(1);
+        Debug.Assert(array.Length == 1);
+
+        MemoryMarshal.GetArrayDataReference(array) = item;
+        return array;
+    }
+
+    [Pure]
+    public T[] RentFor(T item0, T item1)
+    {
+        T[] array = RentExact(2);
+        Debug.Assert(array.Length == 2);
+
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
+        Unsafe.Add(ref reference, 0) = item0;
+        Unsafe.Add(ref reference, 1) = item1;
+
+        return array;
+    }
+
+    [Pure]
+    public T[] RentFor(T item0, T item1, T item2)
+    {
+        T[] array = RentExact(3);
+        Debug.Assert(array.Length == 3);
+
+        ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
+        Unsafe.Add(ref reference, 0) = item0;
+        Unsafe.Add(ref reference, 1) = item1;
+        Unsafe.Add(ref reference, 2) = item2;
+
+        return array;
+    }
+
+    [Pure]
     public T[] RentFor(params ReadOnlySpan<T> items)
     {
         T[] array = RentExact(items.Length);
+        Debug.Assert(array.Length == items.Length);
+
         SpanHelpers.Copy(items, array);
         return array;
     }
@@ -169,10 +210,16 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
 
     public override void Return(T[]? array, bool clearArray = false)
     {
-        if (array is { Length: < ArrayPool.MinimumArrayLength })
+        if (array is null)
+        {
+            return;
+        }
+
+        if (array.Length < ArrayPool.MinimumArrayLength)
         {
             ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
-            smallArrayPool.Return(array);
+            smallArrayPool.Return(array, clearArray);
+            return;
         }
 
         if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
@@ -236,9 +283,9 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetBucketIndex([NotNullWhen(true)] T[]? array, out int bucketIndex, out int pow2Length)
+    private static bool TryGetBucketIndex(T[] array, out int bucketIndex, out int pow2Length)
     {
-        if (array is not { Length: >= ArrayPool.MinimumArrayLength and <= ArrayPool.MaximumArrayLength })
+        if (array.Length is >= ArrayPool.MinimumArrayLength and <= ArrayPool.MaximumArrayLength)
         {
             bucketIndex = -1;
             pow2Length = -1;
