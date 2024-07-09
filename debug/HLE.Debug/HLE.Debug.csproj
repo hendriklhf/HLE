@@ -5,15 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.10.0" />
-    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+    <PackageReference Include="BenchmarkDotNet"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\HLE.IL\HLE.IL.ilproj" />
-    <ProjectReference Include="..\..\src\HLE.Twitch\HLE.Twitch.csproj" />
-    <ProjectReference Include="..\..\src\HLE\HLE.csproj" />
+    <ProjectReference Include="..\..\src\HLE.IL\HLE.IL.ilproj"/>
+    <ProjectReference Include="..\..\src\HLE.Twitch\HLE.Twitch.csproj"/>
+    <ProjectReference Include="..\..\src\HLE\HLE.csproj"/>
   </ItemGroup>
 
 </Project>
