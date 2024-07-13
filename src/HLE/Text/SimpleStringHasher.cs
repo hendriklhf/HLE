@@ -13,14 +13,9 @@ internal static class SimpleStringHasher
 
     public static uint Hash(ref PooledInterpolatedStringHandler chars)
     {
-        try
-        {
-            return Hash(chars.Text);
-        }
-        finally
-        {
-            chars.Dispose();
-        }
+        uint hash = Hash(chars.Text);
+        chars.Dispose();
+        return hash;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

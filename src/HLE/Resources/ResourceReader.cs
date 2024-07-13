@@ -9,30 +9,20 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Memory;
 using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Resources;
 
-public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
+[method: MustDisposeResource]
+public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
 {
     int IReadOnlyCollection<Resource>.Count => _resources.Count;
 
-    private readonly Assembly _assembly;
-    private readonly string _assemblyName;
+    private readonly Assembly _assembly = assembly;
     private readonly ConcurrentDictionary<string, Resource> _resources = new();
     private List<GCHandle>? _handles;
-
-    [MustDisposeResource]
-    public ResourceReader(Assembly assembly)
-    {
-        _assembly = assembly;
-        string? assemblyName = assembly.GetName().Name;
-        ArgumentException.ThrowIfNullOrEmpty(assemblyName);
-        _assemblyName = $"{assemblyName}.";
-    }
 
     public void Dispose()
     {
@@ -52,22 +42,19 @@ public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquat
     }
 
     [Pure]
-    public Resource Read(ref PooledInterpolatedStringHandler resourceName)
+    public Resource Read(ref PooledInterpolatedStringHandler resourcePath)
     {
-        try
-        {
-            return Read(resourceName.Text);
-        }
-        finally
-        {
-            resourceName.Dispose();
-        }
+        Resource resource = Read(resourcePath.Text);
+        resourcePath.Dispose();
+        return resource;
     }
 
     [Pure]
-    public Resource Read(ReadOnlySpan<char> resourceName)
+    public Resource Read(ReadOnlySpan<char> resourcePath) => Read(StringPool.Shared.GetOrAdd(resourcePath));
+
+    [Pure]
+    public Resource Read(string resourcePath)
     {
-        string resourcePath = BuildResourcePath(resourceName);
         if (!TryReadCore(resourcePath, out Resource resource))
         {
             ThrowResourceDoesntExist(resourcePath);
@@ -81,40 +68,22 @@ public sealed unsafe class ResourceReader : IResourceReader, IDisposable, IEquat
     private static void ThrowResourceDoesntExist(ReadOnlySpan<char> resourcePath)
         => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
 
-    public bool TryRead(ref PooledInterpolatedStringHandler resourceName, out Resource resource)
+    public bool TryRead(ref PooledInterpolatedStringHandler resourcePath, out Resource resource)
     {
-        try
-        {
-            return TryRead(resourceName.Text, out resource);
-        }
-        finally
-        {
-            resourceName.Dispose();
-        }
+        bool success = TryRead(resourcePath.Text, out resource);
+        resourcePath.Dispose();
+        return success;
     }
 
     /// <summary>
     /// Tries to read a resource.
     /// </summary>
-    /// <param name="resourceName">The name of the resource.</param>
+    /// <param name="resourcePath">The path of the resource.</param>
     /// <param name="resource">The resource bytes.</param>
     /// <returns>True, if the resource exists, false otherwise.</returns>
-    public bool TryRead(ReadOnlySpan<char> resourceName, out Resource resource)
-    {
-        string resourcePath = BuildResourcePath(resourceName);
-        return TryReadCore(resourcePath, out resource);
-    }
+    public bool TryRead(ReadOnlySpan<char> resourcePath, out Resource resource) => TryReadCore(StringPool.Shared.GetOrAdd(resourcePath), out resource);
 
-    [SkipLocalsInit]
-    private string BuildResourcePath(ReadOnlySpan<char> resourceName)
-    {
-        string assemblyName = _assemblyName;
-        Span<char> buffer = stackalloc char[assemblyName.Length + resourceName.Length];
-        SpanHelpers.Copy(assemblyName, buffer);
-        SpanHelpers.Copy(resourceName, buffer.SliceUnsafe(assemblyName.Length));
-
-        return StringPool.Shared.GetOrAdd(buffer);
-    }
+    public bool TryRead(string resourcePath, out Resource resource) => TryReadCore(resourcePath, out resource);
 
     private bool TryReadCore(string resourcePath, out Resource resource)
     {

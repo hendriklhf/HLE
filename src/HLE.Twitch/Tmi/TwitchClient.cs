@@ -220,8 +220,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         SubscribeToEvents();
     }
 
-    [SuppressMessage("Performance", "HAA0302:Display class allocation to capture closure")]
-    [SuppressMessage("Performance", "HAA0301:Closure Allocation Source")]
     private void SubscribeToEvents()
     {
         _client.OnConnected += (_, e) => OnConnected?.Invoke(this, e);

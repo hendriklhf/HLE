@@ -43,10 +43,7 @@ internal static unsafe class ObjectTree
                 return 0;
             }
 
-#pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
-            // doesn't box, obj is a reference type
             size = ObjectMarshal.GetObjectSize(obj);
-#pragma warning restore HAA0601
             if (typeof(T) == typeof(string))
             {
                 return size;
@@ -59,10 +56,7 @@ internal static unsafe class ObjectTree
                     Type elementType = typeof(T).GetElementType()!;
                     if (ObjectMarshal.GetMethodTable(elementType)->IsReferenceOrContainsReferences)
                     {
-#pragma warning disable HAA0601 // Value type to reference type conversion causes boxing at call site (here), and unboxing at the callee-site.
-                        // doesn't box, obj is a reference type
                         return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
-#pragma warning restore HAA0601
                     }
 
                     return size;
@@ -83,7 +77,8 @@ internal static unsafe class ObjectTree
         nuint size = 0;
         ReadOnlySpan<FieldInfo> instanceFields = GetFields(typeof(T));
 
-        object o = ObjectMarshal.BoxOnStack(ref obj, out _);
+        object? o = typeof(T).IsValueType ? ObjectMarshal.BoxOnStack(ref obj, out _) : obj;
+        Debug.Assert(o is not null);
 
         foreach (FieldInfo field in instanceFields)
         {

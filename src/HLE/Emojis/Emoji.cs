@@ -41,14 +41,9 @@ public static partial class Emoji
     [Pure]
     public static bool IsEmoji(ref PooledInterpolatedStringHandler text)
     {
-        try
-        {
-            return IsEmoji(text.Text);
-        }
-        finally
-        {
-            text.Dispose();
-        }
+        bool result = IsEmoji(text.Text);
+        text.Dispose();
+        return result;
     }
 
     [Pure]

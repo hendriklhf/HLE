@@ -285,7 +285,7 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryGetBucketIndex(T[] array, out int bucketIndex, out int pow2Length)
     {
-        if (array.Length is >= ArrayPool.MinimumArrayLength and <= ArrayPool.MaximumArrayLength)
+        if (array.Length is < ArrayPool.MinimumArrayLength or > ArrayPool.MaximumArrayLength)
         {
             bucketIndex = -1;
             pow2Length = -1;

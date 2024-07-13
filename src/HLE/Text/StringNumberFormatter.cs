@@ -64,14 +64,9 @@ public readonly struct StringNumberFormatter(StringNumberFormat format) : IEquat
     [Pure]
     public int Parse(ref PooledInterpolatedStringHandler stringNumber)
     {
-        try
-        {
-            return Parse(stringNumber.Text);
-        }
-        finally
-        {
-            stringNumber.Dispose();
-        }
+        int number = Parse(stringNumber.Text);
+        stringNumber.Dispose();
+        return number;
     }
 
     [Pure]

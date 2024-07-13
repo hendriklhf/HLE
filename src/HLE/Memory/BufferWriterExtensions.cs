@@ -9,14 +9,8 @@ public static class BufferWriterExtensions
 {
     public static void WriteUtf8<TBufferWriter>(this TBufferWriter writer, ref PooledInterpolatedStringHandler chars) where TBufferWriter : IBufferWriter<byte>
     {
-        try
-        {
-            writer.WriteUtf8(chars.Text);
-        }
-        finally
-        {
-            chars.Dispose();
-        }
+        writer.WriteUtf8(chars.Text);
+        chars.Dispose();
     }
 
     public static void WriteUtf8<TBufferWriter>(this TBufferWriter writer, ReadOnlySpan<char> chars) where TBufferWriter : IBufferWriter<byte>

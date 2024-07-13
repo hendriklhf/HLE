@@ -43,14 +43,9 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
     [Pure]
     public static StringNumberFormat Create(ref PooledInterpolatedStringHandler chars)
     {
-        try
-        {
-            return Create(chars.Text);
-        }
-        finally
-        {
-            chars.Dispose();
-        }
+        StringNumberFormat format = Create(chars.Text);
+        chars.Dispose();
+        return format;
     }
 
     [Pure]

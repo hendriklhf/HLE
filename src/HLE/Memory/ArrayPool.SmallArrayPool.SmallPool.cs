@@ -7,7 +7,7 @@ public sealed partial class ArrayPool<T>
 {
     private partial struct SmallArrayPool
     {
-        [InlineArray(ArrayPool.MinimumArrayLength - 2)]
+        [InlineArray(ArrayPool.MinimumArrayLength - 1)]
         [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
         private partial struct SmallPool
         {

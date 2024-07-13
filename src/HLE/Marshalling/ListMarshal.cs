@@ -9,7 +9,7 @@ using HLE.Memory;
 
 namespace HLE.Marshalling;
 
-public static class ListMarshal
+public static partial class ListMarshal
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -34,26 +34,20 @@ public static class ListMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(List<T> list) => GetArrayCore(list);
+    public static T[] GetArray<T>(List<T> list) => UnsafeAccessor<T>.GetItems(list);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetArray<T>(List<T> list, T[] array)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(list.Count, array.Length);
-        GetArrayCore(list) = array;
+        UnsafeAccessor<T>.GetItems(list) = array;
     }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_items")]
-    private static extern ref T[] GetArrayCore<T>(List<T> list);
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_size")]
-    private static extern ref int GetCount<T>(List<T> list);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetCount<T>(List<T> list, int count)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(count, list.Capacity);
-        GetCount(list) = count;
+        UnsafeAccessor<T>.GetSize(list) = count;
     }
 
     [Pure]

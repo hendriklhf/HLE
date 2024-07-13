@@ -123,7 +123,6 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is IntBoolUnion<T> other && Equals(other);
 
     [Pure]
-    [SuppressMessage("Performance", "HAA0102:Non-overridden virtual method call on value type", Justification = "T is always a primitive value type")]
     public override readonly int GetHashCode() => _value.GetHashCode();
 
     public static bool operator ==(IntBoolUnion<T> left, IntBoolUnion<T> right) => left.Equals(right);

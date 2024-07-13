@@ -13,6 +13,8 @@ public sealed class ArrayPoolTest
 
     public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = TheoryDataHelpers.CreateRange(0, 4096);
 
+    public static TheoryData<int> ConsecutiveValues0ToMinimumLengthMinus1 { get; } = TheoryDataHelpers.CreateRange(0, ArrayPool.MinimumArrayLength - 1);
+
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
         => Assert.Equal(ArrayPool.BucketIndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
@@ -25,12 +27,12 @@ public sealed class ArrayPoolTest
     }
 
     [Fact]
-    public void RentReturnsNonEmptyArrayForLengthZero()
+    public void RentReturnsEmptyArrayForLengthZero()
     {
         ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(0);
-        Assert.NotEmpty(array);
+        Assert.Empty(array);
     }
 
     [Theory]
@@ -47,14 +49,12 @@ public sealed class ArrayPoolTest
         });
 
     [Theory]
-    [InlineData(1)]
-    [InlineData(ArrayPool.MinimumArrayLength - 1)]
-    public void RentArrayShorterThanMinimumLength(int minimumLength)
+    [MemberData(nameof(ConsecutiveValues0ToMinimumLengthMinus1))]
+    public void RentArrayShorterThanMinimumLength(int length)
     {
         ArrayPool<int> pool = new();
-
-        int[] array = pool.Rent(minimumLength);
-        Assert.Equal(ArrayPool.MinimumArrayLength, array.Length);
+        int[] array = pool.Rent(length);
+        Assert.Equal(length, array.Length);
     }
 
     [Theory]
@@ -72,7 +72,7 @@ public sealed class ArrayPoolTest
 
             Assert.True(array.Length >= minimumLength);
             Assert.Same(previousArray, array);
-            Assert.Equal(GC.MaxGeneration, GC.GetGeneration(array)); // array is pinned
+            Assert.True(ReferenceEquals(array, Array.Empty<int>()) || GC.GetGeneration(array) == GC.MaxGeneration); // array is pinned
 
             pool.Return(array);
             previousArray = array;

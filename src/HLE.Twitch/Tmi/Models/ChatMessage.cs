@@ -88,14 +88,12 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
         }
 
         UnsafeBufferWriter<char> writer = new(destination);
-#pragma warning disable HAA0101 // its params ReadOnlySpan
         writer.Write("<#");
         writer.Write(Channel);
         writer.Write("> ");
         writer.Write(Username.AsSpan());
         writer.Write(": ");
         writer.Write(Message.AsSpan());
-#pragma warning restore HAA0101
 
         charsWritten = writer.Count;
         return true;

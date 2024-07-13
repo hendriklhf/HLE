@@ -57,14 +57,9 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
 
     public Regex GetOrAdd([StringSyntax(StringSyntaxAttribute.Regex)] ref PooledInterpolatedStringHandler pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
     {
-        try
-        {
-            return GetOrAdd(pattern.Text, options, timeout);
-        }
-        finally
-        {
-            pattern.Dispose();
-        }
+        Regex regex = GetOrAdd(pattern.Text, options, timeout);
+        pattern.Dispose();
+        return regex;
     }
 
     public Regex GetOrAdd([StringSyntax(StringSyntaxAttribute.Regex)] ReadOnlySpan<char> pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
@@ -105,38 +100,23 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ref PooledInterpolatedStringHandler pattern, [MaybeNullWhen(false)] out Regex regex)
     {
-        try
-        {
-            return TryGet(pattern.Text, RegexOptions.None, Regex.InfiniteMatchTimeout, out regex);
-        }
-        finally
-        {
-            pattern.Dispose();
-        }
+        bool success = TryGet(pattern.Text, RegexOptions.None, Regex.InfiniteMatchTimeout, out regex);
+        pattern.Dispose();
+        return success;
     }
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ref PooledInterpolatedStringHandler pattern, RegexOptions options, [MaybeNullWhen(false)] out Regex regex)
     {
-        try
-        {
-            return TryGet(pattern.Text, options, Regex.InfiniteMatchTimeout, out regex);
-        }
-        finally
-        {
-            pattern.Dispose();
-        }
+        bool success = TryGet(pattern.Text, options, Regex.InfiniteMatchTimeout, out regex);
+        pattern.Dispose();
+        return success;
     }
 
     public bool TryGet([StringSyntax(StringSyntaxAttribute.Regex)] ref PooledInterpolatedStringHandler pattern, RegexOptions options, TimeSpan timeout, [MaybeNullWhen(false)] out Regex regex)
     {
-        try
-        {
-            return GetBucket(pattern.Text, options, timeout).TryGet(pattern.Text, options, timeout, out regex);
-        }
-        finally
-        {
-            pattern.Dispose();
-        }
+        bool success = GetBucket(pattern.Text, options, timeout).TryGet(pattern.Text, options, timeout, out regex);
+        pattern.Dispose();
+        return success;
     }
 
     [Pure]
@@ -156,19 +136,14 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
     [Pure]
     public bool Contains([StringSyntax(StringSyntaxAttribute.Regex)] ref PooledInterpolatedStringHandler pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
     {
-        try
+        if (timeout == default)
         {
-            if (timeout == default)
-            {
-                timeout = Regex.InfiniteMatchTimeout;
-            }
+            timeout = Regex.InfiniteMatchTimeout;
+        }
 
-            return GetBucket(pattern.Text, options, timeout).Contains(pattern.Text, options, timeout);
-        }
-        finally
-        {
-            pattern.Dispose();
-        }
+        bool contains = GetBucket(pattern.Text, options, timeout).Contains(pattern.Text, options, timeout);
+        pattern.Dispose();
+        return contains;
     }
 
     private ref Bucket GetBucket(Regex regex) => ref GetBucket(regex.ToString(), regex.Options, regex.MatchTimeout);

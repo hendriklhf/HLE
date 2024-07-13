@@ -46,6 +46,25 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
     [Pure]
     public static IEnumerable<TEnum> AsEnumerable() => s_values;
 
+    [Pure]
+    public static unsafe bool IsDefined(TEnum value)
+    {
+        switch (sizeof(TEnum))
+        {
+            case sizeof(byte):
+                return AsSpan<byte>().Contains(Unsafe.As<TEnum, byte>(ref value));
+            case sizeof(ushort):
+                return AsSpan<ushort>().Contains(Unsafe.As<TEnum, ushort>(ref value));
+            case sizeof(uint):
+                return AsSpan<uint>().Contains(Unsafe.As<TEnum, uint>(ref value));
+            case sizeof(ulong):
+                return AsSpan<ulong>().Contains(Unsafe.As<TEnum, ulong>(ref value));
+            default:
+                ThrowHelper.ThrowUnreachableException();
+                return false;
+        }
+    }
+
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)

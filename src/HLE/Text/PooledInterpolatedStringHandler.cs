@@ -9,7 +9,6 @@ namespace HLE.Text;
 [InterpolatedStringHandler]
 [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
 [SuppressMessage("ReSharper", "NotDisposedResourceIsReturned")]
-[SuppressMessage("ReSharper", "ConvertToPrimaryConstructor")]
 [SuppressMessage("ReSharper", "NotDisposedResource")]
 [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable")]
 public ref struct PooledInterpolatedStringHandler
@@ -50,14 +49,9 @@ public ref struct PooledInterpolatedStringHandler
 
     public string ToStringAndDispose()
     {
-        try
-        {
-            return ToString();
-        }
-        finally
-        {
-            Dispose();
-        }
+        string str = ToString();
+        Dispose();
+        return str;
     }
 
     [Pure]

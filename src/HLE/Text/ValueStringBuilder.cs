@@ -137,25 +137,19 @@ public unsafe ref partial struct ValueStringBuilder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Append(scoped ref char chars, int length)
     {
-        GrowIfNeeded(length);
-        ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
+        ref char destination = ref GetDestination(length);
         SpanHelpers.Memmove(ref destination, ref chars, (uint)length);
         Length += length;
     }
 
-    public void Append(char c)
-    {
-        // TODO: optimize buffer retrieving like in PooledList
-        GrowIfNeeded(1);
-        Unsafe.Add(ref GetBufferReference(), Length++) = c;
-    }
+    public void Append(char c) => GetDestination(1) = c;
 
     public void Append(char c, int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
-        GrowIfNeeded(count);
-        FreeBufferSpan.SliceUnsafe(0, count).Fill(c);
+        ref char destination = ref GetDestination(count);
+        MemoryMarshal.CreateSpan(ref destination, count).Fill(c);
         Length += count;
     }
 
@@ -222,12 +216,14 @@ public unsafe ref partial struct ValueStringBuilder
     public void Append<T>(T value, string? format = null)
     {
         const int MaximumFormattingTries = 5;
-        int countOfFailedTries = 0;
 
+        int countOfFailedTries = 0;
         int charsWritten;
-        while (!TryFormat(value, FreeBufferSpan, out charsWritten, format))
+        ref char destination = ref GetDestination(1);
+        int length = Length;
+        while (!TryFormat(value, MemoryMarshal.CreateSpan(ref destination, Capacity - length), out charsWritten, format))
         {
-            Grow(128);
+            destination = ref GrowAndGetDestination(128);
 
             if (++countOfFailedTries >= MaximumFormattingTries)
             {
@@ -286,22 +282,29 @@ public unsafe ref partial struct ValueStringBuilder
 
     public void Clear() => Length = 0;
 
-    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
+    public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
-    private void GrowIfNeeded(int sizeHint)
+    private ref char GetDestination(int sizeHint)
     {
-        int freeBufferSize = FreeBufferSize;
-        if (freeBufferSize >= sizeHint)
+        Debug.Assert(sizeHint >= 0);
+
+        if (IsDisposed)
         {
-            return;
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueStringBuilder));
         }
 
-        Grow(sizeHint - freeBufferSize);
+        int length = Length;
+        int freeBufferSize = Capacity - length;
+        if (freeBufferSize >= sizeHint)
+        {
+            return ref Unsafe.Add(ref _buffer, length);
+        }
+
+        return ref GrowAndGetDestination(sizeHint - freeBufferSize);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
-    private void Grow(int neededSize)
+    private ref char GrowAndGetDestination(int neededSize)
     {
         Debug.Assert(neededSize >= 0);
 
@@ -320,11 +323,12 @@ public unsafe ref partial struct ValueStringBuilder
         if (IsStackalloced)
         {
             IsStackalloced = false;
-            return;
+            return ref Unsafe.Add(ref _buffer, length);
         }
 
         char[] array = SpanMarshal.AsArray(oldBuffer);
         ArrayPool<char>.Shared.Return(array);
+        return ref Unsafe.Add(ref _buffer, length);
     }
 
     private readonly ref char GetBufferReference()

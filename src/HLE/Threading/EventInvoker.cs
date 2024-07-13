@@ -31,9 +31,7 @@ public static partial class EventInvoker
             tasks.Add(target(sender, args));
         }
 
-#pragma warning disable HAA0101 // no
         return Task.WhenAll(tasks.AsSpan());
-#pragma warning restore HAA0101
     }
 
     public static void QueueOnThreadPool<TEventArgs>(EventHandler<TEventArgs>? eventHandler, object? sender, TEventArgs eventArgs)

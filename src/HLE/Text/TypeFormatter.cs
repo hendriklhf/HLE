@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -9,6 +10,7 @@ namespace HLE.Text;
 public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<TypeFormatter>
 {
     private readonly TypeFormattingOptions _options = options;
+    private readonly ConcurrentDictionary<Type, string> _cache = new();
 
     [Pure]
     public string Format<T>() => Format(typeof(T));
@@ -17,12 +19,19 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     [SkipLocalsInit]
     public string Format(Type type)
     {
+        if (_cache.TryGetValue(type, out string? str))
+        {
+            return str;
+        }
+
         // ReSharper disable once NotDisposedResource
         ValueStringBuilder builder = new(stackalloc char[512]);
         try
         {
             AppendTypeAndGenericParameters(type, ref builder, true, true);
-            return builder.ToString();
+            str = builder.ToString();
+            _cache.TryAdd(type, str);
+            return str;
         }
         finally
         {
