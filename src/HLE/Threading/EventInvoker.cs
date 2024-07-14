@@ -10,8 +10,6 @@ namespace HLE.Threading;
 
 public static partial class EventInvoker
 {
-    [SkipLocalsInit]
-    [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
     public static Task InvokeAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs>? eventHandler, TSender sender, TEventArgs args)
     {
         if (eventHandler is null)
@@ -19,12 +17,37 @@ public static partial class EventInvoker
             return Task.CompletedTask;
         }
 
-        if (eventHandler.HasSingleTarget)
+        return eventHandler.HasSingleTarget ? eventHandler(sender, args) : InvokeMultiTargetAsync(eventHandler, sender, args);
+    }
+
+    public static Task InvokeAsync<TSender>(AsyncEventHandler<TSender>? eventHandler, TSender sender)
+    {
+        if (eventHandler is null)
         {
-            return eventHandler(sender, args);
+            return Task.CompletedTask;
         }
 
-        Unsafe.SkipInit(out TaskBuffer buffer);
+        return eventHandler.HasSingleTarget ? eventHandler(sender) : InvokeMultiTargetAsync(eventHandler, sender);
+    }
+
+    [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
+    private static Task InvokeMultiTargetAsync<TSender>(AsyncEventHandler<TSender> eventHandler, TSender sender)
+    {
+        TaskBuffer buffer = default;
+        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer, TaskBuffer.Length));
+        foreach (AsyncEventHandler<TSender> target in Delegate.EnumerateInvocationList(eventHandler))
+        {
+            tasks.Add(target(sender));
+        }
+
+        return Task.WhenAll(tasks.AsSpan());
+    }
+
+    [SkipLocalsInit]
+    [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
+    private static Task InvokeMultiTargetAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs> eventHandler, TSender sender, TEventArgs args)
+    {
+        TaskBuffer buffer = default;
         using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer, TaskBuffer.Length));
         foreach (AsyncEventHandler<TSender, TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {

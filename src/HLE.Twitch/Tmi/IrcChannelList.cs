@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -26,7 +25,13 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
             return ImmutableCollectionsMarshal.AsImmutableArray(utf8Names);
         }
 
-        utf8Names = _channels.Select(static c => c.NameUtf8.AsMemory()).ToArray();
+        utf8Names = new ReadOnlyMemory<byte>[_channels.Count];
+        ReadOnlySpan<IrcChannel> channels = CollectionsMarshal.AsSpan(_channels);
+        for (int i = 0; i < channels.Length; i++)
+        {
+            utf8Names[i] = channels[i].NameUtf8.AsMemory();
+        }
+
         _utf8NamesCache = utf8Names;
         return ImmutableCollectionsMarshal.AsImmutableArray(utf8Names);
     }
@@ -38,7 +43,7 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
         List<IrcChannel> channels = _channels;
         lock (channels)
         {
-            if (TryGet(channels, formattedName, out IrcChannel? channel))
+            if (TryGet(CollectionsMarshal.AsSpan(channels), formattedName, out IrcChannel? channel))
             {
                 return channel;
             }
@@ -62,7 +67,7 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
 
         lock (channels)
         {
-            if (!TryGet(channels, formattedName, out IrcChannel? channel))
+            if (!TryGet(CollectionsMarshal.AsSpan(channels), formattedName, out IrcChannel? channel))
             {
                 return null;
             }
@@ -79,14 +84,17 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
         _utf8NamesCache = null;
     }
 
-    private static bool TryGet(List<IrcChannel> channels, string name, [MaybeNullWhen(false)] out IrcChannel channel)
+    private
+#if !DEBUG
+        static
+#endif
+        bool TryGet(ReadOnlySpan<IrcChannel> channels, string name, [MaybeNullWhen(false)] out IrcChannel channel)
     {
-        Debug.Assert(Monitor.IsEntered(channels));
+        Debug.Assert(Monitor.IsEntered(_channels));
 
-        Span<IrcChannel> channelsSpan = CollectionsMarshal.AsSpan(channels);
-        for (int i = 0; i < channelsSpan.Length; i++)
+        for (int i = 0; i < channels.Length; i++)
         {
-            IrcChannel ircChannel = channelsSpan[i];
+            IrcChannel ircChannel = channels[i];
             if (ircChannel.Name != name)
             {
                 continue;

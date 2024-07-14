@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using HLE.Twitch.Tmi;
 using HLE.Twitch.Tmi.Models;
 using Xunit;
@@ -54,6 +55,7 @@ public sealed class IrcHandlerTest
             Assert.Equal("lbnshlfe", chatMessage.Channel);
             Assert.Equal("xd xd xd", chatMessage.Message.ToString());
             chatMessage.Dispose();
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(PrivMsg));
@@ -77,6 +79,7 @@ public sealed class IrcHandlerTest
             Assert.Equal(0, roomstateArgs.SlowMode);
             Assert.False(roomstateArgs.SubsOnly);
             Assert.Equal("strbhlfe", roomstateArgs.Channel);
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(RoomstateAllOff));
@@ -99,6 +102,7 @@ public sealed class IrcHandlerTest
             Assert.Equal(10, roomstateArgs.SlowMode);
             Assert.True(roomstateArgs.SubsOnly);
             Assert.Equal("strbhlfe", roomstateArgs.Channel);
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(RoomstateAllOn));
@@ -116,6 +120,7 @@ public sealed class IrcHandlerTest
         {
             Assert.Equal("strbhlfe", joinedChannelArgs.Username);
             Assert.Equal("lbnshlfe", joinedChannelArgs.Channel);
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(Join));
@@ -133,6 +138,7 @@ public sealed class IrcHandlerTest
         {
             Assert.Equal("strbhlfe", leftChannelArgs.Username);
             Assert.Equal("lbnshlfe", leftChannelArgs.Channel);
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(Part));
@@ -151,6 +157,7 @@ public sealed class IrcHandlerTest
             Assert.Equal(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
             Assert.Equal("lbnshlfe", notice.Channel);
             Assert.Equal("This room is not in emote-only mode.", notice.Message);
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(NoticeWithTag));
@@ -169,6 +176,7 @@ public sealed class IrcHandlerTest
             Assert.Equal(NoticeType.Unknown, notice.Type);
             Assert.Equal("*", notice.Channel);
             Assert.Equal("Login authentication failed", notice.Message);
+            return Task.CompletedTask;
         };
 
         Assert.True(handler.Handle(NoticeWithoutTag));

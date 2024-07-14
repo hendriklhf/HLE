@@ -13,6 +13,7 @@
     <EmbeddedResource Include="Resources\Resource1"/>
     <EmbeddedResource Include="Resources\Resource2"/>
     <EmbeddedResource Include="Resources\Resource3"/>
+    <EmbeddedResource Include="Resources\Resource4" LogicalName="R4"/>
   </ItemGroup>
 
 </Project>

@@ -37,12 +37,12 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <summary>
     /// Is invoked if the client connects to the server.
     /// </summary>
-    public event EventHandler? OnConnected;
+    public event AsyncEventHandler<WebSocketIrcClient>? OnConnected;
 
     /// <summary>
     /// Is invoked if the client disconnects.
     /// </summary>
-    public event EventHandler? OnDisconnected;
+    public event AsyncEventHandler<WebSocketIrcClient>? OnDisconnected;
 
     /// <summary>
     /// Is invoked if the client receives data. If this event is subscribed to, the <see cref="Bytes"/> instance has to be manually disposed.
@@ -249,7 +249,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         await ConnectClientAsync();
         StartListeningThread();
-        OnConnected?.Invoke(this, EventArgs.Empty);
+        await EventInvoker.InvokeAsync(OnConnected, this);
 
         using PooledBufferWriter<byte> messageBuilder = new(CapReqMessage.Length);
         if (_oAuthToken != OAuthToken.Empty)
@@ -277,7 +277,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public async Task DisconnectAsync()
     {
         await DisconnectClientAsync();
-        OnDisconnected?.Invoke(this, EventArgs.Empty);
+        await EventInvoker.InvokeAsync(OnDisconnected, this);
     }
 
     internal async Task ReconnectAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> channels)

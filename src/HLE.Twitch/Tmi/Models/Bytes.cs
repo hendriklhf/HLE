@@ -16,7 +16,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
 {
     public int Length { get; }
 
-    private RentedArray<byte> _buffer = [];
+    private RentedArray<byte> _buffer = []; // TODO: change to array
 
     public static Bytes Empty => new();
 

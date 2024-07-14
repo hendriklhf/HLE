@@ -17,27 +17,27 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a JOIN command has been received.
     /// </summary>
-    public event EventHandler<JoinChannelMessage>? OnJoinReceived;
+    public event AsyncEventHandler<IrcHandler, JoinChannelMessage>? OnJoinReceived;
 
     /// <summary>
     /// Is invoked if a PART command has been received.
     /// </summary>
-    public event EventHandler<LeftChannelMessage>? OnPartReceived;
+    public event AsyncEventHandler<IrcHandler, LeftChannelMessage>? OnPartReceived;
 
     /// <summary>
     /// Is invoked if a ROOMSTATE command has been received.
     /// </summary>
-    public event EventHandler<Roomstate>? OnRoomstateReceived;
+    public event AsyncEventHandler<IrcHandler, Roomstate>? OnRoomstateReceived;
 
     /// <summary>
     /// Is invoked if a PRIVMSG command has been received.
     /// </summary>
-    public event EventHandler<IChatMessage>? OnChatMessageReceived;
+    public event AsyncEventHandler<IrcHandler, IChatMessage>? OnChatMessageReceived;
 
     /// <summary>
     /// Is invoked if a RECONNECT command has been received.
     /// </summary>
-    public event AsyncEventHandler<IrcHandler, EventArgs>? OnReconnectReceived;
+    public event AsyncEventHandler<IrcHandler>? OnReconnectReceived;
 
     /// <summary>
     /// Is invoked if a PING command has been received.
@@ -47,7 +47,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a NOTICE command has been received.
     /// </summary>
-    public event EventHandler<Notice>? OnNoticeReceived;
+    public event AsyncEventHandler<IrcHandler, Notice>? OnNoticeReceived;
 
     internal bool IsOnJoinReceivedSubscribed => OnJoinReceived is not null;
 
@@ -133,7 +133,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        OnNoticeReceived.Invoke(this, _noticeParser.Parse(ircMessage, indicesOfWhitespaces));
+        Notice notice = _noticeParser.Parse(ircMessage, indicesOfWhitespaces);
+        EventInvoker.InvokeAsync(OnNoticeReceived, this, notice).Ignore();
         return true;
     }
 
@@ -156,7 +157,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        EventInvoker.InvokeAsync(OnReconnectReceived, this, EventArgs.Empty).Ignore();
+        EventInvoker.InvokeAsync(OnReconnectReceived, this).Ignore();
         return true;
     }
 
@@ -167,7 +168,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        EventInvoker.InvokeAsync(OnPingReceived, this, new(ircMessage[6..])).Ignore();
+        Bytes pingMessage = new(ircMessage[6..]);
+        EventInvoker.InvokeAsync(OnPingReceived, this, pingMessage).Ignore();
         return true;
     }
 
@@ -184,7 +186,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        OnPartReceived.Invoke(this, _membershipMessageParser.ParseLeftChannelMessage(ircMessage, indicesOfWhitespaces));
+        LeftChannelMessage leftChannelMessage = _membershipMessageParser.ParseLeftChannelMessage(ircMessage, indicesOfWhitespaces);
+        EventInvoker.InvokeAsync(OnPartReceived, this, leftChannelMessage).Ignore();
         return true;
     }
 
@@ -195,7 +198,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        OnJoinReceived.Invoke(this, _membershipMessageParser.ParseJoinChannelMessage(ircMessage, indicesOfWhitespaces));
+        JoinChannelMessage joinChannelMessage = _membershipMessageParser.ParseJoinChannelMessage(ircMessage, indicesOfWhitespaces);
+        EventInvoker.InvokeAsync(OnJoinReceived, this, joinChannelMessage).Ignore();
         return true;
     }
 
@@ -218,7 +222,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        OnNoticeReceived.Invoke(this, _noticeParser.Parse(ircMessage, indicesOfWhitespaces));
+        Notice notice = _noticeParser.Parse(ircMessage, indicesOfWhitespaces);
+        EventInvoker.InvokeAsync(OnNoticeReceived, this, notice).Ignore();
         return true;
     }
 
@@ -230,7 +235,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         }
 
         _roomstateParser.Parse(ircMessage, indicesOfWhitespaces, out Roomstate roomstate);
-        OnRoomstateReceived.Invoke(this, roomstate);
+        EventInvoker.InvokeAsync(OnRoomstateReceived, this, roomstate).Ignore();
         return true;
     }
 
@@ -242,7 +247,8 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
         }
 
         // ReSharper disable once NotDisposedResource
-        OnChatMessageReceived.Invoke(this, _chatMessageParser.Parse(ircMessage, indicesOfWhitespaces));
+        IChatMessage chatMessage = _chatMessageParser.Parse(ircMessage, indicesOfWhitespaces);
+        EventInvoker.InvokeAsync(OnChatMessageReceived, this, chatMessage).Ignore();
         return true;
     }
 

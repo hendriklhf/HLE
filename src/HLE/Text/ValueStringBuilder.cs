@@ -142,7 +142,11 @@ public unsafe ref partial struct ValueStringBuilder
         Length += length;
     }
 
-    public void Append(char c) => GetDestination(1) = c;
+    public void Append(char c)
+    {
+        GetDestination(1) = c;
+        Length++;
+    }
 
     public void Append(char c, int count)
     {

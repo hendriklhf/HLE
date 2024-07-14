@@ -14,7 +14,7 @@ public sealed class ResourceReaderTest
         List<string> resources = [];
         for (int i = 1; i <= 3; i++)
         {
-            bool success = reader.TryRead($"Resources.Resource{i}", out Resource resource);
+            bool success = reader.TryRead($"HLE.Tests.Resources.Resource{i}", out Resource resource);
             Assert.True(success);
             resources.Add(Encoding.UTF8.GetString(resource.AsSpan()));
         }
@@ -22,5 +22,13 @@ public sealed class ResourceReaderTest
         Assert.Equal("abc\r\n", resources[0]);
         Assert.Equal("xd\r\n", resources[1]);
         Assert.Equal(":)\r\n", resources[2]);
+    }
+
+    [Fact]
+    public void ReadResource_LogicalName_Test()
+    {
+        using ResourceReader reader = new(typeof(ResourceReaderTest).Assembly);
+        Resource resource = reader.Read("R4");
+        Assert.Equal("hello\r\n", Encoding.UTF8.GetString(resource.AsSpan()));
     }
 }

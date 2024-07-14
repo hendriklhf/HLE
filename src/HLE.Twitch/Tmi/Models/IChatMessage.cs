@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Threading.Tasks;
 using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
@@ -86,4 +88,18 @@ public interface IChatMessage : IDisposable, IEquatable<IChatMessage>, ISpanForm
     /// The message content.
     /// </summary>
     LazyString Message { get; }
+
+    /// <summary>
+    /// Used for formatting the message in console.
+    /// </summary>
+    /// <param name="writer">The console writer.</param>
+    /// <example><c>ChatMessage.Format(Console.Out);</c></example>
+    void Format(TextWriter writer);
+
+    /// <summary>
+    /// Used for formatting the message asynchronously in console.
+    /// </summary>
+    /// <param name="writer">The console writer.</param>
+    /// <example><c>ChatMessage.Format(Console.Out);</c></example>
+    Task FormatAsync(TextWriter writer);
 }

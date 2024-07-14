@@ -2,7 +2,9 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using HLE.Memory;
 using HLE.Text;
 
@@ -71,12 +73,33 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     [SkipLocalsInit]
     public sealed override string ToString()
     {
-        using ValueStringBuilder builder = new(stackalloc char[Channel.Length + Username.Length + Message.Length + 6]);
-        builder.Append("<#", Channel, "> ", Username.AsSpan(), ": ", Message.AsSpan());
-        return builder.ToString();
+        Span<char> buffer = stackalloc char[Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length];
+        int length = Format(buffer);
+        return new(buffer[..length]);
     }
 
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
+
+    public void Format(TextWriter writer)
+    {
+        Span<char> buffer = stackalloc char[Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length];
+        int length = Format(buffer);
+        writer.WriteLine(buffer[..length]);
+    }
+
+    public async Task FormatAsync(TextWriter writer)
+    {
+        char[] buffer = ArrayPool<char>.Shared.Rent(Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length);
+        try
+        {
+            int length = Format(buffer);
+            await writer.WriteLineAsync(buffer.AsMemory(..length));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
+    }
 
     public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
     {
@@ -87,6 +110,14 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
             return false;
         }
 
+        charsWritten = Format(destination);
+        return true;
+    }
+
+    private int Format(Span<char> destination)
+    {
+        Debug.Assert(destination.Length >= Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length);
+
         UnsafeBufferWriter<char> writer = new(destination);
         writer.Write("<#");
         writer.Write(Channel);
@@ -94,9 +125,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
         writer.Write(Username.AsSpan());
         writer.Write(": ");
         writer.Write(Message.AsSpan());
-
-        charsWritten = writer.Count;
-        return true;
+        return writer.Count;
     }
 
     [Pure]
