@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -11,7 +12,7 @@ public sealed partial class StringPool
     private partial struct Bucket : IEquatable<Bucket>
     {
         private Strings _strings;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         private const int MoveItemThreshold = 4;
 
@@ -113,13 +114,11 @@ public sealed partial class StringPool
             return false;
         }
 
-        // ReSharper disable once InconsistentlySynchronizedField
-        public readonly bool Equals(Bucket other) => ReferenceEquals(_lock, other._lock);
+        public readonly bool Equals(Bucket other) => _lock == other._lock;
 
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
-        // ReSharper disable once InconsistentlySynchronizedField
-        public override readonly int GetHashCode() => RuntimeHelpers.GetHashCode(_lock);
+        public override readonly int GetHashCode() => _lock.GetHashCode();
 
         public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
 

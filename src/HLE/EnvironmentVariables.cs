@@ -9,7 +9,7 @@ using HLE.Collections;
 
 namespace HLE;
 
-public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string>, ICountable, IEquatable<EnvironmentVariables>
+public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string>, ICountable, IIndexable<string>, IEquatable<EnvironmentVariables>
 {
     // ReSharper disable once CanSimplifyDictionaryTryGetValueWithGetValueOrDefault
     public string? this[string name] => _environmentVariables.TryGetValue(name, out string? value) ? value : null;
@@ -24,6 +24,8 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
 
     IEnumerable<string> IReadOnlyDictionary<string, string>.Values => Values;
 
+    string IIndexable<string>.this[int index] => _environmentVariables.Values[index];
+
     public int Count => _environmentVariables.Count;
 
     private readonly FrozenDictionary<string, string> _environmentVariables = FrozenDictionary<string, string>.Empty;
@@ -36,7 +38,7 @@ public readonly struct EnvironmentVariables : IReadOnlyDictionary<string, string
 
     public EnvironmentVariables(FrozenDictionary<string, string> environmentVariables) => _environmentVariables = environmentVariables;
 
-    public static EnvironmentVariables Create() => EnvironmentVariableProvider.GetEnvironmentVariables();
+    public static EnvironmentVariables Create() => OperatingSystemEnvironmentVariableProvider.GetEnvironmentVariables();
 
     bool IReadOnlyDictionary<string, string>.ContainsKey(string key) => _environmentVariables.ContainsKey(key);
 

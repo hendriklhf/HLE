@@ -676,7 +676,20 @@ public sealed class StringArrayTest
         Assert.Throws<NotSupportedException>(() => collection.Remove("abc"));
     }
 
-    // TODO: add missing tests
+    [Theory]
+    [MemberData(nameof(StringArrayParameters))]
+    public void Clear_Test(string[] strings)
+    {
+        StringArray array = new(strings);
+        array.Clear();
+
+        for (int i = 0; i < array.Length; i++)
+        {
+            Assert.Null(array[i]);
+            Assert.Equal(0, array.GetStringLength(i));
+            Assert.Equal(0, array.GetChars(i).Length);
+        }
+    }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static TTo CastDownReliably<TFrom, TTo>(TFrom from) where TFrom : TTo

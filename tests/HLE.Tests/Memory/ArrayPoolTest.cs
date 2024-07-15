@@ -224,13 +224,24 @@ public sealed class ArrayPoolTest
 
         Assert.Equal(length, firstArray.Length);
         Assert.Equal(length, secondArray.Length);
-        Assert.True(thirdArray.Length >= length);
+        if (roundedLength < ArrayPool.MinimumArrayLength)
+        {
+            Assert.Equal(roundedLength, thirdArray.Length);
+        }
+        else
+        {
+            Assert.True(thirdArray.Length >= length);
+        }
 
+        Assert.Same(firstArray, secondArray);
         if (length >= ArrayPool.MinimumArrayLength)
         {
-            Assert.Same(firstArray, secondArray);
             Assert.Same(firstArray, thirdArray);
             Assert.Same(thirdArray, secondArray);
+        }
+
+        if (firstArray.Length != 0)
+        {
             Assert.Equal(GC.MaxGeneration, GC.GetGeneration(firstArray)); // array is pinned
         }
     }

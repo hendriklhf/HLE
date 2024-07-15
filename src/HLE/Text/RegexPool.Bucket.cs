@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -12,7 +13,7 @@ public sealed partial class RegexPool
     private partial struct Bucket : IEquatable<Bucket>
     {
         private Regexes _regexes;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         public Bucket()
         {
@@ -123,11 +124,11 @@ public sealed partial class RegexPool
 
         public bool Contains(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout) => TryGet(pattern, options, timeout, out _);
 
-        public readonly bool Equals(Bucket other) => ReferenceEquals(_lock, other._lock);
+        public readonly bool Equals(Bucket other) => _lock == other._lock;
 
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
-        public override readonly int GetHashCode() => RuntimeHelpers.GetHashCode(_lock);
+        public override readonly int GetHashCode() => _lock.GetHashCode();
 
         public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
 

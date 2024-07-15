@@ -4,7 +4,7 @@ using System.Diagnostics.Contracts;
 
 namespace HLE;
 
-internal static class EnvironmentVariableProvider
+internal static class OperatingSystemEnvironmentVariableProvider
 {
     private static readonly IEnvironmentVariableProvider s_provider = CreateProvider();
 

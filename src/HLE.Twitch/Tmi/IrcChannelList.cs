@@ -84,11 +84,7 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
         _utf8NamesCache = null;
     }
 
-    private
-#if !DEBUG
-        static
-#endif
-        bool TryGet(ReadOnlySpan<IrcChannel> channels, string name, [MaybeNullWhen(false)] out IrcChannel channel)
+    private bool TryGet(ReadOnlySpan<IrcChannel> channels, string name, [MaybeNullWhen(false)] out IrcChannel channel)
     {
         Debug.Assert(Monitor.IsEntered(_channels));
 
