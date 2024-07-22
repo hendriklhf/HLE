@@ -29,6 +29,7 @@ public static class InlineArrayHelpers
     private static void ValidateGenericArguments<TArray, TElement>()
     {
         ReadOnlySpan<FieldInfo> fields = typeof(TArray).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        _ = fields;
         Debug.Assert(fields.Length == 1);
         Debug.Assert(fields[0].FieldType == typeof(TElement));
     }

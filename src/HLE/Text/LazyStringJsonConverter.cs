@@ -24,8 +24,8 @@ internal sealed class LazyStringJsonConverter :
 
         ReadOnlySpan<byte> jsonValue = reader.ValueSpan;
         int maxCharCount = Encoding.UTF8.GetMaxCharCount(jsonValue.Length);
-        RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
-        int charCount = Encoding.UTF8.GetChars(jsonValue, chars.AsSpan());
+        char[] chars = ArrayPool<char>.Shared.Rent(maxCharCount);
+        int charCount = Encoding.UTF8.GetChars(jsonValue, chars);
         return new(chars, charCount);
     }
 

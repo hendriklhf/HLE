@@ -176,7 +176,7 @@ public unsafe struct NativeString :
 
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public readonly bool Equals(NativeString other) => AsString() == other.AsString();
+    public readonly bool Equals(NativeString other) => _buffer == other._buffer;
 
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is NativeString other && Equals(other);
 

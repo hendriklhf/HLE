@@ -72,8 +72,8 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     private protected static LazyString BytesToLazyString(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
         int maximumCharCount = encoding.GetMaxCharCount(bytes.Length);
-        RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(maximumCharCount);
-        int charCount = encoding.GetChars(bytes, chars.AsSpan());
+        char[] chars = ArrayPool<char>.Shared.Rent(maximumCharCount);
+        int charCount = encoding.GetChars(bytes, chars);
         return new(chars, charCount);
     }
 

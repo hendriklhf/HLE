@@ -182,10 +182,10 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
     public override string ToString() => Name;
 
     [Pure]
-    public bool Equals(double value) => Math.Abs(Value - value) == 0;
+    public bool Equals(double value) => Math.Abs(Value - value) <= 0;
 
     [Pure]
-    public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) == 0;
+    public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) <= 0;
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is UnitPrefix other && Equals(other);

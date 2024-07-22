@@ -544,8 +544,8 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         Encoding utf8 = Encoding.UTF8;
         int maxByteCount = utf8.GetMaxByteCount(chars.Length);
-        RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(maxByteCount);
-        int byteCount = utf8.GetBytes(chars, buffer.AsSpan());
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+        int byteCount = utf8.GetBytes(chars, buffer);
         return Bytes.AsBytes(buffer, byteCount);
     }
 

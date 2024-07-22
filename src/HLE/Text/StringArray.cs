@@ -57,10 +57,12 @@ public sealed class StringArray :
     internal readonly int[] _starts;
     internal char[]? _chars;
     private int _freeBufferSize;
+    private int _minStringLength = int.MaxValue;
+    private int _maxStringLength;
 
     public static StringArray Empty { get; } = new(0);
 
-    public StringArray(int length) => StringArrayConstructorCore(length, out _strings, out _lengths, out _starts);
+    public StringArray(int length) => CtorCore(length, out _strings, out _lengths, out _starts);
 
     public StringArray(List<string> strings) : this(strings.Count)
         => FillArray(CollectionsMarshal.AsSpan(strings));
@@ -78,7 +80,7 @@ public sealed class StringArray :
     {
         if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string> span))
         {
-            StringArrayConstructorCore(span.Length, out _strings, out _lengths, out _starts);
+            CtorCore(span.Length, out _strings, out _lengths, out _starts);
             FillArray(span);
             return;
         }
@@ -90,7 +92,7 @@ public sealed class StringArray :
         FillArray(_strings);
     }
 
-    private static void StringArrayConstructorCore(int length, out string[] strings, out int[] lengths, out int[] starts)
+    private static void CtorCore(int length, out string[] strings, out int[] lengths, out int[] starts)
     {
         if (length == 0)
         {
@@ -178,13 +180,18 @@ public sealed class StringArray :
 
     [Pure]
     [SkipLocalsInit]
-    public unsafe int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    public int IndexOf(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
     {
-        if (Length == 0)
+        if (Length == 0 || chars.Length > _maxStringLength || chars.Length < _minStringLength)
         {
             return -1;
         }
 
+        return IndexOfCore(chars, comparison, startIndex);
+    }
+
+    private unsafe int IndexOfCore(ReadOnlySpan<char> chars, StringComparison comparison, int startIndex = 0)
+    {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)startIndex, (uint)Length);
 
         ReadOnlySpan<int> lengths = _lengths.AsSpan(startIndex..);
@@ -278,13 +285,6 @@ public sealed class StringArray :
         _freeBufferSize = _chars?.Length ?? 0;
     }
 
-    public ArrayEnumerator<string> GetEnumerator() => new(_strings);
-
-    // ReSharper disable once NotDisposedResourceIsReturned
-    IEnumerator<string> IEnumerable<string>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<string>.Enumerator : GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
     public void CopyTo(List<string> destination, int offset = 0)
     {
         CopyWorker<string> copyWorker = new(_strings);
@@ -330,6 +330,8 @@ public sealed class StringArray :
         Span<int> lengths = _lengths;
         Span<char> chars = _chars;
 
+        UpdateMinMaxStringLength(str.Length);
+
         int lengthDifference = str.Length - lengths[index];
 
         switch (lengthDifference)
@@ -367,6 +369,19 @@ public sealed class StringArray :
         _freeBufferSize -= lengthDifference;
     }
 
+    private void UpdateMinMaxStringLength(int stringLength)
+    {
+        if (stringLength > _maxStringLength)
+        {
+            _maxStringLength = stringLength;
+        }
+
+        if (stringLength < _minStringLength)
+        {
+            _minStringLength = stringLength;
+        }
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowBufferIfNeeded(int sizeHint)
     {
@@ -402,6 +417,13 @@ public sealed class StringArray :
         _chars = chars;
         _freeBufferSize += newBufferSize - currentBufferSize;
     }
+
+    public ArrayEnumerator<string> GetEnumerator() => new(_strings);
+
+    // ReSharper disable once NotDisposedResourceIsReturned
+    IEnumerator<string> IEnumerable<string>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<string>.Enumerator : GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public bool Equals([NotNullWhen(true)] StringArray? other) => ReferenceEquals(this, other);
 

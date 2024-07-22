@@ -246,9 +246,11 @@ public unsafe ref partial struct ValueStringBuilder
         }
 
         string? str;
+#pragma warning disable IDE0038, RCS1220
         if (value is IFormattable)
         {
             if (value is ISpanFormattable)
+#pragma warning restore IDE0038, RCS1220
             {
                 // constrained call to avoid boxing for value types
                 return ((ISpanFormattable)value).TryFormat(destination, out charsWritten, format, null);

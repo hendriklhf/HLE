@@ -27,6 +27,6 @@ public readonly struct MethodTable
     [FieldOffset(0)]
     private readonly uint _flags;
 
-    private const uint ContainsManagedPointersFlag = 0x1000000;
     private const uint IsValueTypeFlag = 0x00040000;
+    private const uint ContainsManagedPointersFlag = 0x1000000;
 }

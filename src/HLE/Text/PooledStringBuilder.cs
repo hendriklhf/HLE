@@ -90,7 +90,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => WrittenMemory;
 
-    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
+    public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
     public void Advance(int length) => Length += length;
 
@@ -116,25 +116,22 @@ public sealed partial class PooledStringBuilder(int capacity) :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Append(ref char chars, int length)
     {
-        GrowIfNeeded(length);
-        ref char destination = ref Unsafe.Add(ref GetBufferReference(), Length);
+        ref char destination = ref GetDestination(length);
         SpanHelpers.Memmove(ref destination, ref chars, (uint)length);
         Length += length;
     }
 
     public void Append(char c)
     {
-        // TODO: optimize buffer retrieving like in PooledList
-        GrowIfNeeded(1);
-        Unsafe.Add(ref GetBufferReference(), Length++) = c;
+        GetDestination(1) = c;
+        Length++;
     }
 
     public void Append(char c, int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
-        GrowIfNeeded(count);
-        FreeBufferSpan.SliceUnsafe(0, count).Fill(c);
+        MemoryMarshal.CreateSpan(ref GetDestination(count), count).Fill(c);
         Length += count;
     }
 
@@ -223,12 +220,13 @@ public sealed partial class PooledStringBuilder(int capacity) :
         {
             return TryFormatEnum(null, value, destination, out charsWritten, format);
         }
-
+#pragma warning disable IDE0038, RCS1220
         string? str;
         if (value is IFormattable)
         {
             if (value is ISpanFormattable)
             {
+#pragma warning restore IDE0038, RCS1220
                 // constrained call to avoid boxing for value types
                 return ((ISpanFormattable)value).TryFormat(destination, out charsWritten, format, null);
             }
@@ -266,7 +264,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     public void Clear() => Length = 0;
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
-    private void Grow(int neededSize)
+    private ref char Grow(int neededSize)
     {
         Debug.Assert(neededSize > 0);
 
@@ -282,18 +280,21 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
         ArrayPool<char>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
+        return ref MemoryMarshal.GetArrayDataReference(newBuffer);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
-    private void GrowIfNeeded(int sizeHint)
+    private ref char GetDestination(int sizeHint)
     {
-        int freeBufferSize = FreeBufferSize;
+        char[] buffer = GetBuffer();
+        int length = Length;
+        int freeBufferSize = buffer.Length - length;
         if (freeBufferSize >= sizeHint)
         {
-            return;
+            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buffer), length);
         }
 
-        Grow(sizeHint - freeBufferSize);
+        return ref Grow(sizeHint - freeBufferSize);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -307,9 +308,6 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
         return buffer;
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ref char GetBufferReference() => ref MemoryMarshal.GetArrayDataReference(GetBuffer());
 
     [Pure]
     public override string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
@@ -371,7 +369,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
     public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => Length == other?.Length && GetBuffer().Equals(other.GetBuffer());
+    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => Length == other?.Length && ReferenceEquals(GetBuffer(), other.GetBuffer());
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is PooledStringBuilder other && Equals(other);

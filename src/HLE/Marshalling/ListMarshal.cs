@@ -30,7 +30,7 @@ public static partial class ListMarshal
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowListIsEmpty() => throw new InvalidOperationException("The list is empty.");
+    private static void ThrowListIsEmpty() => throw new InvalidOperationException("The list is empty, therefore it is not possible to get a reference to the items.");
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

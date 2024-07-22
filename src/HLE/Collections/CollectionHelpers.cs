@@ -334,11 +334,11 @@ public static partial class CollectionHelpers
         bool isSourceRightOfDestination = sourceIndex > destinationIndex;
         if (isSourceRightOfDestination)
         {
-            span[destinationIndex..sourceIndex].CopyTo(span[(destinationIndex + 1)..]);
+            SpanHelpers.Copy(span[destinationIndex..sourceIndex], span[(destinationIndex + 1)..]);
         }
         else
         {
-            span[(sourceIndex + 1)..(destinationIndex + 1)].CopyTo(span[sourceIndex..]);
+            SpanHelpers.Copy(span[(sourceIndex + 1)..(destinationIndex + 1)], span[sourceIndex..]);
         }
 
         span[destinationIndex] = value;

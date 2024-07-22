@@ -66,7 +66,6 @@ internal struct HttpContentBytes : IEquatable<HttpContentBytes>, IDisposable
 
         return CreateCoreAsync(httpResponse.Content, (int)contentLength);
 
-        // ReSharper disable once InconsistentNaming
         static async ValueTask<HttpContentBytes> CreateCoreAsync(HttpContent content, int contentLength)
         {
             byte[] buffer = ArrayPool<byte>.Shared.Rent(contentLength);

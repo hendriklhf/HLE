@@ -169,23 +169,35 @@ public static class RandomExtensions
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static Int128 NextInt128(this Random random)
     {
-        random.NextStruct(out Int128 result);
+#pragma warning disable IDE0059
+        Unsafe.SkipInit(out Int128 result);
+#pragma warning restore IDE0059
+        random.NextStruct(out result);
         return result;
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static Int128 NextInt128(this Random random, Int128 min, Int128 max)
     {
-        random.NextStruct(out Int128 result);
+#pragma warning disable IDE0059
+        Unsafe.SkipInit(out Int128 result);
+#pragma warning restore IDE0059
+        random.NextStruct(out result);
         return NumberHelpers.BringIntoRange(result, min, max);
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static UInt128 NextUInt128(this Random random)
     {
-        random.NextStruct(out UInt128 result);
+#pragma warning disable IDE0059
+        Unsafe.SkipInit(out UInt128 result);
+#pragma warning restore IDE0059
+        random.NextStruct(out result);
         return result;
     }
 
@@ -197,16 +209,24 @@ public static class RandomExtensions
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static Guid NextGuid(this Random random)
     {
-        random.NextStruct(out Guid guid);
+#pragma warning disable IDE0059
+        Unsafe.SkipInit(out Guid guid);
+#pragma warning restore IDE0059
+        random.NextStruct(out guid);
         return guid;
     }
 
     [Pure]
+    [SkipLocalsInit]
     public static decimal NextDecimal(this Random random)
     {
-        random.NextStruct(out decimal result);
+#pragma warning disable IDE0059
+        Unsafe.SkipInit(out decimal result);
+#pragma warning restore IDE0059
+        random.NextStruct(out result);
         return result;
     }
 
@@ -351,8 +371,6 @@ public static class RandomExtensions
     public static void Fill<T>(this Random random, List<T> list) where T : unmanaged
         => random.Write(ref ListMarshal.GetReference(list), (uint)list.Count);
 
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
     public static unsafe void Fill(this Random random, Array array)
     {
         Type elementType = array.GetType().GetElementType()!;
@@ -389,8 +407,7 @@ public static class RandomExtensions
     public static T NextStruct<T>(this Random random) where T : unmanaged
     {
         Unsafe.SkipInit(out T result);
-        Span<byte> bytes = StructMarshal.GetBytes(ref result);
-        random.NextBytes(bytes);
+        random.Write(ref result, 1);
         return result;
     }
 
@@ -399,8 +416,7 @@ public static class RandomExtensions
     public static void NextStruct<T>(this Random random, out T result) where T : unmanaged
     {
         Unsafe.SkipInit(out result);
-        Span<byte> bytes = StructMarshal.GetBytes(ref result);
-        random.NextBytes(bytes);
+        random.Write(ref result, 1);
     }
 
     [Pure]
@@ -460,15 +476,28 @@ public static class RandomExtensions
     {
         ref byte byteDestination = ref Unsafe.As<T, byte>(ref destination);
         nuint byteCount = checked((uint)sizeof(T) * elementCount);
-        while (byteCount >= int.MaxValue)
+
+        if (byteCount > int.MaxValue)
         {
-            Span<byte> bytes = MemoryMarshal.CreateSpan(ref byteDestination, int.MaxValue);
+            WriteLoop(random, byteDestination, ref byteCount);
+        }
+
+        Span<byte> bytes = MemoryMarshal.CreateSpan(ref byteDestination, (int)byteCount);
+        random.NextBytes(bytes);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)] // unlikely path
+    private static void WriteLoop(Random random, byte destination, ref nuint byteCount)
+    {
+        Debug.Assert(byteCount > int.MaxValue);
+
+        do
+        {
+            Span<byte> bytes = MemoryMarshal.CreateSpan(ref destination, int.MaxValue);
             random.NextBytes(bytes);
             byteCount -= int.MaxValue;
         }
-
-        Span<byte> remainder = MemoryMarshal.CreateSpan(ref byteDestination, (int)byteCount);
-        random.NextBytes(remainder);
+        while (byteCount > int.MaxValue);
     }
 
     [Pure]

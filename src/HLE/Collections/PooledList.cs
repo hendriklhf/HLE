@@ -66,7 +66,8 @@ public sealed class PooledList<T>(int capacity) :
     [MustDisposeResource]
     public PooledList(ReadOnlySpan<T> items) : this(items.Length)
     {
-        SpanHelpers.Copy(items, _buffer.AsSpan());
+        AssertBufferNotNull();
+        SpanHelpers.Copy(items, _buffer);
         Count = items.Length;
     }
 

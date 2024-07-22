@@ -91,11 +91,9 @@ public sealed class LazyString :
     }
 
     [MustDisposeResource]
-    internal LazyString([HandlesResourceDisposal] RentedArray<char> chars, int length)
+    internal LazyString(char[] chars, int length)
     {
-        Debug.Assert(chars._pool == ArrayPool<char>.Shared);
-
-        _chars = chars.Array;
+        _chars = chars;
         Length = length;
     }
 

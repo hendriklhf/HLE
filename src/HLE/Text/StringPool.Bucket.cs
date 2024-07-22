@@ -78,7 +78,7 @@ public sealed partial class StringPool
         private void AddWithoutLock(string value)
         {
             ref string? stringsReference = ref InlineArrayHelpers.GetReference<Strings, string?>(ref _strings);
-            SpanHelpers.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, DefaultBucketCapacity - 1);
+            SpanHelpers.Memmove(ref Unsafe.Add(ref stringsReference, 1), ref stringsReference, Strings.Length - 1);
             stringsReference = value;
         }
 

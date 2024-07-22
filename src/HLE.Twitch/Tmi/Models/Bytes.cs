@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Collections;
 using HLE.Marshalling;
@@ -16,7 +15,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
 {
     public int Length { get; }
 
-    private RentedArray<byte> _buffer = []; // TODO: change to array
+    private byte[]? _buffer;
 
     public static Bytes Empty => new();
 
@@ -24,7 +23,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     {
     }
 
-    private Bytes(RentedArray<byte> buffer, int length)
+    private Bytes(byte[] buffer, int length)
     {
         _buffer = buffer;
         Length = length;
@@ -33,23 +32,33 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     public Bytes(ReadOnlySpan<byte> data)
     {
         Length = data.Length;
-        _buffer = ArrayPool<byte>.Shared.RentAsRentedArray(data.Length);
-        SpanHelpers.Copy(data, _buffer.AsSpan());
+        _buffer = ArrayPool<byte>.Shared.Rent(data.Length);
+        SpanHelpers.Copy(data, _buffer);
     }
 
-    public static Bytes AsBytes(RentedArray<byte> buffer, int length)
+    public static Bytes AsBytes(byte[] buffer, int length)
     {
         Debug.Assert(length >= buffer.Length);
         return new(buffer, length);
     }
 
-    public void Dispose() => _buffer.Dispose();
+    public void Dispose()
+    {
+        byte[]? buffer = _buffer;
+        if (buffer is null)
+        {
+            return;
+        }
+
+        ArrayPool<byte>.Shared.Return(buffer);
+        _buffer = null;
+    }
 
     [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref _buffer.Reference, Length);
+    public readonly ReadOnlySpan<byte> AsSpan() => _buffer.AsSpan(0, Length);
 
     [Pure]
-    public readonly ReadOnlyMemory<byte> AsMemory() => _buffer.AsMemory(..Length);
+    public readonly ReadOnlyMemory<byte> AsMemory() => _buffer.AsMemory(0, Length);
 
     [Pure]
     public readonly byte[] ToArray()
@@ -92,7 +101,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
 
     public override readonly string ToString() => Length == 0 ? string.Empty : Encoding.UTF8.GetString(AsSpan());
 
-    public readonly bool Equals(Bytes other) => Length == other.Length && _buffer.Equals(other._buffer);
+    public readonly bool Equals(Bytes other) => Length == other.Length && ReferenceEquals(_buffer, other._buffer);
 
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bytes other && Equals(other);
 
