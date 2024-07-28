@@ -1,20 +1,20 @@
 <Project>
 
-  <PropertyGroup Condition="'$(IsNugetPackage)'=='true'">
+  <PropertyGroup Condition="'$(IsNugetPackage)'=='true' and '$(PublishingPackage)'=='true'">
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Hendrik</Authors>
     <Product>$(AssemblyName)</Product>
     <PackageId>$(AssemblyName)</PackageId>
     <Title>$(AssemblyName)</Title>
-    <Version>2.1.8</Version>
-    <PackageVersion>$(Version)</PackageVersion>
-    <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>$(Version)</FileVersion>
+    <Version>$(NugetPackageVersion)</Version>
+    <PackageVersion>$(NugetPackageVersion)</PackageVersion>
+    <AssemblyVersion>$(NugetPackageVersion)</AssemblyVersion>
+    <FileVersion>$(NugetPackageVersion)</FileVersion>
     <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <!-- <PackageReadmeFile>README.md</PackageReadmeFile> -->
+    <!-- TODO: Add README -->
   </PropertyGroup>
 
   <ItemGroup Condition="'$(UseDefaultAnalyzerPackages)'=='true'">
@@ -39,25 +39,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="SonarAnalyzer.CSharp">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(IsTestProject)'=='true'">
-    <IsPackable>false</IsPackable>
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
-    <RunSettingsFilePath>..$([System.IO.Path]::DirectorySeparatorChar)HLE.runsettings</RunSettingsFilePath>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(IsTestProject)'=='true'">
-    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-    <PackageReference Include="xunit"/>
-    <PackageReference Include="coverlet.collector">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

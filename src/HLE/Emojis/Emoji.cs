@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 using HLE.Text;
 
 namespace HLE.Emojis;
@@ -26,14 +27,10 @@ public static partial class Emoji
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(static f => f.FieldType == typeof(string))
         .Select(static f => Unsafe.As<string>(f.GetValue(null))!)
-        .ToFrozenSet();
+        .ToFrozenSet(StringComparer.Ordinal);
 
     [Pure]
-    public static bool IsEmoji(char c)
-    {
-        string str = SingleCharStringPool.GetOrAdd(c);
-        return IsEmoji(str);
-    }
+    public static bool IsEmoji(char c) => IsEmoji(new ReadOnlySpan<char>(ref c));
 
     [Pure]
     public static bool IsEmoji(string text) => s_emojis.Contains(text);

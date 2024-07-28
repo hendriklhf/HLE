@@ -54,7 +54,7 @@ internal static unsafe class ObjectTree
                 if (typeof(T).IsSZArray)
                 {
                     Type elementType = typeof(T).GetElementType()!;
-                    if (ObjectMarshal.GetMethodTable(elementType)->IsReferenceOrContainsReferences)
+                    if (ObjectMarshal.GetMethodTableFromType(elementType)->IsReferenceOrContainsReferences)
                     {
                         return size + GetArrayElementsSize(Unsafe.As<Array>(obj), elementType);
                     }
@@ -82,7 +82,7 @@ internal static unsafe class ObjectTree
 
         foreach (FieldInfo field in instanceFields)
         {
-            if (!ObjectMarshal.GetMethodTable(field.FieldType)->IsReferenceOrContainsReferences)
+            if (!ObjectMarshal.GetMethodTableFromType(field.FieldType)->IsReferenceOrContainsReferences)
             {
                 continue;
             }
@@ -139,7 +139,7 @@ internal static unsafe class ObjectTree
     private static nuint GetArrayElementsSize(Array array, Type elementType)
     {
         Debug.Assert(array.Rank == 1);
-        Debug.Assert(ObjectMarshal.GetMethodTable(array.GetType().GetElementType()!)->IsReferenceOrContainsReferences);
+        Debug.Assert(ObjectMarshal.GetMethodTableFromType(array.GetType().GetElementType()!)->IsReferenceOrContainsReferences);
 
         if (!s_getArrayElementsSizeCache.TryGetValue(elementType, out MethodInfo? method))
         {

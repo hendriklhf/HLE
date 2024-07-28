@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using HLE.Text;
 using HLE.Twitch.JsonConverters;
-using ValueStringBuilder = HLE.Text.ValueStringBuilder;
 
 namespace HLE.Twitch.Helix.Models;
 
@@ -64,25 +63,21 @@ public class Emote : IEquatable<Emote>
             return false;
         }
 
-        urlBuilder.Append(Id);
-        urlBuilder.Append('/');
-        urlBuilder.Append(s_imageFormatValues[format]);
+        urlBuilder.Append($"{Id}/{s_imageFormatValues[format]}");
 
         if ((Themes & theme) == 0 || !BitOperations.IsPow2((int)theme))
         {
             return false;
         }
 
-        urlBuilder.Append('/');
-        urlBuilder.Append(s_themeValues[theme]);
+        urlBuilder.Append($"/{s_themeValues[theme]}");
 
         if ((Scales & scale) == 0 || !BitOperations.IsPow2((int)scale))
         {
             return false;
         }
 
-        urlBuilder.Append('/');
-        urlBuilder.Append(s_scaleValues[scale]);
+        urlBuilder.Append($"/{s_scaleValues[scale]}");
         url = StringPool.Shared.GetOrAdd(urlBuilder.WrittenSpan);
         return true;
     }

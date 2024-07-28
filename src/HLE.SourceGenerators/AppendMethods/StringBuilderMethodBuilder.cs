@@ -22,7 +22,6 @@ public abstract class StringBuilderMethodBuilder(StringBuilder builder)
     private protected const string MemoryMarshalTypeName = nameof(MemoryMarshal);
     private protected const string GetReferenceMethodName = nameof(MemoryMarshal.GetReference);
     private protected const string LengthPropertyName = "Length";
-    private protected const string CapacityPropertyName = "Capacity";
     private protected const string BufferReferenceVariableName = "reference";
 
     private const string ArgumentSeparator = ", ";

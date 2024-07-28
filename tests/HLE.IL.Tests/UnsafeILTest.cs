@@ -102,8 +102,8 @@ public sealed unsafe class UnsafeILTest
         const string Hello = "hello";
         RawStringData* data = UnsafeIL.AsPointer<string, RawStringData>(Hello);
 
+        Assert.Equal((nuint)ObjectMarshal.GetMethodTable<string>(), (nuint)data->MethodTable);
         Assert.Equal(Hello.Length, data->Length);
-        Assert.True(ObjectMarshal.GetMethodTable<string>() == data->MethodTable);
         Assert.Equal(Hello[0], data->FirstChar);
     }
 

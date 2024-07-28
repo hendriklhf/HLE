@@ -13,12 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    <ProjectReference Include="..\HLE.IL\HLE.IL.ilproj"/>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-    <ProjectReference Include="..\HLE.IL\HLE.IL.ilproj"/>
   </ItemGroup>
 
   <ItemGroup>

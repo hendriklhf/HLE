@@ -13,6 +13,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6978E4D3-1DE4-4D84-8EC5-76028E11CDB8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CDE88CDD-7EA1-47F2-A7C7-C8923DE5E09E}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.targets = tests\Directory.Build.targets
+		tests\xunit.runner.json = tests\xunit.runner.json
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "debug", "debug", "{BB652E74-A6D6-42FD-AF0A-3A0A2D3090C3}"
 EndProject
@@ -30,10 +34,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
-		global.json = global.json
-		tests\HLE.runsettings = tests\HLE.runsettings
 		Directory.Build.targets = Directory.Build.targets
 		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
+		LICENSE = LICENSE
+		publish.ps1 = publish.ps1
 	EndProjectSection
 EndProject
 Global

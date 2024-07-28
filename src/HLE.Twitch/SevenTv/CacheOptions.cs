@@ -11,7 +11,7 @@ public sealed class CacheOptions : IEquatable<CacheOptions>
 
     public bool Equals(CacheOptions? other) => ReferenceEquals(this, other);
 
-    public override bool Equals(object? obj) => obj is CacheOptions other && Equals(other);
+    public override bool Equals(object? obj) => ReferenceEquals(this, obj);
 
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 

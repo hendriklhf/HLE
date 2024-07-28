@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Text;
 using HLE.Twitch.Tmi.Models;
@@ -12,6 +13,16 @@ namespace HLE.Twitch.Tmi;
 
 public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquatable<MemoryEfficientChatMessageParser>
 {
+    [Pure]
+    [SkipLocalsInit]
+    [MustDisposeResource]
+    public override MemoryEfficientChatMessage Parse(ReadOnlySpan<byte> ircMessage)
+    {
+        Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, (byte)' ', indicesOfWhitespacesBuffer, MaximumWhitespacesNeededToHandle);
+        return Parse(ircMessage, indicesOfWhitespacesBuffer.SliceUnsafe(..whitespaceCount));
+    }
+
     [Pure]
     [SkipLocalsInit]
     [MustDisposeResource]
@@ -112,7 +123,6 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
         }
 
         Badge[] badges = ArrayPool<Badge>.Shared.Rent(5);
-        Encoding utf8 = Encoding.UTF8;
         do
         {
             int indexOfComma = value.IndexOf((byte)',');
@@ -120,8 +130,8 @@ public sealed class MemoryEfficientChatMessageParser : ChatMessageParser, IEquat
             ReadOnlySpan<byte> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
             value = indexOfComma < 0 ? [] : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf((byte)'/');
-            string name = StringPool.Shared.GetOrAdd(info[..slashIndex], utf8);
-            string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..], utf8);
+            string name = StringPool.Shared.GetOrAdd(info[..slashIndex], Encoding.UTF8);
+            string level = StringPool.Shared.GetOrAdd(info[(slashIndex + 1)..], Encoding.UTF8);
             badges[badgeCount++] = new(name, level);
         }
         while (value.Length != 0);

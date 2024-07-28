@@ -57,10 +57,8 @@ public sealed class LazyString :
 
     public static LazyString Empty { get; } = new();
 
-    private LazyString()
+    private LazyString() : this(string.Empty)
     {
-        _chars = [];
-        _string = string.Empty;
     }
 
     [MustDisposeResource]

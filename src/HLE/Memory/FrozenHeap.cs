@@ -23,4 +23,10 @@ internal static unsafe class FrozenHeap
         s_unregisterFrozenSegment(handle.Value);
         handle.Dispose();
     }
+
+    public static void UnregisterSegment(FrozenSegmentHandle* handle)
+    {
+        s_unregisterFrozenSegment(handle->Value);
+        handle->Dispose();
+    }
 }

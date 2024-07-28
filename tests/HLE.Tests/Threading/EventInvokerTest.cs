@@ -9,7 +9,7 @@ namespace HLE.Tests.Threading;
 
 public sealed class EventInvokerTest
 {
-    public static TheoryData<int> TargetCountParameters { get; } = TheoryDataHelpers.CreateRange(0, 16);
+    public static TheoryData<int> TargetCountParameters { get; } = TheoryDataHelpers.CreateRange(0, Environment.ProcessorCount * 2);
 
     private int _counter;
 
@@ -41,7 +41,7 @@ public sealed class EventInvokerTest
         }
 
         EventInvoker.QueueOnThreadPool(eventHandler, this, "hello");
-        await Task.Delay(1_024);
+        await Task.Delay(targetCount * 2);
 
         int invocationListLength = eventHandler?.GetInvocationList().Length ?? 0;
         Assert.Equal(targetCount, invocationListLength);
@@ -53,7 +53,7 @@ public sealed class EventInvokerTest
         Assert.Same(this, sender);
         Assert.Same("hello", args);
         Interlocked.Increment(ref _counter);
-        return Task.Delay(Random.Shared.Next(8, 32));
+        return Task.CompletedTask;
     }
 
     private void OnSomething(object? sender, string args)
@@ -61,6 +61,5 @@ public sealed class EventInvokerTest
         Assert.Same(this, sender);
         Assert.Same("hello", args);
         Interlocked.Increment(ref _counter);
-        Thread.Sleep(Random.Shared.Next(8, 32));
     }
 }

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using HLE.Marshalling;
+using HLE.Memory;
 using HLE.Numerics;
 using Xunit;
 
@@ -61,8 +62,10 @@ public sealed class NumberHelperTest
     [Fact]
     public void GetNumberLengthTest()
     {
-        int[] numbers = new int[10_000];
-        Random.Shared.Fill(numbers.AsSpan(1));
+        using RentedArray<int> buffer = ArrayPool<int>.Shared.RentAsRentedArray(10_000);
+
+        Span<int> numbers = buffer[..10_000];
+        Random.Shared.Fill(numbers[1..]);
         for (int i = 0; i < numbers.Length; i++)
         {
             int number = numbers[i];

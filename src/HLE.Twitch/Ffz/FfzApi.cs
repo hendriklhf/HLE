@@ -33,8 +33,7 @@ public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
         async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(long channelId)
         {
             using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
-            urlBuilder.Append(ApiBaseUrl, "/room/id/");
-            urlBuilder.Append(channelId);
+            urlBuilder.Append($"{ApiBaseUrl}/room/id/{channelId}");
 
             using HttpClient httpClient = new();
             using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
@@ -77,7 +76,7 @@ public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
         async ValueTask<ImmutableArray<Emote>> GetChannelEmotesCoreAsync(ReadOnlyMemory<char> channelName)
         {
             using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
-            urlBuilder.Append(ApiBaseUrl, "/room/", channelName.Span);
+            urlBuilder.Append($"{ApiBaseUrl}/room/{channelName.Span}");
 
             using HttpClient httpClient = new();
             using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());
@@ -118,7 +117,7 @@ public sealed class FfzApi : IFfzApi, IEquatable<FfzApi>
         async ValueTask<ImmutableArray<Emote>> GetGlobalEmotesCoreAsync()
         {
             using PooledStringBuilder urlBuilder = new(ApiBaseUrl.Length + 30);
-            urlBuilder.Append(ApiBaseUrl, "/set/global");
+            urlBuilder.Append($"{ApiBaseUrl}/set/global");
 
             using HttpClient httpClient = new();
             using HttpResponseMessage httpResponse = await httpClient.GetAsync(urlBuilder.ToString());

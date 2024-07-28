@@ -31,20 +31,10 @@ internal struct UrlBuilder : IDisposable, IEquatable<UrlBuilder>
     public readonly void Dispose() => _builder.Dispose();
 
     public void AppendParameter(ReadOnlySpan<char> key, ReadOnlySpan<char> value)
-    {
-        _builder.Append(ParameterCount++ == 0 ? '?' : '&');
-        _builder.Append(key);
-        _builder.Append('=');
-        _builder.Append(value);
-    }
+        => _builder.Append($"{(ParameterCount++ == 0 ? '?' : '&')}{key}={value}");
 
     public void AppendParameter<T>(ReadOnlySpan<char> key, T value)
-    {
-        _builder.Append(ParameterCount++ == 0 ? '?' : '&');
-        _builder.Append(key);
-        _builder.Append('=');
-        _builder.Append(value);
-    }
+        => _builder.Append($"{(ParameterCount++ == 0 ? '?' : '&')}{key}={value}");
 
     [Pure]
     public override readonly string ToString() => _builder.ToString();

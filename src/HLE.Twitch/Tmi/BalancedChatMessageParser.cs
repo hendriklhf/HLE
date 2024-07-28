@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Text;
 using HLE.Twitch.Tmi.Models;
 using JetBrains.Annotations;
@@ -11,6 +12,16 @@ namespace HLE.Twitch.Tmi;
 
 public sealed class BalancedChatMessageParser : ChatMessageParser, IEquatable<BalancedChatMessageParser>
 {
+    [Pure]
+    [SkipLocalsInit]
+    [MustDisposeResource]
+    public override BalancedChatMessage Parse(ReadOnlySpan<byte> ircMessage)
+    {
+        Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
+        int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, (byte)' ', indicesOfWhitespacesBuffer, MaximumWhitespacesNeededToHandle);
+        return Parse(ircMessage, indicesOfWhitespacesBuffer.SliceUnsafe(..whitespaceCount));
+    }
+
     [Pure]
     [SkipLocalsInit]
     [MustDisposeResource]

@@ -22,11 +22,35 @@ public sealed partial class PooledStringBuilder
 
         public void AppendLiteral(string str) => _builder.Append(str);
 
-        public void AppendFormatted(string str) => _builder.Append(str);
+        public void AppendFormatted(string? str)
+        {
+            if (str is null)
+            {
+                return;
+            }
 
-        public void AppendFormatted(List<char> chars) => _builder.Append(chars);
+            _builder.Append(str);
+        }
 
-        public void AppendFormatted(char[] chars) => _builder.Append(chars);
+        public void AppendFormatted(List<char>? chars)
+        {
+            if (chars is null)
+            {
+                return;
+            }
+
+            _builder.Append(chars);
+        }
+
+        public void AppendFormatted(char[]? chars)
+        {
+            if (chars is null)
+            {
+                return;
+            }
+
+            _builder.Append(chars);
+        }
 
         public void AppendFormatted(ReadOnlyMemory<char> memory) => _builder.Append(memory.Span);
 

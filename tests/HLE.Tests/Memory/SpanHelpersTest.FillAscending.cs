@@ -57,8 +57,10 @@ public sealed partial class SpanHelpersTest
 
     private static void FillAscendingTestCore<T>(T start) where T : unmanaged, INumber<T>
     {
-        T[] numbers = GC.AllocateUninitializedArray<T>(500_000);
-        SpanHelpers.FillAscending(numbers.AsSpan(), start);
+        using RentedArray<T> buffer = ArrayPool<T>.Shared.RentAsRentedArray(500_000);
+
+        Span<T> numbers = buffer[..500_000];
+        SpanHelpers.FillAscending(numbers, start);
 
         for (int i = 0; i < numbers.Length; i++)
         {

@@ -14,9 +14,9 @@ namespace HLE.Memory;
 /// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
-public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatable<ArrayPool<T>>
+public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 {
-    public static new ArrayPool<T> Shared { get; } = new();
+    public static ArrayPool<T> Shared { get; } = new();
 
     internal readonly Bucket[] _buckets;
 
@@ -51,7 +51,7 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     }
 
     [Pure]
-    public override T[] Rent(int minimumLength)
+    public T[] Rent(int minimumLength)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(minimumLength);
 
@@ -158,9 +158,9 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     {
         const int MaximumTryCount = 3;
 
-        Bucket[] buckets = _buckets;
-        ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buckets), bucketIndex);
-        int bucketsLength = buckets.Length;
+        ref Bucket startingBucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        int bucketsLength = _buckets.Length;
+        ref Bucket bucket = ref startingBucket;
         int tryCount = 0;
         do
         {
@@ -175,8 +175,7 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
         }
         while (tryCount < MaximumTryCount && bucketIndex < bucketsLength);
 
-        Debug.Assert(tryCount == MaximumTryCount);
-        return Unsafe.Subtract(ref bucket, MaximumTryCount).Rent();
+        return startingBucket.Rent();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
@@ -208,7 +207,7 @@ public sealed partial class ArrayPool<T> : System.Buffers.ArrayPool<T>, IEquatab
     [MustDisposeResource]
     public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
 
-    public override void Return(T[]? array, bool clearArray = false)
+    public void Return(T[]? array, bool clearArray = false)
     {
         if (array is null)
         {

@@ -1,23 +1,27 @@
 using System;
 using System.Runtime.InteropServices;
 using HLE.Memory;
+using HLE.Test.TestUtilities;
 using Xunit;
 
 namespace HLE.Tests.Memory;
 
 public sealed partial class SpanHelpersTest
 {
-    public static TheoryData<int> MemmoveParameters { get; } = CreateMemmoveParameters(0, 2048);
+    public static TheoryData<int> MemmoveParameters { get; } = CreateMemmoveParameters();
 
-    public static TheoryData<int> MemmoveUnalignedAndOverlappingParameters { get; } = CreateMemmoveParameters(64, 2048);
+    public static TheoryData<int> MemmoveUnalignedAndOverlappingParameters { get; } = TheoryDataHelpers.CreateRange(64, 2048);
 
     [Theory]
     [MemberData(nameof(MemmoveParameters))]
-    public void MemmoveByteTest(int byteCount)
+    public void Memmove_Bytes_Test(int byteCount)
     {
-        Span<byte> source = GC.AllocateUninitializedArray<byte>(byteCount);
+        using RentedArray<byte> sourceBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(byteCount);
+        using RentedArray<byte> destinationBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(byteCount);
+
+        Span<byte> source = sourceBuffer[..byteCount];
         Random.Shared.Fill(source);
-        Span<byte> destination = GC.AllocateUninitializedArray<byte>(byteCount);
+        Span<byte> destination = destinationBuffer[..byteCount];
 
         SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
         Assert.True(destination.SequenceEqual(source));
@@ -25,11 +29,14 @@ public sealed partial class SpanHelpersTest
 
     [Theory]
     [MemberData(nameof(MemmoveParameters))]
-    public void MemmoveStringTest(int stringCount)
+    public void Memmove_Objects_Test(int objectCount)
     {
-        Span<string> source = GC.AllocateUninitializedArray<string>(stringCount);
-        FillWithRandomStrings(source);
-        Span<string> destination = new string[stringCount];
+        using RentedArray<object> sourceBuffer = ArrayPool<object>.Shared.RentAsRentedArray(objectCount);
+        using RentedArray<object> destinationBuffer = ArrayPool<object>.Shared.RentAsRentedArray(objectCount);
+
+        Span<object> source = sourceBuffer[..objectCount];
+        FillWithIndividualObjects(source);
+        Span<object> destination = destinationBuffer[..objectCount];
 
         SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
 
@@ -58,12 +65,12 @@ public sealed partial class SpanHelpersTest
 
     [Theory]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
-    public void Memmove_Overlapping_Test(int byteCount)
+    public void Memmove_Overlapping_DestinationGreaterThanSource_Test(int byteCount)
     {
         Span<byte> source = GC.AllocateUninitializedArray<byte>(byteCount);
-
         Random.Shared.Fill(source);
-        int elementsToSkip = Random.Shared.Next(1, 64);
+
+        int elementsToSkip = Random.Shared.Next(1, byteCount / 8);
         Span<byte> destination = source[elementsToSkip..];
 
         Span<byte> expectedItems = source[..destination.Length].ToArray();
@@ -71,27 +78,43 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(expectedItems));
     }
 
-    private static TheoryData<int> CreateMemmoveParameters(int minLength, int maxLength)
+    [Theory]
+    [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
+    public void Memmove_Overlapping_SourceGreaterThanDestination_Test(int byteCount)
+    {
+        Span<byte> source = GC.AllocateUninitializedArray<byte>(byteCount);
+        Random.Shared.Fill(source);
+
+        Span<byte> destination = source;
+        int elementsToSkip = Random.Shared.Next(1, byteCount / 8);
+        source = source[elementsToSkip..];
+
+        Span<byte> expectedItems = source.ToArray();
+        SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        Assert.True(destination[..source.Length].SequenceEqual(expectedItems));
+    }
+
+    private static TheoryData<int> CreateMemmoveParameters()
     {
         TheoryData<int> data = new();
-        for (int i = minLength; i <= maxLength; i++)
+        for (int i = 0; i <= 100_000; i++)
         {
             data.Add(i);
         }
 
-        for (int i = 0; i < 128; i++)
+        for (int i = 1; i <= 6; i++)
         {
-            data.Add(Random.Shared.Next(4096, 1_048_576));
+            data.Add(0xFFFF << i);
         }
 
         return data;
     }
 
-    private static void FillWithRandomStrings(Span<string> strings)
+    private static void FillWithIndividualObjects(Span<object> objects)
     {
-        for (int i = 0; i < strings.Length; i++)
+        for (int i = 0; i < objects.Length; i++)
         {
-            strings[i] = Random.Shared.NextString(8);
+            objects[i] = new();
         }
     }
 }

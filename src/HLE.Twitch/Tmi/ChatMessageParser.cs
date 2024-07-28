@@ -52,12 +52,12 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
 
     private protected static ReadOnlySpan<byte> ActionPrefix => ":\u0001ACTION"u8;
 
-    private const int MaximumWhitespacesNeededToHandle = 5;
+    private protected const int MaximumWhitespacesNeededToHandle = 5;
 
     [Pure]
     [SkipLocalsInit]
     [MustDisposeResource]
-    public IChatMessage Parse(ReadOnlySpan<byte> ircMessage)
+    public virtual IChatMessage Parse(ReadOnlySpan<byte> ircMessage)
     {
         Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
         int whitespaceCount = ParsingHelpers.IndicesOf(ircMessage, (byte)' ', indicesOfWhitespacesBuffer, MaximumWhitespacesNeededToHandle);
@@ -71,6 +71,8 @@ public abstract class ChatMessageParser : IChatMessageParser, IEquatable<ChatMes
     [MustDisposeResource]
     private protected static LazyString BytesToLazyString(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
+        Debug.Assert(bytes.Length != 0, "check if it is never null, otherwise return LazyString.Empty early");
+
         int maximumCharCount = encoding.GetMaxCharCount(bytes.Length);
         char[] chars = ArrayPool<char>.Shared.Rent(maximumCharCount);
         int charCount = encoding.GetChars(bytes, chars);

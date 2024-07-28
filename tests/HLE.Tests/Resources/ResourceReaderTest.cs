@@ -14,7 +14,7 @@ public sealed class ResourceReaderTest
         List<string> resources = [];
         for (int i = 1; i <= 3; i++)
         {
-            bool success = reader.TryRead($"HLE.Tests.Resources.Resource{i}", out Resource resource);
+            bool success = reader.TryRead($"{typeof(ResourceReaderTest).Namespace}.Resource{i}", out Resource resource);
             Assert.True(success);
             resources.Add(Encoding.UTF8.GetString(resource.AsSpan()));
         }

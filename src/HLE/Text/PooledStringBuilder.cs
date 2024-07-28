@@ -280,7 +280,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
         ArrayPool<char>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
-        return ref MemoryMarshal.GetArrayDataReference(newBuffer);
+        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(newBuffer), Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path

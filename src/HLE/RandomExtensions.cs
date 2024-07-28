@@ -374,7 +374,7 @@ public static class RandomExtensions
     public static unsafe void Fill(this Random random, Array array)
     {
         Type elementType = array.GetType().GetElementType()!;
-        if (ObjectMarshal.GetMethodTable(elementType)->IsReferenceOrContainsReferences)
+        if (ObjectMarshal.GetMethodTableFromType(elementType)->IsReferenceOrContainsReferences)
         {
             ThrowArrayElementTypeMustBeUnmanaged();
         }
@@ -479,15 +479,21 @@ public static class RandomExtensions
 
         if (byteCount > int.MaxValue)
         {
-            WriteLoop(random, byteDestination, ref byteCount);
+            WriteLoop(random, ref byteDestination, ref byteCount);
+            if (byteCount == 0)
+            {
+                return;
+            }
         }
+
+        Debug.Assert(byteCount <= int.MaxValue);
 
         Span<byte> bytes = MemoryMarshal.CreateSpan(ref byteDestination, (int)byteCount);
         random.NextBytes(bytes);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // unlikely path
-    private static void WriteLoop(Random random, byte destination, ref nuint byteCount)
+    private static void WriteLoop(Random random, ref byte destination, ref nuint byteCount)
     {
         Debug.Assert(byteCount > int.MaxValue);
 
@@ -495,6 +501,7 @@ public static class RandomExtensions
         {
             Span<byte> bytes = MemoryMarshal.CreateSpan(ref destination, int.MaxValue);
             random.NextBytes(bytes);
+            destination = ref Unsafe.Add(ref destination, int.MaxValue);
             byteCount -= int.MaxValue;
         }
         while (byteCount > int.MaxValue);

@@ -54,11 +54,11 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static MethodTable* GetMethodTable<T>() where T : allows ref struct
-        => GetMethodTable(typeof(T));
+        => GetMethodTableFromType(typeof(T));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable(Type type) => (MethodTable*)type.TypeHandle.Value;
+    public static MethodTable* GetMethodTableFromType(Type type) => (MethodTable*)type.TypeHandle.Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,7 +133,7 @@ public static unsafe class ObjectMarshal
     public static long GetRawArraySize(Array array)
     {
         Type type = array.GetType();
-        ushort componentSize = GetMethodTable(type)->ComponentSize;
+        ushort componentSize = GetMethodTableFromType(type)->ComponentSize;
         return BaseObjectSize + (uint)sizeof(nuint) + array.LongLength * componentSize;
     }
 

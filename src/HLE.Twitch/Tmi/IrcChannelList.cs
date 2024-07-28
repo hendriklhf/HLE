@@ -15,6 +15,7 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
 {
     private readonly List<IrcChannel> _channels = new(8);
     private ReadOnlyMemory<byte>[]? _utf8NamesCache;
+    private readonly Lock _utf8NamesLock = new();
 
     [Pure]
     public ImmutableArray<ReadOnlyMemory<byte>> GetUtf8Names()
@@ -25,15 +26,24 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
             return ImmutableCollectionsMarshal.AsImmutableArray(utf8Names);
         }
 
-        utf8Names = new ReadOnlyMemory<byte>[_channels.Count];
-        ReadOnlySpan<IrcChannel> channels = CollectionsMarshal.AsSpan(_channels);
-        for (int i = 0; i < channels.Length; i++)
+        lock (_utf8NamesLock)
         {
-            utf8Names[i] = channels[i].NameUtf8.AsMemory();
-        }
+            utf8Names = _utf8NamesCache;
+            if (utf8Names is not null)
+            {
+                return ImmutableCollectionsMarshal.AsImmutableArray(utf8Names);
+            }
 
-        _utf8NamesCache = utf8Names;
-        return ImmutableCollectionsMarshal.AsImmutableArray(utf8Names);
+            utf8Names = new ReadOnlyMemory<byte>[_channels.Count];
+            ReadOnlySpan<IrcChannel> channels = CollectionsMarshal.AsSpan(_channels);
+            for (int i = 0; i < channels.Length; i++)
+            {
+                utf8Names[i] = channels[i].NameUtf8.AsMemory();
+            }
+
+            _utf8NamesCache = utf8Names;
+            return ImmutableCollectionsMarshal.AsImmutableArray(utf8Names);
+        }
     }
 
     public IrcChannel Add(ReadOnlySpan<char> name)
@@ -80,7 +90,11 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
 
     public void Clear()
     {
-        _channels.Clear();
+        lock (_channels)
+        {
+            _channels.Clear();
+        }
+
         _utf8NamesCache = null;
     }
 

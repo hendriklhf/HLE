@@ -12,7 +12,7 @@ public sealed unsafe class MethodTableTest
     [MemberData(nameof(ComponentSizeParameters))]
     public void ComponentSize_Test((ushort Expected, Type Type) parameter)
     {
-        MethodTable* mt = ObjectMarshal.GetMethodTable(parameter.Type);
+        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
         Assert.Equal(parameter.Expected, mt->ComponentSize);
     }
 
@@ -24,7 +24,7 @@ public sealed unsafe class MethodTableTest
     [InlineData(typeof(object))]
     public void IsValueType_Test(Type type)
     {
-        MethodTable* mt = ObjectMarshal.GetMethodTable(type);
+        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(type);
         Assert.Equal(type.IsValueType, mt->IsValueType);
     }
 
