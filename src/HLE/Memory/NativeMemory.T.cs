@@ -14,19 +14,19 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Memory;
 
 [DebuggerDisplay("{ToString()}")]
-public unsafe partial struct NativeMemory<T> :
+public sealed unsafe partial class NativeMemory<T> :
     IDisposable,
     ICollection<T>,
     ICopyable<T>,
-    IBitwiseEquatable<NativeMemory<T>>,
     IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
     ICollectionProvider<T>,
-    IMemoryProvider<T>
+    IMemoryProvider<T>,
+    IEquatable<NativeMemory<T>>
     where T : unmanaged, IEquatable<T>
 {
-    public readonly ref T this[int index]
+    public ref T this[int index]
     {
         get
         {
@@ -35,13 +35,13 @@ public unsafe partial struct NativeMemory<T> :
         }
     }
 
-    readonly T IIndexable<T>.this[int index] => this[index];
+    T IIndexable<T>.this[int index] => this[index];
 
-    public readonly ref T this[Index index] => ref this[index.GetOffset(Length)];
+    public ref T this[Index index] => ref this[index.GetOffset(Length)];
 
-    public readonly Span<T> this[Range range] => AsSpan(range);
+    public Span<T> this[Range range] => AsSpan(range);
 
-    public readonly T* Pointer
+    public T* Pointer
     {
         get
         {
@@ -50,39 +50,23 @@ public unsafe partial struct NativeMemory<T> :
         }
     }
 
-    public readonly int Length
-    {
-        get => _lengthAndIsDisposed.Integer;
-        private init
-        {
-            Debug.Assert(value >= 0, "value needs to be >= 0 and should be validated by the ctor");
-            _lengthAndIsDisposed.SetIntegerUnsafe(value);
-        }
-    }
+    public int Length { get; }
 
-    private bool IsDisposed
-    {
-        readonly get => _lengthAndIsDisposed.Bool;
-        set => _lengthAndIsDisposed.Bool = value;
-    }
+    public ref T Reference => ref Unsafe.AsRef<T>(Pointer);
 
-    public readonly ref T Reference => ref Unsafe.AsRef<T>(Pointer);
+    int IReadOnlyCollection<T>.Count => Length;
 
-    readonly int IReadOnlyCollection<T>.Count => Length;
+    int ICollection<T>.Count => Length;
 
-    readonly int ICollection<T>.Count => Length;
+    int ICountable.Count => Length;
 
-    readonly int ICountable.Count => Length;
+    bool ICollection<T>.IsReadOnly => false;
 
-    readonly bool ICollection<T>.IsReadOnly => false;
+    private T* _memory;
 
-    internal readonly T* _memory;
+    public static NativeMemory<T> Empty { get; } = new();
 
-    private IntBoolUnion<int> _lengthAndIsDisposed;
-
-    public static NativeMemory<T> Empty => new();
-
-    public NativeMemory()
+    private NativeMemory()
     {
     }
 
@@ -97,15 +81,9 @@ public unsafe partial struct NativeMemory<T> :
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         Length = length;
-        IsDisposed = false;
 
-        ulong byteCount = checked((uint)sizeof(T) * (ulong)length);
-        if (!Environment.Is64BitProcess && byteCount > nuint.MaxValue)
-        {
-            ThrowAmountBytesExceed32BitIntegerRange();
-        }
-
-        T* memory = (T*)NativeMemory.AlignedAlloc((nuint)byteCount, (uint)sizeof(nuint));
+        nuint byteCount = checked((uint)sizeof(T) * (nuint)(uint)length);
+        T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, (uint)sizeof(nuint));
         if (zeroed)
         {
             ClearMemory((byte*)memory, byteCount);
@@ -114,23 +92,37 @@ public unsafe partial struct NativeMemory<T> :
         _memory = memory;
     }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowAmountBytesExceed32BitIntegerRange() =>
-        throw new InvalidOperationException("The amount of bytes (sizeof(T) * length) needing to be allocated, " +
-                                            "exceed the address range of the 32-bit architecture.");
+    ~NativeMemory() => DisposeCore();
 
-    private static void ClearMemory(byte* memory, ulong byteCount)
+    public void Dispose()
+    {
+        DisposeCore();
+        GC.SuppressFinalize(this);
+    }
+
+    private void DisposeCore()
+    {
+        T* memory = _memory;
+        if (memory is null)
+        {
+            return;
+        }
+
+        Debug.Assert(MemoryHelpers.IsAligned(memory, (uint)sizeof(nuint)));
+        NativeMemory.AlignedFree(memory);
+        _memory = null;
+    }
+
+    private static void ClearMemory(byte* memory, nuint byteCount)
     {
         Debug.Assert(byteCount != 0);
 
-        do
+        while (byteCount >= uint.MaxValue)
         {
             Unsafe.InitBlock(memory, 0, uint.MaxValue);
             byteCount -= uint.MaxValue;
             memory += uint.MaxValue;
         }
-        while (byteCount >= uint.MaxValue);
 
         if (byteCount != 0)
         {
@@ -139,89 +131,77 @@ public unsafe partial struct NativeMemory<T> :
     }
 
     [Pure]
-    public readonly Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Reference, Length);
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Reference, Length);
 
     [Pure]
-    public readonly Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
+    public Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
 
     [Pure]
-    public readonly Span<T> AsSpan(int start, int length) => new Slicer<T>(Pointer, Length).SliceSpan(start, length);
+    public Span<T> AsSpan(int start, int length) => new Slicer<T>(Pointer, Length).SliceSpan(start, length);
 
     [Pure]
-    public readonly Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).SliceSpan(range);
+    public Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).SliceSpan(range);
 
     [Pure]
-    public readonly Memory<T> AsMemory() => new NativeMemoryManager<T>(Pointer, Length).Memory;
+    public Memory<T> AsMemory() => new NativeMemoryManager<T>(Pointer, Length).Memory;
 
 #pragma warning disable CA2000 // dispose NativeMemoryManager. Not needed, NativeMemoryManager.Dispose is a nop
     [Pure]
-    public readonly Memory<T> AsMemory(int start) => new NativeMemoryManager<T>(Pointer, Length).Memory[start..];
+    public Memory<T> AsMemory(int start) => new NativeMemoryManager<T>(Pointer, Length).Memory[start..];
 
     [Pure]
-    public readonly Memory<T> AsMemory(int start, int length) => new NativeMemoryManager<T>(Pointer, Length).Memory.Slice(start, length);
+    public Memory<T> AsMemory(int start, int length) => new NativeMemoryManager<T>(Pointer, Length).Memory.Slice(start, length);
 
     [Pure]
-    public readonly Memory<T> AsMemory(Range range) => new NativeMemoryManager<T>(Pointer, Length).Memory[range];
+    public Memory<T> AsMemory(Range range) => new NativeMemoryManager<T>(Pointer, Length).Memory[range];
 #pragma warning restore CA2000
 
-    readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
+    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
 
-    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
 
-    readonly Memory<T> IMemoryProvider<T>.GetMemory() => AsMemory();
+    Memory<T> IMemoryProvider<T>.GetMemory() => AsMemory();
 
-    readonly ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => AsMemory();
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => AsMemory();
 
-    public void Dispose()
-    {
-        if (IsDisposed)
-        {
-            return;
-        }
-
-        Debug.Assert((nuint)_memory % (nuint)sizeof(nuint) == 0);
-        NativeMemory.AlignedFree(_memory);
-        IsDisposed = true;
-    }
-
-    public readonly void CopyTo(List<T> destination, int offset = 0)
+    public void CopyTo(List<T> destination, int offset = 0)
     {
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(destination, offset);
     }
 
-    public readonly void CopyTo(T[] destination, int offset)
+    public void CopyTo(T[] destination, int offset)
     {
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(destination, offset);
     }
 
-    public readonly void CopyTo(Memory<T> destination)
+    public void CopyTo(Memory<T> destination)
     {
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(destination);
     }
 
-    public readonly void CopyTo(Span<T> destination)
+    public void CopyTo(Span<T> destination)
     {
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(destination);
     }
 
-    public readonly void CopyTo(ref T destination)
+    public void CopyTo(ref T destination)
     {
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(ref destination);
     }
 
-    public readonly void CopyTo(T* destination)
+    public void CopyTo(T* destination)
     {
         CopyWorker<T> copyWorker = new(Pointer, Length);
         copyWorker.CopyTo(destination);
     }
 
     [Pure]
-    public readonly T[] ToArray()
+    public T[] ToArray()
     {
         int length = Length;
         if (length == 0)
@@ -236,52 +216,52 @@ public unsafe partial struct NativeMemory<T> :
     }
 
     [Pure]
-    public readonly T[] ToArray(int start) => AsSpan().ToArray(start);
+    public T[] ToArray(int start) => AsSpan().ToArray(start);
 
     [Pure]
-    public readonly T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+    public T[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
 
     [Pure]
-    public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
+    public T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public List<T> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
 
     [Pure]
-    public readonly List<T> ToList(int start) => AsSpan().ToList(start);
+    public List<T> ToList(int start) => AsSpan().ToList(start);
 
     [Pure]
-    public readonly List<T> ToList(int start, int length) => AsSpan().ToList(start, length);
+    public List<T> ToList(int start, int length) => AsSpan().ToList(start, length);
 
     [Pure]
-    public readonly List<T> ToList(Range range) => AsSpan().ToList(range);
+    public List<T> ToList(Range range) => AsSpan().ToList(range);
 
-    readonly void ICollection<T>.Add(T item) => throw new NotSupportedException();
+    void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public readonly void Clear() => ClearMemory((byte*)_memory, (uint)sizeof(T) * (ulong)Length);
+    public void Clear() => ClearMemory((byte*)_memory, (uint)sizeof(T) * (uint)Length);
 
-    readonly bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
+    bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
 
-    readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
+    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly void ThrowIfDisposed()
+    private void ThrowIfDisposed()
     {
-        if (IsDisposed)
+        if (_memory is null)
         {
             ThrowHelper.ThrowObjectDisposedException<NativeMemory<T>>();
         }
     }
 
-    public readonly NativeMemoryEnumerator<T> GetEnumerator() => new(_memory, Length);
+    public NativeMemoryEnumerator<T> GetEnumerator() => new(_memory, Length);
 
     // ReSharper disable once NotDisposedResourceIsReturned
-    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
 
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public override readonly string ToString()
+    public override string ToString()
     {
         if (typeof(T) == typeof(char))
         {
@@ -292,15 +272,15 @@ public unsafe partial struct NativeMemory<T> :
     }
 
     [Pure]
-    public readonly bool Equals(NativeMemory<T> other) => Length == other.Length && Pointer == other.Pointer;
+    public bool Equals(NativeMemory<T>? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is NativeMemory<T> other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is NativeMemory<T> other && Equals(other);
 
     [Pure]
-    public override readonly int GetHashCode() => HashCode.Combine((nuint)Pointer, Length);
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(NativeMemory<T> left, NativeMemory<T> right) => left.Equals(right);
+    public static bool operator ==(NativeMemory<T>? left, NativeMemory<T>? right) => Equals(left, right);
 
-    public static bool operator !=(NativeMemory<T> left, NativeMemory<T> right) => !(left == right);
+    public static bool operator !=(NativeMemory<T>? left, NativeMemory<T>? right) => !(left == right);
 }

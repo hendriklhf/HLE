@@ -78,7 +78,7 @@ public sealed class PooledMemoryStream(int capacity) :
 
     private Span<byte> GetPositionalBuffer() => GetBuffer().AsSpan(_position, _length - _position);
 
-    private ref byte GetPositionalReference() => ref UnsafeIL.GetArrayReference(GetBuffer(), _position);
+    private ref byte GetPositionalReference() => ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), _position);
 
     public override void Close()
     {
@@ -211,7 +211,7 @@ public sealed class PooledMemoryStream(int capacity) :
         else
         {
             GrowBuffer((uint)buffer.Length);
-            SpanHelpers.Copy(buffer, GetPositionalBuffer());
+            SpanHelpers.Copy(buffer, ref GetPositionalReference());
         }
 
         int position = _position + buffer.Length;

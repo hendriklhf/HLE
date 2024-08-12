@@ -57,17 +57,18 @@ public static unsafe partial class SpanHelpers
             return;
         }
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlaps(ref source, ref destination, elementCount))
+        nuint byteCount = checked(elementCount * (uint)sizeof(T));
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlaps(ref source, ref destination, byteCount))
         {
             MemmoveImpl<T>.s_memmove(ref destination, ref source, elementCount);
             return;
         }
 
-        Memcpy(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), checked(elementCount * (uint)sizeof(T)));
+        Memcpy(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), byteCount);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool Overlaps<T>(ref T source, ref T destination, nuint elementCount) =>
-        (nuint)Unsafe.ByteOffset(ref source, ref destination) < elementCount ||
-        (nuint)Unsafe.ByteOffset(ref destination, ref source) < elementCount;
+    private static bool Overlaps<T>(ref T source, ref T destination, nuint byteCount) =>
+        (nuint)Unsafe.ByteOffset(ref source, ref destination) < byteCount ||
+        (nuint)Unsafe.ByteOffset(ref destination, ref source) < byteCount;
 }

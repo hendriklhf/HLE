@@ -14,7 +14,7 @@ namespace HLE.Memory;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{AsString()}\"")]
-public sealed unsafe class NativeString :
+public readonly unsafe struct NativeString :
     IReadOnlyList<char>,
     IDisposable,
     IEquatable<NativeString>,
@@ -46,20 +46,18 @@ public sealed unsafe class NativeString :
 
     int IReadOnlyCollection<char>.Count => Length;
 
-    private byte* _buffer;
+    private readonly NativeMemory<byte> _memory;
 
-    public static NativeString Empty => new();
+    public static NativeString Empty { get; } = new();
 
-    public NativeString()
-    {
-    }
+    public NativeString() => _memory = NativeMemory<byte>.Empty;
 
     [MustDisposeResource]
     public NativeString(int length)
     {
         if (length == 0)
         {
-            _buffer = null;
+            _memory = NativeMemory<byte>.Empty;
             Length = 0;
             return;
         }
@@ -67,7 +65,8 @@ public sealed unsafe class NativeString :
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         nuint neededBufferSize = ObjectMarshal.GetRawStringSize(length);
-        byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
+        NativeMemory<byte> memory = new(int.CreateChecked(neededBufferSize));
+        byte* buffer = memory.Pointer;
 
         *(nuint*)buffer = 0;
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
@@ -76,7 +75,7 @@ public sealed unsafe class NativeString :
         Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
 
         Length = length;
-        _buffer = buffer;
+        _memory = memory;
     }
 
     [MustDisposeResource]
@@ -84,13 +83,14 @@ public sealed unsafe class NativeString :
     {
         if (chars.Length == 0)
         {
-            _buffer = null;
+            _memory = NativeMemory<byte>.Empty;
             Length = 0;
             return;
         }
 
         nuint neededBufferSize = ObjectMarshal.GetRawStringSize(chars.Length);
-        byte* buffer = (byte*)NativeMemory.AlignedAlloc(neededBufferSize, (nuint)sizeof(nuint));
+        NativeMemory<byte> memory = new(int.CreateChecked(neededBufferSize));
+        byte* buffer = memory.Pointer;
 
         *(nuint*)buffer = 0;
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
@@ -99,54 +99,44 @@ public sealed unsafe class NativeString :
         SpanHelpers.Copy(chars, &rawStringData->FirstChar);
 
         Length = chars.Length;
-        _buffer = buffer;
+        _memory = memory;
     }
 
-    ~NativeString() => TryDispose();
-
-    public void Dispose()
-    {
-        if (!TryDispose())
-        {
-            return;
-        }
-
-        GC.SuppressFinalize(this);
-    }
-
-    private bool TryDispose()
-    {
-        byte* buffer = _buffer;
-        if (buffer == null)
-        {
-            return false;
-        }
-
-        NativeMemory.AlignedFree(buffer);
-        _buffer = null;
-        return true;
-    }
+    public void Dispose() => _memory.Dispose();
 
     [Pure]
-    public RawStringData* AsRawStringData() => (RawStringData*)(_buffer + sizeof(nuint));
+    public RawStringData* AsRawStringData()
+    {
+        if (Length == 0)
+        {
+            ThrowCantGetRawDataOnEmptyString();
+        }
+
+        return (RawStringData*)(_memory.Pointer + sizeof(nuint));
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowCantGetRawDataOnEmptyString() => throw new InvalidOperationException("The string is empty, therefore getting the raw data is not possible.");
 
     [Pure]
     public string AsString() => Length == 0 ? string.Empty : ObjectMarshal.ReadObject<string>(AsRawStringData());
 
     [Pure]
-    public Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref GetCharsReference(), Length);
+    public Span<char> AsSpan() => Length == 0 ? [] : MemoryMarshal.CreateSpan(ref GetCharsReference(), Length);
 
     [Pure]
-    public Span<char> AsSpan(int start) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(start);
+    public Span<char> AsSpan(int start) => new Slicer<char>(AsSpan()).SliceSpan(start);
 
     [Pure]
-    public Span<char> AsSpan(int start, int length) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(start, length);
+    public Span<char> AsSpan(int start, int length) => new Slicer<char>(AsSpan()).SliceSpan(start, length);
 
     [Pure]
-    public Span<char> AsSpan(Range range) => new Slicer<char>(ref GetCharsReference(), Length).SliceSpan(range);
+    public Span<char> AsSpan(Range range) => new Slicer<char>(AsSpan()).SliceSpan(range);
 
     [Pure]
-    public Memory<char> AsMemory() => new NativeMemoryManager<char>(&AsRawStringData()->FirstChar, Length).Memory;
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "not needed")]
+    public Memory<char> AsMemory() => Length == 0 ? Memory<char>.Empty : new NativeMemoryManager<char>(&AsRawStringData()->FirstChar, Length).Memory;
 
     Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
 
@@ -157,23 +147,27 @@ public sealed unsafe class NativeString :
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ref char GetCharsReference() => ref Unsafe.AsRef<char>(&AsRawStringData()->FirstChar);
+    private ref char GetCharsReference()
+    {
+        Debug.Assert(Length != 0);
+        return ref Unsafe.AsRef<char>(&AsRawStringData()->FirstChar);
+    }
 
     [Pure]
-    public override string ToString() => new(AsSpan());
+    public override string ToString() => Length == 0 ? string.Empty : new(AsSpan());
 
-    public NativeMemoryEnumerator<char> GetEnumerator() => new((char*)Unsafe.AsPointer(ref GetCharsReference()), Length);
+    public NativeMemoryEnumerator<char> GetEnumerator() => Length == 0 ? new(null, 0) : new((char*)Unsafe.AsPointer(ref GetCharsReference()), Length);
 
     // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<char> IEnumerable<char>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<char>.Enumerator : GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public bool Equals([NotNullWhen(true)] NativeString? other) => ReferenceEquals(this, other);
+    public bool Equals(NativeString other) => Length == other.Length && _memory.Equals(other._memory);
 
-    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is NativeString other && Equals(other);
 
-    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+    public override int GetHashCode() => HashCode.Combine(Length, _memory);
 
     public int GetHashCode(StringComparison comparison) => AsString().GetHashCode(comparison);
 

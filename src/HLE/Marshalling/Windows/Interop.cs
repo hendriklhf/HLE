@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
@@ -14,20 +13,6 @@ public static unsafe partial class Interop
     public static char* GetEnvironmentStrings() => _GetEnvironmentStrings();
 
     public static bool FreeEnvironmentStrings(char* environmentStrings) => _FreeEnvironmentStrings(environmentStrings);
-
-    public static uint SendInput<T>(ReadOnlySpan<T> inputs) where T : unmanaged, IInput
-    {
-        fixed (T* ptr = inputs)
-        {
-            return SendInput(ptr, (uint)inputs.Length);
-        }
-    }
-
-    public static uint SendInput<T>(T* input) where T : unmanaged, IInput
-        => SendInput(input, 1);
-
-    public static uint SendInput<T>(T* inputs, uint count) where T : unmanaged, IInput
-        => _SendInput(count, inputs, sizeof(T));
 
     public static void* VirtualAlloc(void* address, nuint size, AllocationTypes allocationTypes, ProtectionTypes protectionTypes)
         => _VirtualAlloc(address, size, allocationTypes, protectionTypes);
@@ -59,8 +44,4 @@ public static unsafe partial class Interop
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [LibraryImport("kernel32.dll", EntryPoint = "FreeEnvironmentStringsW")]
     private static partial bool _FreeEnvironmentStrings(char* environmentStrings);
-
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    [LibraryImport("user32.dll", EntryPoint = "SendInput")]
-    private static partial uint _SendInput(uint inputCount, void* inputs, int sizeOfInput);
 }

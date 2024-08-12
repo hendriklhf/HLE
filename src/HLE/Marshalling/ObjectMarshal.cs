@@ -132,8 +132,7 @@ public static unsafe class ObjectMarshal
     [Pure]
     public static long GetRawArraySize(Array array)
     {
-        Type type = array.GetType();
-        ushort componentSize = GetMethodTableFromType(type)->ComponentSize;
+        ushort componentSize = GetMethodTable(array)->ComponentSize;
         return BaseObjectSize + (uint)sizeof(nuint) + array.LongLength * componentSize;
     }
 
@@ -144,6 +143,17 @@ public static unsafe class ObjectMarshal
         (nuint)sizeof(nuint) /* array length */ +
         (uint)arrayLength * (uint)sizeof(T); /* items */
 
+    /// <summary>
+    /// Boxes a struct on the stack, so that no heap allocation occurs.
+    /// </summary>
+    /// <param name="value">A reference to the struct that should be boxed.</param>
+    /// <param name="box">The box.</param>
+    /// <typeparam name="T">The type of the boxed value.</typeparam>
+    /// <returns>The boxed struct.</returns>
+    /// <remarks>
+    /// The box should always be disposed, i.e.: <c>object box = ObjectMarshal.BoxOnStack(ref myStruct, out _);</c>.
+    /// The parameter is only needed to reserve the stack space for the box.
+    /// </remarks>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static object BoxOnStack<T>(ref T value, out Box<T> box)

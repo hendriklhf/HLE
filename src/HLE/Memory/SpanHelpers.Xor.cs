@@ -54,18 +54,6 @@ public static partial class SpanHelpers
                 values = ref Unsafe.Add(ref values, Vector512<T>.Count);
                 length -= Vector512<T>.Count;
             }
-
-            if (length < Vector512<T>.Count >> 1)
-            {
-                goto RemainderLoop;
-            }
-
-            int remainingStart = Vector512<T>.Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector512<T> remainder = Vector512.LoadUnsafe(ref values);
-            remainder ^= maskVector;
-            remainder.StoreUnsafe(ref values);
-            return;
         }
 
         if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
@@ -80,18 +68,6 @@ public static partial class SpanHelpers
                 values = ref Unsafe.Add(ref values, Vector256<T>.Count);
                 length -= Vector256<T>.Count;
             }
-
-            if (length < Vector256<T>.Count >> 1)
-            {
-                goto RemainderLoop;
-            }
-
-            int remainingStart = Vector256<T>.Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector256<T> remainder = Vector256.LoadUnsafe(ref values);
-            remainder ^= maskVector;
-            remainder.StoreUnsafe(ref values);
-            return;
         }
 
         if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
@@ -106,21 +82,8 @@ public static partial class SpanHelpers
                 values = ref Unsafe.Add(ref values, Vector128<T>.Count);
                 length -= Vector128<T>.Count;
             }
-
-            if (length < Vector128<T>.Count >> 1)
-            {
-                goto RemainderLoop;
-            }
-
-            int remainingStart = Vector128<T>.Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            Vector128<T> remainder = Vector128.LoadUnsafe(ref values);
-            remainder ^= maskVector;
-            remainder.StoreUnsafe(ref values);
-            return;
         }
 
-    RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) ^= mask;
@@ -178,19 +141,6 @@ public static partial class SpanHelpers
                 mask = ref Unsafe.Add(ref mask, Vector512<T>.Count);
                 length -= Vector512<T>.Count;
             }
-
-            if (length < Vector512<T>.Count >> 1)
-            {
-                goto RemainderLoop;
-            }
-
-            int remainingStart = Vector512<T>.Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            mask = ref Unsafe.Subtract(ref mask, remainingStart);
-            Vector512<T> remainder = Vector512.LoadUnsafe(ref values);
-            remainder ^= Vector512.LoadUnsafe(ref mask);
-            remainder.StoreUnsafe(ref values);
-            return;
         }
 
         if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
@@ -205,19 +155,6 @@ public static partial class SpanHelpers
                 mask = ref Unsafe.Add(ref mask, Vector256<T>.Count);
                 length -= Vector256<T>.Count;
             }
-
-            if (length < Vector256<T>.Count >> 1)
-            {
-                goto RemainderLoop;
-            }
-
-            int remainingStart = Vector256<T>.Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            mask = ref Unsafe.Subtract(ref mask, remainingStart);
-            Vector256<T> remainder = Vector256.LoadUnsafe(ref values);
-            remainder ^= Vector256.LoadUnsafe(ref mask);
-            remainder.StoreUnsafe(ref values);
-            return;
         }
 
         if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
@@ -232,22 +169,8 @@ public static partial class SpanHelpers
                 mask = ref Unsafe.Add(ref mask, Vector128<T>.Count);
                 length -= Vector128<T>.Count;
             }
-
-            if (length < Vector128<T>.Count >> 1)
-            {
-                goto RemainderLoop;
-            }
-
-            int remainingStart = Vector128<T>.Count - length;
-            values = ref Unsafe.Subtract(ref values, remainingStart);
-            mask = ref Unsafe.Subtract(ref mask, remainingStart);
-            Vector128<T> remainder = Vector128.LoadUnsafe(ref values);
-            remainder ^= Vector128.LoadUnsafe(ref mask);
-            remainder.StoreUnsafe(ref values);
-            return;
         }
 
-    RemainderLoop:
         for (int i = 0; i < length; i++)
         {
             Unsafe.Add(ref values, i) ^= Unsafe.Add(ref mask, i);

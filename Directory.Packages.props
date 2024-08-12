@@ -25,20 +25,20 @@
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.4"/>
     <PackageVersion Include="Roslynator.CodeFixes" Version="4.12.4"/>
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.12.4"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="9.30.0.95878"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="9.31.0.96804"/>
   </ItemGroup>
 
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.2"/>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0"/>
-    <PackageVersion Include="xunit" Version="2.9.0"/>
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2"/>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.0-release-24373-02"/>
+    <PackageVersion Include="xunit.v3" Version="0.2.0-pre.69"/>
+    <PackageVersion Include="xunit.runner.console" Version="2.9.0"/>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.0-pre.24"/>
   </ItemGroup>
 
   <!-- Benchmarks -->
   <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.13.12"/>
+    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0"/>
   </ItemGroup>
-
 </Project>

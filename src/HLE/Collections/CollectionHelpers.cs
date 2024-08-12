@@ -10,7 +10,7 @@ using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
-#if RELEASE
+#if !TEST_RUN
 using System.Linq;
 #endif
 
@@ -195,13 +195,12 @@ public static partial class CollectionHelpers
 
     public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
     {
-#if RELEASE // this might prevent the tests from reaching the bottom branches, so it will be removed for test runs as it is runtime code
+#if !TEST_RUN // this might prevent the tests from reaching the bottom branches, so it will be removed for test runs as it is runtime code
         if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
         {
             return true;
         }
 #endif
-
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             elementCount = span.Length;

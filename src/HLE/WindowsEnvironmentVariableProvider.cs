@@ -40,7 +40,7 @@ internal sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableP
         }
         finally
         {
-            _ = Interop.FreeEnvironmentStrings(environmentStrings);
+            Interop.FreeEnvironmentStrings(environmentStrings);
         }
 
         return new(environmentVariables.ToFrozenDictionary());

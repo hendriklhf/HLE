@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HLE\HLE.csproj"/>
+    <ProjectReference Condition="'$(PublishingPackage)'!='true'" Include="..\HLE\HLE.csproj"/>
+    <PackageReference Condition="'$(PublishingPackage)'=='true'" Include="HLE"/>
   </ItemGroup>
 
   <ItemGroup>
