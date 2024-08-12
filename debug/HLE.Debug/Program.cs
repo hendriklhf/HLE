@@ -2,9 +2,10 @@ using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 
+#pragma warning disable RCS1060, S125, IDE0022
+
 namespace HLE.Debug;
 
-[SuppressMessage("Style", "IDE0022:Use expression body for method")]
 internal static class Program
 {
     private static void Main()
@@ -25,12 +26,13 @@ BenchmarkRunner.Run<Bench>(config);
 
 [MemoryDiagnoser]
 [DisassemblyDiagnoser]
-[Orderer(SummaryOrderPolicy.SlowestToFastest)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [SuppressMessage("Performance", "CA1822:Mark members as static")]
 [SuppressMessage("ReSharper", "ClassCanBeSealed.Global")]
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 [SuppressMessage("Design", "CA1024:Use properties where appropriate")]
 [SuppressMessage("Maintainability", "CA1515:Consider making public types internal")]
-#pragma warning disable CA1001, CA1707
+[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+#pragma warning disable CA1001, CA1707, S125
 public class Bench;
