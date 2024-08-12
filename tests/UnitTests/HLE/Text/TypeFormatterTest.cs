@@ -17,8 +17,8 @@ public sealed class TypeFormatterTest
         new Parameter($"System{DefaultNamespaceSeparator}Int32[,,]", typeof(int[,,])),
         new Parameter($"System{DefaultNamespaceSeparator}Int32[,,,]", typeof(int[,,,])),
         new Parameter($"System{DefaultNamespaceSeparator}String", typeof(string)),
-        new Parameter($"HLE{DefaultNamespaceSeparator}Tests{DefaultNamespaceSeparator}Text{DefaultNamespaceSeparator}TypeFormatterTest.Parameter", typeof(Parameter)),
-        new Parameter($"HLE{DefaultNamespaceSeparator}Tests{DefaultNamespaceSeparator}Text{DefaultNamespaceSeparator}TypeFormatterTest.Parameter[]", typeof(Parameter[])),
+        new Parameter($"HLE{DefaultNamespaceSeparator}UnitTests{DefaultNamespaceSeparator}Text{DefaultNamespaceSeparator}TypeFormatterTest.Parameter", typeof(Parameter)),
+        new Parameter($"HLE{DefaultNamespaceSeparator}UnitTests{DefaultNamespaceSeparator}Text{DefaultNamespaceSeparator}TypeFormatterTest.Parameter[]", typeof(Parameter[])),
         new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>)),
         new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary.Enumerator{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>.Enumerator))
     );
