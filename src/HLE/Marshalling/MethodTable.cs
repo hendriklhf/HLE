@@ -15,9 +15,11 @@ public readonly struct MethodTable
     /// </summary>
     public ushort ComponentSize => _componentSize;
 
-    public bool IsValueType => (_flags & IsValueTypeFlag) != 0;
+    public bool IsValueType => (_flags & ValueTypeMask) == IsValueTypeFlag;
 
     public bool ContainsManagedPointers => (_flags & ContainsManagedPointersFlag) != 0;
+
+    public bool IsInterface => (_flags & CategoryMask) == IsInterfaceFlag;
 
     public bool IsReferenceOrContainsReferences => !IsValueType || ContainsManagedPointers;
 
@@ -28,5 +30,8 @@ public readonly struct MethodTable
     private readonly uint _flags;
 
     private const uint IsValueTypeFlag = 0x00040000;
+    private const uint ValueTypeMask = 0x000C0000;
+    private const uint IsInterfaceFlag = 0x000C0000;
+    private const uint CategoryMask = 0x000F0000;
     private const uint ContainsManagedPointersFlag = 0x1000000;
 }
