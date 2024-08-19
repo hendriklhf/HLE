@@ -112,20 +112,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
-    private void StartListeningThread()
-    {
-        Thread listeningThread = new(static state =>
-        {
-            WebSocketIrcClient client = Unsafe.As<WebSocketIrcClient>(state)!;
-            client.StartListeningAsync().Ignore();
-        })
-        {
-            IsBackground = true,
-            Priority = ThreadPriority.AboveNormal
-        };
-
-        listeningThread.Start(this);
-    }
+    private void StartListeningBackgroundTask() => StartListeningAsync().Ignore();
 
     private async Task StartListeningAsync()
     {
@@ -248,7 +235,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public async Task ConnectAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> channels)
     {
         await ConnectClientAsync();
-        StartListeningThread();
+        StartListeningBackgroundTask();
         await EventInvoker.InvokeAsync(OnConnected, this);
 
         using PooledBufferWriter<byte> messageBuilder = new(CapReqMessage.Length);

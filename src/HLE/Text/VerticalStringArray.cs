@@ -179,7 +179,7 @@ public sealed class VerticalStringArray :
         return IndexOfCore(str, startIndex);
     }
 
-    public int IndexOfCore(ReadOnlySpan<char> str, int startIndex = 0)
+    private int IndexOfCore(ReadOnlySpan<char> str, int startIndex = 0)
     {
         int iteration = 0;
         ref string strings = ref MemoryMarshal.GetArrayDataReference(_strings);
@@ -189,22 +189,22 @@ public sealed class VerticalStringArray :
         while (length >= BitsPerMap)
         {
             uint map = GetMatchingLengthsMap(ref stringLengths, str.Length);
-            switch (map)
+            if (map == 0)
             {
-                case 0:
-                    length -= BitsPerMap;
-                    stringLengths = ref Unsafe.Add(ref stringLengths, BitsPerMap);
-                    chars = ref Unsafe.Add(ref chars, BitsPerMap);
-                    iteration++;
-                    continue;
-                case 1:
-                    int index = GetActualIndex(BitOperations.TrailingZeroCount(map), iteration, startIndex);
-                    if (str.SequenceEqual(Unsafe.Add(ref strings, index)))
-                    {
-                        return index;
-                    }
+                length -= BitsPerMap;
+                stringLengths = ref Unsafe.Add(ref stringLengths, BitsPerMap);
+                chars = ref Unsafe.Add(ref chars, BitsPerMap);
+                iteration++;
+                continue;
+            }
 
-                    break;
+            if (BitOperations.PopCount(map) == 1)
+            {
+                int index = GetActualIndex(BitOperations.TrailingZeroCount(map), iteration, startIndex);
+                if (str.SequenceEqual(Unsafe.Add(ref strings, index)))
+                {
+                    return index;
+                }
             }
 
             for (int i = 0; i < str.Length; i++)
@@ -215,7 +215,7 @@ public sealed class VerticalStringArray :
                     goto Continue;
                 }
 
-                if (map == 1)
+                if (BitOperations.PopCount(map) == 1)
                 {
                     int index = GetActualIndex(BitOperations.TrailingZeroCount(map), iteration, startIndex);
                     if (str.SequenceEqual(Unsafe.Add(ref strings, index)))
@@ -238,7 +238,7 @@ public sealed class VerticalStringArray :
 
         if (length != 0)
         {
-            ReadOnlySpan<string> remainder = _strings.AsSpanUnsafe(..^length);
+            ReadOnlySpan<string> remainder = _strings.AsSpanUnsafe(^length..);
             for (int i = 0; i < remainder.Length; i++)
             {
                 if (str.SequenceEqual(remainder[i]))

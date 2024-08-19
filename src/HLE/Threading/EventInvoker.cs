@@ -67,14 +67,14 @@ public static partial class EventInvoker
         if (eventHandler.HasSingleTarget)
         {
             EventHandlerState<TEventArgs> state = new(eventHandler, sender, eventArgs);
-            ThreadPool.QueueUserWorkItem(DelegateCache<TEventArgs>.QueueUserWorkItem, state, true);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
             return;
         }
 
         foreach (EventHandler<TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {
             EventHandlerState<TEventArgs> state = new(target, sender, eventArgs);
-            ThreadPool.QueueUserWorkItem(DelegateCache<TEventArgs>.QueueUserWorkItem, state, true);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
         }
     }
 

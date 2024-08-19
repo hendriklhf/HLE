@@ -37,8 +37,6 @@ public sealed class ConcurrentDoubleDictionary<TPrimaryKey, TSecondaryKey, TValu
 
     public IReadOnlyCollection<TValue> Values => _dictionary.Values;
 
-    public object SyncRoot => _dictionary;
-
     internal readonly DoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> _dictionary;
 
     public ConcurrentDoubleDictionary() => _dictionary = [];
