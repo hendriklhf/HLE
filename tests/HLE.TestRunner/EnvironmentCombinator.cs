@@ -86,8 +86,7 @@ internal static class EnvironmentCombinator
 
         return RuntimeInformation.OSArchitecture switch
         {
-            Architecture.X64 => ["linux-x64", "linux-x86"],
-            Architecture.X86 => ["linux-x86"],
+            Architecture.X64 => ["linux-x64"],
             Architecture.Arm64 => ["linux-arm64", "linux-arm"],
             Architecture.Arm => ["linux-arm"],
             _ => throw new PlatformNotSupportedException()

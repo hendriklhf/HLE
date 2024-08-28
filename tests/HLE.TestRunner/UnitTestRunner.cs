@@ -24,9 +24,9 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
         }
     }
 
-    public async Task<int> RunAsync()
+    public async Task<ImmutableArray<UnitTestRunResult>> RunAsync()
     {
-        List<Task<bool>> tasks = new();
+        List<Task<UnitTestRunResult>> tasks = new();
 
         ImmutableArray<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combinate();
         foreach (TestProject testProject in _testProjects)
@@ -38,8 +38,8 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
             }
         }
 
-        bool[] result = await Task.WhenAll(tasks);
-        return result.AsSpan().Count(false);
+        UnitTestRunResult[] result = await Task.WhenAll(tasks);
+        return ImmutableCollectionsMarshal.AsImmutableArray(result);
     }
 
     private static ImmutableArray<TestProject> DiscoverTestProjects(TextWriter outputWriter)

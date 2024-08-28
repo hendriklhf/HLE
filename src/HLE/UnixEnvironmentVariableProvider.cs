@@ -60,7 +60,7 @@ internal sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProv
             Interop.FreeEnvironment(environment);
         }
 
-        return new(result.ToFrozenDictionary());
+        return new(result.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
     }
 
     [Pure]

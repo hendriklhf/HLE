@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HLE.TestRunner;
@@ -8,6 +10,7 @@ internal static class Program
     private static async Task<int> Main()
     {
         using UnitTestRunner runner = new(Console.Out);
-        return await runner.RunAsync();
+        ImmutableArray<UnitTestRunResult> results = await runner.RunAsync();
+        return results.Count(static r => !r.IsSuccess);
     }
 }

@@ -68,12 +68,13 @@ public struct RentedArray<T> :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if (_array is null)
+            T[]? array = _array;
+            if (array is null)
             {
                 ThrowHelper.ThrowObjectDisposedException<RentedArray<T>>();
             }
 
-            return _array;
+            return array;
         }
     }
 

@@ -397,6 +397,14 @@ public sealed class VerticalStringArray :
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)index, (uint)Length);
 
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (str is null)
+        {
+            _strings[index] = null!;
+            _lengths[index] = 0;
+            return;
+        }
+
         GrowCharBufferIfNeeded(str.Length);
 
         UpdateMinMaxStringLength(str.Length);
@@ -436,6 +444,7 @@ public sealed class VerticalStringArray :
         char[] newBuffer = new char[requiredBufferLength];
         char[] oldBuffer = _chars;
         SpanHelpers.Copy(oldBuffer, newBuffer);
+        ArrayPool<char>.Shared.Return(oldBuffer);
         _chars = newBuffer;
     }
 

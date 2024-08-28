@@ -1,6 +1,6 @@
 namespace HLE.Collections;
 
-public interface IIndexable<out T>
+public interface IIndexable<out T> : ICountable
 {
     /// <summary>
     /// Gets the item at the given index of the collection.

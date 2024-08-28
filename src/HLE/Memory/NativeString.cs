@@ -18,7 +18,6 @@ public readonly unsafe struct NativeString :
     IReadOnlyList<char>,
     IDisposable,
     IEquatable<NativeString>,
-    ICountable,
     IIndexable<char>,
     ISpanProvider<char>,
     IMemoryProvider<char>

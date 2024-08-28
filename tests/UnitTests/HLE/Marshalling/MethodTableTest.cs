@@ -8,81 +8,78 @@ namespace HLE.UnitTests.Marshalling;
 
 public sealed unsafe partial class MethodTableTest
 {
-    public static TheoryData<(ushort, Type)> ComponentSizeParameters { get; } = CreateComponentSizeParameters();
-
-    public static TheoryData<Type> MethodTableTypeParameters { get; } =
+    public static TheoryData<MethodTableTypeParameter> MethodTableTypeParameters { get; } =
     [
-        typeof(int),
-        typeof(Guid),
-        typeof(int[]),
-        typeof(string[]),
-        typeof(Array),
-        typeof(string),
-        typeof(object),
-        typeof(Enum),
-        typeof(ValueType),
-        typeof(IDisposable),
-        typeof(ISpanParsable<int>),
-        typeof(ISpanParsable<string>),
-        typeof(RuntimeHelpers),
-        typeof(ObjectMarshal),
-        typeof(StringComparison),
-        typeof(RegexOptions),
-        typeof(GenericStruct<int>),
-        typeof(GenericStruct<string>),
-        typeof(GenericRefStruct<int>),
-        typeof(GenericRefStruct<string>),
-        typeof(GenericRefStructWithRefField<int>),
-        typeof(GenericRefStructWithRefField<string>)
+        new(typeof(int), 0, false),
+        new(typeof(Guid), 0, false),
+        new(typeof(byte[]), sizeof(byte), false),
+        new(typeof(ushort[]), sizeof(ushort), false),
+        new(typeof(short[]), sizeof(short), false),
+        new(typeof(int[]), sizeof(int), false),
+        new(typeof(uint[]), sizeof(uint), false),
+        new(typeof(ulong[]), sizeof(ulong), false),
+        new(typeof(long[]), sizeof(long), false),
+        new(typeof(object[]), (ushort)sizeof(object), true),
+        new(typeof(string[]), (ushort)sizeof(string), true),
+        new(typeof(Guid[]), (ushort)sizeof(Guid), false),
+        new(typeof(Array), 0, false),
+        new(typeof(string), 0, false),
+        new(typeof(object), 0, false),
+        new(typeof(Enum), 0, false),
+        new(typeof(ValueType), 0, false),
+        new(typeof(IDisposable), 0, false),
+        new(typeof(ISpanParsable<int>), 0, false),
+        new(typeof(ISpanParsable<string>), 0, false),
+        new(typeof(RuntimeHelpers), 0, false),
+        new(typeof(ObjectMarshal), 0, false),
+        new(typeof(StringComparison), 0, false),
+        new(typeof(RegexOptions), 0, false),
+        new(typeof(GenericStruct<int>), 0, false),
+        new(typeof(GenericStruct<string>), 0, true),
+        new(typeof(GenericRefStruct<int>), 0, false),
+        new(typeof(GenericRefStruct<string>), 0, true),
+        new(typeof(GenericRefStructWithRefField<int>), 0, true),
+        new(typeof(GenericRefStructWithRefField<string>), 0, true)
     ];
 
     [Theory]
-    [MemberData(nameof(ComponentSizeParameters))]
-    public void ComponentSize_Test((ushort Expected, Type Type) parameter)
+    [MemberData(nameof(MethodTableTypeParameters))]
+    public void ComponentSize(MethodTableTypeParameter parameter)
     {
         MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
-        Assert.Equal(parameter.Expected, mt->ComponentSize);
+        Assert.Equal(parameter.ComponentSize, mt->ComponentSize);
     }
 
     [Theory]
     [MemberData(nameof(MethodTableTypeParameters))]
-    public void IsValueType_Test(Type type)
+    public void IsValueType(MethodTableTypeParameter parameter)
     {
-        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(type);
-        Assert.Equal(type.IsValueType, mt->IsValueType);
+        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
+        Assert.Equal(parameter.Type.IsValueType, mt->IsValueType);
     }
 
     [Theory]
     [MemberData(nameof(MethodTableTypeParameters))]
-    public void IsReferenceOrContainsReferences_Test(Type type)
+    public void IsReferenceOrContainsReferences(MethodTableTypeParameter parameter)
     {
-        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(type);
-
-        bool expected = (bool)typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences))!.MakeGenericMethod(type).Invoke(null, null)!;
-
+        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
+        bool expected = (bool)typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences))!.MakeGenericMethod(parameter.Type).Invoke(null, null)!;
         Assert.Equal(expected, mt->IsReferenceOrContainsReferences);
     }
 
     [Theory]
     [MemberData(nameof(MethodTableTypeParameters))]
-    public void IsInterface_Test(Type type)
+    public void IsInterface(MethodTableTypeParameter parameter)
     {
-        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(type);
-        Assert.Equal(type.IsInterface, mt->IsInterface);
+        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
+        Assert.Equal(parameter.Type.IsInterface, mt->IsInterface);
     }
 
-    private static TheoryData<(ushort, Type)> CreateComponentSizeParameters()
+    [Theory]
+    [MemberData(nameof(MethodTableTypeParameters))]
+    public void ContainsManagedPointers(MethodTableTypeParameter parameter)
     {
-        // ReSharper disable once UseCollectionExpression
-        TheoryData<(ushort, Type)> data = new()
-        {
-            (sizeof(byte), typeof(byte[])),
-            (sizeof(ushort), typeof(ushort[])),
-            (sizeof(uint), typeof(uint[])),
-            (sizeof(ulong), typeof(ulong[])),
-            ((ushort)sizeof(Guid), typeof(Guid[])),
-            (sizeof(char), typeof(string))
-        };
-        return data;
+        MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
+        Assert.Equal(parameter.ContainsManagedPointers, mt->ContainsManagedPointers);
     }
 }

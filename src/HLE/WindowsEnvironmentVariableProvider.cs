@@ -43,7 +43,7 @@ internal sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableP
             Interop.FreeEnvironmentStrings(environmentStrings);
         }
 
-        return new(environmentVariables.ToFrozenDictionary());
+        return new(environmentVariables.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
     }
 
     [Pure]

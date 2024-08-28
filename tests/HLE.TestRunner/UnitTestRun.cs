@@ -17,12 +17,12 @@ internal sealed class UnitTestRun(TextWriter outputWriter, TestProject testProje
 
     private static readonly string s_executableFileExtensions = OperatingSystem.IsWindows() ? ".exe" : string.Empty;
 
-    public async Task<bool> StartAsync()
+    public async Task<UnitTestRunResult> StartAsync()
     {
         string? buildOutputPath = await _testProject.BuildAsync(_environment);
         if (buildOutputPath is null)
         {
-            return false;
+            return UnitTestRunResult.Failure;
         }
 
         string projectName = Path.GetFileNameWithoutExtension(_testProject.FilePath);
@@ -30,7 +30,7 @@ internal sealed class UnitTestRun(TextWriter outputWriter, TestProject testProje
         return await RunExecutableAsync(executablePath, _environment);
     }
 
-    private async Task<bool> RunExecutableAsync(string executablePath, EnvironmentConfiguration environment)
+    private async Task<UnitTestRunResult> RunExecutableAsync(string executablePath, EnvironmentConfiguration environment)
     {
         ProcessStartInfo startInfo = new()
         {
@@ -58,7 +58,7 @@ internal sealed class UnitTestRun(TextWriter outputWriter, TestProject testProje
         await testRunProcess.WaitForExitAsync();
         await readerTask;
 
-        return testRunProcess.ExitCode == 0;
+        return testRunProcess.ExitCode == 0 ? UnitTestRunResult.Success : UnitTestRunResult.Failure;
     }
 
     [Pure]
