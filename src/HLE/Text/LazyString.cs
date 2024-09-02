@@ -38,6 +38,8 @@ public sealed class LazyString :
 
     char IIndexable<char>.this[int index] => this[index];
 
+    char IIndexable<char>.this[Index index] => this[index];
+
     public ref readonly char this[Index index] => ref this[index.GetOffset(Length)];
 
     public ReadOnlySpan<char> this[Range range] => new Slicer<char>(ref GetReference(), Length).SliceReadOnlySpan(range);
@@ -66,6 +68,7 @@ public sealed class LazyString :
     {
         _chars = null;
         _string = str;
+        Length = str.Length;
     }
 
     [MustDisposeResource]
@@ -178,7 +181,11 @@ public sealed class LazyString :
     public char[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<char> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public List<char> ToList()
+    {
+        ReadOnlySpan<char> chars = AsSpan();
+        return chars.Length == 0 ? [] : ListMarshal.ConstructList(chars, GC.AllocateUninitializedArray<char>(chars.Length));
+    }
 
     [Pure]
     public List<char> ToList(int start) => AsSpan().ToList(start);
@@ -266,7 +273,8 @@ public sealed class LazyString :
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
-    public MemoryEnumerator<char> GetEnumerator() => new(ref GetReference(), Length);
+    [Pure]
+    public MemoryEnumerator<char> GetEnumerator() => new(AsSpan());
 
     IEnumerator<char> IEnumerable<char>.GetEnumerator()
     {
@@ -295,7 +303,7 @@ public sealed class LazyString :
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<char>)this).GetEnumerator();
 
     [Pure]
-    public bool Equals(LazyString? other) => Length == other?.Length && AsSpan().SequenceEqual(other.AsSpan());
+    public bool Equals([NotNullWhen(true)] LazyString? other) => Length == other?.Length && AsSpan().SequenceEqual(other.AsSpan());
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is LazyString other && Equals(other);

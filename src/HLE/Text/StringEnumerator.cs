@@ -15,11 +15,13 @@ public struct StringEnumerator(string str) : IEnumerator<char>, IEquatable<Strin
     private readonly string _str = str;
     private int _current = -1;
 
+    public static StringEnumerator Empty => new(string.Empty);
+
     public bool MoveNext() => ++_current < _str.Length;
 
     public void Reset() => _current = -1;
 
-    public readonly void Dispose()
+    readonly void IDisposable.Dispose()
     {
     }
 

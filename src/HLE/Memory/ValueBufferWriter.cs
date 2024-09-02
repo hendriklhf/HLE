@@ -1,4 +1,6 @@
 using System;
+using System.Buffers;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -16,8 +18,21 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
-public ref struct ValueBufferWriter<T>
+public ref struct ValueBufferWriter<T> :
+    IBufferWriter<T>,
+    ICollection<T>,
+    IDisposable,
+    ICopyable<T>,
+    IEquatable<ValueBufferWriter<T>>,
+    IIndexable<T>,
+    IReadOnlyCollection<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>
 {
+    readonly T IIndexable<T>.this[int index] => WrittenSpan[index];
+
+    readonly T IIndexable<T>.this[Index index] => WrittenSpan[index];
+
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
@@ -59,6 +74,8 @@ public ref struct ValueBufferWriter<T>
     }
 
     public readonly int Capacity => GetBuffer().Length;
+
+    readonly bool ICollection<T>.IsReadOnly => false;
 
     private ref T _buffer;
     private IntBoolUnion<int> _bufferLengthAndIsStackalloced;
@@ -125,6 +142,12 @@ public ref struct ValueBufferWriter<T>
         return ref Unsafe.Add(ref GetBufferReference(), Count);
     }
 
+    readonly Memory<T> IBufferWriter<T>.GetMemory(int sizeHint) => throw new NotSupportedException();
+
+    readonly Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => WrittenSpan;
+
     public void Write(T item)
     {
         GetReference() = item;
@@ -182,6 +205,12 @@ public ref struct ValueBufferWriter<T>
 
     public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
+    void ICollection<T>.Add(T item) => Write(item);
+
+    readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
+
+    readonly bool ICollection<T>.Contains(T item) => throw new NotSupportedException();
+
     [Pure]
     public readonly T[] ToArray()
     {
@@ -206,7 +235,20 @@ public ref struct ValueBufferWriter<T>
     public readonly T[] ToArray(Range range) => WrittenSpan.ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(WrittenSpan);
+    public readonly List<T> ToList()
+    {
+        Span<T> writtenSpan = WrittenSpan;
+        return writtenSpan.Length == 0 ? [] : ListMarshal.ConstructList(writtenSpan, GC.AllocateUninitializedArray<T>(writtenSpan.Length));
+    }
+
+    [Pure]
+    public readonly List<T> ToList(int start) => WrittenSpan.ToList(start);
+
+    [Pure]
+    public readonly List<T> ToList(int start, int length) => WrittenSpan.ToList(start, length);
+
+    [Pure]
+    public readonly List<T> ToList(Range range) => WrittenSpan.ToList(range);
 
     /// <summary>
     /// Trims unused buffer size.<br/>
@@ -339,7 +381,7 @@ public ref struct ValueBufferWriter<T>
     {
         if (IsDisposed)
         {
-            ThrowHelper.ThrowObjectDisposedException(typeof(ValueBufferWriter<T>));
+            ThrowHelper.ThrowObjectDisposedException<ValueBufferWriter<T>>();
         }
 
         return ref _buffer;
@@ -353,17 +395,21 @@ public ref struct ValueBufferWriter<T>
     {
         if (typeof(char) != typeof(T))
         {
-            return ToStringHelpers.FormatCollection(typeof(ValueBufferWriter<T>), Count);
+            return ToStringHelpers.FormatCollection<ValueBufferWriter<T>>(Count);
         }
 
         ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());
         return new(MemoryMarshal.CreateReadOnlySpan(ref reference, Count));
     }
 
-    public readonly MemoryEnumerator<T> GetEnumerator() => new(ref GetBufferReference(), Count);
+    public readonly MemoryEnumerator<T> GetEnumerator() => new(WrittenSpan);
+
+    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => throw new NotSupportedException();
+
+    readonly IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
 
     [Pure]
-    public readonly bool Equals(ValueBufferWriter<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();
+    public readonly bool Equals(scoped ValueBufferWriter<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();
 
     [Pure]
     public override readonly bool Equals(object? obj) => false;

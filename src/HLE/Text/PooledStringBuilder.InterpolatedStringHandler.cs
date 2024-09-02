@@ -8,7 +8,7 @@ namespace HLE.Text;
 public sealed partial class PooledStringBuilder
 {
     [InterpolatedStringHandler]
-    public readonly ref struct InterpolatedStringHandler
+    public readonly ref struct InterpolatedStringHandler : IEquatable<InterpolatedStringHandler>
     {
         private readonly PooledStringBuilder _builder;
 
@@ -63,7 +63,7 @@ public sealed partial class PooledStringBuilder
         public void AppendFormatted<T>(T value, string? format) => _builder.Append(value, format);
 
         [Pure]
-        public bool Equals(InterpolatedStringHandler other) => _builder.Equals(other._builder);
+        public bool Equals(scoped InterpolatedStringHandler other) => _builder.Equals(other._builder);
 
         [Pure]
         public override bool Equals(object? obj) => false;

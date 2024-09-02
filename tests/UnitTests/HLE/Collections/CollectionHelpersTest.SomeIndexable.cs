@@ -11,6 +11,8 @@ public sealed partial class CollectionHelpersTest
     {
         public int this[int index] => _items[index];
 
+        public int this[Index index] => _items[index];
+
         public int Count => _items.Length;
 
         private readonly int[] _items;

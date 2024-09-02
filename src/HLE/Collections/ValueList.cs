@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -15,7 +16,15 @@ namespace HLE.Collections;
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("Count = {Count}")]
 [CollectionBuilder(typeof(ValueListBuilder), nameof(ValueListBuilder.Create))]
-public ref struct ValueList<T>
+public ref struct ValueList<T> :
+    IList<T>,
+    ICopyable<T>,
+    IEquatable<ValueList<T>>,
+    IDisposable,
+    IIndexable<T>,
+    IReadOnlyList<T>,
+    ISpanProvider<T>,
+    ICollectionProvider<T>
 {
     public readonly ref T this[int index]
     {
@@ -25,6 +34,18 @@ public ref struct ValueList<T>
             return ref Unsafe.Add(ref GetBufferReference(), index);
         }
     }
+
+    readonly T IList<T>.this[int index]
+    {
+        get => this[index];
+        set => this[index] = value;
+    }
+
+    readonly T IReadOnlyList<T>.this[int index] => this[index];
+
+    readonly T IIndexable<T>.this[int index] => this[index];
+
+    readonly T IIndexable<T>.this[Index index] => this[index];
 
     public readonly ref T this[Index index] => ref this[index.GetOffset(Count)];
 
@@ -63,6 +84,8 @@ public ref struct ValueList<T>
     }
 
     public readonly int Capacity => BufferLength;
+
+    readonly bool ICollection<T>.IsReadOnly => false;
 
     internal ref T _buffer;
     private IntBoolUnion<int> _bufferLengthAndIsDisposed;
@@ -126,8 +149,9 @@ public ref struct ValueList<T>
     [Pure]
     public readonly Span<T> AsSpan(Range range) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(range);
 
-    [Pure]
-    public readonly Memory<T> AsMemory() => SpanMarshal.AsArray(ref GetBufferReference()).AsMemory(..Count);
+    readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
 
     [Pure]
     public readonly T[] ToArray()
@@ -153,7 +177,20 @@ public ref struct ValueList<T>
     public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public readonly List<T> ToList(int start) => AsSpan().ToList(start);
+
+    [Pure]
+    public readonly List<T> ToList(int start, int length) => AsSpan().ToList(start, length);
+
+    [Pure]
+    public readonly List<T> ToList(Range range) => AsSpan().ToList(range);
+
+    [Pure]
+    public readonly List<T> ToList()
+    {
+        Span<T> items = AsSpan();
+        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<T>(items.Length));
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private void GrowIfNeeded(int sizeHint)
@@ -318,6 +355,10 @@ public ref struct ValueList<T>
 
     public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
 
+    readonly int IList<T>.IndexOf(T item) => throw new NotSupportedException();
+
+    readonly bool ICollection<T>.Contains(T item) => throw new NotSupportedException();
+
     public void Insert(int index, T item)
     {
         GrowIfNeeded(1);
@@ -326,6 +367,8 @@ public ref struct ValueList<T>
         buffer[index..^1].CopyTo(buffer[(index + 1)..]);
         buffer[index] = item;
     }
+
+    readonly bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     public void RemoveAt(int index)
     {
@@ -374,7 +417,7 @@ public ref struct ValueList<T>
     {
         if (IsDisposed)
         {
-            ThrowHelper.ThrowObjectDisposedException(typeof(ValueList<T>));
+            ThrowHelper.ThrowObjectDisposedException<ValueList<T>>();
         }
 
         return ref _buffer;
@@ -386,7 +429,7 @@ public ref struct ValueList<T>
     {
         if (typeof(T) != typeof(char))
         {
-            return ToStringHelpers.FormatCollection(typeof(ValueList<T>), Count);
+            return ToStringHelpers.FormatCollection<ValueList<T>>(Count);
         }
 
         ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());
@@ -394,7 +437,11 @@ public ref struct ValueList<T>
     }
 
     [Pure]
-    public readonly MemoryEnumerator<T> GetEnumerator() => new(ref GetBufferReference(), Count);
+    public readonly MemoryEnumerator<T> GetEnumerator() => new(AsSpan());
+
+    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator() => throw new NotSupportedException();
+
+    readonly IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
 
     [Pure]
     public readonly bool Equals(scoped ValueList<T> other) => Count == other.Count && GetBuffer() == other.GetBuffer();

@@ -14,6 +14,8 @@ public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
 
     private readonly int _end;
 
+    public static RangeEnumerator Empty => default;
+
     public RangeEnumerator(Range range)
     {
         if (range.End.IsFromEnd)
@@ -33,9 +35,9 @@ public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
         => throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
 
     [DoesNotReturn]
-    public readonly void Reset() => throw new NotSupportedException();
+    readonly void IEnumerator.Reset() => throw new NotSupportedException();
 
-    public readonly void Dispose()
+    readonly void IDisposable.Dispose()
     {
     }
 

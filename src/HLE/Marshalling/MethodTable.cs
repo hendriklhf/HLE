@@ -17,11 +17,14 @@ public readonly struct MethodTable
 
     public bool IsValueType => (_flags & ValueTypeMask) == IsValueTypeFlag;
 
-    public bool ContainsManagedPointers => (_flags & ContainsManagedPointersFlag) != 0;
+    // ReSharper disable once InconsistentNaming
+    public bool ContainsGCPointers => (_flags & ContainsGCPointersFlag) != 0;
 
     public bool IsInterface => (_flags & CategoryMask) == IsInterfaceFlag;
 
-    public bool IsReferenceOrContainsReferences => !IsValueType || ContainsManagedPointers;
+    public bool IsReferenceOrContainsReferences => !IsValueType || ContainsGCPointers;
+
+    public bool HasComponentSize => (_flags & HasComponentSizeFlag) != 0;
 
     [FieldOffset(0)]
     private readonly ushort _componentSize;
@@ -33,5 +36,7 @@ public readonly struct MethodTable
     private const uint ValueTypeMask = 0x000C0000;
     private const uint IsInterfaceFlag = 0x000C0000;
     private const uint CategoryMask = 0x000F0000;
-    private const uint ContainsManagedPointersFlag = 0x1000000;
+    // ReSharper disable once InconsistentNaming
+    private const uint ContainsGCPointersFlag = 0x1000000;
+    private const uint HasComponentSizeFlag = 0x80000000;
 }

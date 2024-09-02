@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -21,7 +22,7 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
     int IReadOnlyCollection<Resource>.Count => _resources.Count;
 
     private readonly Assembly _assembly = assembly;
-    private readonly ConcurrentDictionary<string, Resource> _resources = new();
+    private readonly ConcurrentDictionary<string, Resource?> _resources = new();
     private List<GCHandle>? _handles;
 
     public void Dispose()
@@ -55,7 +56,7 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
     [Pure]
     public Resource Read(string resourcePath)
     {
-        if (!TryReadCore(resourcePath, out Resource resource))
+        if (!TryRead(resourcePath, out Resource resource))
         {
             ThrowResourceDoesntExist(resourcePath);
         }
@@ -81,21 +82,32 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
     /// <param name="resourcePath">The path of the resource.</param>
     /// <param name="resource">The resource bytes.</param>
     /// <returns>True, if the resource exists, false otherwise.</returns>
-    public bool TryRead(ReadOnlySpan<char> resourcePath, out Resource resource) => TryReadCore(StringPool.Shared.GetOrAdd(resourcePath), out resource);
+    public bool TryRead(ReadOnlySpan<char> resourcePath, out Resource resource) => TryRead(StringPool.Shared.GetOrAdd(resourcePath), out resource);
 
-    public bool TryRead(string resourcePath, out Resource resource) => TryReadCore(resourcePath, out resource);
+    public bool TryRead(string resourcePath, out Resource resource)
+    {
+        if (!_resources.TryGetValue(resourcePath, out Resource? nullableResource))
+        {
+            return TryReadCore(resourcePath, out resource);
+        }
+
+        if (nullableResource is null)
+        {
+            resource = default;
+            return false;
+        }
+
+        resource = nullableResource.Value;
+        return true;
+    }
 
     private bool TryReadCore(string resourcePath, out Resource resource)
     {
-        if (_resources.TryGetValue(resourcePath, out resource))
-        {
-            return resource != default;
-        }
-
         using Stream? stream = _assembly.GetManifestResourceStream(resourcePath);
         if (stream is null)
         {
-            _resources.AddOrSet(resourcePath, default);
+            _resources.AddOrSet(resourcePath, null);
+            resource = default;
             return false;
         }
 
@@ -154,7 +166,7 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
         => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
 
     // ReSharper disable once NotDisposedResourceIsReturned
-    public IEnumerator<Resource> GetEnumerator() => _resources.IsEmpty ? EmptyEnumeratorCache<Resource>.Enumerator : _resources.Values.GetEnumerator();
+    public IEnumerator<Resource> GetEnumerator() => throw new NotImplementedException();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

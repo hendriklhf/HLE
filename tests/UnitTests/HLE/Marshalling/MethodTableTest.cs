@@ -23,7 +23,7 @@ public sealed unsafe partial class MethodTableTest
         new(typeof(string[]), (ushort)sizeof(string), true),
         new(typeof(Guid[]), (ushort)sizeof(Guid), false),
         new(typeof(Array), 0, false),
-        new(typeof(string), 0, false),
+        new(typeof(string), sizeof(char), false),
         new(typeof(object), 0, false),
         new(typeof(Enum), 0, false),
         new(typeof(ValueType), 0, false),
@@ -38,8 +38,8 @@ public sealed unsafe partial class MethodTableTest
         new(typeof(GenericStruct<string>), 0, true),
         new(typeof(GenericRefStruct<int>), 0, false),
         new(typeof(GenericRefStruct<string>), 0, true),
-        new(typeof(GenericRefStructWithRefField<int>), 0, true),
-        new(typeof(GenericRefStructWithRefField<string>), 0, true)
+        new(typeof(GenericRefStructWithRefField<int>), 0, false),
+        new(typeof(GenericRefStructWithRefField<string>), 0, false)
     ];
 
     [Theory]
@@ -47,7 +47,15 @@ public sealed unsafe partial class MethodTableTest
     public void ComponentSize(MethodTableTypeParameter parameter)
     {
         MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
-        Assert.Equal(parameter.ComponentSize, mt->ComponentSize);
+        if (parameter.Type.IsArray || parameter.Type == typeof(string))
+        {
+            Assert.True(mt->HasComponentSize);
+            Assert.Equal(parameter.ComponentSize, mt->ComponentSize);
+        }
+        else
+        {
+            Assert.False(mt->HasComponentSize);
+        }
     }
 
     [Theory]
@@ -80,6 +88,6 @@ public sealed unsafe partial class MethodTableTest
     public void ContainsManagedPointers(MethodTableTypeParameter parameter)
     {
         MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
-        Assert.Equal(parameter.ContainsManagedPointers, mt->ContainsManagedPointers);
+        Assert.Equal(parameter.ContainsGCPointers, mt->ContainsGCPointers);
     }
 }

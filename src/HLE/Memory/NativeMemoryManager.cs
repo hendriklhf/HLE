@@ -18,10 +18,6 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     private readonly T* _memory = memory;
     private readonly int _length = length;
 
-    public NativeMemoryManager(NativeMemory<T> memory) : this(memory.Pointer, memory.Length)
-    {
-    }
-
     [Pure]
     public override Span<T> GetSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_memory), _length);
 

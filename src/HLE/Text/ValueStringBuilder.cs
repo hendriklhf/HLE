@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -13,9 +14,20 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Text;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-public unsafe ref partial struct ValueStringBuilder
+public unsafe ref partial struct ValueStringBuilder :
+    IDisposable,
+    ICollection<char>,
+    IEquatable<ValueStringBuilder>,
+    ICopyable<char>,
+    IIndexable<char>,
+    IReadOnlyCollection<char>,
+    ISpanProvider<char>
 {
     public readonly ref char this[int index] => ref WrittenSpan[index];
+
+    readonly char IIndexable<char>.this[int index] => this[index];
+
+    readonly char IIndexable<char>.this[Index index] => this[index];
 
     public readonly ref char this[Index index] => ref WrittenSpan[index];
 
@@ -31,6 +43,12 @@ public unsafe ref partial struct ValueStringBuilder
             _lengthAndIsStackalloced.SetIntegerUnsafe(value);
         }
     }
+
+    readonly int IReadOnlyCollection<char>.Count => Length;
+
+    readonly int ICountable.Count => Length;
+
+    readonly int ICollection<char>.Count => Length;
 
     private bool IsStackalloced
     {
@@ -61,6 +79,8 @@ public unsafe ref partial struct ValueStringBuilder
     public readonly Span<char> FreeBufferSpan => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref GetBufferReference(), Length), FreeBufferSize);
 
     public readonly int FreeBufferSize => Capacity - Length;
+
+    readonly bool ICollection<char>.IsReadOnly => false;
 
     private ref char _buffer;
     private IntBoolUnion<int> _bufferLengthAndIsDisposed;
@@ -278,8 +298,14 @@ public unsafe ref partial struct ValueStringBuilder
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "TryFormatUnconstrained")]
-    private static extern bool TryFormatEnum<TEnum>(Enum? c, TEnum value, Span<char> destination, out int charsWritten,
-        [StringSyntax(StringSyntaxAttribute.EnumFormat)] ReadOnlySpan<char> format = default);
+    private static extern bool TryFormatEnum<TEnum>(
+        Enum? c,
+        TEnum value,
+        Span<char> destination,
+        out int charsWritten,
+        [StringSyntax(StringSyntaxAttribute.EnumFormat)]
+        ReadOnlySpan<char> format = default
+    );
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -290,13 +316,59 @@ public unsafe ref partial struct ValueStringBuilder
 
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
+    readonly Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
+
+    readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => WrittenSpan;
+
+    void ICollection<char>.Add(char item) => Append(item);
+
+    readonly bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
+
+    readonly bool ICollection<char>.Contains(char item) => WrittenSpan.Contains(item);
+
+    public readonly void CopyTo(List<char> destination, int offset = 0)
+    {
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination, offset);
+    }
+
+    public readonly void CopyTo(char[] destination, int offset = 0)
+    {
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination, offset);
+    }
+
+    public readonly void CopyTo(Memory<char> destination)
+    {
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
+    }
+
+    public readonly void CopyTo(Span<char> destination)
+    {
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
+    }
+
+    public readonly void CopyTo(ref char destination)
+    {
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(ref destination);
+    }
+
+    public readonly void CopyTo(char* destination)
+    {
+        CopyWorker<char> copyWorker = new(WrittenSpan);
+        copyWorker.CopyTo(destination);
+    }
+
     private ref char GetDestination(int sizeHint)
     {
         Debug.Assert(sizeHint >= 0);
 
         if (IsDisposed)
         {
-            ThrowHelper.ThrowObjectDisposedException(typeof(ValueStringBuilder));
+            ThrowHelper.ThrowObjectDisposedException<ValueStringBuilder>();
         }
 
         int length = Length;
@@ -341,7 +413,7 @@ public unsafe ref partial struct ValueStringBuilder
     {
         if (IsDisposed)
         {
-            ThrowHelper.ThrowObjectDisposedException(typeof(ValueStringBuilder));
+            ThrowHelper.ThrowObjectDisposedException<ValueStringBuilder>();
         }
 
         return ref _buffer;
@@ -349,7 +421,11 @@ public unsafe ref partial struct ValueStringBuilder
 
     internal readonly Span<char> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
 
-    public readonly MemoryEnumerator<char> GetEnumerator() => new(ref GetBufferReference(), Length);
+    public readonly MemoryEnumerator<char> GetEnumerator() => new(WrittenSpan);
+
+    readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => throw new NotSupportedException();
+
+    readonly IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
 
     [Pure]
     public override readonly string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
@@ -368,14 +444,14 @@ public unsafe ref partial struct ValueStringBuilder
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public readonly bool Equals(ValueStringBuilder other) => Length == other.Length && GetBuffer() == other.GetBuffer();
+    public readonly bool Equals(scoped ValueStringBuilder other) => Length == other.Length && GetBuffer() == other.GetBuffer();
 
     [Pure]
-    public readonly bool Equals(ValueStringBuilder other, StringComparison comparisonType)
+    public readonly bool Equals(scoped ValueStringBuilder other, StringComparison comparisonType)
         => Equals(other.WrittenSpan, comparisonType);
 
     [Pure]
-    public readonly bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType)
+    public readonly bool Equals(scoped ReadOnlySpan<char> str, StringComparison comparisonType)
         => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
     [Pure]

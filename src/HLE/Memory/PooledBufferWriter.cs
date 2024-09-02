@@ -35,6 +35,8 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 {
     T IIndexable<T>.this[int index] => WrittenSpan[index];
 
+    T IIndexable<T>.this[Index index] => WrittenSpan[index];
+
     /// <summary>
     /// A <see cref="Span{T}"/> view over the written elements.
     /// </summary>
@@ -192,7 +194,11 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public T[] ToArray(Range range) => WrittenSpan.ToArray(range);
 
     [Pure]
-    public List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(WrittenSpan);
+    public List<T> ToList()
+    {
+        Span<T> writtenSpan = WrittenSpan;
+        return writtenSpan.Length == 0 ? [] : ListMarshal.ConstructList(writtenSpan, GC.AllocateUninitializedArray<T>(writtenSpan.Length));
+    }
 
     [Pure]
     public List<T> ToList(int start) => WrittenSpan.ToList(start);

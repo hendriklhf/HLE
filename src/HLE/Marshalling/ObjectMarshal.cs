@@ -41,7 +41,9 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TPointer* GetMethodTablePointer<TPointer>(object obj) => UnsafeIL.AsPointer<object, TPointer>(obj);
+    public static TPointer* GetMethodTablePointer<TPointer>(object obj)
+        //where TPointer : allows ref struct
+        => UnsafeIL.AsPointer<object, TPointer>(obj);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

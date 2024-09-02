@@ -404,7 +404,8 @@ public static class RandomExtensions
 
     [Pure]
     [SkipLocalsInit]
-    public static T NextStruct<T>(this Random random) where T : unmanaged
+    public static T NextStruct<T>(this Random random)
+        where T : unmanaged, allows ref struct
     {
         Unsafe.SkipInit(out T result);
         random.Write(ref result, 1);
@@ -413,7 +414,8 @@ public static class RandomExtensions
 
     [Pure]
     [SkipLocalsInit]
-    public static void NextStruct<T>(this Random random, out T result) where T : unmanaged
+    public static void NextStruct<T>(this Random random, out T result)
+        where T : unmanaged, allows ref struct
     {
         Unsafe.SkipInit(out result);
         random.Write(ref result, 1);
@@ -469,10 +471,12 @@ public static class RandomExtensions
         }
     }
 
-    public static unsafe void Write<T>(this Random random, T* destination, nuint elementCount) where T : unmanaged
+    public static unsafe void Write<T>(this Random random, T* destination, nuint elementCount)
+        where T : unmanaged, allows ref struct
         => random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
 
-    public static unsafe void Write<T>(this Random random, ref T destination, nuint elementCount) where T : unmanaged
+    public static unsafe void Write<T>(this Random random, ref T destination, nuint elementCount)
+        where T : unmanaged, allows ref struct
     {
         ref byte byteDestination = ref Unsafe.As<T, byte>(ref destination);
         nuint byteCount = checked((uint)sizeof(T) * elementCount);
@@ -552,6 +556,7 @@ public static class RandomExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ref T GetItem<T>(this Random random, ref T items, int length)
+        where T : allows ref struct
     {
         if (length == 0)
         {

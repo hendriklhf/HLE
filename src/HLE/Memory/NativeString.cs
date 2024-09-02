@@ -35,6 +35,8 @@ public readonly unsafe struct NativeString :
 
     char IIndexable<char>.this[int index] => this[index];
 
+    char IIndexable<char>.this[Index index] => this[index];
+
     public ref char this[Index index] => ref this[index.GetOffset(Length)];
 
     public Span<char> this[Range range] => AsSpan(range);

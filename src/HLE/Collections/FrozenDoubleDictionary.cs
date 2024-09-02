@@ -112,7 +112,11 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     }
 
     [Pure]
-    public List<TValue> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(Values.AsSpan());
+    public List<TValue> ToList()
+    {
+        ReadOnlySpan<TValue> items = Values.AsSpan();
+        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<TValue>(items.Length));
+    }
 
     [Pure]
     public List<TValue> ToList(int start) => Values.AsSpan().ToList(start);
@@ -163,7 +167,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     void ICollection<TValue>.Clear() => throw new NotSupportedException();
 
-    public bool Remove(TValue item) => throw new NotSupportedException();
+    bool ICollection<TValue>.Remove(TValue item) => throw new NotSupportedException();
 
     public ArrayEnumerator<TValue> GetEnumerator()
     {

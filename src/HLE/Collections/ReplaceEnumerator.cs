@@ -18,6 +18,8 @@ public readonly struct ReplaceEnumerator<T>(IEnumerator<T> enumerator, Func<T, b
     private readonly Func<T, bool> _predicate = predicate;
     private readonly T _replacement = replacement;
 
+    public static ReplaceEnumerator<T> Empty => new(EmptyEnumeratorCache<T>.Enumerator, null!, default!);
+
     public bool MoveNext() => _enumerator.MoveNext();
 
     private T GetCurrent()

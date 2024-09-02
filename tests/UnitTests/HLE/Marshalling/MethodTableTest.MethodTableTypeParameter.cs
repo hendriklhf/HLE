@@ -4,11 +4,13 @@ namespace HLE.UnitTests.Marshalling;
 
 public sealed partial class MethodTableTest
 {
-    public sealed class MethodTableTypeParameter(Type type, ushort componentSize, bool containsManagedPointers)
+    // ReSharper disable once InconsistentNaming
+    public sealed class MethodTableTypeParameter(Type type, ushort componentSize, bool containsGCPointers)
     {
         public ushort ComponentSize { get; } = componentSize;
 
-        public bool ContainsManagedPointers { get; } = containsManagedPointers;
+        // ReSharper disable once InconsistentNaming
+        public bool ContainsGCPointers { get; } = containsGCPointers;
 
         public Type Type { get; } = type;
 

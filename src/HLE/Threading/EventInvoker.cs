@@ -71,11 +71,7 @@ public static partial class EventInvoker
             return;
         }
 
-        foreach (EventHandler<TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
-        {
-            EventHandlerState<TEventArgs> state = new(target, sender, eventArgs);
-            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
-        }
+        InvokeMultiTarget(eventHandler, sender, eventArgs);
     }
 
     public static void QueueOnThreadPool(EventHandler? eventHandler, object? sender)
@@ -92,6 +88,20 @@ public static partial class EventInvoker
             return;
         }
 
+        InvokeMultiTarget(eventHandler, sender);
+    }
+
+    private static void InvokeMultiTarget<TEventArgs>(EventHandler<TEventArgs> eventHandler, object? sender, TEventArgs eventArgs)
+    {
+        foreach (EventHandler<TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
+        {
+            EventHandlerState<TEventArgs> state = new(target, sender, eventArgs);
+            ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
+        }
+    }
+
+    private static void InvokeMultiTarget(EventHandler eventHandler, object? sender)
+    {
         foreach (EventHandler target in Delegate.EnumerateInvocationList(eventHandler))
         {
             EventHandlerState state = new(target, sender);

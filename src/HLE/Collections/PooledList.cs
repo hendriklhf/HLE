@@ -38,6 +38,8 @@ public sealed class PooledList<T>(int capacity) :
 
     T IIndexable<T>.this[int index] => this[index];
 
+    T IIndexable<T>.this[Index index] => this[index];
+
     T IReadOnlyList<T>.this[int index] => this[index];
 
     T IList<T>.this[int index]
@@ -122,7 +124,11 @@ public sealed class PooledList<T>(int capacity) :
     public T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<T> ToList() => Count == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public List<T> ToList()
+    {
+        Span<T> items = AsSpan();
+        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<T>(items.Length));
+    }
 
     [Pure]
     public List<T> ToList(int start) => AsSpan(start..).ToList();

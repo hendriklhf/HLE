@@ -11,7 +11,7 @@ internal static class ThrowHelper
 {
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowObjectDisposedException<T>() where T : IDisposable
+    public static void ThrowObjectDisposedException<T>() where T : IDisposable, allows ref struct
         => throw new ObjectDisposedException(typeof(T).FullName);
 
     [DoesNotReturn]

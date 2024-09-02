@@ -42,6 +42,8 @@ public readonly unsafe struct Resource(byte* resource, int length) :
         }
     }
 
+    byte IIndexable<byte>.this[Index index] => ((IIndexable<byte>)this)[index.GetOffset(Length)];
+
     public int Length { get; } = length;
 
     int ICountable.Count => Length;
@@ -54,7 +56,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
 
     private readonly byte* _resource = resource;
 
-    public static Resource Empty => new();
+    public static Resource Empty => default;
 
     public Resource() : this(null, 0)
     {
@@ -92,7 +94,11 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     public byte[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<byte> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public List<byte> ToList()
+    {
+        ReadOnlySpan<byte> bytes = AsSpan();
+        return bytes.Length == 0 ? [] : ListMarshal.ConstructList(bytes, GC.AllocateUninitializedArray<byte>(bytes.Length));
+    }
 
     [Pure]
     public List<byte> ToList(int start) => AsSpan().ToList(start);

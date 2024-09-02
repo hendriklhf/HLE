@@ -35,9 +35,11 @@ public readonly partial struct EnvironmentVariables :
 
     string IIndexable<string>.this[int index] => ImmutableCollectionsMarshal.AsArray(_environmentVariables.Values)![index];
 
+    string IIndexable<string>.this[Index index] => ((IIndexable<string>)this)[index.GetOffset(Count)];
+
     public int Count => _environmentVariables.Count;
 
-    public bool IsReadOnly => true;
+    bool ICollection<EnvironmentVariable>.IsReadOnly => true;
 
     private readonly FrozenDictionary<string, string> _environmentVariables = FrozenDictionary<string, string>.Empty;
 
@@ -59,8 +61,6 @@ public readonly partial struct EnvironmentVariables :
         => _environmentVariables.TryGetValue(item.Name, out string? value) && item.Value == value;
 
     bool ICollection<EnvironmentVariable>.Remove(EnvironmentVariable item) => throw new NotSupportedException();
-
-    void ICollection<EnvironmentVariable>.CopyTo(EnvironmentVariable[] array, int arrayIndex) => throw new NotSupportedException();
 
     public void CopyTo(List<EnvironmentVariable> destination, int offset = 0)
     {

@@ -1,122 +1,177 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Linq;
 using HLE.Collections;
-using HLE.TestUtilities;
 using Xunit;
 
 namespace HLE.UnitTests.Collections;
 
 public sealed class ArrayEnumeratorTest
 {
-    public static TheoryData<int> EnumerateParameters { get; } = TheoryDataHelpers.CreateRange(1, 256);
+    private static readonly int[] s_array = Enumerable.Range(0, 16).ToArray();
+    private static readonly List<int> s_list = Enumerable.Range(0, 16).ToList();
 
-    public static TheoryData<int> EnumerateRangeParameters { get; } = TheoryDataHelpers.CreateRange(8, 256);
-
-    [Theory]
-    [MemberData(nameof(EnumerateParameters))]
-    public void Enumerate_Array_Test(int length)
+    [Fact]
+    public void Property_Empty_IsEmpty()
     {
-        int[] array = new int[length];
-        Random.Shared.Fill(array);
+        ArrayEnumerator<int> enumerator = ArrayEnumerator<int>.Empty;
+        while (enumerator.MoveNext())
+        {
+            Assert.Fail("MoveNext() should always return false for the empty enumerator.");
+        }
+    }
 
-        int counter = 0;
+    [Fact]
+    public void Enumerates_EmptyArray_Correctly()
+    {
+        int[] array = [];
         ArrayEnumerator<int> enumerator = new(array);
         while (enumerator.MoveNext())
         {
-            Assert.Equal(array[counter++], enumerator.Current);
+            Assert.Fail("MoveNext() should always return false when constructed with an empty array.");
         }
-
-        Assert.Equal(counter, array.Length);
     }
 
     [Fact]
-    public void Enumerate_Array_Empty_Test()
+    public void Enumerates_NonEmptyArray_Correctly()
     {
-        ArrayEnumerator<int> enumerator = new(Array.Empty<int>());
+        ArrayEnumerator<int> enumerator = new(s_array);
+        int index = 0;
         while (enumerator.MoveNext())
         {
-            Assert.Fail();
-        }
-    }
-
-    [Theory]
-    [MemberData(nameof(EnumerateRangeParameters))]
-    public void Enumerate_Array_Range_Test(int length)
-    {
-        int[] array = new int[length];
-        Random.Shared.Fill(array);
-
-        int counter = 0;
-        ArrayEnumerator<int> enumerator = new(array, 4, array.Length - 4);
-        while (enumerator.MoveNext())
-        {
-            Assert.Equal(array[counter++ + 4], enumerator.Current);
+            Assert.Equal(s_array[index++], enumerator.Current);
         }
 
-        Assert.Equal(counter, array.Length - 4);
-    }
-
-    [Theory]
-    [MemberData(nameof(EnumerateRangeParameters))]
-    public void Constructor_Throws_ArgumentOutOfRangeException(int length)
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-        {
-            int[] array = new int[length];
-            ArrayEnumerator<int> enumerator = new(array, length + 8, length);
-            while (enumerator.MoveNext())
-            {
-                Assert.Fail();
-            }
-        });
-
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-        {
-            int[] array = new int[length];
-            ArrayEnumerator<int> enumerator = new(array, length - 8, length + 8);
-            while (enumerator.MoveNext())
-            {
-                Assert.Fail();
-            }
-        });
+        Assert.Equal(s_array.Length, index);
     }
 
     [Fact]
-    public void Enumerate_Array_Range_Empty_Test()
+    public void Enumerates_NonEmptyArray_WithStartAndEnd_Correctly()
     {
-        ArrayEnumerator<int> enumerator = new([], 0, 0);
+        const int Start = 5;
+        const int AdditionalEndOffset = 3;
+
+        ArrayEnumerator<int> enumerator = new(s_array, Start, s_array.Length - Start - AdditionalEndOffset);
+        int index = Start;
         while (enumerator.MoveNext())
         {
-            Assert.Fail();
+            Assert.Equal(s_array[index++], enumerator.Current);
+        }
+
+        Assert.Equal(s_array.Length - AdditionalEndOffset - 1, index);
+    }
+
+    [Fact]
+    public void Enumerates_NonEmptyArray_WithStartAndLengthZero_Correctly()
+    {
+        ArrayEnumerator<int> enumerator = new(s_array, 0, 0);
+        while (enumerator.MoveNext())
+        {
+            Assert.Fail("MoveNext() should always return false when constructed with an empty array.");
         }
     }
 
-    [Theory]
-    [MemberData(nameof(EnumerateParameters))]
-    public void Enumerate_List_Test(int length)
+    [Fact]
+    public void Enumerates_EmptyList_Correctly()
     {
         List<int> list = [];
-        CollectionsMarshal.SetCount(list, length);
-        Random.Shared.Fill(list);
-
-        int counter = 0;
         ArrayEnumerator<int> enumerator = new(list);
         while (enumerator.MoveNext())
         {
-            Assert.Equal(list[counter++], enumerator.Current);
+            Assert.Fail("MoveNext() should always return false when constructed with an empty list.");
         }
-
-        Assert.Equal(counter, list.Count);
     }
 
     [Fact]
-    public void Enumerate_List_Empty_Test()
+    public void Enumerates_NonEmptyList_Correctly()
     {
-        ArrayEnumerator<int> enumerator = new(new List<int>());
+        ArrayEnumerator<int> enumerator = new(s_list);
+        int index = 0;
         while (enumerator.MoveNext())
         {
-            Assert.Fail();
+            Assert.Equal(s_list[index++], enumerator.Current);
         }
+
+        Assert.Equal(s_list.Count, index);
+    }
+
+    [Fact]
+    public void AddingToTheList_DoesNotChangeEnumeratorBehavior_AfterEnumeratorConstruction()
+    {
+        List<int> list = [0, 1, 2];
+        ArrayEnumerator<int> enumerator = new(list);
+        list.AddRange([3, 4, 5]);
+
+        int index = 0;
+        while (enumerator.MoveNext())
+        {
+            Assert.Equal(s_list[index++], enumerator.Current);
+        }
+
+        Assert.Equal(list.Count - 3, index);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenStartIsNegative()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, -1, 0);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenArrayIsEmpty_And_StartIsZero()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>([], 0, 0);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenLengthIsNegative()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, 0, -1);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenStartAndLengthAreNegative()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, -1, -1);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenStartIsGreaterThanLastArrayIndex()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, s_array.Length, 0);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenLengthIsGreaterThanArrayLength()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, 0, s_array.Length + 1);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenLengthMinusStartIsTooLong()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, 5, s_array.Length - 4);
+    }
+
+    [Fact]
+    public void Ctor_ThrowsArgumentOutOfRangeException_WhenStartPlusLengthIsTooLong()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        static void Act() => _ = new ArrayEnumerator<int>(s_array, 6, s_array.Length - 5);
     }
 }

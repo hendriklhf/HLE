@@ -25,7 +25,7 @@ public static unsafe class MemoryHelpers
     /// <returns>True, if a stackalloc can be used, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool UseStackalloc<T>(int elementCount)
+    public static bool UseStackalloc<T>(int elementCount) where T : allows ref struct
     {
         int totalByteSize = sizeof(T) * elementCount;
         return totalByteSize <= s_maximumStackallocSize;
@@ -37,7 +37,7 @@ public static unsafe class MemoryHelpers
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsAligned<T>(ref T reference, nuint alignment)
+    public static bool IsAligned<T>(ref T reference, nuint alignment) where T : allows ref struct
     {
         if (BitOperations.PopCount(alignment) != 1)
         {
@@ -49,11 +49,13 @@ public static unsafe class MemoryHelpers
     }
 
     [Pure]
-    public static T* Align<T>(T* pointer, nuint alignment, AlignmentMethod method) => (T*)Unsafe.AsPointer(ref Align(ref Unsafe.AsRef<T>(pointer), alignment, method));
+    public static T* Align<T>(T* pointer, nuint alignment, AlignmentMethod method) where T : allows ref struct
+        => (T*)Unsafe.AsPointer(ref Align(ref Unsafe.AsRef<T>(pointer), alignment, method));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T Align<T>(ref T reference, nuint alignment, AlignmentMethod method)
+        where T : allows ref struct
     {
         if (BitOperations.PopCount(alignment) != 1)
         {

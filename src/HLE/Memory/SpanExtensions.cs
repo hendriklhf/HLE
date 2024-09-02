@@ -61,11 +61,11 @@ public static class SpanExtensions
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToList<T>(this Span<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span);
+    public static List<T> ToList<T>(this Span<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span, GC.AllocateUninitializedArray<T>(span.Length));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToList<T>(this ReadOnlySpan<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span);
+    public static List<T> ToList<T>(this ReadOnlySpan<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span, GC.AllocateUninitializedArray<T>(span.Length));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -110,6 +110,6 @@ public static class SpanExtensions
         }
 
         ref T source = ref Slicer<T>.GetStart(ref span, spanLength, start, length);
-        return ListMarshal.ConstructList(ref source, length);
+        return ListMarshal.ConstructList(ref source, length, GC.AllocateUninitializedArray<T>(length));
     }
 }

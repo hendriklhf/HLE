@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using HLE.Collections;
 
 namespace HLE.Text;
@@ -18,19 +17,18 @@ internal static class ToStringHelpers
     });
 
     [Pure]
-    public static string FormatCollection<TCountable>(TCountable countable) where TCountable : ICountable
+    public static string FormatCollection<TCountable>(TCountable countable) where TCountable : ICountable, allows ref struct
         => FormatCollection(typeof(TCountable), countable.Count);
 
     [Pure]
-    public static string FormatCollection<TCollection, TElement>(TCollection collection) where TCollection : ICollection<TElement>
+    public static string FormatCollection<TCollection, TElement>(TCollection collection) where TCollection : ICollection<TElement>, allows ref struct
         => FormatCollection(typeof(TCollection), collection.Count);
 
     [Pure]
-    public static string FormatCollection<TCollection>(int elementCount)
+    public static string FormatCollection<TCollection>(int elementCount) where TCollection : allows ref struct
         => FormatCollection(typeof(TCollection), elementCount);
 
     [Pure]
-    [SkipLocalsInit]
     public static string FormatCollection(Type collectionType, int elementCount)
     {
         ReadOnlySpan<char> formattedType = s_formatter.Format(collectionType);

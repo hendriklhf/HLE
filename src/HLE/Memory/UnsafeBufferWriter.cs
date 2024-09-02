@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
@@ -7,7 +8,7 @@ using HLE.Text;
 
 namespace HLE.Memory;
 
-public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
+public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) : IEquatable<UnsafeBufferWriter<T>>
 {
     public readonly Span<T> WrittenSpan => MemoryMarshal.CreateSpan(ref _buffer, Count);
 
@@ -49,7 +50,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
     {
         if (typeof(T) != typeof(char))
         {
-            return ToStringHelpers.FormatCollection(typeof(UnsafeBufferWriter<T>), Count);
+            return ToStringHelpers.FormatCollection<UnsafeBufferWriter<T>>(Count);
         }
 
         if (Count == 0)
@@ -63,7 +64,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer)
 
     public readonly bool Equals(UnsafeBufferWriter<T> other) => Count == other.Count && Unsafe.AreSame(ref _buffer, ref other._buffer);
 
-    public override readonly bool Equals(object? obj) => false;
+    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     public override readonly int GetHashCode() => ((nuint)Unsafe.AsPointer(ref _buffer)).GetHashCode();
 

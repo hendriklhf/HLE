@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 
 namespace HLE.Memory;
 
-public readonly unsafe ref struct CopyWorker<T>
+public readonly unsafe ref struct CopyWorker<T> : IEquatable<CopyWorker<T>>
 {
     private readonly ref T _source;
     private readonly nuint _length;
@@ -129,4 +130,17 @@ public readonly unsafe ref struct CopyWorker<T>
     private static void ThrowCopiedItemsWouldExceedMaxArrayLength()
         => throw new InvalidOperationException($"The amount of items to be copied into the {typeof(List<T>)} would exceed " +
                                                "the maximum array length, thus can't be copied to the destination.");
+
+    [Pure]
+    public bool Equals(scoped CopyWorker<T> other) => Unsafe.AreSame(ref _source, ref other._source) && _length == other._length;
+
+    [Pure]
+    public override bool Equals([NotNullWhen(true)] object? obj) => false;
+
+    [Pure]
+    public override int GetHashCode() => _length.GetHashCode();
+
+    public static bool operator ==(CopyWorker<T> left, CopyWorker<T> right) => left.Equals(right);
+
+    public static bool operator !=(CopyWorker<T> left, CopyWorker<T> right) => !(left == right);
 }

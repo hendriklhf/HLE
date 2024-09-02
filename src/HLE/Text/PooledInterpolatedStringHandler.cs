@@ -11,7 +11,9 @@ namespace HLE.Text;
 [SuppressMessage("ReSharper", "NotDisposedResourceIsReturned")]
 [SuppressMessage("ReSharper", "NotDisposedResource")]
 [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable")]
-public ref struct PooledInterpolatedStringHandler
+public ref struct PooledInterpolatedStringHandler :
+    IEquatable<PooledInterpolatedStringHandler>,
+    IDisposable
 {
     public readonly ReadOnlySpan<char> Text => _builder.WrittenSpan;
 
@@ -69,6 +71,7 @@ public ref struct PooledInterpolatedStringHandler
 
     public void AppendFormatted<T>(T value, string? format) => _builder.Append(value, format);
 
+    [Pure]
     public override readonly string ToString() => new(Text);
 
     public string ToStringAndDispose()
@@ -79,7 +82,7 @@ public ref struct PooledInterpolatedStringHandler
     }
 
     [Pure]
-    public readonly bool Equals(PooledInterpolatedStringHandler other) => _builder.Equals(other._builder);
+    public readonly bool Equals(scoped PooledInterpolatedStringHandler other) => _builder.Equals(other._builder);
 
     [Pure]
     public override readonly bool Equals(object? obj) => false;

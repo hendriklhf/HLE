@@ -37,6 +37,8 @@ public sealed unsafe partial class NativeMemory<T> :
 
     T IIndexable<T>.this[int index] => this[index];
 
+    T IIndexable<T>.this[Index index] => this[index];
+
     public ref T this[Index index] => ref this[index.GetOffset(Length)];
 
     public Span<T> this[Range range] => AsSpan(range);
@@ -143,17 +145,17 @@ public sealed unsafe partial class NativeMemory<T> :
     public Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).SliceSpan(range);
 
     [Pure]
-    public Memory<T> AsMemory() => new NativeMemoryManager<T>(Pointer, Length).Memory;
+    public Memory<T> AsMemory() => new MemoryManager(this).Memory;
 
-#pragma warning disable CA2000 // dispose NativeMemoryManager. Not needed, NativeMemoryManager.Dispose is a nop
+#pragma warning disable CA2000 // dispose NativeMemoryManager not called. That would free the memory.
     [Pure]
-    public Memory<T> AsMemory(int start) => new NativeMemoryManager<T>(Pointer, Length).Memory[start..];
-
-    [Pure]
-    public Memory<T> AsMemory(int start, int length) => new NativeMemoryManager<T>(Pointer, Length).Memory.Slice(start, length);
+    public Memory<T> AsMemory(int start) => new MemoryManager(this).Memory[start..];
 
     [Pure]
-    public Memory<T> AsMemory(Range range) => new NativeMemoryManager<T>(Pointer, Length).Memory[range];
+    public Memory<T> AsMemory(int start, int length) => new MemoryManager(this).Memory.Slice(start, length);
+
+    [Pure]
+    public Memory<T> AsMemory(Range range) => new MemoryManager(this).Memory[range];
 #pragma warning restore CA2000
 
     Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
@@ -225,7 +227,11 @@ public sealed unsafe partial class NativeMemory<T> :
     public T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<T> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public List<T> ToList()
+    {
+        Span<T> items = AsSpan();
+        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<T>(items.Length));
+    }
 
     [Pure]
     public List<T> ToList(int start) => AsSpan().ToList(start);

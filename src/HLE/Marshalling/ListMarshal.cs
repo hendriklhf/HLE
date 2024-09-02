@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -51,26 +50,30 @@ public static partial class ListMarshal
     }
 
     [Pure]
-    public static List<T> ConstructList<T>(List<T> items) => ConstructList(CollectionsMarshal.AsSpan(items));
+    public static List<T> ConstructList<T>(List<T> items, T[] buffer) => ConstructList(CollectionsMarshal.AsSpan(items), buffer);
 
     [Pure]
-    public static List<T> ConstructList<T>(T[] items) => ConstructList(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
+    public static List<T> ConstructList<T>(T[] items, T[] buffer) => ConstructList(ref MemoryMarshal.GetArrayDataReference(items), items.Length, buffer);
 
     [Pure]
-    public static List<T> ConstructList<T>(Span<T> items) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length);
+    public static List<T> ConstructList<T>(Span<T> items, T[] buffer) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length, buffer);
 
     [Pure]
-    public static List<T> ConstructList<T>(ReadOnlySpan<T> items) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length);
+    public static List<T> ConstructList<T>(ReadOnlySpan<T> items, T[] buffer) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length, buffer);
 
     [Pure]
-    public static List<T> ConstructList<T>(ref T items, int length)
+    public static List<T> ConstructList<T>(ref T items, int length, T[] buffer)
     {
-        Debug.Assert(length != 0);
-
         List<T> list = [];
-        T[] array = GC.AllocateUninitializedArray<T>(length);
-        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(array), ref items, (uint)length);
-        SetArray(list, array);
+        if (length == 0)
+        {
+            return list;
+        }
+
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(length, buffer.Length);
+
+        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(buffer), ref items, (uint)length);
+        SetArray(list, buffer);
         SetCount(list, length);
         return list;
     }

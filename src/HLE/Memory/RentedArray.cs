@@ -44,6 +44,8 @@ public struct RentedArray<T> :
 
     readonly T IIndexable<T>.this[int index] => this[index];
 
+    readonly T IIndexable<T>.this[Index index] => this[index];
+
     public readonly ref T this[Index index] => ref this[index.GetOffset(Length)];
 
     public readonly Span<T> this[Range range] => AsSpan(range);
@@ -161,7 +163,7 @@ public struct RentedArray<T> :
     public readonly List<T> ToList()
     {
         Span<T> source = AsSpan();
-        return source.Length == 0 ? [] : ListMarshal.ConstructList(source);
+        return source.Length == 0 ? [] : ListMarshal.ConstructList(source, GC.AllocateUninitializedArray<T>(source.Length));
     }
 
     [Pure]

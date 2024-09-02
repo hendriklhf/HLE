@@ -41,6 +41,8 @@ public sealed class PooledMemoryStream(int capacity) :
         }
     }
 
+    public byte this[Index index] => ((IIndexable<byte>)this)[index.GetOffset(_length)];
+
     byte IIndexable<byte>.this[int index]
     {
         get
@@ -416,7 +418,11 @@ public sealed class PooledMemoryStream(int capacity) :
     public byte[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<byte> ToList() => _length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public List<byte> ToList()
+    {
+        Span<byte> bytes = AsSpan();
+        return bytes.Length == 0 ? [] : ListMarshal.ConstructList(bytes, GC.AllocateUninitializedArray<byte>(bytes.Length));
+    }
 
     [Pure]
     public List<byte> ToList(int start) => AsSpan().ToList(start..);

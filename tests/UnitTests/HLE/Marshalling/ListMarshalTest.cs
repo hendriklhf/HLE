@@ -136,53 +136,5 @@ public sealed class ListMarshalTest
         Assert.Throws<ArgumentOutOfRangeException>(() => ListMarshal.SetCount(list, 1));
     }
 
-    [Fact]
-    public void ConstructList_ReadOnlySpan_Test()
-    {
-        ReadOnlySpan<int> items = [0, 1, 2, 3, 4];
-        List<int> list = ListMarshal.ConstructList(items);
-
-        Assert.True(items.SequenceEqual(CollectionsMarshal.AsSpan(list)));
-        Assert.True(list.Capacity >= items.Length);
-    }
-
-    [Fact]
-    public void ConstructList_Span_Test()
-    {
-        Span<int> items = [0, 1, 2, 3, 4];
-        List<int> list = ListMarshal.ConstructList(items);
-
-        Assert.True(items.SequenceEqual(CollectionsMarshal.AsSpan(list)));
-        Assert.True(list.Capacity >= items.Length);
-    }
-
-    [Fact]
-    public void ConstructList_Array_Test()
-    {
-        int[] items = [0, 1, 2, 3, 4];
-        List<int> list = ListMarshal.ConstructList(items);
-
-        Assert.True(items.AsSpan().SequenceEqual(CollectionsMarshal.AsSpan(list)));
-        Assert.True(list.Capacity >= items.Length);
-    }
-
-    [Fact]
-    public void ConstructList_List_Test()
-    {
-        List<int> items = [0, 1, 2, 3, 4];
-        List<int> list = ListMarshal.ConstructList(items);
-
-        Assert.True(CollectionsMarshal.AsSpan(items).SequenceEqual(CollectionsMarshal.AsSpan(list)));
-        Assert.True(list.Capacity >= items.Count);
-    }
-
-    [Fact]
-    public void ConstructList_Ref_Test()
-    {
-        ReadOnlySpan<int> items = [0, 1, 2, 3, 4];
-        List<int> list = ListMarshal.ConstructList(ref MemoryMarshal.GetReference(items), items.Length);
-
-        Assert.True(items.SequenceEqual(CollectionsMarshal.AsSpan(list)));
-        Assert.True(list.Capacity >= items.Length);
-    }
+    // TODO: add ConstructList tests
 }

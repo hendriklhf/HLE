@@ -1,3 +1,5 @@
+using System;
+
 namespace HLE.Collections;
 
 public interface IIndexable<out T> : ICountable
@@ -7,4 +9,7 @@ public interface IIndexable<out T> : ICountable
     /// </summary>
     /// <param name="index">The index of the item.</param>
     T this[int index] { get; }
+
+    /// <inheritdoc cref="this[int]"/>
+    T this[Index index] { get; }
 }

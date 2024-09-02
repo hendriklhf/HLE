@@ -29,6 +29,8 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     char IIndexable<char>.this[int index] => WrittenSpan[index];
 
+    char IIndexable<char>.this[Index index] => WrittenSpan[index];
+
     public ref char this[Index index] => ref WrittenSpan[index];
 
     public Span<char> this[Range range] => WrittenSpan[range];
@@ -253,8 +255,14 @@ public sealed partial class PooledStringBuilder(int capacity) :
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "TryFormatUnconstrained")]
-    private static extern bool TryFormatEnum<TEnum>(Enum? c, TEnum value, Span<char> destination, out int charsWritten,
-        [StringSyntax(StringSyntaxAttribute.EnumFormat)] ReadOnlySpan<char> format = default);
+    private static extern bool TryFormatEnum<TEnum>(
+        Enum? c,
+        TEnum value,
+        Span<char> destination,
+        out int charsWritten,
+        [StringSyntax(StringSyntaxAttribute.EnumFormat)]
+        ReadOnlySpan<char> format = default
+    );
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
