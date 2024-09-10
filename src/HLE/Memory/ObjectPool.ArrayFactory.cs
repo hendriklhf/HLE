@@ -14,7 +14,7 @@ public sealed partial class ObjectPool<T>
 
         public ArrayFactory(int arrayLength)
         {
-            if (!typeof(T).IsArray)
+            if (!typeof(T).IsSZArray)
             {
                 ThrowGenericParameterIsNotArray();
             }
@@ -55,6 +55,6 @@ public sealed partial class ObjectPool<T>
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowGenericParameterIsNotArray()
-            => throw new InvalidOperationException($"Generic parameter {typeof(T)} is not an array type.");
+            => throw new InvalidOperationException($"Generic parameter {typeof(T)} is not a single dimension array type.");
     }
 }

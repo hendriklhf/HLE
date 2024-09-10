@@ -53,7 +53,9 @@ public ref struct ValueList<T> :
 
     public int Count
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         readonly get => _countAndIsStackalloced.Integer;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal set
         {
             Debug.Assert(value >= 0);
@@ -63,13 +65,17 @@ public ref struct ValueList<T> :
 
     private bool IsStackalloced
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         readonly get => _countAndIsStackalloced.Bool;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => _countAndIsStackalloced.Bool = value;
     }
 
     private int BufferLength
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         readonly get => _bufferLengthAndIsDisposed.Integer;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set
         {
             Debug.Assert(value >= 0);
@@ -79,7 +85,9 @@ public ref struct ValueList<T> :
 
     private bool IsDisposed
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         readonly get => _bufferLengthAndIsDisposed.Bool;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => _bufferLengthAndIsDisposed.Bool = value;
     }
 
@@ -186,26 +194,23 @@ public ref struct ValueList<T> :
     public readonly List<T> ToList(Range range) => AsSpan().ToList(range);
 
     [Pure]
-    public readonly List<T> ToList()
-    {
-        Span<T> items = AsSpan();
-        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<T>(items.Length));
-    }
+    public readonly List<T> ToList() => AsSpan().ToList();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
-    private void GrowIfNeeded(int sizeHint)
+    private ref T GetDestination(int sizeHint)
     {
-        int freeSpace = Capacity - Count;
+        int count = Count;
+        int freeSpace = Capacity - count;
         if (freeSpace >= sizeHint)
         {
-            return;
+            return ref Unsafe.Add(ref GetBufferReference(), count);
         }
 
-        Grow(sizeHint - freeSpace);
+        return ref GrowAndGetDestination(sizeHint - freeSpace);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
-    private void Grow(int neededSize)
+    private ref T GrowAndGetDestination(int neededSize)
     {
         Debug.Assert(neededSize >= 0);
 
@@ -218,23 +223,26 @@ public ref struct ValueList<T> :
             SpanHelpers.Copy(oldBuffer[..count], newBuffer);
         }
 
-        _buffer = ref MemoryMarshal.GetReference(newBuffer);
+        ref T buffer = ref MemoryMarshal.GetReference(newBuffer);
+        _buffer = ref buffer;
         BufferLength = newBuffer.Length;
 
         if (IsStackalloced)
         {
             IsStackalloced = false;
-            return;
+            return ref Unsafe.Add(ref buffer, count);
         }
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
         ArrayPool<T>.Shared.Return(array);
+
+        return ref Unsafe.Add(ref buffer, count);
     }
 
     public void Add(T item)
     {
-        GrowIfNeeded(1);
-        Unsafe.Add(ref GetBufferReference(), Count++) = item;
+        GetDestination(1) = item;
+        Count++;
     }
 
     public void AddRange(IEnumerable<T> items)
@@ -246,11 +254,8 @@ public ref struct ValueList<T> :
                 return;
             }
 
-            GrowIfNeeded(itemsCount);
-
-            ref T buffer = ref GetBufferReference();
             int count = Count;
-            ref T destination = ref Unsafe.Add(ref buffer, count);
+            ref T destination = ref GetDestination(itemsCount);
             if (items.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
             {
                 SpanHelpers.Copy(span, ref destination);
@@ -286,10 +291,8 @@ public ref struct ValueList<T> :
             return;
         }
 
-        GrowIfNeeded(items.Length);
-
         int count = Count;
-        ref T destination = ref Unsafe.Add(ref GetBufferReference(), count);
+        ref T destination = ref GetDestination(items.Length);
         SpanHelpers.Copy(items, ref destination);
         Count = count + items.Length;
     }
@@ -353,7 +356,7 @@ public ref struct ValueList<T> :
         Count = 0;
     }
 
-    public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
+    public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
     readonly int IList<T>.IndexOf(T item) => throw new NotSupportedException();
 
@@ -361,7 +364,7 @@ public ref struct ValueList<T> :
 
     public void Insert(int index, T item)
     {
-        GrowIfNeeded(1);
+        GetDestination(1);
         Count++;
         Span<T> buffer = AsSpan();
         buffer[index..^1].CopyTo(buffer[(index + 1)..]);
@@ -423,7 +426,7 @@ public ref struct ValueList<T> :
         return ref _buffer;
     }
 
-    internal readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
+    private readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
 
     public override readonly string ToString()
     {

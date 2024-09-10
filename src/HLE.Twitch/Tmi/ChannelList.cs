@@ -15,7 +15,11 @@ namespace HLE.Twitch.Tmi;
 /// A class that represents a list of channels the client is connected to.
 /// </summary>
 [DebuggerDisplay("Count = {_channels.Count}")]
-public sealed class ChannelList : IReadOnlyCollection<Channel>, IEquatable<ChannelList>, ICountable, ICollectionProvider<Channel>
+public sealed class ChannelList :
+    IReadOnlyCollection<Channel>,
+    IEquatable<ChannelList>,
+    ICountable,
+    ICollectionProvider<Channel>
 {
     /// <summary>
     /// Gets the amount of channels in the list.

@@ -235,11 +235,7 @@ public ref struct ValueBufferWriter<T> :
     public readonly T[] ToArray(Range range) => WrittenSpan.ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList()
-    {
-        Span<T> writtenSpan = WrittenSpan;
-        return writtenSpan.Length == 0 ? [] : ListMarshal.ConstructList(writtenSpan, GC.AllocateUninitializedArray<T>(writtenSpan.Length));
-    }
+    public readonly List<T> ToList() => WrittenSpan.ToList();
 
     [Pure]
     public readonly List<T> ToList(int start) => WrittenSpan.ToList(start);

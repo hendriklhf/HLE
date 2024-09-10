@@ -51,6 +51,7 @@ public readonly partial struct EnvironmentVariables :
 
     public EnvironmentVariables(FrozenDictionary<string, string> environmentVariables) => _environmentVariables = environmentVariables;
 
+    [Pure]
     public static EnvironmentVariables Create() => OperatingSystemEnvironmentVariableProvider.GetEnvironmentVariables();
 
     void ICollection<EnvironmentVariable>.Add(EnvironmentVariable item) => throw new NotSupportedException();

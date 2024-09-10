@@ -14,7 +14,10 @@ public static unsafe class MemoryHelpers
     /// </summary>
     public const int NonZeroedNativeMemoryThreshold = 512;
 
-    private static readonly int s_maximumStackallocSize = Environment.Is64BitProcess ? 8192 : 2048;
+    private static readonly int s_maximumStackallocSize = Environment.Is64BitProcess ? DefaultMaximumStackallocSize64 : DefaultMaximumStackallocSize32;
+
+    private const int DefaultMaximumStackallocSize32 = 2048;
+    private const int DefaultMaximumStackallocSize64 = 8192;
 
     /// <summary>
     /// Determines whether to use a stack or a heap allocation by passing a generic type and the element count.

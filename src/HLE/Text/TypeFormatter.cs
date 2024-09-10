@@ -17,19 +17,16 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
 
     [Pure]
     [SkipLocalsInit]
-    public string Format(Type type)
-    {
-        if (_cache.TryGetValue(type, out string? str))
-        {
-            return str;
-        }
+    public string Format(Type type) => _cache.TryGetValue(type, out string? str) ? str : FormatCore(type);
 
+    private string FormatCore(Type type)
+    {
         // ReSharper disable once NotDisposedResource
         ValueStringBuilder builder = new(stackalloc char[512]);
         try
         {
             AppendTypeAndGenericParameters(type, ref builder, true, true);
-            str = builder.ToString();
+            string str = builder.ToString();
             _cache.TryAdd(type, str);
             return str;
         }

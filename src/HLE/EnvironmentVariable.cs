@@ -17,6 +17,9 @@ public readonly struct EnvironmentVariable(string name, string value) : IEquatab
     }
 
     [Pure]
+    public override string ToString() => $"{Name}=\"{Value}\"";
+
+    [Pure]
     public bool Equals(EnvironmentVariable other) => Name == other.Name && Value == other.Value;
 
     [Pure]

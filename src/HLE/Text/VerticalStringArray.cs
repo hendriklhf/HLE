@@ -10,7 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Text;
@@ -150,11 +149,7 @@ public sealed class VerticalStringArray :
     public string[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<string> ToList()
-    {
-        ReadOnlySpan<string> strings = AsSpan();
-        return strings.Length == 0 ? [] : ListMarshal.ConstructList(strings, new string[strings.Length]);
-    }
+    public List<string> ToList() => AsSpan().ToList();
 
     [Pure]
     public List<string> ToList(int start) => AsSpan().ToList(start);

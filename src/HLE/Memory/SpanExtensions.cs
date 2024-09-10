@@ -61,11 +61,31 @@ public static class SpanExtensions
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToList<T>(this Span<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span, GC.AllocateUninitializedArray<T>(span.Length));
+    public static List<T> ToList<T>(this Span<T> span)
+    {
+        if (span.Length == 0)
+        {
+            return [];
+        }
+
+        T[] items = GC.AllocateUninitializedArray<T>(span.Length);
+        SpanHelpers.Copy(span, items);
+        return ListMarshal.ConstructList(items, span.Length);
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static List<T> ToList<T>(this ReadOnlySpan<T> span) => span.Length == 0 ? [] : ListMarshal.ConstructList(span, GC.AllocateUninitializedArray<T>(span.Length));
+    public static List<T> ToList<T>(this ReadOnlySpan<T> span)
+    {
+        if (span.Length == 0)
+        {
+            return [];
+        }
+
+        T[] items = GC.AllocateUninitializedArray<T>(span.Length);
+        SpanHelpers.Copy(span, items);
+        return ListMarshal.ConstructList(items, span.Length);
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -110,6 +130,9 @@ public static class SpanExtensions
         }
 
         ref T source = ref Slicer<T>.GetStart(ref span, spanLength, start, length);
-        return ListMarshal.ConstructList(ref source, length, GC.AllocateUninitializedArray<T>(length));
+        T[] buffer = GC.AllocateUninitializedArray<T>(length);
+        ref T destination = ref MemoryMarshal.GetArrayDataReference(buffer);
+        SpanHelpers.Memmove(ref destination, ref source, (uint)length);
+        return ListMarshal.ConstructList(buffer, length);
     }
 }

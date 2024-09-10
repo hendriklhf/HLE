@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -160,11 +159,7 @@ public struct RentedArray<T> :
     public readonly T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public readonly List<T> ToList()
-    {
-        Span<T> source = AsSpan();
-        return source.Length == 0 ? [] : ListMarshal.ConstructList(source, GC.AllocateUninitializedArray<T>(source.Length));
-    }
+    public readonly List<T> ToList() => AsSpan().ToList();
 
     [Pure]
     public readonly List<T> ToList(int start) => AsSpan(start..).ToList();

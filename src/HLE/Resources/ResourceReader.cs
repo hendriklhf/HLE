@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -17,12 +16,13 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Resources;
 
 [method: MustDisposeResource]
-public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
+public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
 {
-    int IReadOnlyCollection<Resource>.Count => _resources.Count;
+    int IReadOnlyCollection<Resource>.Count => _resourceMap.Count;
 
     private readonly Assembly _assembly = assembly;
-    private readonly ConcurrentDictionary<string, Resource?> _resources = new();
+    private readonly ConcurrentDictionary<string, Resource?> _resourceMap = new();
+    private readonly List<Resource> _resources = [];
     private List<GCHandle>? _handles;
 
     public void Dispose()
@@ -86,7 +86,7 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
 
     public bool TryRead(string resourcePath, out Resource resource)
     {
-        if (!_resources.TryGetValue(resourcePath, out Resource? nullableResource))
+        if (!_resourceMap.TryGetValue(resourcePath, out Resource? nullableResource))
         {
             return TryReadCore(resourcePath, out resource);
         }
@@ -106,7 +106,7 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
         using Stream? stream = _assembly.GetManifestResourceStream(resourcePath);
         if (stream is null)
         {
-            _resources.AddOrSet(resourcePath, null);
+            _resourceMap.AddOrSet(resourcePath, null);
             resource = default;
             return false;
         }
@@ -124,7 +124,8 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
                 memoryStream.Position = 0;
                 byte* pointer = memoryStream.PositionPointer;
                 resource = new(pointer, streamLength);
-                _resources.AddOrSet(resourcePath, resource);
+                _resourceMap.AddOrSet(resourcePath, resource);
+                AddResource(resource);
                 return true;
             }
 
@@ -144,14 +145,18 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
         stream.ReadExactly(buffer);
         byte* bufferPointer = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(buffer));
         resource = new(bufferPointer, streamLength);
-        _resources.AddOrSet(resourcePath, resource);
+        _resourceMap.AddOrSet(resourcePath, resource);
+        AddResource(resource);
         return true;
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
+    private void AddResource(Resource resource) => _resources.Add(resource);
+
+    [MethodImpl(MethodImplOptions.Synchronized)]
     private void StoreHandle(GCHandle handle)
     {
-        _handles ??= new(8);
+        _handles ??= [];
         _handles.Add(handle);
     }
 
@@ -165,8 +170,10 @@ public sealed unsafe class ResourceReader(Assembly assembly) : IDisposable, IEqu
     private static void ThrowStreamLengthExceedsMaxArrayLength()
         => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
 
-    // ReSharper disable once NotDisposedResourceIsReturned
-    public IEnumerator<Resource> GetEnumerator() => throw new NotImplementedException();
+    [Pure]
+    public Enumerator GetEnumerator() => new(_resources);
+
+    IEnumerator<Resource> IEnumerable<Resource>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

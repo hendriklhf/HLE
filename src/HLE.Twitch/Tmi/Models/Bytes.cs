@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Text;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Twitch.Tmi.Models;
@@ -84,7 +83,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     public readonly byte[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public readonly List<byte> ToList() => Length == 0 ? [] : ListMarshal.ConstructList(AsSpan());
+    public readonly List<byte> ToList() => AsSpan().ToList();
 
     [Pure]
     public readonly List<byte> ToList(int start) => AsSpan().ToList(start);

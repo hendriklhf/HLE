@@ -154,11 +154,7 @@ public sealed class StringArray :
     public string[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<string> ToList()
-    {
-        ReadOnlySpan<string> strings = AsSpan();
-        return strings.Length == 0 ? [] : ListMarshal.ConstructList(strings, new string[strings.Length]);
-    }
+    public List<string> ToList() => AsSpan().ToList();
 
     [Pure]
     public List<string> ToList(int start) => AsSpan().ToList(start);

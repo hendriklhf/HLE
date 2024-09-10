@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
-using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Collections;
@@ -112,11 +111,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     }
 
     [Pure]
-    public List<TValue> ToList()
-    {
-        ReadOnlySpan<TValue> items = Values.AsSpan();
-        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<TValue>(items.Length));
-    }
+    public List<TValue> ToList() => Values.AsSpan().ToList();
 
     [Pure]
     public List<TValue> ToList(int start) => Values.AsSpan().ToList(start);

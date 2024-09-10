@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Memory;
 
 namespace HLE.Marshalling;
 
@@ -50,31 +49,18 @@ public static partial class ListMarshal
     }
 
     [Pure]
-    public static List<T> ConstructList<T>(List<T> items, T[] buffer) => ConstructList(CollectionsMarshal.AsSpan(items), buffer);
-
-    [Pure]
-    public static List<T> ConstructList<T>(T[] items, T[] buffer) => ConstructList(ref MemoryMarshal.GetArrayDataReference(items), items.Length, buffer);
-
-    [Pure]
-    public static List<T> ConstructList<T>(Span<T> items, T[] buffer) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length, buffer);
-
-    [Pure]
-    public static List<T> ConstructList<T>(ReadOnlySpan<T> items, T[] buffer) => ConstructList(ref MemoryMarshal.GetReference(items), items.Length, buffer);
-
-    [Pure]
-    public static List<T> ConstructList<T>(ref T items, int length, T[] buffer)
+    public static List<T> ConstructList<T>(T[] items, int count)
     {
         List<T> list = [];
-        if (length == 0)
+        if (count == 0)
         {
             return list;
         }
 
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(length, buffer.Length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(count, items.Length);
 
-        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(buffer), ref items, (uint)length);
-        SetArray(list, buffer);
-        SetCount(list, length);
+        SetArray(list, items);
+        SetCount(list, count);
         return list;
     }
 }

@@ -31,10 +31,10 @@
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.2"/>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.0"/>
-    <PackageVersion Include="xunit.v3" Version="0.2.0-pre.69"/>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1"/>
+    <PackageVersion Include="xunit.v3" Version="0.3.0-pre.18"/>
     <PackageVersion Include="xunit.runner.console" Version="2.9.0"/>
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.0-pre.24"/>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.0-pre.30"/>
   </ItemGroup>
 
   <!-- Benchmarks -->

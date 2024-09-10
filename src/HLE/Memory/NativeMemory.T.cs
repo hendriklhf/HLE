@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Text;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -227,11 +226,7 @@ public sealed unsafe partial class NativeMemory<T> :
     public T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<T> ToList()
-    {
-        Span<T> items = AsSpan();
-        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<T>(items.Length));
-    }
+    public List<T> ToList() => AsSpan().ToList();
 
     [Pure]
     public List<T> ToList(int start) => AsSpan().ToList(start);

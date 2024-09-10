@@ -181,11 +181,7 @@ public sealed class LazyString :
     public char[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<char> ToList()
-    {
-        ReadOnlySpan<char> chars = AsSpan();
-        return chars.Length == 0 ? [] : ListMarshal.ConstructList(chars, GC.AllocateUninitializedArray<char>(chars.Length));
-    }
+    public List<char> ToList() => AsSpan().ToList();
 
     [Pure]
     public List<char> ToList(int start) => AsSpan().ToList(start);

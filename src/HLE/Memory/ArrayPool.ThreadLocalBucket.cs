@@ -35,11 +35,11 @@ public sealed partial class ArrayPool<T>
             return (_bucketInitializationStatuses & arrayLength) != 0;
         }
 
-        public readonly bool Equals(ThreadLocalBucket other) => _bucketInitializationStatuses == other._bucketInitializationStatuses; // not correct
+        public readonly bool Equals(ThreadLocalBucket other) => _bucketInitializationStatuses == other._bucketInitializationStatuses; // TODO: not correct
 
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ThreadLocalBucket other && Equals(other);
 
-        public override readonly int GetHashCode() => HashCode.Combine(_bucketInitializationStatuses, _pool);
+        public override readonly int GetHashCode() => HashCode.Combine(_bucketInitializationStatuses, _pool); // TODO: not correct
 
         public static bool operator ==(ThreadLocalBucket left, ThreadLocalBucket right) => left.Equals(right);
 

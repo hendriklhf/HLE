@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -124,11 +123,7 @@ public sealed class PooledList<T>(int capacity) :
     public T[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<T> ToList()
-    {
-        Span<T> items = AsSpan();
-        return items.Length == 0 ? [] : ListMarshal.ConstructList(items, GC.AllocateUninitializedArray<T>(items.Length));
-    }
+    public List<T> ToList() => AsSpan().ToList();
 
     [Pure]
     public List<T> ToList(int start) => AsSpan(start..).ToList();

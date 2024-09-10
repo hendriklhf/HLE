@@ -124,6 +124,13 @@ public static unsafe class StructMarshal
            typeof(T).IsEnum ||
            typeof(T).IsAssignableTo(typeof(IBitwiseEquatable<T>));
 
+    /// <summary>
+    /// Unboxes a struct without a type check.
+    /// It will not be checked if the type of the boxed struct inside <paramref name="obj"/> matches the type <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="obj">The box.</param>
+    /// <typeparam name="T">The type of the struct that will be read from the box.</typeparam>
+    /// <returns>A reference to the struct in the box.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T Unbox<T>(object obj) => ref UnsafeIL.Unbox<T>(obj);

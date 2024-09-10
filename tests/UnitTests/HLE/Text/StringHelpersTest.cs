@@ -273,9 +273,7 @@ public sealed partial class StringHelpersTest
 
     private static TheoryData<string> CreateRegexEscapeWithoutMetaCharsParameters()
     {
-        TheoryData<string> data = new();
-
-        data.Add(string.Empty);
+        TheoryData<string> data = [string.Empty];
         for (int i = 0; i < 64; i++)
         {
             string str = Random.Shared.NextString(i, StringConstants.AlphaNumerics);

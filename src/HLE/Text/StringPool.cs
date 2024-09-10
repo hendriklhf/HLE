@@ -28,7 +28,7 @@ public sealed partial class StringPool : IEquatable<StringPool>
     /// </summary>
     public StringPool()
     {
-        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
+        Span<Bucket> buckets = GetBuckets();
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
@@ -37,7 +37,7 @@ public sealed partial class StringPool : IEquatable<StringPool>
 
     public void Clear()
     {
-        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
+        Span<Bucket> buckets = GetBuckets();
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i].Clear();
@@ -217,6 +217,8 @@ public sealed partial class StringPool : IEquatable<StringPool>
         charsWritten = encoding.GetChars(bytes, charBuffer);
         return Contains(charBuffer[..charsWritten]);
     }
+
+    private Span<Bucket> GetBuckets() => InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref Bucket GetBucket(ReadOnlySpan<char> str)

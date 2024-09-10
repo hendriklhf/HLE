@@ -7,7 +7,6 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Text;
 
@@ -56,6 +55,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
 
     private readonly byte* _resource = resource;
 
+    [SuppressMessage("Major Code Smell", "S1168:Empty arrays and collections should be returned instead of null")]
     public static Resource Empty => default;
 
     public Resource() : this(null, 0)
@@ -94,11 +94,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     public byte[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<byte> ToList()
-    {
-        ReadOnlySpan<byte> bytes = AsSpan();
-        return bytes.Length == 0 ? [] : ListMarshal.ConstructList(bytes, GC.AllocateUninitializedArray<byte>(bytes.Length));
-    }
+    public List<byte> ToList() => AsSpan().ToList();
 
     [Pure]
     public List<byte> ToList(int start) => AsSpan().ToList(start);
