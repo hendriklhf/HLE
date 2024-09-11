@@ -9,7 +9,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.Memory;
+using HLE.Marshalling;
 
 namespace HLE;
 
@@ -65,11 +65,9 @@ public readonly partial struct EnvironmentVariables :
 
     public void CopyTo(List<EnvironmentVariable> destination, int offset = 0)
     {
-        // TODO: not optimal copying into a temporary buffer and then into the list
-        using RentedArray<EnvironmentVariable> buffer = ArrayPool<EnvironmentVariable>.Shared.RentAsRentedArray(Count);
-        CopyTo(buffer.AsSpan());
-        CopyWorker<EnvironmentVariable> copyWorker = new(buffer[..Count]);
-        copyWorker.CopyTo(destination, offset);
+        destination.EnsureCapacity(offset + Count);
+        ref EnvironmentVariable dest = ref Unsafe.Add(ref ListMarshal.GetReference(destination), offset);
+        CopyTo(ref dest);
     }
 
     public void CopyTo(EnvironmentVariable[] destination, int offset = 0) => CopyTo(ref MemoryMarshal.GetReference(destination.AsSpan(offset)));

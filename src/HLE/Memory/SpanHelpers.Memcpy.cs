@@ -9,8 +9,8 @@ namespace HLE.Memory;
 
 public static unsafe partial class SpanHelpers
 {
-    private const nuint MemmoveAlignment = 64;
-    private const nuint MemmoveAlignmentThreshold = 256;
+    private const nuint MemcpyAlignment = 64;
+    private const nuint MemcpyAlignmentThreshold = 256;
 
     internal static void Memcpy(void* destination, void* source, nuint byteCount)
         => Memcpy(ref Unsafe.AsRef<byte>(destination), ref Unsafe.AsRef<byte>(source), byteCount);
@@ -22,16 +22,16 @@ public static unsafe partial class SpanHelpers
     {
         Debug.Assert(byteCount != 0);
 
-        if (byteCount >= MemmoveAlignmentThreshold && !MemoryHelpers.IsAligned(ref destination, MemmoveAlignment))
+        if (byteCount >= MemcpyAlignmentThreshold && !MemoryHelpers.IsAligned(ref destination, MemcpyAlignment))
         {
-            MemmoveAlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
+            MemcpyAlignmentResult alignmentResult = Align(ref source, ref destination, byteCount);
             destination = ref alignmentResult.Destination;
             source = ref alignmentResult.Source;
             byteCount = alignmentResult.ByteCount;
         }
 
     CheckByteCount:
-        switch (BitOperations.LeadingZeroCount((ulong)byteCount))
+        switch (BitOperations.LeadingZeroCount(byteCount))
         {
             case <= 47: // >= 65536
                 nuint byteCountBefore = byteCount;
@@ -384,11 +384,11 @@ public static unsafe partial class SpanHelpers
     private static void Copy1Byte(ref byte source, ref byte destination) => destination = source;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static MemmoveAlignmentResult Align(ref byte source, ref byte destination, nuint byteCount)
+    private static MemcpyAlignmentResult Align(ref byte source, ref byte destination, nuint byteCount)
     {
-        Debug.Assert(byteCount >= MemmoveAlignment);
+        Debug.Assert(byteCount >= MemcpyAlignment);
 
-        ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, MemmoveAlignment, AlignmentMethod.Add);
+        ref byte alignedDestination = ref MemoryHelpers.Align(ref destination, MemcpyAlignment, AlignmentMethod.Add);
         nuint alignmentDifference = (nuint)Unsafe.AsPointer(ref alignedDestination) - (nuint)Unsafe.AsPointer(ref destination);
 
         Debug.Assert(alignmentDifference != 0);
