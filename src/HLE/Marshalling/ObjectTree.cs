@@ -18,8 +18,8 @@ internal static unsafe class ObjectTree
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getSizeCache = new();
 
     [Pure]
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     public static nuint GetSize<T>(ref T obj)
     {
         if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -70,8 +70,8 @@ internal static unsafe class ObjectTree
     }
 
     [SkipLocalsInit]
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     private static nuint GetFieldsSize<T>(ref T obj)
     {
         nuint size = 0;
@@ -94,8 +94,8 @@ internal static unsafe class ObjectTree
         return size;
     }
 
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     private static nuint GetSizeNonGeneric(object? obj, Type type)
     {
         Debug.Assert(obj is not null);
@@ -133,8 +133,8 @@ internal static unsafe class ObjectTree
         return fieldInfos;
     }
 
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static nuint GetArrayElementsSize(Array array, Type elementType)
     {
@@ -161,8 +161,8 @@ internal static unsafe class ObjectTree
         return getArrayElementsSize(array);
     }
 
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     private static nuint GetArrayElementsSizeCore<T>(T[] array)
     {
         nuint size = 0;
@@ -197,8 +197,8 @@ internal static unsafe class ObjectTree
         return true;
     }
 
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static nuint GetInlineArrayElementsSize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(ref T array, int length)
     {
@@ -230,8 +230,8 @@ internal static unsafe class ObjectTree
         return getInlineArrayElementsSize(ref array, length);
     }
 
-    [RequiresDynamicCode("The native code for this instantiation might not be available at runtime.")]
-    [RequiresUnreferencedCode("If some of the generic arguments are annotated (either with DynamicallyAccessedMembersAttribute, or generic constraints), trimming can\\'t validate that the requirements of those annotations are met.")]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     private static nuint GetInlineArrayElementsSizeCore<TArray, TElement>(ref TArray array, int length) where TArray : struct
     {
         Debug.Assert(RuntimeHelpers.IsReferenceOrContainsReferences<TElement>());

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -22,6 +23,8 @@ public static unsafe class ObjectMarshal
         .MethodHandle
         .GetFunctionPointer();
 
+    private static readonly ConcurrentDictionary<Type, object> s_uninitializedObjectCache = new();
+
     /// <summary>
     /// Gets the amount of bytes allocated for the instance of the object.
     /// </summary>
@@ -30,6 +33,19 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint GetObjectSize(object obj) => BaseObjectSize + (nuint)s_getRawObjectSize(obj);
+
+    [Pure]
+    public static nuint GetObjectSize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>()
+        where T : class
+    {
+        if (!s_uninitializedObjectCache.TryGetValue(typeof(T), out object? obj))
+        {
+            obj = RuntimeHelpers.GetUninitializedObject(typeof(T));
+            s_uninitializedObjectCache.TryAdd(typeof(T), obj);
+        }
+
+        return GetObjectSize(obj);
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 using HLE.Text;
 
 namespace HLE.TestRunner;
@@ -14,13 +16,14 @@ internal static class EnvironmentCombinator
     private static readonly string[] s_runtimeIdentifiers = DetermineRuntimeIdentifiers();
     private static readonly EnvironmentVariable[] s_environmentVariables =
     [
-        new("DOTNET_EnableAVX", ["0", "1"]),
-        new("DOTNET_EnableAVX2", ["0", "1"]),
-        new("DOTNET_EnableAVX512F", ["0", "1"]),
-        new("DOTNET_EnableBMI1", ["0", "1"]),
-        new("DOTNET_EnableBMI2", ["0", "1"])
+        new("DOTNET_EnableAVX", ["0", "1"], Avx.IsSupported),
+        new("DOTNET_EnableAVX2", ["0", "1"], Avx2.IsSupported),
+        new("DOTNET_EnableAVX512F", ["0", "1"], Avx512F.IsSupported),
+        new("DOTNET_EnableBMI1", ["0", "1"], Bmi1.IsSupported),
+        new("DOTNET_EnableBMI2", ["0", "1"], Bmi2.IsSupported)
     ];
 
+    [Pure]
     public static ImmutableArray<EnvironmentConfiguration> Combinate()
     {
         List<EnvironmentConfiguration> environmentConfigurations = new();
@@ -29,14 +32,26 @@ internal static class EnvironmentCombinator
         {
             foreach (string runtimeIdentifier in s_runtimeIdentifiers)
             {
-                ReadOnlySpan<EnvironmentVariable> environmentVariables = s_environmentVariables;
-                for (int i = 0; i < Math.Pow(2, environmentVariables.Length); i++)
+                int applicableEnvironmentVariableCount = GetApplicableEnvironmentVariableCount();
+                if (applicableEnvironmentVariableCount == 0)
                 {
-                    string values = i.ToString($"b{environmentVariables.Length}", CultureInfo.InvariantCulture);
+                    continue;
+                }
+
+                ReadOnlySpan<EnvironmentVariable> environmentVariables = s_environmentVariables;
+                for (int i = 0; i < Math.Pow(2, applicableEnvironmentVariableCount); i++)
+                {
+                    string values = i.ToString($"b{applicableEnvironmentVariableCount}", CultureInfo.InvariantCulture);
                     EnvironmentConfiguration environmentConfiguration = new(configuration, runtimeIdentifier);
                     for (int j = 0; j < environmentVariables.Length; j++)
                     {
-                        environmentConfiguration.AddEnvironmentVariable(environmentVariables[j].Name, SingleCharStringPool.GetOrAdd(values[j]));
+                        EnvironmentVariable environmentVariable = environmentVariables[j];
+                        if (!environmentVariable.IsApplicable)
+                        {
+                            continue;
+                        }
+
+                        environmentConfiguration.AddEnvironmentVariable(environmentVariable.Name, SingleCharStringPool.GetOrAdd(values[j]));
                     }
 
                     environmentConfigurations.Add(environmentConfiguration);
@@ -45,6 +60,21 @@ internal static class EnvironmentCombinator
         }
 
         return ImmutableCollectionsMarshal.AsImmutableArray(environmentConfigurations.ToArray());
+    }
+
+    private static int GetApplicableEnvironmentVariableCount()
+    {
+        ReadOnlySpan<EnvironmentVariable> environmentVariables = s_environmentVariables;
+        int count = 0;
+        for (int i = 0; i < environmentVariables.Length; i++)
+        {
+            if (environmentVariables[i].IsApplicable)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static string[] DetermineRuntimeIdentifiers()
