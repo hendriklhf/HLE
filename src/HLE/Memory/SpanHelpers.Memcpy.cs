@@ -31,7 +31,7 @@ public static unsafe partial class SpanHelpers
         }
 
     CheckByteCount:
-        switch (BitOperations.LeadingZeroCount(byteCount))
+        switch (BitOperations.LeadingZeroCount((ulong)byteCount))
         {
             case <= 47: // >= 65536
                 nuint byteCountBefore = byteCount;

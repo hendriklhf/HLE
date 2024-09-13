@@ -15,7 +15,7 @@ public sealed class EventInvokerTest
 
     [Theory]
     [MemberData(nameof(TargetCountParameters))]
-    public async Task InvokeAsync_Test_Async(int targetCount)
+    public async Task InvokeAsync(int targetCount)
     {
         AsyncEventHandler<EventInvokerTest, string>? eventHandler = null;
         for (int i = 0; i < targetCount; i++)
@@ -30,9 +30,9 @@ public sealed class EventInvokerTest
         Assert.Equal(invocationListLength, _counter);
     }
 
-    [Theory]
+    [Theory(Timeout = 10_000)]
     [MemberData(nameof(TargetCountParameters))]
-    public async Task QueueOnThreadPool_Test_Async(int targetCount)
+    public Task QueueOnThreadPool(int targetCount)
     {
         EventHandler<string>? eventHandler = null;
         for (int i = 0; i < targetCount; i++)
@@ -41,11 +41,18 @@ public sealed class EventInvokerTest
         }
 
         EventInvoker.QueueOnThreadPool(eventHandler, this, "hello");
-        await Task.Delay(targetCount * 2, TestContext.Current.CancellationToken);
+
+        SpinWait spinWait = default;
+        while (_counter < targetCount)
+        {
+            spinWait.SpinOnce();
+        }
 
         int invocationListLength = eventHandler?.GetInvocationList().Length ?? 0;
         Assert.Equal(targetCount, invocationListLength);
         Assert.Equal(invocationListLength, _counter);
+
+        return Task.CompletedTask;
     }
 
     private Task OnSomethingAsync(EventInvokerTest sender, string args)

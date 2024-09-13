@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using HLE.IL;
 using HLE.Memory;
 using Xunit;
 
@@ -23,8 +22,6 @@ public sealed partial class SpanHelpersTest
     private static ReadOnlySpan<ulong> Int64FillValues => [0, 1];
 
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_indicesOfCoreMethodCache = new();
-
-    private const ulong One = 1;
 
     [Theory]
     [MemberData(nameof(IndicesOfParameters))]
@@ -45,13 +42,14 @@ public sealed partial class SpanHelpersTest
         indicesOfCore(items);
     }
 
-    private static void IndicesOfCore<T>(T[] items) where T : struct, IEquatable<T>
+    private static unsafe void IndicesOfCore<T>(T[] items) where T : struct, IEquatable<T>
     {
         // ReSharper disable once NotDisposedResource (it is dispoed. can't use a "using" statement, as "loopedIndices" is passed by mutable ref)
         ValueList<int> loopedIndices = new(items.Length);
         try
         {
-            T one = UnsafeIL.As<ulong, T>(One);
+            ulong longOne = 1;
+            T one = *(T*)&longOne;
             GetLoopedIndices<T>(items, ref loopedIndices);
             using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(items.Length);
             int indicesCount = SpanHelpers.IndicesOf(items, one, indicesBuffer.AsSpan());
@@ -65,9 +63,10 @@ public sealed partial class SpanHelpersTest
         }
     }
 
-    private static void GetLoopedIndices<T>(ReadOnlySpan<T> items, ref ValueList<int> indices) where T : struct, IEquatable<T>
+    private static unsafe void GetLoopedIndices<T>(ReadOnlySpan<T> items, ref ValueList<int> indices) where T : struct, IEquatable<T>
     {
-        T one = UnsafeIL.As<ulong, T>(One);
+        ulong longOne = 1;
+        T one = *(T*)&longOne;
         for (int i = 0; i < items.Length; i++)
         {
             if (items[i].Equals(one))
