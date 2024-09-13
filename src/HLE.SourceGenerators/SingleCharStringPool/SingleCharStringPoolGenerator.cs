@@ -1,27 +1,50 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace HLE.SourceGenerators.SingleCharStringPool;
 
 [Generator]
-public sealed class SingleCharStringPoolGenerator : ISourceGenerator
+public sealed class SingleCharStringPoolGenerator : IIncrementalGenerator
 {
     private const string Indentation = "    ";
 
-    public void Initialize(GeneratorInitializationContext context)
-        => context.RegisterForSyntaxNotifications(static () => new SingleCharStringPoolReceiver());
-
-    public void Execute(GeneratorExecutionContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        SingleCharStringPoolReceiver receiver = (SingleCharStringPoolReceiver)context.SyntaxReceiver!;
-        if (receiver.AmountOfCachedSingleCharStrings < 0)
+        IncrementalValuesProvider<EqualsValueClauseSyntax> provider = context.SyntaxProvider.CreateSyntaxProvider(IsRequiredSyntaxNode, TransformSyntaxNode);
+        context.RegisterImplementationSourceOutput(provider, Execute);
+    }
+
+    private static bool IsRequiredSyntaxNode(SyntaxNode syntaxNode, CancellationToken _)
+        => syntaxNode is EqualsValueClauseSyntax
         {
-            ThrowAmountLessThanZero(receiver);
+            Parent: VariableDeclaratorSyntax
+            {
+                Identifier.Text: "AmountOfCachedSingleCharStrings",
+                Parent.Parent.Parent: ClassDeclarationSyntax
+                {
+                    Identifier.Text: "SingleCharStringPool",
+                    Parent: FileScopedNamespaceDeclarationSyntax namespaceDeclaration
+                }
+            }
+        } && namespaceDeclaration.Name.ToString() == "HLE.Text";
+
+    private static EqualsValueClauseSyntax TransformSyntaxNode(GeneratorSyntaxContext context, CancellationToken _)
+        => (EqualsValueClauseSyntax)context.Node;
+
+    private static void Execute(SourceProductionContext context, EqualsValueClauseSyntax equalsValueClause)
+    {
+        string valueText = equalsValueClause.Value.ToString();
+        int amountOfCachedSingleCharStrings = int.Parse(valueText);
+        if (amountOfCachedSingleCharStrings < 0)
+        {
+            ThrowAmountLessThanZero(nameof(amountOfCachedSingleCharStrings));
         }
 
-        string[] cachedTokenStrings = new string[receiver.AmountOfCachedSingleCharStrings];
+        string[] cachedTokenStrings = new string[amountOfCachedSingleCharStrings];
         for (ushort i = 0; i < cachedTokenStrings.Length; i++)
         {
             cachedTokenStrings[i] = $"\"\\u{i:x4}\"";
@@ -54,9 +77,6 @@ public sealed class SingleCharStringPoolGenerator : ISourceGenerator
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowAmountLessThanZero(SingleCharStringPoolReceiver receiver)
-    {
-        object paramValue = receiver.AmountOfCachedSingleCharStrings; // boxes, as ArgumentOutOfRangeException's constructor takes an object
-        throw new ArgumentOutOfRangeException($"{nameof(receiver)}.{nameof(receiver.AmountOfCachedSingleCharStrings)}", paramValue, "Amount of cached single char strings is below zero.");
-    }
+    private static void ThrowAmountLessThanZero(string paramName)
+        => throw new ArgumentOutOfRangeException(paramName, "Amount of cached single char strings is below zero.");
 }

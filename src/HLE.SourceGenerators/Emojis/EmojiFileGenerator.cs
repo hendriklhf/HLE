@@ -13,10 +13,8 @@ namespace HLE.SourceGenerators.Emojis;
 [Generator]
 [SuppressMessage("ReSharper", "ReplaceSliceWithRangeIndexer")]
 [SuppressMessage("Major Code Smell", "S6354:Use a testable date/time provider")]
-public sealed class EmojiFileGenerator : ISourceGenerator
+public sealed class EmojiFileGenerator : IIncrementalGenerator
 {
-    private Emoji[]? _emojis;
-
     private static readonly Dictionary<string, string> s_illegalEmojiNameReplacements = new()
     {
         { "+1", "ThumbsUp" },
@@ -39,10 +37,11 @@ public sealed class EmojiFileGenerator : ISourceGenerator
 
     // ReSharper disable once AsyncVoidMethod
     [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
-    public async void Initialize(GeneratorInitializationContext _)
+    public async void Initialize(IncrementalGeneratorInitializationContext context)
     {
         using Stream emojiJsonBytes = await GetEmojiJsonBytesAsync();
-        _emojis = await JsonSerializer.DeserializeAsync<Emoji[]>(emojiJsonBytes);
+        Emoji[]? emojis = await JsonSerializer.DeserializeAsync<Emoji[]>(emojiJsonBytes);
+        context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, _) => Execute(context, emojis!));
     }
 
     private static ValueTask<Stream> GetEmojiJsonBytesAsync()
@@ -58,12 +57,12 @@ public sealed class EmojiFileGenerator : ISourceGenerator
         }
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    private static void Execute(SourceProductionContext context, Emoji[] emojis)
     {
-        StringBuilder sourceBuilder = new(65536);
+        StringBuilder sourceBuilder = new(ushort.MaxValue);
         sourceBuilder.AppendLine("namespace HLE.Emojis;").AppendLine();
         sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
-        AppendEmojis(sourceBuilder, _emojis);
+        AppendEmojis(sourceBuilder, emojis);
         sourceBuilder.AppendLine("}");
         context.AddSource("HLE.Emojis.Emoji.g.cs", sourceBuilder.ToString());
     }
