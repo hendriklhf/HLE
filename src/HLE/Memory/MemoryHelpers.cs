@@ -65,13 +65,13 @@ public static unsafe class MemoryHelpers
             ThrowAlignmentNeedsToBeNonZeroPowerOfTwo();
         }
 
-        nuint value = (nuint)Unsafe.AsPointer(ref reference);
+        nuint address = (nuint)Unsafe.AsPointer(ref reference);
         switch (method)
         {
             case AlignmentMethod.Add:
-                return ref Unsafe.AsRef<T>((void*)(value + alignment - (value % alignment)));
+                return ref Unsafe.AsRef<T>((void*)(address + alignment - (address % alignment)));
             case AlignmentMethod.Subtract:
-                return ref Unsafe.AsRef<T>((void*)(value & ~(alignment - 1)));
+                return ref Unsafe.AsRef<T>((void*)(address & ~(alignment - 1)));
             default:
                 ThrowHelper.ThrowInvalidEnumValue(method);
                 return ref Unsafe.NullRef<T>();
@@ -81,5 +81,5 @@ public static unsafe class MemoryHelpers
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowAlignmentNeedsToBeNonZeroPowerOfTwo()
-        => throw new InvalidOperationException("The alignment needs to be a non-zero power of 2.");
+        => throw new ArgumentException("The alignment needs to be a non-zero power of 2.");
 }

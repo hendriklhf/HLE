@@ -24,11 +24,12 @@ public static partial class ListMarshal
         }
 
         return ref MemoryMarshal.GetArrayDataReference(array);
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowListIsEmpty() => throw new InvalidOperationException("The list is empty, therefore it is not possible to get a reference to the items.");
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowListIsEmpty()
+            => throw new InvalidOperationException("The list is empty, therefore it is not possible to get a reference to the items.");
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -51,14 +52,9 @@ public static partial class ListMarshal
     [Pure]
     public static List<T> ConstructList<T>(T[] items, int count)
     {
-        List<T> list = [];
-        if (count == 0)
-        {
-            return list;
-        }
-
         ArgumentOutOfRangeException.ThrowIfGreaterThan(count, items.Length);
 
+        List<T> list = [];
         SetArray(list, items);
         SetCount(list, count);
         return list;

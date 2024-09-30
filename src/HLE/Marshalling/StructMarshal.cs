@@ -26,6 +26,14 @@ public static unsafe class StructMarshal
         where TRight : struct
         => EqualsBitwise(ref left, ref right);
 
+    /// <inheritdoc cref="EqualsBitwise{TLeft,TRight}(ref TLeft,ref TRight)"/>
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool EqualsBitwise<TLeft, TRight>(TLeft left, ref TRight right)
+        where TLeft : struct
+        where TRight : struct
+        => EqualsBitwise(ref left, ref right);
+
     /// <summary>
     /// Compares two structs bitwise.
     /// </summary>
@@ -65,17 +73,17 @@ public static unsafe class StructMarshal
 
         if (Vector512.IsHardwareAccelerated && sizeof(TLeft) == Vector512<byte>.Count)
         {
-            return Vector512.Create<byte>(GetBytes(ref left)) == Vector512.Create<byte>(GetBytes(ref right));
+            return Unsafe.As<TLeft, Vector512<byte>>(ref left) == Unsafe.As<TRight, Vector512<byte>>(ref right);
         }
 
         if (Vector256.IsHardwareAccelerated && sizeof(TLeft) == Vector256<byte>.Count)
         {
-            return Vector256.Create<byte>(GetBytes(ref left)) == Vector256.Create<byte>(GetBytes(ref right));
+            return Unsafe.As<TLeft, Vector256<byte>>(ref left) == Unsafe.As<TRight, Vector256<byte>>(ref right);
         }
 
         if (Vector128.IsHardwareAccelerated && sizeof(TLeft) == Vector128<byte>.Count)
         {
-            return Vector128.Create<byte>(GetBytes(ref left)) == Vector128.Create<byte>(GetBytes(ref right));
+            return Unsafe.As<TLeft, Vector128<byte>>(ref left) == Unsafe.As<TRight, Vector128<byte>>(ref right);
         }
 
         return GetBytes(ref left).SequenceEqual(GetBytes(ref right));

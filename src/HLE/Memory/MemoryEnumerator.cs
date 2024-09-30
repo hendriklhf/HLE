@@ -53,7 +53,8 @@ public ref struct MemoryEnumerator<T> : IEnumerator<T>, IEquatable<MemoryEnumera
 
     [Pure]
     public readonly bool Equals(scoped MemoryEnumerator<T> other)
-        => Unsafe.AreSame(ref _memory, ref other._memory) && _current == other._current && _length == other._length;
+        => Unsafe.AreSame(ref _memory, ref other._memory) &&
+           _current == other._current && _length == other._length;
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;

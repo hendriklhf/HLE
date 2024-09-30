@@ -20,7 +20,7 @@ public sealed partial class RegexPool
         {
             private Regex? _regexes;
 
-            public const int Length = DefaultBucketCapacity;
+            private const int Length = DefaultBucketCapacity;
         }
     }
 }

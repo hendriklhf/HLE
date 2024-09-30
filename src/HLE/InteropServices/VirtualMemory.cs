@@ -1,7 +1,7 @@
 using System;
-using HLE.Marshalling.Windows;
+using HLE.Marshalling;
 
-namespace HLE.Marshalling;
+namespace HLE.InteropServices;
 
 internal static unsafe class VirtualMemory
 {
@@ -9,7 +9,11 @@ internal static unsafe class VirtualMemory
     {
         if (OperatingSystem.IsWindows())
         {
-            return Interop.VirtualAlloc(null, size, AllocationTypes.Commit, ProtectionTypes.ExecuteReadWrite);
+            return Interop.Windows.VirtualAlloc(null, size, AllocationTypes.Commit, ProtectionTypes.ReadWrite);
+        }
+
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
         }
 
         ThrowHelper.ThrowOperatingSystemNotSupported();
@@ -20,7 +24,11 @@ internal static unsafe class VirtualMemory
     {
         if (OperatingSystem.IsWindows())
         {
-            Interop.VirtualFree(address, 0, FreeTypes.Release);
+            Interop.Windows.VirtualFree(address, 0, FreeTypes.Release);
+        }
+
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
         }
 
         ThrowHelper.ThrowOperatingSystemNotSupported();

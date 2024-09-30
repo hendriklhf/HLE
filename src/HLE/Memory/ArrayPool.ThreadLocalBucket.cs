@@ -19,7 +19,7 @@ public sealed partial class ArrayPool<T>
         private uint _bucketInitializationStatuses;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref T[]? GetPoolReference() => ref Unsafe.As<Pool, T[]?>(ref Unsafe.AsRef(ref _pool));
+        public ref T[]? GetPoolReference() => ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref Unsafe.AsRef(ref _pool));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetInitialized(int arrayLength)

@@ -18,7 +18,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
 
     public RegexPool()
     {
-        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
+        Span<Bucket> buckets = GetBuckets();
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new();
@@ -27,7 +27,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
 
     public void Clear()
     {
-        Span<Bucket> buckets = InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
+        Span<Bucket> buckets = GetBuckets();
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i].Clear();
@@ -146,13 +146,15 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
         return contains;
     }
 
+    private Span<Bucket> GetBuckets() => InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets);
+
     private ref Bucket GetBucket(Regex regex) => ref GetBucket(regex.ToString(), regex.Options, regex.MatchTimeout);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref Bucket GetBucket(ReadOnlySpan<char> pattern, RegexOptions options, TimeSpan timeout)
     {
         uint hash = SimpleStringHasher.Hash(pattern);
-        hash = (uint)HashCode.Combine(hash, (int)options, timeout);
+        hash = (uint)HashCode.Combine(hash, (uint)options, timeout);
         uint index = hash % DefaultPoolCapacity;
         return ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Buckets, Bucket>(ref _buckets), index);
     }

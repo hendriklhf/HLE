@@ -114,11 +114,11 @@ public readonly unsafe struct NativeString :
         }
 
         return (RawStringData*)(_memory.Pointer + sizeof(nuint));
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowCantGetRawDataOnEmptyString() => throw new InvalidOperationException("The string is empty, therefore getting the raw data is not possible.");
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowCantGetRawDataOnEmptyString() => throw new InvalidOperationException("The string is empty, therefore getting the raw data is not possible.");
+    }
 
     [Pure]
     public string AsString() => Length == 0 ? string.Empty : ObjectMarshal.ReadObject<string>(AsRawStringData());

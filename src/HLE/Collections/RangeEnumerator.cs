@@ -25,14 +25,16 @@ public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
 
         Current = range.Start.Value - 1;
         _end = range.End.Value;
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowRangeEndStartsFromEnd()
+            => throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
     }
 
     public bool MoveNext() => ++Current <= _end;
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowRangeEndStartsFromEnd()
-        => throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
 
     [DoesNotReturn]
     readonly void IEnumerator.Reset() => throw new NotSupportedException();

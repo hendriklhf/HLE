@@ -123,6 +123,13 @@ public static partial class SpanHelpers
         {
             Unsafe.Add(ref reference, i) ^= Unsafe.Add(ref maskReference, i);
         }
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowLengthsAreNotEqual()
+            => throw new InvalidOperationException("The length of the values and the mask have to be the same.");
     }
 
     public static void Xor<T>(ref T values, ref T mask, int length) where T : IBitwiseOperators<T, T, T>
@@ -176,9 +183,4 @@ public static partial class SpanHelpers
             Unsafe.Add(ref values, i) ^= Unsafe.Add(ref mask, i);
         }
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowLengthsAreNotEqual()
-        => throw new InvalidOperationException("The length of the values and the mask have to be the same.");
 }

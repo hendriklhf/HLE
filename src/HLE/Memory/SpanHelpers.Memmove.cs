@@ -50,6 +50,7 @@ public static unsafe partial class SpanHelpers
     /// <param name="destination">The destination of the elements.</param>
     /// <param name="source">The source of the elements.</param>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Memmove<T>(ref T destination, ref T source, nuint elementCount)
     {
         if (elementCount == 0 || Unsafe.AreSame(ref destination, ref source))

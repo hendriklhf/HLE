@@ -59,15 +59,17 @@ public static partial class SingleCharStringPool
         }
 
         s_customSingleCharStringCache.AddOrSet(c, str);
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowStringIsNotASingleCharString(string str)
+            => throw new InvalidOperationException($"The provided string's (\"{str}\") length is not 1.");
     }
 
     [Pure]
     public static bool Contains(char c) => c < AmountOfCachedSingleCharStrings || s_customSingleCharStringCache.ContainsKey(c);
 
     internal static partial ReadOnlySpan<string> GetCachedSingleCharStrings();
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowStringIsNotASingleCharString(string str)
-        => throw new InvalidOperationException($"The provided string's (\"{str}\") length is not 1.");
 }

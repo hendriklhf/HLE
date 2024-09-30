@@ -371,17 +371,25 @@ public static class RandomExtensions
     public static void Fill<T>(this Random random, List<T> list) where T : unmanaged
         => random.Write(ref ListMarshal.GetReference(list), (uint)list.Count);
 
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
     public static unsafe void Fill(this Random random, Array array)
     {
         Type elementType = array.GetType().GetElementType()!;
-        if (ObjectMarshal.GetMethodTableFromType(elementType)->IsReferenceOrContainsReferences)
+        if (ObjectMarshal.IsReferenceOrContainsReferences(elementType))
         {
             ThrowArrayElementTypeMustBeUnmanaged();
         }
 
+        Debug.Assert(ObjectMarshal.GetMethodTable(array)->HasComponentSize);
+
         ushort componentSize = ObjectMarshal.GetMethodTable(array)->ComponentSize;
         ref byte reference = ref MemoryMarshal.GetArrayDataReference(array);
         random.Write(ref reference, checked(componentSize * nuint.CreateChecked(array.LongLength)));
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowArrayElementTypeMustBeUnmanaged()
+            => throw new InvalidOperationException("The array element type must be an unmanaged type.");
     }
 
     public static void Fill<T>(this Random random, T[] array) where T : unmanaged
@@ -389,11 +397,6 @@ public static class RandomExtensions
 
     public static void Fill<T>(this Random random, Span<T> span) where T : unmanaged
         => random.Write(ref MemoryMarshal.GetReference(span), (uint)span.Length);
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowArrayElementTypeMustBeUnmanaged()
-        => throw new InvalidOperationException("The array element type must be an unmanaged type.");
 
     [Pure]
     public static bool NextBool(this Random random)
@@ -565,10 +568,10 @@ public static class RandomExtensions
 
         int randomIndex = random.Next(length);
         return ref Unsafe.Add(ref items, randomIndex);
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowCantGetRandomItemFromEmptyCollection()
-        => throw new InvalidOperationException("Can't get a random item from an empty collection.");
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowCantGetRandomItemFromEmptyCollection()
+            => throw new InvalidOperationException("Can't get a random item from an empty collection.");
+    }
 }

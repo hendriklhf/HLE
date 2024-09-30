@@ -221,7 +221,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             return;
         }
 
-        if (!TryGetBucketIndex(array, out int bucketIndex, out int pow2Length))
+        if (!TryGetBucketIndex(array.Length, out int bucketIndex, out int pow2Length))
         {
             return;
         }
@@ -282,17 +282,17 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetBucketIndex(T[] array, out int bucketIndex, out int pow2Length)
+    private static bool TryGetBucketIndex(int arrayLength, out int bucketIndex, out int pow2Length)
     {
-        if (array.Length is < ArrayPool.MinimumArrayLength or > ArrayPool.MaximumArrayLength)
+        if (arrayLength is < ArrayPool.MinimumArrayLength or > ArrayPool.MaximumArrayLength)
         {
             bucketIndex = -1;
             pow2Length = -1;
             return false;
         }
 
-        pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)array.Length);
-        if (pow2Length != array.Length)
+        pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)arrayLength);
+        if (pow2Length != arrayLength)
         {
             pow2Length >>= 1;
         }

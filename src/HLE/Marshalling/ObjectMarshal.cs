@@ -24,9 +24,10 @@ public static unsafe class ObjectMarshal
         .GetFunctionPointer();
 
     private static readonly ConcurrentDictionary<Type, object> s_uninitializedObjectCache = new();
+    private static readonly ConcurrentDictionary<Type, bool> s_isReferenceOrContainsReferencesCache = new();
 
     /// <summary>
-    /// Gets the amount of bytes allocated for the instance of the object.
+    /// Gets the amount of bytes allocated for the instance of the object (physical size).
     /// </summary>
     /// <param name="obj">The object whose instance size will be returned.</param>
     /// <returns>The amount of bytes allocated for the object.</returns>
@@ -40,11 +41,44 @@ public static unsafe class ObjectMarshal
     {
         if (!s_uninitializedObjectCache.TryGetValue(typeof(T), out object? obj))
         {
-            obj = RuntimeHelpers.GetUninitializedObject(typeof(T));
-            s_uninitializedObjectCache.TryAdd(typeof(T), obj);
+            obj = GetUninitializedObject();
         }
 
         return GetObjectSize(obj);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static object GetUninitializedObject()
+        {
+            object obj = RuntimeHelpers.GetUninitializedObject(typeof(T));
+            s_uninitializedObjectCache.TryAdd(typeof(T), obj);
+            return obj;
+        }
+    }
+
+    [Pure]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    public static bool IsReferenceOrContainsReferences(MethodTable* methodTable)
+        => IsReferenceOrContainsReferences(Type.GetTypeFromHandle(RuntimeTypeHandle.FromIntPtr((nint)methodTable))!);
+
+    [Pure]
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
+    public static bool IsReferenceOrContainsReferences(Type type)
+    {
+        return s_isReferenceOrContainsReferencesCache.TryGetValue(type, out bool isReferenceOrContainsReferences)
+            ? isReferenceOrContainsReferences
+            : IsReferenceOrContainsReferencesCore(type);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static bool IsReferenceOrContainsReferencesCore(Type type)
+        {
+            MethodInfo method = typeof(RuntimeHelpers)
+                .GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences), BindingFlags.Public | BindingFlags.Static)!
+                .MakeGenericMethod(type);
+
+            bool isReferenceOrContainsReferences = (bool)method.Invoke(null, null)!;
+            s_isReferenceOrContainsReferencesCache.TryAdd(type, isReferenceOrContainsReferences);
+            return isReferenceOrContainsReferences;
+        }
     }
 
     [Pure]
@@ -58,7 +92,7 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TPointer* GetMethodTablePointer<TPointer>(object obj)
-        //where TPointer : allows ref struct
+        // where TPointer : allows ref struct
         => UnsafeIL.AsPointer<object, TPointer>(obj);
 
     [Pure]
@@ -133,6 +167,10 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref RawArrayData GetRawArrayData(Array array) => ref UnsafeIL.AsRef<Array, RawArrayData>(array);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref RawArrayData GetRawArrayData<T>(T[] array) => ref UnsafeIL.AsRef<T[], RawArrayData>(array);
 
     [Pure]
@@ -148,10 +186,10 @@ public static unsafe class ObjectMarshal
     public static nuint GetRawArraySize<T>(T[] array) => GetRawArraySize<T>(array.Length);
 
     [Pure]
-    public static long GetRawArraySize(Array array)
+    public static ulong GetRawArraySize(Array array)
     {
         ushort componentSize = GetMethodTable(array)->ComponentSize;
-        return BaseObjectSize + (uint)sizeof(nuint) + array.LongLength * componentSize;
+        return BaseObjectSize + (uint)sizeof(nuint) + (ulong)array.LongLength * componentSize;
     }
 
     [Pure]

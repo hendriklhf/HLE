@@ -15,17 +15,17 @@ internal sealed class ProcessOutputReader(Process process, TextWriter outputWrit
 {
     private readonly Process _process = process;
     private readonly TextWriter _outputWriter = outputWriter;
-    private readonly SemaphoreSlim _processStartWait = new(0);
+    private readonly ManualResetEventSlim _processStartSignal = new(false);
 
     private static readonly SemaphoreSlim s_outputWriterLock = new(1);
 
-    public void Dispose() => _processStartWait.Dispose();
+    public void Dispose() => _processStartSignal.Dispose();
 
-    public void NotifyProcessStarted() => _processStartWait.Release();
+    public void NotifyProcessStarted() => _processStartSignal.Set();
 
     public async Task StartReadingAsync()
     {
-        await _processStartWait.WaitAsync();
+        _processStartSignal.Wait();
 
         Debug.Assert(!_process.HasExited);
 

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using HLE.Marshalling;
 
 namespace HLE.Memory;
 
@@ -42,6 +43,10 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj)
         => obj is NativeMemoryEnumerator<T> other && Equals(other);
+
+    [Pure]
+    public readonly bool EqualsB(ref NativeMemoryEnumerator<T> other)
+        => StructMarshal.EqualsBitwise(this, ref other);
 
     [Pure]
     public override readonly int GetHashCode() => HashCode.Combine((nuint)_memory, _current, _length);

@@ -20,7 +20,8 @@ public static unsafe class NativeMemoryMarshal
         => NativeMemory.AlignedFree(ptr);
 
     [Pure]
-    public static T AllocObject<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>() where T : class
+    public static T AllocObject<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] T>()
+        where T : class
     {
         EnsureAllocatableType<T>();
 
@@ -33,7 +34,8 @@ public static unsafe class NativeMemoryMarshal
         return ObjectMarshal.ReadObject<T>(memory);
     }
 
-    public static void FreeObject(object obj)
+    public static void FreeObject<T>(T obj)
+        where T : class
     {
         nuint* memory = ObjectMarshal.GetMethodTablePointer<nuint>(obj);
         NativeMemory.AlignedFree(memory - 1);
@@ -41,7 +43,7 @@ public static unsafe class NativeMemoryMarshal
 
     private static void EnsureAllocatableType<T>() where T : allows ref struct
     {
-        if (typeof(T).IsArray || typeof(T) == typeof(string) || typeof(T).IsInterface)
+        if (typeof(T).IsArray || typeof(T) == typeof(string) || typeof(T).IsInterface || typeof(T).IsAbstract)
         {
             Throw();
         }

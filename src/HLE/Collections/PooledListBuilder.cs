@@ -9,7 +9,7 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Collections;
 
 [SuppressMessage("ReSharper", "ConvertToStaticClass", Justification = "collection builders can't be static")]
-public sealed class PooledListBuilder
+public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
 {
     [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
     private PooledListBuilder() => ThrowHelper.ThrowCalledCollectionBuilderConstructor<PooledListBuilder>();

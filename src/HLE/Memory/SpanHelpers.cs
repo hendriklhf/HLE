@@ -15,11 +15,11 @@ public static partial class SpanHelpers
             typeof(T) != typeof(long) && typeof(T) != typeof(ulong) &&
             typeof(T) != typeof(nint) && typeof(T) != typeof(nuint))
         {
-            ThrowInvalidIntegerType<T>();
+            ThrowInvalidIntegerType();
         }
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowInvalidIntegerType<T>() => throw new NotSupportedException($"{typeof(T)} is not a valid integer type.");
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowInvalidIntegerType() => throw new NotSupportedException($"{typeof(T)} is not a valid integer type.");
+    }
 }

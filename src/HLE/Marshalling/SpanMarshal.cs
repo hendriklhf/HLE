@@ -77,16 +77,16 @@ public static unsafe class SpanMarshal
             return ref arrayMethodTable;
         }
 
-        ThrowCantGetMethodTableOfUnknownType<TSpanElement>(); // finding the MemoryManager is impossible
+        ThrowCantGetMethodTableOfUnknownType(); // finding the MemoryManager is impossible
         return ref Unsafe.NullRef<byte>();
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowCantGetMethodTableOfUnknownType<TSpanElement>() => throw new InvalidOperationException(
-        $"The {typeof(Span<TSpanElement>)} is backed by an unknown type or native memory. " +
-        $"It's not possible to convert it to a {typeof(Span<TSpanElement>)}"
-    );
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowCantGetMethodTableOfUnknownType() => throw new InvalidOperationException(
+            $"The {typeof(Span<TSpanElement>)} is backed by an unknown type or native memory. " +
+            $"It's not possible to convert it to a {typeof(Span<TSpanElement>)}"
+        );
+    }
 
     /// <summary>
     /// Returns the <see cref="Span{T}"/> that has been passed in. The method can be used to avoid a compiler error,
@@ -127,6 +127,6 @@ public static unsafe class SpanMarshal
     public static T[] AsArray<T>(ReadOnlySpan<T> span) => AsArray(ref MemoryMarshal.GetReference(span));
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static T[] AsArray<T>(ref T firstElement) => UnsafeIL.AsArray(ref firstElement);
 }

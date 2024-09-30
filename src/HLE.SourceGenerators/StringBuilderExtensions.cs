@@ -34,6 +34,8 @@ public static class StringBuilderExtensions
                 return builder.Append(value);
         }
 
+        builder.EnsureCapacity(builder.Length + count + value.Length * count);
+
         int length = count - 1;
         for (int i = 0; i < length; i++)
         {
@@ -45,6 +47,13 @@ public static class StringBuilderExtensions
 
     public static StringBuilder Append(this StringBuilder builder, string str, int count)
     {
+        if (count == 0)
+        {
+            return builder;
+        }
+
+        builder.EnsureCapacity(builder.Length + count * str.Length);
+
         for (int i = 0; i < count; i++)
         {
             builder.Append(str);

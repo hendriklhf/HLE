@@ -31,6 +31,8 @@ public static unsafe partial class SpanHelpers
         }
 
     CheckByteCount:
+        // casting to ulong to have a consistent size across 32 and 64 bit processes,
+        // as cases expect a 64-bit integer
         switch (BitOperations.LeadingZeroCount((ulong)byteCount))
         {
             case <= 47: // >= 65536

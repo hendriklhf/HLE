@@ -50,7 +50,7 @@ public sealed class SingleCharStringPoolGenerator : IIncrementalGenerator
             cachedTokenStrings[i] = $"\"\\u{i:x4}\"";
         }
 
-        StringBuilder sourceBuilder = new();
+        StringBuilder sourceBuilder = new(amountOfCachedSingleCharStrings * 12);
         sourceBuilder.AppendLine("using System;").AppendLine();
         sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
         sourceBuilder.AppendLine("public static partial class SingleCharStringPool").AppendLine("{");

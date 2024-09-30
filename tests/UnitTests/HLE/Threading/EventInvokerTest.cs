@@ -11,7 +11,7 @@ public sealed class EventInvokerTest
 {
     public static TheoryData<int> TargetCountParameters { get; } = TheoryDataHelpers.CreateRange(0, Environment.ProcessorCount * 2);
 
-    private int _counter;
+    private volatile int _counter;
 
     [Theory]
     [MemberData(nameof(TargetCountParameters))]

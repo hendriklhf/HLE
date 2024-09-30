@@ -207,16 +207,19 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
     }
 
     [Pure]
-    public int CompareTo(object? obj) => obj switch
+    public int CompareTo(object? obj)
     {
-        null => 1,
-        UnitPrefix other => CompareTo(other),
-        _ => ThrowInvalidArgumentType(nameof(obj))
-    };
+        return obj switch
+        {
+            null => 1,
+            UnitPrefix other => CompareTo(other),
+            _ => ThrowInvalidArgumentType(nameof(obj))
+        };
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static int ThrowInvalidArgumentType(string paramName) => throw new ArgumentException("Invalid argument type.", paramName);
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static int ThrowInvalidArgumentType(string paramName) => throw new ArgumentException("Invalid argument type.", paramName);
+    }
 
     [Pure]
     public override int GetHashCode() => HashCode.Combine(Name, Symbol, Value);

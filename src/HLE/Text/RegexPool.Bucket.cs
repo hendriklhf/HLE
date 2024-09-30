@@ -23,7 +23,7 @@ public sealed partial class RegexPool
         {
             lock (_lock)
             {
-                InlineArrayHelpers.AsSpan<Regexes, Regex?>(ref _regexes, Regexes.Length).Clear();
+                InlineArrayHelpers.AsSpan<Regexes, Regex?>(ref _regexes).Clear();
             }
         }
 
@@ -118,7 +118,7 @@ public sealed partial class RegexPool
         /// </summary>
         /// <param name="indexOfMatchingRegex">The index of the matching regex in <see cref="_regexes"/>.</param>
         private void MoveRegexByFourIndices(int indexOfMatchingRegex)
-            => InlineArrayHelpers.AsSpan<Regexes, Regex?>(ref _regexes, Regexes.Length).MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
+            => InlineArrayHelpers.AsSpan<Regexes, Regex?>(ref _regexes).MoveItem(indexOfMatchingRegex, indexOfMatchingRegex - 4);
 
         public bool Contains(Regex regex) => TryGet(regex.ToString(), regex.Options, regex.MatchTimeout, out _);
 

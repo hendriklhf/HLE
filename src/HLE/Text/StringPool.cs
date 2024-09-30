@@ -218,7 +218,7 @@ public sealed partial class StringPool : IEquatable<StringPool>
         return Contains(charBuffer[..charsWritten]);
     }
 
-    private Span<Bucket> GetBuckets() => InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets, Buckets.Length);
+    private Span<Bucket> GetBuckets() => InlineArrayHelpers.AsSpan<Buckets, Bucket>(ref _buckets);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref Bucket GetBucket(ReadOnlySpan<char> str)

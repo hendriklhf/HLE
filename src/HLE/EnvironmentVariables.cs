@@ -111,6 +111,7 @@ public readonly partial struct EnvironmentVariables :
     bool IReadOnlyDictionary<string, string>.TryGetValue(string key, [MaybeNullWhen(false)] out string value)
         => _environmentVariables.TryGetValue(key, out value);
 
+    [Pure]
     public Enumerator GetEnumerator() => new(this);
 
     IEnumerator<EnvironmentVariable> IEnumerable<EnvironmentVariable>.GetEnumerator() => GetEnumerator();

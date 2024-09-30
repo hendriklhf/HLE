@@ -8,37 +8,35 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using HLE.Marshalling.Unix;
+using HLE.Text;
 
 namespace HLE;
 
 [SupportedOSPlatform("linux")]
 [SupportedOSPlatform("macos")]
-internal sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<UnixEnvironmentVariableProvider>
+internal sealed unsafe partial class UnixEnvironmentVariableProvider : IEnvironmentVariableProvider, IEquatable<UnixEnvironmentVariableProvider>
 {
     [Pure]
-    public unsafe EnvironmentVariables GetEnvironmentVariables()
+    public EnvironmentVariables GetEnvironmentVariables()
     {
-        Dictionary<string, string> result = new(64);
-
-        nint environment = Interop.GetEnvironment();
-        if (environment == 0)
-        {
-            return EnvironmentVariables.Empty;
-        }
-
-        const byte EqualsSign = (byte)'=';
-
+        Variable* environment = (Variable*)Interop.GetEnvironment();
         try
         {
-            nint env = environment;
-            byte* entryPtr = *(byte**)env;
-            while (entryPtr != null)
+            if (environment == null)
             {
-                ReadOnlySpan<byte> entry = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(entryPtr);
+                return EnvironmentVariables.Empty;
+            }
+
+            const byte EqualsSign = (byte)'=';
+
+            Dictionary<string, string> result = new(64);
+            Variable* variables = environment;
+            while (variables->Value != null)
+            {
+                ReadOnlySpan<byte> entry = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(variables->Value);
                 if (entry.Length < 2)
                 {
-                    env += sizeof(nint);
-                    entryPtr = *(byte**)env;
+                    variables++;
                     continue;
                 }
 
@@ -46,21 +44,20 @@ internal sealed class UnixEnvironmentVariableProvider : IEnvironmentVariableProv
                 ReadOnlySpan<byte> key = entry[..indexOfEquals];
                 ReadOnlySpan<byte> value = entry[(indexOfEquals + 1)..];
 
-                string keyString = Encoding.UTF8.GetString(key);
-                string valueString = Encoding.UTF8.GetString(value);
+                string keyString = StringPool.Shared.GetOrAdd(key, Encoding.UTF8);
+                string valueString = StringPool.Shared.GetOrAdd(value, Encoding.UTF8);
 
                 result.Add(keyString, valueString);
 
-                env += sizeof(nint);
-                entryPtr = *(byte**)env;
+                variables++;
             }
+
+            return new(result.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
         }
         finally
         {
             Interop.FreeEnvironment(environment);
         }
-
-        return new(result.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
     }
 
     [Pure]

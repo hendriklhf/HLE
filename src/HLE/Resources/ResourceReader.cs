@@ -62,12 +62,12 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposab
         }
 
         return resource;
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowResourceDoesntExist(ReadOnlySpan<char> resourcePath)
-        => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowResourceDoesntExist(ReadOnlySpan<char> resourcePath)
+            => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
+    }
 
     public bool TryRead(ref PooledInterpolatedStringHandler resourcePath, out Resource resource)
     {
@@ -148,6 +148,16 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposab
         _resourceMap.AddOrSet(resourcePath, resource);
         AddResource(resource);
         return true;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowStreamLengthExceedsInt32()
+            => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowStreamLengthExceedsMaxArrayLength()
+            => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
@@ -159,16 +169,6 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposab
         _handles ??= [];
         _handles.Add(handle);
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowStreamLengthExceedsInt32()
-        => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowStreamLengthExceedsMaxArrayLength()
-        => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
 
     [Pure]
     public Enumerator GetEnumerator() => new(_resources);

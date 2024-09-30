@@ -16,9 +16,9 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     public string Format<T>() => Format(typeof(T));
 
     [Pure]
-    [SkipLocalsInit]
     public string Format(Type type) => _cache.TryGetValue(type, out string? str) ? str : FormatCore(type);
 
+    [SkipLocalsInit]
     private string FormatCore(Type type)
     {
         // ReSharper disable once NotDisposedResource

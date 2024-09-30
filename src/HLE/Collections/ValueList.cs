@@ -214,10 +214,10 @@ public ref struct ValueList<T> :
     {
         Debug.Assert(neededSize >= 0);
 
-        int count = Count;
         Span<T> oldBuffer = GetBuffer();
         int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
         Span<T> newBuffer = ArrayPool<T>.Shared.Rent(newSize);
+        int count = Count;
         if (count != 0)
         {
             SpanHelpers.Copy(oldBuffer[..count], newBuffer);
@@ -278,23 +278,29 @@ public ref struct ValueList<T> :
         }
     }
 
-    public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
+    public void AddRange(List<T> items)
+        => AddRange(ref ListMarshal.GetReference(items), items.Count);
 
-    public void AddRange(T[] items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(T[] items)
+        => AddRange(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
 
-    public void AddRange(scoped Span<T> items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(scoped Span<T> items)
+        => AddRange(ref MemoryMarshal.GetReference(items), items.Length);
 
     public void AddRange(params scoped ReadOnlySpan<T> items)
+        => AddRange(ref MemoryMarshal.GetReference(items), items.Length);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void AddRange(ref T items, int length)
     {
-        if (items.Length == 0)
+        if (length == 0)
         {
             return;
         }
 
         int count = Count;
-        ref T destination = ref GetDestination(items.Length);
-        SpanHelpers.Copy(items, ref destination);
-        Count = count + items.Length;
+        SpanHelpers.Memmove(ref GetDestination(length), ref items, (uint)length);
+        Count = count + length;
     }
 
     /// <summary>

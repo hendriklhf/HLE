@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
@@ -32,13 +33,14 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) : IEquatable<Unsafe
 
     public void Write(T item) => Unsafe.Add(ref _buffer, Count++) = item;
 
+    public void Write(List<T> items) => Write(ref ListMarshal.GetReference(items), items.Count);
+
     public void Write(T[] items) => Write(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
 
     public void Write(scoped Span<T> items) => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
     public void Write(params scoped ReadOnlySpan<T> items) => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(scoped ref T source, int count)
     {
         ref T destination = ref Unsafe.Add(ref _buffer, Count);
@@ -46,6 +48,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) : IEquatable<Unsafe
         Count += count;
     }
 
+    [Pure]
     public override readonly string ToString()
     {
         if (typeof(T) != typeof(char))

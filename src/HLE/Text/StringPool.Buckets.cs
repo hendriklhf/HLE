@@ -15,6 +15,6 @@ public sealed partial class StringPool
     {
         private Bucket _bucket;
 
-        public const int Length = DefaultPoolCapacity;
+        private const int Length = DefaultPoolCapacity;
     }
 }

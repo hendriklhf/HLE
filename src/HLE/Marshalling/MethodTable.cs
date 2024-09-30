@@ -22,8 +22,6 @@ public readonly struct MethodTable
 
     public bool IsInterface => (_flags & CategoryMask) == IsInterfaceFlag;
 
-    public bool IsReferenceOrContainsReferences => !IsValueType || ContainsGCPointers;
-
     public bool HasComponentSize => (_flags & HasComponentSizeFlag) != 0;
 
     [FieldOffset(0)]

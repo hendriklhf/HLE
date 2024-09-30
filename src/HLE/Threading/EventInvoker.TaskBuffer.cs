@@ -18,6 +18,6 @@ public static partial class EventInvoker
     {
         private Task _task;
 
-        public const int Length = 8;
+        private const int Length = 8;
     }
 }

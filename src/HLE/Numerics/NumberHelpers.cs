@@ -51,6 +51,7 @@ public static class NumberHelpers
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T ParsePositiveNumber<T>(ReadOnlySpan<char> number) where T : INumberBase<T>
     {
         T result = T.Zero;
@@ -100,10 +101,17 @@ public static class NumberHelpers
             return min;
         }
 
+        if (min >= T.Zero && max == T.Zero)
+        {
+            return T.Zero;
+        }
+
         if (min == T.Zero && number >= T.Zero)
         {
             return number % max;
         }
+
+        // TODO: can be special cased for min and max both having popcnt == 1
 
         if (typeof(T) == typeof(sbyte))
         {
@@ -164,14 +172,16 @@ public static class NumberHelpers
             typeof(T) != typeof(UInt128) && typeof(T) != typeof(Int128) &&
             typeof(T) != typeof(char))
         {
-            ThrowNumberTypeNotSupported<T>();
+            ThrowNumberTypeNotSupported();
         }
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowNumberTypeNotSupported<T>()
-        => throw new NotSupportedException($"The type {typeof(T)} is not supported.");
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowNumberTypeNotSupported()
+            => throw new NotSupportedException($"The type {typeof(T)} is not supported.");
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

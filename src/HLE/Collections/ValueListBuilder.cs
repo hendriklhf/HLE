@@ -18,7 +18,7 @@ public sealed class ValueListBuilder
     [MustDisposeResource]
     public static ValueList<T> Create<T>(IEnumerable<T> items)
     {
-        ValueList<T> list = [];
+        ValueList<T> list = new();
         list.AddRange(items);
         return list;
     }

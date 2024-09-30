@@ -16,7 +16,11 @@ internal static class ThrowHelper
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowObjectDisposedException(Type type) => throw new ObjectDisposedException(type.FullName);
+    public static void ThrowObjectDisposedException(Type type)
+    {
+        Debug.Assert(type.IsAssignableTo(typeof(IDisposable)));
+        throw new ObjectDisposedException(type.FullName);
+    }
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -33,7 +37,7 @@ internal static class ThrowHelper
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowCalledCollectionBuilderConstructor<TCollectionBuilder>()
-        => throw new NotSupportedException($"{typeof(TCollectionBuilder)} should not be instantiated. It only has static method that are used for building collections.");
+        => throw new NotSupportedException($"{typeof(TCollectionBuilder)} should not be instantiated. It only has static method that are used by the compiler for building collections.");
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -42,7 +46,7 @@ internal static class ThrowHelper
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowOperatingSystemNotSupported()
-        => throw new NotSupportedException("The current operating system is not yet supported.");
+        => throw new NotSupportedException("The current operating system is not supported.");
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -131,6 +131,11 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public void Append(char c, int count)
     {
+        if (count == 0)
+        {
+            return;
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
         MemoryMarshal.CreateSpan(ref GetDestination(count), count).Fill(c);
@@ -209,11 +214,18 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
             if (++countOfFailedTries >= MaximumFormattingTries)
             {
-                ThrowMaximumFormatTriesExceeded<T>(countOfFailedTries);
+                ThrowMaximumFormatTriesExceeded(countOfFailedTries);
             }
         }
 
         Advance(charsWritten);
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowMaximumFormatTriesExceeded(int countOfFailedTries)
+            => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
     }
 
     public static bool TryFormat<T>(T value, Span<char> destination, out int charsWritten, string? format)
@@ -263,11 +275,6 @@ public sealed partial class PooledStringBuilder(int capacity) :
         [StringSyntax(StringSyntaxAttribute.EnumFormat)]
         ReadOnlySpan<char> format = default
     );
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumFormatTriesExceeded<T>(int countOfFailedTries)
-        => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
 
     public void Clear() => Length = 0;
 

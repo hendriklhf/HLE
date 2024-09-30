@@ -32,9 +32,14 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
         }
 
         ReadOnlySpan<TEnum> values = AsSpan();
-        ref TEnum valuesReference = ref MemoryMarshal.GetReference(values);
-        ref TUnderlyingType underlyingTypeReference = ref Unsafe.As<TEnum, TUnderlyingType>(ref valuesReference);
-        return MemoryMarshal.CreateReadOnlySpan(ref underlyingTypeReference, Count);
+        return Unsafe.As<ReadOnlySpan<TEnum>, ReadOnlySpan<TUnderlyingType>>(ref values);
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
+            => throw new InvalidOperationException(
+                $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type of {enumType}."
+            );
     }
 
     [Pure]
@@ -64,11 +69,4 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
                 return false;
         }
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
-        => throw new InvalidOperationException(
-            $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type of {enumType}."
-        );
 }

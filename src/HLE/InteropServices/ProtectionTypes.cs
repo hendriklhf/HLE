@@ -1,6 +1,6 @@
 using System;
 
-namespace HLE.Marshalling.Windows;
+namespace HLE.InteropServices;
 
 [Flags]
 public enum ProtectionTypes

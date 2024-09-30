@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using HLE.Marshalling;
@@ -71,8 +72,9 @@ public sealed unsafe partial class MethodTableTest
     public void IsReferenceOrContainsReferences(MethodTableTypeParameter parameter)
     {
         MethodTable* mt = ObjectMarshal.GetMethodTableFromType(parameter.Type);
-        bool expected = (bool)typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences))!.MakeGenericMethod(parameter.Type).Invoke(null, null)!;
-        Assert.Equal(expected, mt->IsReferenceOrContainsReferences);
+        MethodInfo runtimeHelpersIsReferenceOrContainsReference = typeof(RuntimeHelpers).GetMethod(nameof(RuntimeHelpers.IsReferenceOrContainsReferences))!.MakeGenericMethod(parameter.Type);
+        bool expected = (bool)runtimeHelpersIsReferenceOrContainsReference.Invoke(null, null)!;
+        Assert.Equal(expected, ObjectMarshal.IsReferenceOrContainsReferences(mt));
     }
 
     [Theory]

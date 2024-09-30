@@ -17,11 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <PackageReference Include="JetBrains.Annotations"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations"/>
+    <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
   </ItemGroup>
 
 </Project>

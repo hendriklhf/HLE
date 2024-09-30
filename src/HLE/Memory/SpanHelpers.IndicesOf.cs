@@ -66,7 +66,7 @@ public static partial class SpanHelpers
 
         if (destination.Length < span.Length)
         {
-            ThrowDestinationTooShort<T>();
+            ThrowDestinationTooShort();
         }
 
         ref T reference = ref MemoryMarshal.GetReference(span);
@@ -79,6 +79,11 @@ public static partial class SpanHelpers
             sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), span.Length, Unsafe.As<T, ulong>(ref item), ref destinationRef),
             _ => IndicesOfNonOptimizedFallback(span, item, destination)
         };
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowDestinationTooShort()
+            => throw new InvalidOperationException($"The destination needs to be at least as long as the {nameof(Span<T>)} of items provided.");
     }
 
     public static int IndicesOf<T>(ref T items, int length, T item, ref int destination) where T : unmanaged, IEquatable<T>
@@ -203,9 +208,4 @@ public static partial class SpanHelpers
 
         return indicesLength;
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDestinationTooShort<T>()
-        => throw new InvalidOperationException($"The destination needs to be at least as long as the {nameof(Span<T>)} of items provided.");
 }

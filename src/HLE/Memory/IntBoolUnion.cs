@@ -71,12 +71,14 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
         {
             ThrowIntegerTypeNotSupported();
         }
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowIntegerTypeNotSupported()
-        => throw new NotSupportedException($"Only {typeof(sbyte)}, {typeof(short)}, {typeof(int)} and {typeof(long)} are supported.");
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowIntegerTypeNotSupported()
+            => throw new NotSupportedException($"Only {typeof(sbyte)}, {typeof(short)}, {typeof(int)} and {typeof(long)} are supported.");
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe T GetIntegerMask()

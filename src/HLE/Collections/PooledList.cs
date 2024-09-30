@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 using HLE.Memory;
 using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -12,10 +13,9 @@ using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
-[method: MustDisposeResource]
 [DebuggerDisplay("Count = {Count}")]
 [CollectionBuilder(typeof(PooledListBuilder), nameof(PooledListBuilder.Create))]
-public sealed class PooledList<T>(int capacity) :
+public sealed class PooledList<T> :
     IList<T>,
     ICopyable<T>,
     IEquatable<PooledList<T>>,
@@ -57,12 +57,13 @@ public sealed class PooledList<T>(int capacity) :
 
     bool ICollection<T>.IsReadOnly => false;
 
-    internal T[]? _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
+    internal T[]? _buffer;
 
     [MustDisposeResource]
-    public PooledList() : this(0)
-    {
-    }
+    public PooledList() => _buffer = [];
+
+    [MustDisposeResource]
+    public PooledList(int capacity) => _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
 
     [MustDisposeResource]
     public PooledList(ReadOnlySpan<T> items) : this(items.Length)
@@ -238,21 +239,28 @@ public sealed class PooledList<T>(int capacity) :
         }
     }
 
-    public void AddRange(List<T> items) => AddRange((ReadOnlySpan<T>)CollectionsMarshal.AsSpan(items));
+    public void AddRange(List<T> items)
+        => AddRange(ref ListMarshal.GetReference(items), items.Count);
 
-    public void AddRange(T[] items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(T[] items)
+        => AddRange(ref MemoryMarshal.GetArrayDataReference(items), items.Length);
 
-    public void AddRange(Span<T> items) => AddRange((ReadOnlySpan<T>)items);
+    public void AddRange(Span<T> items)
+        => AddRange(ref MemoryMarshal.GetReference(items), items.Length);
 
     public void AddRange(params ReadOnlySpan<T> items)
+        => AddRange(ref MemoryMarshal.GetReference(items), items.Length);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void AddRange(ref T items, int length)
     {
-        if (items.Length == 0)
+        if (length == 0)
         {
             return;
         }
 
-        SpanHelpers.Copy(items, ref GetDestination(items.Length));
-        Count += items.Length;
+        SpanHelpers.Memmove(ref GetDestination(length), ref items, (uint)length);
+        Count += length;
     }
 
     /// <summary>
@@ -323,8 +331,7 @@ public sealed class PooledList<T>(int capacity) :
         GrowIfNeeded(1);
 
         int count = Count;
-        AssertBufferNotNull();
-        ref T buffer = ref MemoryMarshal.GetArrayDataReference(_buffer);
+        ref T buffer = ref MemoryMarshal.GetArrayDataReference(GetBuffer());
         ref T destination = ref Unsafe.Add(ref buffer, index);
 
         if (index != count)

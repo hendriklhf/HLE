@@ -331,10 +331,11 @@ public static class RandomNumberGeneratorExtensions
     public static void Fill<T>(this RandomNumberGenerator random, List<T> list) where T : unmanaged
         => random.Write(ref ListMarshal.GetReference(list), (uint)list.Count);
 
+    [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
     public static unsafe void Fill(this RandomNumberGenerator random, Array array)
     {
         Type elementType = array.GetType().GetElementType()!;
-        if (ObjectMarshal.GetMethodTableFromType(elementType)->IsReferenceOrContainsReferences)
+        if (ObjectMarshal.IsReferenceOrContainsReferences(elementType))
         {
             ThrowArrayElementTypeMustBeUnmanaged();
         }
@@ -342,6 +343,13 @@ public static class RandomNumberGeneratorExtensions
         ushort componentSize = ObjectMarshal.GetMethodTable(array)->ComponentSize;
         ref byte reference = ref MemoryMarshal.GetArrayDataReference(array);
         random.Write(ref reference, checked(componentSize * nuint.CreateChecked(array.LongLength)));
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowArrayElementTypeMustBeUnmanaged()
+            => throw new InvalidOperationException("The array element type must be an unmanaged type.");
     }
 
     public static void Fill<T>(this RandomNumberGenerator random, T[] array) where T : unmanaged
@@ -349,11 +357,6 @@ public static class RandomNumberGeneratorExtensions
 
     public static void Fill<T>(this RandomNumberGenerator random, Span<T> span) where T : unmanaged
         => random.Write(ref MemoryMarshal.GetReference(span), (uint)span.Length);
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowArrayElementTypeMustBeUnmanaged()
-        => throw new InvalidOperationException("The array element type must be an unmanaged type.");
 
     [Pure]
     public static bool GetBool(this RandomNumberGenerator random)

@@ -34,7 +34,7 @@ public static partial class EventInvoker
     private static Task InvokeMultiTargetAsync<TSender>(AsyncEventHandler<TSender> eventHandler, TSender sender)
     {
         TaskBuffer buffer = default;
-        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer, TaskBuffer.Length));
+        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
         foreach (AsyncEventHandler<TSender> target in Delegate.EnumerateInvocationList(eventHandler))
         {
             tasks.Add(target(sender));
@@ -47,8 +47,8 @@ public static partial class EventInvoker
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
     private static Task InvokeMultiTargetAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs> eventHandler, TSender sender, TEventArgs args)
     {
-        TaskBuffer buffer = default;
-        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer, TaskBuffer.Length));
+        Unsafe.SkipInit(out TaskBuffer buffer);
+        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
         foreach (AsyncEventHandler<TSender, TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {
             tasks.Add(target(sender, args));

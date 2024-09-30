@@ -99,9 +99,21 @@ public readonly unsafe ref struct CopyWorker<T> : IEquatable<CopyWorker<T>>
 
         ref T destinationReference = ref Unsafe.Add(ref ListMarshal.GetReference(destination), offset);
         CopyTo(ref destinationReference);
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowCopiedItemsWouldExceedMaxArrayLength()
+            => throw new InvalidOperationException($"The amount of items to be copied into the {typeof(List<T>)} would exceed " +
+                                                   "the maximum array length, thus can't be copied to the destination.");
     }
 
-    public void CopyTo(T[] destination, int offset = 0) => CopyTo(destination.AsSpan(offset));
+    public void CopyTo(T[] destination, int offset = 0)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)offset, (uint)destination.Length);
+        CopyTo(destination.AsSpan(offset));
+    }
 
     public void CopyTo(Memory<T> destination) => CopyTo(destination.Span);
 
@@ -114,22 +126,18 @@ public readonly unsafe ref struct CopyWorker<T> : IEquatable<CopyWorker<T>>
         }
 
         CopyTo(ref MemoryMarshal.GetReference(destination));
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowDestinationTooShort()
+            => throw new InvalidOperationException("The destination length is shorter than the source length.");
     }
 
     public void CopyTo(scoped ref T destination) => SpanHelpers.Memmove(ref destination, ref _source, _length);
 
     public void CopyTo(T* destination) => CopyTo(ref Unsafe.AsRef<T>(destination));
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDestinationTooShort()
-        => throw new InvalidOperationException("The destination length is shorter than the source length.");
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowCopiedItemsWouldExceedMaxArrayLength()
-        => throw new InvalidOperationException($"The amount of items to be copied into the {typeof(List<T>)} would exceed " +
-                                               "the maximum array length, thus can't be copied to the destination.");
 
     [Pure]
     public bool Equals(scoped CopyWorker<T> other) => Unsafe.AreSame(ref _source, ref other._source) && _length == other._length;

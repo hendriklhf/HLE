@@ -118,14 +118,16 @@ public sealed class LazyString :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref char GetReference()
     {
-        if (_chars is not null)
+        char[]? chars = _chars;
+        if (chars is not null)
         {
-            return ref MemoryMarshal.GetArrayDataReference(_chars);
+            return ref MemoryMarshal.GetArrayDataReference(chars);
         }
 
-        if (_string is not null)
+        string? str = _string;
+        if (str is not null)
         {
-            return ref StringMarshal.GetReference(_string);
+            return ref StringMarshal.GetReference(str);
         }
 
         ThrowHelper.ThrowUnreachableException();
@@ -143,14 +145,16 @@ public sealed class LazyString :
             return ReadOnlyMemory<char>.Empty;
         }
 
-        if (_chars is not null)
+        char[]? chars = _chars;
+        if (chars is not null)
         {
-            return _chars.AsMemory();
+            return chars.AsMemory();
         }
 
-        if (_string is not null)
+        string? str = _string;
+        if (str is not null)
         {
-            return _string.AsMemory();
+            return str.AsMemory();
         }
 
         ThrowHelper.ThrowUnreachableException();
@@ -198,9 +202,10 @@ public sealed class LazyString :
     [Pure]
     public string ToString(bool poolString)
     {
-        if (_string is not null)
+        string? s = _string;
+        if (s is not null)
         {
-            return _string;
+            return s;
         }
 
         if (Length == 0)
@@ -261,6 +266,7 @@ public sealed class LazyString :
 
     void ICollection<char>.Clear() => throw new NotSupportedException();
 
+    [Pure]
     public bool Contains(char item) => AsSpan().Contains(item);
 
     bool ICollection<char>.Remove(char item) => throw new NotSupportedException();

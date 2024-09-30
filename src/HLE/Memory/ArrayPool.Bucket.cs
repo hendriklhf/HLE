@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace HLE.Memory;
 
@@ -12,14 +13,15 @@ public sealed partial class ArrayPool<T>
     {
         internal readonly T[][] _stack = GC.AllocateArray<T[]>(capacity, true);
         private readonly int _arrayLength = arrayLength;
-        private uint _count;
+        internal uint _count;
+        internal readonly Lock _lock = new();
 
         [Pure]
         public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength, true);
 
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
-            lock (_stack)
+            lock (_lock)
             {
                 uint count = _count;
                 if (count == 0)
@@ -38,7 +40,7 @@ public sealed partial class ArrayPool<T>
 
         public bool TryRentExact(int length, [MaybeNullWhen(false)] out T[] array)
         {
-            lock (_stack)
+            lock (_lock)
             {
                 uint count = _count;
                 if (count == 0)
@@ -69,7 +71,7 @@ public sealed partial class ArrayPool<T>
 
         public void Return(T[] array, bool clearArray)
         {
-            lock (_stack)
+            lock (_lock)
             {
                 uint count = _count;
                 if (count == _stack.Length)
@@ -85,7 +87,7 @@ public sealed partial class ArrayPool<T>
 
         public void Clear()
         {
-            lock (_stack)
+            lock (_lock)
             {
                 Array.Clear(_stack);
                 _count = 0;

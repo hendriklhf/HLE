@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -25,9 +24,13 @@ public static class InlineArrayHelpers
     public static Span<TElement> AsSpan<TArray, TElement>(ref TArray array, int length) where TArray : struct
         => MemoryMarshal.CreateSpan(ref GetReference<TArray, TElement>(ref array), length);
 
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe Span<TElement> AsSpan<TArray, TElement>(ref TArray array) where TArray : struct
+        => MemoryMarshal.CreateSpan(ref GetReference<TArray, TElement>(ref array), sizeof(TArray) / sizeof(TElement));
+
+#pragma warning disable
     [Conditional("DEBUG")]
-    [SuppressMessage("Trimming", "IL2090:\'this\' argument does not satisfy \'DynamicallyAccessedMembersAttribute\' in call to target method. The generic parameter of the source method or type does not have matching annotations.")]
-    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
     private static void ValidateGenericArguments<TArray, TElement>()
         where TArray : allows ref struct
         where TElement : allows ref struct
@@ -37,4 +40,5 @@ public static class InlineArrayHelpers
         Debug.Assert(fields.Length == 1);
         Debug.Assert(fields[0].FieldType == typeof(TElement));
     }
+#pragma warning restore
 }

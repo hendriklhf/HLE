@@ -72,12 +72,14 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
                 ThrowContainsCharMultipleTimes(c);
             }
         }
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowContainsCharMultipleTimes(char c)
-        => throw new InvalidOperationException($"The provided chars contain char '{c}' multiple times.");
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowContainsCharMultipleTimes(char c)
+            => throw new InvalidOperationException($"The provided chars contain char '{c}' multiple times.");
+    }
 
     public bool Equals(StringNumberFormat other) => Chars.SequenceEqual(other._chars);
 

@@ -170,10 +170,14 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public void Append(char c, int count)
     {
+        if (count == 0)
+        {
+            return;
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
-        ref char destination = ref GetDestination(count);
-        MemoryMarshal.CreateSpan(ref destination, count).Fill(c);
+        MemoryMarshal.CreateSpan(ref GetDestination(count), count).Fill(c);
         Length += count;
     }
 
@@ -251,11 +255,16 @@ public unsafe ref partial struct ValueStringBuilder :
 
             if (++countOfFailedTries >= MaximumFormattingTries)
             {
-                ThrowMaximumFormatTriesExceeded<T>(countOfFailedTries);
+                ThrowMaximumFormatTriesExceeded(countOfFailedTries);
             }
         }
 
         Advance(charsWritten);
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowMaximumFormatTriesExceeded(int countOfFailedTries)
+            => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
     }
 
     public static bool TryFormat<T>(T value, Span<char> destination, out int charsWritten, string? format)
@@ -306,11 +315,6 @@ public unsafe ref partial struct ValueStringBuilder :
         [StringSyntax(StringSyntaxAttribute.EnumFormat)]
         ReadOnlySpan<char> format = default
     );
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowMaximumFormatTriesExceeded<T>(int countOfFailedTries)
-        => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
 
     public void Clear() => Length = 0;
 

@@ -25,6 +25,18 @@ public sealed partial class ObjectPool<T>
             }
 
             ArrayLength = arrayLength;
+
+            return;
+
+            [DoesNotReturn]
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            static void ThrowGenericParameterIsNotArray()
+                => throw new InvalidOperationException($"Generic parameter {typeof(T)} is not a single dimension array type.");
+
+            [DoesNotReturn]
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            static void ThrowGenericParameterIsNotArrayElementType()
+                => throw new InvalidOperationException($"Generic parameter {typeof(TElement)} is not the element type of generic parameter {typeof(T)}");
         }
 
         [Pure]
@@ -46,15 +58,5 @@ public sealed partial class ObjectPool<T>
             TElement[] array = UnsafeIL.As<T, TElement[]>(obj);
             Array.Clear(array);
         }
-
-        [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowGenericParameterIsNotArrayElementType()
-            => throw new InvalidOperationException($"Generic parameter {typeof(TElement)} is not the element type of generic parameter {typeof(T)}");
-
-        [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowGenericParameterIsNotArray()
-            => throw new InvalidOperationException($"Generic parameter {typeof(T)} is not a single dimension array type.");
     }
 }

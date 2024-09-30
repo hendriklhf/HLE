@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using HLE.Collections;
 using HLE.Text;
 using JetBrains.Annotations;
@@ -46,8 +47,13 @@ public sealed unsafe partial class NativeMemory<T> :
     {
         get
         {
-            ThrowIfDisposed();
-            return _memory;
+            nuint memory = _memory;
+            if (memory == 0)
+            {
+                ThrowHelper.ThrowObjectDisposedException<NativeMemory<T>>();
+            }
+
+            return (T*)memory;
         }
     }
 
@@ -63,7 +69,7 @@ public sealed unsafe partial class NativeMemory<T> :
 
     bool ICollection<T>.IsReadOnly => false;
 
-    private T* _memory;
+    private nuint _memory;
 
     public static NativeMemory<T> Empty { get; } = new();
 
@@ -90,7 +96,7 @@ public sealed unsafe partial class NativeMemory<T> :
             ClearMemory((byte*)memory, byteCount);
         }
 
-        _memory = memory;
+        _memory = (nuint)memory;
     }
 
     ~NativeMemory() => DisposeCore();
@@ -103,15 +109,14 @@ public sealed unsafe partial class NativeMemory<T> :
 
     private void DisposeCore()
     {
-        T* memory = _memory;
-        if (memory is null)
+        nuint memory = Interlocked.Exchange(ref _memory, 0);
+        if (memory == 0)
         {
             return;
         }
 
-        Debug.Assert(MemoryHelpers.IsAligned(memory, (uint)sizeof(nuint)));
-        NativeMemory.AlignedFree(memory);
-        _memory = null;
+        Debug.Assert(MemoryHelpers.IsAligned((void*)memory, (uint)sizeof(nuint)));
+        NativeMemory.AlignedFree((void*)memory);
     }
 
     private static void ClearMemory(byte* memory, nuint byteCount)
@@ -132,7 +137,7 @@ public sealed unsafe partial class NativeMemory<T> :
     }
 
     [Pure]
-    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Reference, Length);
+    public Span<T> AsSpan() => new(Pointer, Length);
 
     [Pure]
     public Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
@@ -245,16 +250,7 @@ public sealed unsafe partial class NativeMemory<T> :
 
     bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        if (_memory is null)
-        {
-            ThrowHelper.ThrowObjectDisposedException<NativeMemory<T>>();
-        }
-    }
-
-    public NativeMemoryEnumerator<T> GetEnumerator() => new(_memory, Length);
+    public NativeMemoryEnumerator<T> GetEnumerator() => new((T*)_memory, Length);
 
     // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();

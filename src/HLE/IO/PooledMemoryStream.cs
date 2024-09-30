@@ -29,7 +29,7 @@ public sealed class PooledMemoryStream(int capacity) :
 
     public override bool CanWrite => _buffer is not null;
 
-    public override long Length => _length;
+    public override long Length => (uint)_length;
 
     int ICountable.Count
     {
@@ -54,10 +54,10 @@ public sealed class PooledMemoryStream(int capacity) :
 
     public override long Position
     {
-        get => _position;
+        get => (uint)_position;
         set
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, _length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)value, (uint)_length);
             _position = (int)value;
         }
     }
@@ -112,6 +112,13 @@ public sealed class PooledMemoryStream(int capacity) :
         ArrayPool<byte>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
         _length = length;
+
+        return;
+
+        [DoesNotReturn]
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void ThrowLengthExceedsMaximumArrayLength()
+            => throw new InvalidOperationException("The length exceeds the maximum array length.");
     }
 
     public override long Seek(long offset, SeekOrigin origin)
@@ -124,14 +131,14 @@ public sealed class PooledMemoryStream(int capacity) :
                 return offset;
             case SeekOrigin.Current:
             {
-                long position = _position + offset;
+                long position = (uint)_position + offset;
                 ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)position, (ulong)_length);
                 _position = (int)position;
                 return position;
             }
             case SeekOrigin.End:
             {
-                long position = _length - offset;
+                long position = (uint)_length - offset;
                 ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)position, (ulong)_length);
                 _position = (int)position;
                 return position;
@@ -317,11 +324,6 @@ public sealed class PooledMemoryStream(int capacity) :
 
         return buffer;
     }
-
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowLengthExceedsMaximumArrayLength()
-        => throw new InvalidOperationException("The length exceeds the maximum array length.");
 
     public void CopyTo(List<byte> destination, int offset = 0)
     {
