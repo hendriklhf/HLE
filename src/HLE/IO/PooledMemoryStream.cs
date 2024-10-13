@@ -89,8 +89,8 @@ public sealed class PooledMemoryStream(int capacity) :
             return;
         }
 
-        ArrayPool<byte>.Shared.Return(buffer);
         _buffer = null;
+        ArrayPool<byte>.Shared.Return(buffer);
     }
 
     public override void SetLength(long value)

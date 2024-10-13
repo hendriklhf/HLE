@@ -440,7 +440,7 @@ public sealed class VerticalStringArray :
         }
 
         int requiredBufferLength = stringLength * Length;
-        char[] newBuffer = new char[requiredBufferLength];
+        char[] newBuffer = GC.AllocateUninitializedArray<char>(requiredBufferLength);
         char[] oldBuffer = _chars;
         SpanHelpers.Copy(oldBuffer, newBuffer);
         ArrayPool<char>.Shared.Return(oldBuffer);

@@ -3,12 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Marshalling;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -53,7 +52,6 @@ public readonly unsafe struct NativeString :
 
     public NativeString() => _memory = NativeMemory<byte>.Empty;
 
-    [MustDisposeResource]
     public NativeString(int length)
     {
         if (length == 0)
@@ -79,7 +77,6 @@ public readonly unsafe struct NativeString :
         _memory = memory;
     }
 
-    [MustDisposeResource]
     public NativeString(ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)

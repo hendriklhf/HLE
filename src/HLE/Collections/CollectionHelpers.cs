@@ -4,12 +4,11 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 #if !TEST_RUN
 using System.Linq;
 #endif
@@ -22,8 +21,7 @@ namespace HLE.Collections;
 public static partial class CollectionHelpers
 {
     [Pure]
-    [LinqTunnel]
-    public static ReplaceEnumerable<T> Replace<T>([NoEnumeration] this IEnumerable<T> enumerable, Func<T, bool> predicate, T replacement)
+    public static ReplaceEnumerable<T> Replace<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate, T replacement)
         => new(enumerable, predicate, replacement);
 
     public static void Replace<T>(this List<T> list, Func<T, bool> predicate, T replacement)
@@ -91,7 +89,7 @@ public static partial class CollectionHelpers
         }
     }
 
-    public static bool TryGetReadOnlySpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out ReadOnlySpan<T> span)
+    public static bool TryGetReadOnlySpan<T>(this IEnumerable<T> enumerable, out ReadOnlySpan<T> span)
     {
         if (typeof(T) == typeof(char) && enumerable is string str)
         {
@@ -123,7 +121,7 @@ public static partial class CollectionHelpers
         }
     }
 
-    public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out Span<T> span)
+    public static bool TryGetSpan<T>(this IEnumerable<T> enumerable, out Span<T> span)
     {
         switch (enumerable)
         {
@@ -142,7 +140,7 @@ public static partial class CollectionHelpers
         }
     }
 
-    public static bool TryGetReadOnlyMemory<T>([NoEnumeration] this IEnumerable<T> enumerable, out ReadOnlyMemory<T> memory)
+    public static bool TryGetReadOnlyMemory<T>(this IEnumerable<T> enumerable, out ReadOnlyMemory<T> memory)
     {
         if (typeof(T) == typeof(char) && enumerable is string str)
         {
@@ -174,7 +172,7 @@ public static partial class CollectionHelpers
         return false;
     }
 
-    public static bool TryGetMemory<T>([NoEnumeration] this IEnumerable<T> enumerable, out Memory<T> memory)
+    public static bool TryGetMemory<T>(this IEnumerable<T> enumerable, out Memory<T> memory)
     {
         switch (enumerable)
         {
@@ -193,7 +191,7 @@ public static partial class CollectionHelpers
         }
     }
 
-    public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int elementCount)
+    public static bool TryGetNonEnumeratedCount<T>(this IEnumerable<T> enumerable, out int elementCount)
     {
 #if !TEST_RUN // this might prevent the tests from reaching the bottom branches, so it will be removed for test runs as it is runtime code
         if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
@@ -231,7 +229,7 @@ public static partial class CollectionHelpers
     /// <param name="elementsCopied">The amount of elements that have been copied.</param>
     /// <typeparam name="T">The type of items that will be tried to be copied.</typeparam>
     /// <returns>True, if copying was possible, otherwise false.</returns>
-    public static bool TryNonEnumeratedCopyTo<T>([NoEnumeration] this IEnumerable<T> enumerable, T[] destination, int offset, out int elementsCopied)
+    public static bool TryNonEnumeratedCopyTo<T>(this IEnumerable<T> enumerable, T[] destination, int offset, out int elementsCopied)
     {
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
@@ -274,7 +272,7 @@ public static partial class CollectionHelpers
         }
     }
 
-    public static bool TryGetNonEnumeratedElementAt<T>([NoEnumeration] this IEnumerable<T> enumerable, int index, [MaybeNullWhen(false)] out T element)
+    public static bool TryGetNonEnumeratedElementAt<T>(this IEnumerable<T> enumerable, int index, [MaybeNullWhen(false)] out T element)
     {
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
@@ -404,11 +402,9 @@ public static partial class CollectionHelpers
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> ToPooledList<T>(this IEnumerable<T> enumerable) => [.. enumerable];
 
     [Pure]
-    [MustDisposeResource]
     public static PooledBufferWriter<T> ToPooledBufferWriter<T>(this IEnumerable<T> enumerable)
     {
         PooledBufferWriter<T> writer = new();
@@ -417,7 +413,6 @@ public static partial class CollectionHelpers
     }
 
     [Pure]
-    [MustDisposeResource]
     public static RentedArray<T> ToRentedArray<T>(this IEnumerable<T> enumerable)
     {
         T[] array;

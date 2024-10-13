@@ -4,18 +4,54 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 
-[DebuggerDisplay("{ToString()}")]
-public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
+/// <summary>
+/// The default constructor of <see cref="ChatMessage"/>.
+/// </summary>
+/// <param name="badgeInfos">The badge info buffer.</param>
+/// <param name="badgeInfoCount">The amount of written elements in the badge info buffer.</param>
+/// <param name="badges">The badge buffer.</param>
+/// <param name="badgeCount">The amount of written elements in the badge buffer.</param>
+/// <param name="flags">The chat message flags.</param>
+public sealed class ChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags) :
+    IDisposable,
+    ISpanFormattable,
+    IEquatable<ChatMessage>
 {
-    public abstract ReadOnlySpan<Badge> BadgeInfos { get; }
+    public ReadOnlySpan<Badge> BadgeInfos
+    {
+        get
+        {
+            Badge[]? badgeInfos = _badgeInfos;
+            if (badgeInfos is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<ChatMessage>();
+            }
 
-    public abstract ReadOnlySpan<Badge> Badges { get; }
+            return badgeInfos.AsSpanUnsafe(.._badgeInfoCount);
+        }
+    }
+
+    public ReadOnlySpan<Badge> Badges
+    {
+        get
+        {
+            Badge[]? badges = _badges;
+            if (badges is null)
+            {
+                ThrowHelper.ThrowObjectDisposedException<ChatMessage>();
+            }
+
+            return badges.AsSpanUnsafe(.._badgeCount);
+        }
+    }
 
     public required Color Color { get; init; }
 
@@ -45,24 +81,31 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     public required LazyString Message { get; init; }
 
-    private protected ChatMessageFlags _flags;
+    private readonly ChatMessageFlags _flags = flags;
+
+    private Badge[]? _badgeInfos = badgeInfos;
+    private readonly int _badgeInfoCount = badgeInfoCount;
+
+    private Badge[]? _badges = badges;
+    private readonly int _badgeCount = badgeCount;
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposing)
+        Badge[]? badgeInfos = Interlocked.Exchange(ref _badgeInfos, null);
+        if (badgeInfos is not null)
         {
-            return;
+            ArrayPool<Badge>.Shared.Return(badgeInfos);
         }
 
-        Message.Dispose();
-        Username.Dispose();
-        DisplayName.Dispose();
+        Badge[]? badges = Interlocked.Exchange(ref _badges, null);
+        if (badges is not null)
+        {
+            ArrayPool<Badge>.Shared.Return(badges);
+        }
+
+        Username.DisposeInterlocked();
+        DisplayName.DisposeInterlocked();
+        Message.DisposeInterlocked();
     }
 
     /// <summary>
@@ -71,7 +114,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     /// <returns>The message in a readable format.</returns>
     [Pure]
     [SkipLocalsInit]
-    public sealed override string ToString()
+    public override string ToString()
     {
         Span<char> buffer = stackalloc char[Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length];
         int length = Format(buffer);
@@ -80,6 +123,7 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
 
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
+    [SkipLocalsInit]
     public void Format(TextWriter writer)
     {
         Span<char> buffer = stackalloc char[Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length];
@@ -132,13 +176,10 @@ public abstract class ChatMessage : IChatMessage, IEquatable<ChatMessage>
     public bool Equals([NotNullWhen(true)] ChatMessage? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] IChatMessage? other) => ReferenceEquals(this, other);
-
-    [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public sealed override int GetHashCode() => Id.GetHashCode();
+    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
     public static bool operator ==(ChatMessage? left, ChatMessage? right) => Equals(left, right);
 

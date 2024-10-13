@@ -14,6 +14,7 @@ internal static unsafe class VirtualMemory
 
         if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
         {
+            // TODO
         }
 
         ThrowHelper.ThrowOperatingSystemNotSupported();
@@ -29,6 +30,7 @@ internal static unsafe class VirtualMemory
 
         if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
         {
+            // TODO
         }
 
         ThrowHelper.ThrowOperatingSystemNotSupported();

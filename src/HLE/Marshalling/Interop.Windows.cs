@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -8,6 +9,7 @@ namespace HLE.Marshalling;
 internal static partial class Interop
 {
     [SupportedOSPlatform("windows")]
+    [SuppressMessage("Minor Code Smell", "S100:Methods and properties should be named in PascalCase")]
     public static unsafe partial class Windows
     {
         [Pure]

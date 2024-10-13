@@ -10,42 +10,51 @@ namespace HLE.Memory;
 
 public ref struct MemoryEnumerator<T> : IEnumerator<T>, IEquatable<MemoryEnumerator<T>>
 {
-    public readonly T Current => Unsafe.Add(ref _memory, _current);
+    public readonly T Current => _current;
 
     readonly object? IEnumerator.Current => Current;
 
-    private readonly ref T _memory;
-    private int _current;
-    private readonly int _length;
+    private ref T _current;
+    private readonly ref T _end;
 
-    public static MemoryEnumerator<T> Empty => default;
+    public static MemoryEnumerator<T> Empty => new(ref Unsafe.NullRef<T>(), 0);
 
     public MemoryEnumerator(ref T memory, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        _memory = ref memory;
-        _length = length;
-        _current = -1;
+        _current = ref memory;
+        _end = ref Unsafe.Add(ref memory, length);
+    }
+
+    public MemoryEnumerator(T[] items)
+    {
+        ref T current = ref MemoryMarshal.GetArrayDataReference(items);
+        _current = ref Unsafe.Add(ref current, -1);
+        _end = ref Unsafe.Add(ref current, items.Length);
     }
 
     public MemoryEnumerator(Span<T> items)
     {
-        _memory = ref MemoryMarshal.GetReference(items);
-        _length = items.Length;
-        _current = -1;
+        ref T current = ref MemoryMarshal.GetReference(items);
+        _current = ref Unsafe.Add(ref current, -1);
+        _end = ref Unsafe.Add(ref current, items.Length);
     }
 
     public MemoryEnumerator(ReadOnlySpan<T> items)
     {
-        _memory = ref MemoryMarshal.GetReference(items);
-        _length = items.Length;
-        _current = -1;
+        ref T current = ref MemoryMarshal.GetReference(items);
+        _current = ref Unsafe.Add(ref current, -1);
+        _end = ref Unsafe.Add(ref current, items.Length);
     }
 
-    public bool MoveNext() => ++_current < _length;
+    public bool MoveNext()
+    {
+        _current = ref Unsafe.Add(ref _current, 1);
+        return !Unsafe.AreSame(ref _current, ref _end);
+    }
 
-    public void Reset() => _current = -1;
+    void IEnumerator.Reset() => throw new NotSupportedException();
 
     readonly void IDisposable.Dispose()
     {
@@ -53,14 +62,14 @@ public ref struct MemoryEnumerator<T> : IEnumerator<T>, IEquatable<MemoryEnumera
 
     [Pure]
     public readonly bool Equals(scoped MemoryEnumerator<T> other)
-        => Unsafe.AreSame(ref _memory, ref other._memory) &&
-           _current == other._current && _length == other._length;
+        => Unsafe.AreSame(ref _current, ref other._current) &&
+           Unsafe.AreSame(ref _end, ref other._end);
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public override readonly unsafe int GetHashCode() => HashCode.Combine((nuint)Unsafe.AsPointer(ref _memory), _current, _length);
+    public override readonly unsafe int GetHashCode() => HashCode.Combine((nuint)Unsafe.AsPointer(ref _current), (nuint)Unsafe.AsPointer(ref _end));
 
     public static bool operator ==(MemoryEnumerator<T> left, MemoryEnumerator<T> right) => left.Equals(right);
 

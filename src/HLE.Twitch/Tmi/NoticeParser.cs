@@ -75,6 +75,7 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
         }
     }
 
+    [SkipLocalsInit]
     private static NoticeType ParseNoticeType(ReadOnlySpan<byte> bytes)
     {
         Span<char> chars = stackalloc char[bytes.Length];

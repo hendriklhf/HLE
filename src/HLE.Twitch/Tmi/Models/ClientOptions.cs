@@ -21,11 +21,6 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     /// </summary>
     public bool IsVerifiedBot { get; init; }
 
-    /// <summary>
-    /// The parsing mode of the IRC message parsers.
-    /// </summary>
-    public ParsingMode ParsingMode { get; init; } = ParsingMode.Balanced;
-
     public static ClientOptions Default => new();
 
     public ClientOptions()
@@ -39,7 +34,7 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is ClientOptions other && Equals(other);
 
     [Pure]
-    public override int GetHashCode() => HashCode.Combine(UseSsl, IsVerifiedBot, ParsingMode);
+    public override int GetHashCode() => HashCode.Combine(UseSsl, IsVerifiedBot);
 
     public static bool operator ==(ClientOptions left, ClientOptions right) => left.Equals(right);
 

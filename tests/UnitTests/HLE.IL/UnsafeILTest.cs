@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
+using HLE.TestUtilities;
 using Xunit;
 
 namespace HLE.IL.UnitTests;
@@ -129,7 +130,7 @@ public sealed unsafe class UnsafeILTest
         string str = UnsafeIL.PointerAs<RawStringData, string>(&data);
 
         Assert.Equal(data.Length, str.Length);
-        Assert.True(ObjectMarshal.GetMethodTable<string>() == data.MethodTable);
+        Assert.True(data.MethodTable == ObjectMarshal.GetMethodTable(str));
         Assert.Equal(data.FirstChar, str[0]);
     }
 
@@ -137,7 +138,7 @@ public sealed unsafe class UnsafeILTest
     public void UnboxTest()
     {
         const int Value = int.MaxValue;
-        object box = Box(Value);
+        object box = TestHelpers.Box(Value);
 
         // should not throw as byte != int
         ref byte unbox = ref UnsafeIL.Unbox<byte>(box);
@@ -145,8 +146,4 @@ public sealed unsafe class UnsafeILTest
         int unboxedValue = Unsafe.As<byte, int>(ref unbox);
         Assert.Equal(Value, unboxedValue);
     }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static object Box<T>(T value) where T : struct
-        => value;
 }

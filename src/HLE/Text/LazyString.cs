@@ -3,14 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
+using System.Threading;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Text;
 
@@ -63,7 +63,6 @@ public sealed class LazyString :
     {
     }
 
-    [MustDisposeResource]
     private LazyString(string str)
     {
         _chars = null;
@@ -71,11 +70,9 @@ public sealed class LazyString :
         Length = str.Length;
     }
 
-    [MustDisposeResource]
     public LazyString(ref PooledInterpolatedStringHandler chars) : this(chars.Text)
         => chars.Dispose();
 
-    [MustDisposeResource]
     public LazyString(ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)
@@ -91,7 +88,6 @@ public sealed class LazyString :
         Length = chars.Length;
     }
 
-    [MustDisposeResource]
     internal LazyString(char[] chars, int length)
     {
         _chars = chars;
@@ -99,7 +95,6 @@ public sealed class LazyString :
     }
 
     [Pure]
-    [MustDisposeResource]
     public static LazyString FromString(string str) => str.Length == 0 ? Empty : new(str);
 
     public void Dispose()
@@ -110,8 +105,19 @@ public sealed class LazyString :
             return;
         }
 
-        ArrayPool<char>.Shared.Return(chars);
         _chars = null;
+        ArrayPool<char>.Shared.Return(chars);
+    }
+
+    internal void DisposeInterlocked()
+    {
+        char[]? chars = Interlocked.Exchange(ref _chars, null);
+        if (chars is null)
+        {
+            return;
+        }
+
+        ArrayPool<char>.Shared.Return(chars);
     }
 
     [Pure]
@@ -196,34 +202,40 @@ public sealed class LazyString :
     [Pure]
     public List<char> ToList(Range range) => AsSpan().ToList(range);
 
+    public bool TryGetString([MaybeNullWhen(false)] out string str)
+    {
+        str = _string;
+        return str is not null;
+    }
+
     [Pure]
     public override string ToString() => ToString(false);
 
     [Pure]
     public string ToString(bool poolString)
     {
-        string? s = _string;
-        if (s is not null)
+        return _string ?? ToStringCore(this, poolString);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static string ToStringCore(LazyString lazyString, bool poolString)
         {
-            return s;
+            if (lazyString.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            char[]? charBuffer = lazyString._chars;
+            lazyString._chars = null;
+
+            Debug.Assert(charBuffer is not null);
+
+            ReadOnlySpan<char> chars = charBuffer.AsSpanUnsafe(..lazyString.Length);
+            string str = poolString ? StringPool.Shared.GetOrAdd(chars) : new(chars);
+            ArrayPool<char>.Shared.Return(charBuffer);
+
+            lazyString._string = str;
+            return str;
         }
-
-        if (Length == 0)
-        {
-            return string.Empty;
-        }
-
-        char[]? charBuffer = _chars;
-        _chars = null;
-
-        Debug.Assert(charBuffer is not null);
-
-        ReadOnlySpan<char> chars = charBuffer.AsSpanUnsafe(..Length);
-        string str = poolString ? StringPool.Shared.GetOrAdd(chars) : new(chars);
-        ArrayPool<char>.Shared.Return(charBuffer);
-
-        _string = str;
-        return str;
     }
 
     public void CopyTo(List<char> destination, int offset = 0)
@@ -305,16 +317,13 @@ public sealed class LazyString :
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<char>)this).GetEnumerator();
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] LazyString? other) => Length == other?.Length && AsSpan().SequenceEqual(other.AsSpan());
+    public bool Equals([NotNullWhen(true)] LazyString? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is LazyString other && Equals(other);
 
     [Pure]
-    public override int GetHashCode() => string.GetHashCode(AsSpan());
-
-    [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = $"named alternate is {nameof(AsSpan)}")]
-    public static implicit operator ReadOnlySpan<char>(LazyString lazyString) => lazyString.AsSpan();
+    public override int GetHashCode() => string.GetHashCode(AsSpan(), StringComparison.Ordinal);
 
     public static bool operator ==(LazyString left, LazyString right) => Equals(left, right);
 

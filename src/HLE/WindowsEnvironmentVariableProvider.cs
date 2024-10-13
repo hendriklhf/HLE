@@ -6,7 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using HLE.Marshalling.Windows;
+using HLE.Marshalling;
 using HLE.Text;
 
 namespace HLE;
@@ -18,7 +18,7 @@ internal sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableP
     public unsafe EnvironmentVariables GetEnvironmentVariables()
     {
         Dictionary<string, string> environmentVariables = new(64);
-        char* environmentStrings = Interop.GetEnvironmentStrings();
+        char* environmentStrings = Interop.Windows.GetEnvironmentStrings();
         try
         {
             char* str = environmentStrings;
@@ -40,7 +40,7 @@ internal sealed class WindowsEnvironmentVariableProvider : IEnvironmentVariableP
         }
         finally
         {
-            Interop.FreeEnvironmentStrings(environmentStrings);
+            Interop.Windows.FreeEnvironmentStrings(environmentStrings);
         }
 
         return new(environmentVariables.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));

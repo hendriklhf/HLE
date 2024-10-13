@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Text;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -90,7 +89,6 @@ public struct RentedArray<T> :
         _pool = ArrayPool<T>.Shared;
     }
 
-    [MustDisposeResource]
     public RentedArray(T[] array, ArrayPool<T> pool)
     {
         _array = array;
@@ -99,8 +97,14 @@ public struct RentedArray<T> :
 
     public void Dispose()
     {
-        _pool.Return(_array);
+        T[]? array = _array;
+        if (array is null)
+        {
+            return;
+        }
+
         _array = null;
+        _pool.Return(array);
     }
 
     [Pure]

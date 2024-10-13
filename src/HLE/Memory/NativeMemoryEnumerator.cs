@@ -3,34 +3,32 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using HLE.Marshalling;
 
 namespace HLE.Memory;
 
 public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatable<NativeMemoryEnumerator<T>>
     where T : unmanaged
 {
-    public readonly T Current => _memory[_current];
+    public readonly T Current => *_current;
 
     readonly object IEnumerator.Current => Current;
 
-    private readonly T* _memory;
-    private int _current = -1;
-    private readonly int _length;
+    private T* _current;
+    private readonly T* _end;
 
-    public static NativeMemoryEnumerator<T> Empty => default;
+    public static NativeMemoryEnumerator<T> Empty => new(null, 0);
 
     public NativeMemoryEnumerator(T* memory, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        _memory = memory;
-        _length = length;
+        _current = memory - 1;
+        _end = memory + length;
     }
 
-    public bool MoveNext() => ++_current < _length;
+    public bool MoveNext() => ++_current != _end;
 
-    public void Reset() => _current = -1;
+    void IEnumerator.Reset() => throw new NotSupportedException();
 
     readonly void IDisposable.Dispose()
     {
@@ -38,18 +36,14 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
 
     [Pure]
     public readonly bool Equals(NativeMemoryEnumerator<T> other)
-        => _memory == other._memory && _current == other._current && _length == other._length;
+        => _current == other._current && _end == other._end;
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj)
         => obj is NativeMemoryEnumerator<T> other && Equals(other);
 
     [Pure]
-    public readonly bool EqualsB(ref NativeMemoryEnumerator<T> other)
-        => StructMarshal.EqualsBitwise(this, ref other);
-
-    [Pure]
-    public override readonly int GetHashCode() => HashCode.Combine((nuint)_memory, _current, _length);
+    public override readonly int GetHashCode() => HashCode.Combine((nuint)_current, (nuint)_end);
 
     public static bool operator ==(NativeMemoryEnumerator<T> left, NativeMemoryEnumerator<T> right) => left.Equals(right);
 

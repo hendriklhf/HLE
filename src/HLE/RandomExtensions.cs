@@ -386,6 +386,8 @@ public static class RandomExtensions
         ref byte reference = ref MemoryMarshal.GetArrayDataReference(array);
         random.Write(ref reference, checked(componentSize * nuint.CreateChecked(array.LongLength)));
 
+        return;
+
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowArrayElementTypeMustBeUnmanaged()

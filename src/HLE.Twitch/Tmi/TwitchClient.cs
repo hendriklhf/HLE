@@ -119,7 +119,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <summary>
     /// Is invoked if a chat message has been received.
     /// </summary>
-    public event AsyncEventHandler<TwitchClient, IChatMessage>? OnChatMessageReceived
+    public event AsyncEventHandler<TwitchClient, ChatMessage>? OnChatMessageReceived
     {
         [MethodImpl(MethodImplOptions.Synchronized)]
         add
@@ -179,7 +179,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     private event AsyncEventHandler<TwitchClient, LeftChannelMessage>? _onLeftChannel;
 
-    private event AsyncEventHandler<TwitchClient, IChatMessage>? _onChatMessageReceived;
+    private event AsyncEventHandler<TwitchClient, ChatMessage>? _onChatMessageReceived;
 
     private event AsyncEventHandler<TwitchClient, Notice>? _onNoticeReceived;
 
@@ -200,7 +200,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     public TwitchClient(ClientOptions options)
     {
         _client = new(AnonymousUsername, OAuthToken.Empty, options);
-        _ircHandler = new(options.ParsingMode);
+        _ircHandler = new();
         IsAnonymousLogin = true;
         SubscribeToEvents();
     }
@@ -216,7 +216,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         username = ChannelFormatter.Format(username, false);
         _client = new(username, oAuthToken, options);
-        _ircHandler = new(options.ParsingMode);
+        _ircHandler = new();
         IsAnonymousLogin = false;
         SubscribeToEvents();
     }
@@ -225,7 +225,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         _client.OnConnected += _ => EventInvoker.InvokeAsync(OnConnected, this);
         _client.OnDisconnected += _ => EventInvoker.InvokeAsync(OnDisconnected, this);
-        _client.OnBytesReceived += (_, data) => WebSocketIrcClient_OnBytesReceivedAsync(data).Ignore();
+        _client.OnBytesReceived += (_, data) => WebSocketIrcClient_OnBytesReceivedAsync(data);
         _client.OnConnectionException += (_, _) => ReconnectAfterConnectionExceptionAsync();
 
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceivedAsync;
@@ -358,10 +358,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    public ValueTask JoinChannelsAsync(List<string> channels) => JoinChannelsAsync(ListMarshal.AsMemory(channels));
+    public ValueTask JoinChannelsAsync(List<string> channels) => JoinChannelsAsync(ListMarshal.AsReadOnlyMemory(channels));
 
     /// <inheritdoc cref="JoinChannelsAsync(ReadOnlyMemory{string})"/>
-    public ValueTask JoinChannelsAsync(params string[] channels) => JoinChannelsAsync(channels.AsMemory());
+    public ValueTask JoinChannelsAsync(params string[] channels) => JoinChannelsAsync(new ReadOnlyMemory<string>(channels, 0, channels.Length));
 
     /// <summary>
     /// If the client is not connected, adds the channels to the channel list, otherwise asynchronously connects the client to the channels.
@@ -425,10 +425,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
-    public ValueTask LeaveChannelsAsync(List<string> channels) => LeaveChannelsAsync(ListMarshal.AsMemory(channels));
+    public ValueTask LeaveChannelsAsync(List<string> channels) => LeaveChannelsAsync(ListMarshal.AsReadOnlyMemory(channels));
 
     /// <inheritdoc cref="LeaveChannelsAsync(ReadOnlyMemory{string})"/>
-    public ValueTask LeaveChannelsAsync(params string[] channels) => LeaveChannelsAsync(channels.AsMemory());
+    public ValueTask LeaveChannelsAsync(params string[] channels) => LeaveChannelsAsync(new ReadOnlyMemory<string>(channels, 0, channels.Length));
 
     /// <summary>
     /// If the client is not connected, removes the channels from the channel list, otherwise leaves the channels.
@@ -486,7 +486,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         return EventInvoker.InvokeAsync(OnBytesReceived, this, data);
     }
 
-    private Task IrcHandler_OnChatMessageReceivedAsync(IrcHandler _, IChatMessage message) => EventInvoker.InvokeAsync(_onChatMessageReceived, this, message);
+    private Task IrcHandler_OnChatMessageReceivedAsync(IrcHandler _, ChatMessage message) => EventInvoker.InvokeAsync(_onChatMessageReceived, this, message);
 
     private Task IrcHandler_OnRoomstateReceivedAsync(object? sender, Roomstate roomstate)
     {

@@ -26,13 +26,10 @@ public sealed class IrcHandlerTest
 
     private static ReadOnlySpan<byte> NoticeWithoutTag => ":tmi.twitch.tv NOTICE * :Login authentication failed"u8;
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void PrivMsgTest(ParsingMode parsingMode)
+    [Fact]
+    public void PrivMsgTest()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         handler.OnChatMessageReceived += static (_, chatMessage) =>
         {
             Assert.Equal(0, chatMessage.BadgeInfos.Length);
@@ -62,13 +59,10 @@ public sealed class IrcHandlerTest
         Assert.True(handler.Handle(PrivMsgAction));
     }
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void Roomstate_AllOff_Test(ParsingMode parsingMode)
+    [Fact]
+    public void Roomstate_AllOff_Test()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnRoomstateReceived += static (_, roomstateArgs) =>
         {
@@ -85,13 +79,10 @@ public sealed class IrcHandlerTest
         Assert.True(handler.Handle(RoomstateAllOff));
     }
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void Roomstate_AllOn_Test(ParsingMode parsingMode)
+    [Fact]
+    public void Roomstate_AllOn_Test()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnRoomstateReceived += static (_, roomstateArgs) =>
         {
@@ -108,13 +99,10 @@ public sealed class IrcHandlerTest
         Assert.True(handler.Handle(RoomstateAllOn));
     }
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void JoinTest(ParsingMode parsingMode)
+    [Fact]
+    public void JoinTest()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnJoinReceived += static (_, joinedChannelArgs) =>
         {
@@ -126,13 +114,10 @@ public sealed class IrcHandlerTest
         Assert.True(handler.Handle(Join));
     }
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void PartTest(ParsingMode parsingMode)
+    [Fact]
+    public void PartTest()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnPartReceived += static (_, leftChannelArgs) =>
         {
@@ -144,13 +129,10 @@ public sealed class IrcHandlerTest
         Assert.True(handler.Handle(Part));
     }
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void Notice_WithTag_Test(ParsingMode parsingMode)
+    [Fact]
+    public void Notice_WithTag_Test()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnNoticeReceived += static (_, notice) =>
         {
@@ -163,13 +145,10 @@ public sealed class IrcHandlerTest
         Assert.True(handler.Handle(NoticeWithTag));
     }
 
-    [Theory]
-    [InlineData(ParsingMode.TimeEfficient)]
-    [InlineData(ParsingMode.MemoryEfficient)]
-    [InlineData(ParsingMode.Balanced)]
-    public void Notice_WithoutTag_Test(ParsingMode parsingMode)
+    [Fact]
+    public void Notice_WithoutTag_Test()
     {
-        IrcHandler handler = new(parsingMode);
+        IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         handler.OnNoticeReceived += static (_, notice) =>
         {

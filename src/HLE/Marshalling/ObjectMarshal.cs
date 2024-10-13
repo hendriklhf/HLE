@@ -167,19 +167,19 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawArrayData GetRawArrayData(Array array) => ref UnsafeIL.AsRef<Array, RawArrayData>(array);
+    public static ref RawArrayData<byte> GetRawArrayData(Array array) => ref UnsafeIL.AsRef<Array, RawArrayData<byte>>(array);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawArrayData GetRawArrayData<T>(T[] array) => ref UnsafeIL.AsRef<T[], RawArrayData>(array);
+    public static ref RawArrayData<T> GetRawArrayData<T>(T[] array) => ref UnsafeIL.AsRef<T[], RawArrayData<T>>(array);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(ref RawArrayData data) => ReadObject<T[], RawArrayData>(ref data);
+    public static T[] GetArray<T>(ref RawArrayData<T> data) => ReadObject<T[], RawArrayData<T>>(ref data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(RawArrayData* data) => ReadObject<T[]>(data);
+    public static T[] GetArray<T>(RawArrayData<T>* data) => ReadObject<T[]>(data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -4,18 +4,16 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Text;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Resources;
 
-[method: MustDisposeResource]
 public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
 {
     int IReadOnlyCollection<Resource>.Count => _resourceMap.Count;
@@ -157,7 +155,7 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposab
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowStreamLengthExceedsMaxArrayLength()
-            => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
+            => throw new InvalidOperationException($"The stream length exceeds the maximum array length ({Array.MaxLength}).");
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]

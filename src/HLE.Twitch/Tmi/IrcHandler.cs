@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -11,8 +10,7 @@ namespace HLE.Twitch.Tmi;
 /// <summary>
 /// A class that handles incoming IRC messages and invokes events for the associated message type.
 /// </summary>
-/// <param name="parsingMode">The parsing mode of all internal messages parsers.</param>
-public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
+public sealed class IrcHandler : IEquatable<IrcHandler>
 {
     /// <summary>
     /// Is invoked if a JOIN command has been received.
@@ -32,7 +30,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// <summary>
     /// Is invoked if a PRIVMSG command has been received.
     /// </summary>
-    public event AsyncEventHandler<IrcHandler, IChatMessage>? OnChatMessageReceived;
+    public event AsyncEventHandler<IrcHandler, ChatMessage>? OnChatMessageReceived;
 
     /// <summary>
     /// Is invoked if a RECONNECT command has been received.
@@ -56,14 +54,6 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     internal bool IsOnNoticeReceivedSubscribed => OnNoticeReceived is not null;
 
     internal bool IsOnChatMessageReceivedSubscribed => OnChatMessageReceived is not null;
-
-    private readonly ChatMessageParser _chatMessageParser = parsingMode switch
-    {
-        ParsingMode.TimeEfficient => new TimeEfficientChatMessageParser(),
-        ParsingMode.Balanced => new BalancedChatMessageParser(),
-        ParsingMode.MemoryEfficient => new MemoryEfficientChatMessageParser(),
-        _ => throw new InvalidEnumArgumentException(nameof(parsingMode), (int)parsingMode, typeof(ParsingMode))
-    };
 
     private readonly RoomstateParser _roomstateParser = new();
     private readonly MembershipMessageParser _membershipMessageParser = new();
@@ -92,6 +82,7 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <returns>True, if an event has been invoked, otherwise false.</returns>
+    [SkipLocalsInit]
     public bool Handle(ReadOnlySpan<byte> ircMessage)
     {
         Span<int> indicesOfWhitespaces = stackalloc int[MaximumWhitespacesNeededToHandle];
@@ -246,8 +237,9 @@ public sealed class IrcHandler(ParsingMode parsingMode) : IEquatable<IrcHandler>
             return false;
         }
 
-        // ReSharper disable once NotDisposedResource
-        IChatMessage chatMessage = _chatMessageParser.Parse(ircMessage, indicesOfWhitespaces);
+#pragma warning disable CA2000
+        ChatMessage chatMessage = ChatMessageParser.Parse(ircMessage, indicesOfWhitespaces);
+#pragma warning restore CA2000
         EventInvoker.InvokeAsync(OnChatMessageReceived, this, chatMessage).Ignore();
         return true;
     }

@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Text;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
@@ -99,14 +98,12 @@ public ref struct ValueList<T> :
     private IntBoolUnion<int> _bufferLengthAndIsDisposed;
     private IntBoolUnion<int> _countAndIsStackalloced;
 
-    [MustDisposeResource]
     public ValueList()
     {
         _buffer = ref Unsafe.NullRef<T>();
         IsStackalloced = true;
     }
 
-    [MustDisposeResource]
     public ValueList(int capacity)
     {
         T[] buffer = ArrayPool<T>.Shared.Rent(capacity);
@@ -114,7 +111,6 @@ public ref struct ValueList<T> :
         BufferLength = buffer.Length;
     }
 
-    [MustDisposeResource]
     public ValueList(Span<T> buffer)
     {
         _buffer = ref MemoryMarshal.GetReference(buffer);

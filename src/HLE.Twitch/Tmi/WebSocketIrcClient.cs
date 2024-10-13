@@ -47,7 +47,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     /// <summary>
     /// Is invoked if the client receives data. If this event is subscribed to, the <see cref="Bytes"/> instance has to be manually disposed.
     /// </summary>
-    public event EventHandler<Bytes>? OnBytesReceived;
+    public event AsyncEventHandler<WebSocketIrcClient, Bytes>? OnBytesReceived;
 
     internal event AsyncEventHandler<WebSocketIrcClient, EventArgs>? OnConnectionException;
 
@@ -122,7 +122,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
             ClientWebSocket webSocket = _webSocket;
 
             int writtenBufferCount = 0;
-            Memory<byte> buffer = GC.AllocateUninitializedArray<byte>(8192, true);
+            Memory<byte> buffer = new byte[4096];
             while (webSocket.State is WebSocketState.Open && !token.IsCancellationRequested)
             {
                 ValueWebSocketReceiveResult receiveResult = await webSocket.ReceiveAsync(buffer[writtenBufferCount..], token);
@@ -226,7 +226,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public Task ConnectAsync(ReadOnlyMemory<byte>[] channels) => ConnectAsync(channels.AsMemory());
 
     /// <inheritdoc cref="ConnectAsync(ReadOnlyMemory{ReadOnlyMemory{byte}})"/>
-    public Task ConnectAsync(List<ReadOnlyMemory<byte>> channels) => ConnectAsync(ListMarshal.AsMemory(channels));
+    public Task ConnectAsync(List<ReadOnlyMemory<byte>> channels) => ConnectAsync(ListMarshal.AsReadOnlyMemory(channels));
 
     /// <summary>
     /// Asynchronously connects the client to the Twitch IRC server.
@@ -364,7 +364,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     private void InvokeBytesReceived(ref Bytes bytes)
     {
         Debug.Assert(OnBytesReceived is not null);
-        EventInvoker.QueueOnThreadPool(OnBytesReceived, this, bytes);
+        EventInvoker.InvokeAsync(OnBytesReceived, this, bytes).Ignore();
     }
 
     internal void CancelTasks()

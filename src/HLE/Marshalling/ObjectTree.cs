@@ -22,6 +22,8 @@ internal static unsafe class ObjectTree
     [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     public static nuint GetSize<T>(ref T obj)
     {
+        Debug.Assert(obj is null || typeof(T) == obj.GetType());
+
         if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
             return (uint)sizeof(T);

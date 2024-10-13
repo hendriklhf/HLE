@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using HLE.Collections;
 using HLE.Text;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -77,7 +76,6 @@ public sealed unsafe partial class NativeMemory<T> :
     {
     }
 
-    [MustDisposeResource]
     public NativeMemory(int length, bool zeroed = true)
     {
         if (length == 0)

@@ -15,7 +15,7 @@ public readonly partial struct OAuthToken : IEquatable<OAuthToken>
 
     public static OAuthToken Empty => new();
 
-    [GeneratedRegex("^(oauth:)?[a-z0-9]{30}?", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
+    [GeneratedRegex("^(oauth:)?[a-z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
     private static partial Regex GetTokenPattern();
 
     private const string TokenPrefix = "oauth:";

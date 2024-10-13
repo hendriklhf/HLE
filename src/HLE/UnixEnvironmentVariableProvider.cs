@@ -7,8 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using HLE.Marshalling.Unix;
 using HLE.Text;
+using HLE.Marshalling;
 
 namespace HLE;
 
@@ -19,7 +19,7 @@ internal sealed unsafe partial class UnixEnvironmentVariableProvider : IEnvironm
     [Pure]
     public EnvironmentVariables GetEnvironmentVariables()
     {
-        Variable* environment = (Variable*)Interop.GetEnvironment();
+        Variable* environment = (Variable*)Interop.Unix.GetEnvironment();
         try
         {
             if (environment == null)
@@ -56,7 +56,7 @@ internal sealed unsafe partial class UnixEnvironmentVariableProvider : IEnvironm
         }
         finally
         {
-            Interop.FreeEnvironment(environment);
+            Interop.Unix.FreeEnvironment(environment);
         }
     }
 

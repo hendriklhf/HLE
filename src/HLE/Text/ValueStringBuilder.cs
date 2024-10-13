@@ -3,13 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Text;
 
@@ -86,14 +85,12 @@ public unsafe ref partial struct ValueStringBuilder :
     private IntBoolUnion<int> _bufferLengthAndIsDisposed;
     private IntBoolUnion<int> _lengthAndIsStackalloced;
 
-    [MustDisposeResource]
     public ValueStringBuilder()
     {
         _buffer = ref Unsafe.NullRef<char>();
         IsStackalloced = true;
     }
 
-    [MustDisposeResource]
     public ValueStringBuilder(int capacity)
     {
         char[] buffer = ArrayPool<char>.Shared.Rent(capacity);
@@ -101,17 +98,14 @@ public unsafe ref partial struct ValueStringBuilder :
         BufferLength = buffer.Length;
     }
 
-    [MustDisposeResource]
     public ValueStringBuilder(Span<char> buffer) : this(ref MemoryMarshal.GetReference(buffer), buffer.Length)
     {
     }
 
-    [MustDisposeResource]
     public ValueStringBuilder(char* buffer, int length) : this(ref Unsafe.AsRef<char>(buffer), length)
     {
     }
 
-    [MustDisposeResource]
     public ValueStringBuilder(ref char buffer, int length)
     {
         _buffer = ref buffer;
@@ -181,6 +175,33 @@ public unsafe ref partial struct ValueStringBuilder :
         Length += count;
     }
 
+    public void Append(List<string> strings) => Append(ref ListMarshal.GetReference(strings), strings.Count);
+
+    public void Append(string[] strings) => Append(ref MemoryMarshal.GetArrayDataReference(strings), strings.Length);
+
+    public void Append(Span<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
+
+    public void Append(ReadOnlySpan<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
+
+    private void Append(ref string strings, int length)
+    {
+        int sum = 0;
+        for (int i = 0; i < length; i++)
+        {
+            sum += Unsafe.Add(ref strings, i).Length;
+        }
+
+        ref char destination = ref GetDestination(sum);
+        for (int i = 0; i < length; i++)
+        {
+            string s = Unsafe.Add(ref strings, i);
+            SpanHelpers.Memmove(ref destination, ref StringMarshal.GetReference(s), (uint)s.Length);
+            destination = ref Unsafe.Add(ref destination, s.Length);
+        }
+
+        Length += sum;
+    }
+
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
         => Append<byte>(value, format);
 
@@ -223,6 +244,9 @@ public unsafe ref partial struct ValueStringBuilder :
     public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
         => Append<double>(value, format);
 
+    public void Append(decimal value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
+        => Append<decimal>(value, format);
+
     public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] string? format = null)
         => Append<DateTime>(dateTime, format);
 
@@ -259,7 +283,9 @@ public unsafe ref partial struct ValueStringBuilder :
             }
         }
 
-        Advance(charsWritten);
+        Length = length + charsWritten;
+
+        return;
 
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -303,7 +329,7 @@ public unsafe ref partial struct ValueStringBuilder :
         }
 
         charsWritten = 0;
-        return true;
+        return false;
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "TryFormatUnconstrained")]

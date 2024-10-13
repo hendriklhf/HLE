@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
-using JetBrains.Annotations;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
@@ -59,13 +58,10 @@ public sealed class PooledList<T> :
 
     internal T[]? _buffer;
 
-    [MustDisposeResource]
     public PooledList() => _buffer = [];
 
-    [MustDisposeResource]
     public PooledList(int capacity) => _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
 
-    [MustDisposeResource]
     public PooledList(ReadOnlySpan<T> items) : this(items.Length)
     {
         AssertBufferNotNull();
@@ -81,8 +77,8 @@ public sealed class PooledList<T> :
             return;
         }
 
-        ArrayPool<T>.Shared.Return(buffer);
         _buffer = null;
+        ArrayPool<T>.Shared.Return(buffer);
     }
 
     [Pure]
@@ -275,17 +271,17 @@ public sealed class PooledList<T> :
     public void TrimBuffer()
     {
         int count = Count;
-        int trimmedBufferSize = BufferHelpers.GrowArray((uint)count, 0);
-        if (trimmedBufferSize == Capacity)
-        {
-            return;
-        }
-
         T[] oldBuffer = GetBuffer();
-        if (trimmedBufferSize == 0)
+        if (count == 0)
         {
             ArrayPool<T>.Shared.Return(oldBuffer);
             _buffer = [];
+            return;
+        }
+
+        int trimmedBufferSize = BufferHelpers.GrowArray((uint)count, 0);
+        if (trimmedBufferSize == oldBuffer.Length)
+        {
             return;
         }
 
@@ -329,14 +325,18 @@ public sealed class PooledList<T> :
     public void Insert(int index, T item)
     {
         GrowIfNeeded(1);
-
         int count = Count;
-        ref T buffer = ref MemoryMarshal.GetArrayDataReference(GetBuffer());
+        if (index > count)
+        {
+            GrowIfNeeded((index - count) + 1);
+        }
+
+        ref T buffer = ref GetBufferReference();
         ref T destination = ref Unsafe.Add(ref buffer, index);
 
         if (index != count)
         {
-            SpanHelpers.Memmove(ref Unsafe.Add(ref buffer, index + 1), ref destination, (uint)(count - index - 1));
+            SpanHelpers.Memmove(ref Unsafe.Add(ref destination, 1), ref destination, (uint)(count - index - 1));
         }
 
         destination = item;

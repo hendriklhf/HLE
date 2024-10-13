@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Collections;
 
@@ -15,7 +14,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     private PooledListBuilder() => ThrowHelper.ThrowCalledCollectionBuilderConstructor<PooledListBuilder>();
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(IEnumerable<T> items)
     {
         PooledList<T> list = [];
@@ -24,23 +22,18 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(List<T> items) => new(CollectionsMarshal.AsSpan(items));
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T[] items) => new((ReadOnlySpan<T>)items);
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(Span<T> items) => new(items);
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(params ReadOnlySpan<T> items) => new(items);
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item)
     {
         PooledList<T> list = new(1);
@@ -50,7 +43,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1)
     {
         PooledList<T> list = new(2);
@@ -64,7 +56,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1, T item2)
     {
         PooledList<T> list = new(3);
@@ -79,7 +70,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3)
     {
         PooledList<T> list = new(4);
@@ -95,7 +85,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4)
     {
         PooledList<T> list = new(5);
@@ -112,7 +101,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4, T item5)
     {
         PooledList<T> list = new(6);
@@ -130,7 +118,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4, T item5, T item6)
     {
         PooledList<T> list = new(7);
@@ -149,7 +136,6 @@ public sealed class PooledListBuilder // : ICollectionBuilder<PooledList<T>, T>
     }
 
     [Pure]
-    [MustDisposeResource]
     public static PooledList<T> Create<T>(T item0, T item1, T item2, T item3, T item4, T item5, T item6, T item7)
     {
         PooledList<T> list = new(8);

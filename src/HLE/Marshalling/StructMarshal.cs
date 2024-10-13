@@ -126,7 +126,7 @@ public static unsafe class StructMarshal
            typeof(T) == typeof(CLong) ||
            typeof(T) == typeof(CULong) ||
            typeof(T) == typeof(NFloat) ||
-           typeof(T) == typeof(RawArrayData) ||
+           typeof(T) == typeof(RawArrayData<>) ||
            typeof(T) == typeof(RawStringData) ||
            typeof(T) == typeof(RangeEnumerator) ||
            typeof(T).IsEnum ||

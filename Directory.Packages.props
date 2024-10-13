@@ -10,22 +10,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageVersion Include="JetBrains.Annotations" Version="2024.2.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.12.0-2.final"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0-2.final"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0-beta1.24415.1"/>
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0-rc.1.24431.7"/>
-    <PackageVersion Include="System.IO.Hashing" Version="9.0.0-rc.1.24431.7"/>
-    <PackageVersion Include="System.Text.Json" Version="9.0.0-rc.1.24431.7"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0"/>
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0-rc.2.24473.5"/>
+    <PackageVersion Include="System.IO.Hashing" Version="9.0.0-rc.2.24473.5"/>
+    <PackageVersion Include="System.Text.Json" Version="9.0.0-rc.2.24473.5"/>
   </ItemGroup>
 
   <!-- Default Analyzers -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.11.20"/>
-    <PackageVersion Include="Roslynator.Analyzers" Version="4.12.6"/>
-    <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.6"/>
-    <PackageVersion Include="Roslynator.CodeFixes" Version="4.12.6"/>
-    <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.12.6"/>
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.12.7"/>
+    <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="4.12.7"/>
+    <PackageVersion Include="Roslynator.CodeFixes" Version="4.12.7"/>
+    <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.12.7"/>
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="9.32.0.97167"/>
   </ItemGroup>
 

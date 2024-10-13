@@ -4,12 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Text;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -18,7 +17,6 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 /// <param name="capacity">The starting capacity of the buffer.</param>
-[method: MustDisposeResource]
 [DebuggerDisplay("{ToString()}")]
 public sealed class PooledBufferWriter<T>(int capacity) :
     IBufferWriter<T>,
@@ -57,12 +55,10 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 
     private T[]? _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
 
-    [MustDisposeResource]
     public PooledBufferWriter() : this(0)
     {
     }
 
-    [MustDisposeResource]
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
         Debug.Assert(_buffer is not null);
@@ -78,8 +74,8 @@ public sealed class PooledBufferWriter<T>(int capacity) :
             return;
         }
 
-        ArrayPool<T>.Shared.Return(buffer);
         _buffer = null;
+        ArrayPool<T>.Shared.Return(buffer);
     }
 
     /// <inheritdoc/>

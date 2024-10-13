@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
+using HLE.TestUtilities;
 using Xunit;
 
 namespace HLE.UnitTests.Marshalling;
@@ -10,7 +11,7 @@ namespace HLE.UnitTests.Marshalling;
 public sealed class ListMarshalTest
 {
     [Fact]
-    public void AsMemory_Test()
+    public void AsMemory()
     {
         List<int> list = [0, 1, 2, 3, 4, 5];
         Memory<int> memory = ListMarshal.AsMemory(list);
@@ -20,10 +21,30 @@ public sealed class ListMarshalTest
     }
 
     [Fact]
-    public void AsMemory_Empty_Test()
+    public void AsMemory_Empty()
     {
         List<int> list = [];
         Memory<int> memory = ListMarshal.AsMemory(list);
+
+        Assert.Equal(list.Count, memory.Length);
+        Assert.Equal(0, memory.Length);
+    }
+
+    [Fact]
+    public void AsReadOnlyMemory()
+    {
+        List<int> list = [0, 1, 2, 3, 4, 5];
+        ReadOnlyMemory<int> memory = ListMarshal.AsReadOnlyMemory(list);
+
+        Assert.Equal(list.Count, memory.Length);
+        Assert.True(memory.Span is [0, 1, 2, 3, 4, 5]);
+    }
+
+    [Fact]
+    public void AsReadOnlyMemory_Empty()
+    {
+        List<int> list = [];
+        ReadOnlyMemory<int> memory = ListMarshal.AsReadOnlyMemory(list);
 
         Assert.Equal(list.Count, memory.Length);
         Assert.Equal(0, memory.Length);
@@ -136,5 +157,29 @@ public sealed class ListMarshalTest
         Assert.Throws<ArgumentOutOfRangeException>(() => ListMarshal.SetCount(list, 1));
     }
 
-    // TODO: add ConstructList tests
+    [Fact]
+    public void ConstructList()
+    {
+        int[] items = [1, 2, 3];
+
+        List<int> list = ListMarshal.ConstructList(items, 3);
+
+        Assert.Equal(3, list.Count);
+        Assert.True(list is [1, 2, 3]);
+        Assert.Same(items, ListMarshal.GetArray(list));
+    }
+
+    [Fact]
+    public void ConstructList_ThrowsArgumentOutOfRangeException_WhenCountLargerThanItemsLength()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(Act);
+        return;
+
+        static void Act()
+        {
+            int[] items = [1, 2, 3];
+            List<int> list = ListMarshal.ConstructList(items, 4);
+            TestHelpers.Consume(list);
+        }
+    }
 }

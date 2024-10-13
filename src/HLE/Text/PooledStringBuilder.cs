@@ -3,19 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Text;
 
 [DebuggerDisplay("\"{ToString()}\"")]
-[method: MustDisposeResource]
-public sealed partial class PooledStringBuilder(int capacity) :
+public sealed partial class PooledStringBuilder :
     IDisposable,
     ICollection<char>,
     IEquatable<PooledStringBuilder>,
@@ -57,14 +55,12 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     bool ICollection<char>.IsReadOnly => false;
 
-    internal char[]? _buffer = capacity == 0 ? [] : ArrayPool<char>.Shared.Rent(capacity);
+    internal char[]? _buffer;
 
-    [MustDisposeResource]
-    public PooledStringBuilder() : this(0)
-    {
-    }
+    public PooledStringBuilder() => _buffer = [];
 
-    [MustDisposeResource]
+    public PooledStringBuilder(int capacity) => _buffer = ArrayPool<char>.Shared.Rent(capacity);
+
     public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
     {
         Debug.Assert(_buffer is not null);
@@ -80,8 +76,8 @@ public sealed partial class PooledStringBuilder(int capacity) :
             return;
         }
 
-        ArrayPool<char>.Shared.Return(buffer);
         _buffer = null;
+        ArrayPool<char>.Shared.Return(buffer);
     }
 
     Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
@@ -142,6 +138,33 @@ public sealed partial class PooledStringBuilder(int capacity) :
         Length += count;
     }
 
+    public void Append(List<string> strings) => Append(ref ListMarshal.GetReference(strings), strings.Count);
+
+    public void Append(string[] strings) => Append(ref MemoryMarshal.GetArrayDataReference(strings), strings.Length);
+
+    public void Append(Span<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
+
+    public void Append(ReadOnlySpan<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
+
+    private void Append(ref string strings, int length)
+    {
+        int sum = 0;
+        for (int i = 0; i < length; i++)
+        {
+            sum += Unsafe.Add(ref strings, i).Length;
+        }
+
+        ref char destination = ref GetDestination(sum);
+        for (int i = 0; i < length; i++)
+        {
+            string s = Unsafe.Add(ref strings, i);
+            SpanHelpers.Memmove(ref destination, ref StringMarshal.GetReference(s), (uint)s.Length);
+            destination = ref Unsafe.Add(ref destination, s.Length);
+        }
+
+        Length += sum;
+    }
+
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
         => Append<byte>(value, format);
 
@@ -183,6 +206,9 @@ public sealed partial class PooledStringBuilder(int capacity) :
 
     public void Append(double value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
         => Append<double>(value, format);
+
+    public void Append(decimal value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
+        => Append<decimal>(value, format);
 
     public void Append(DateTime dateTime, [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] string? format = null)
         => Append<DateTime>(dateTime, format);
@@ -234,6 +260,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
         {
             return TryFormatEnum(null, value, destination, out charsWritten, format);
         }
+
 #pragma warning disable IDE0038, RCS1220
         string? str;
         if (value is IFormattable)
@@ -263,7 +290,7 @@ public sealed partial class PooledStringBuilder(int capacity) :
         }
 
         charsWritten = 0;
-        return true;
+        return false;
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "TryFormatUnconstrained")]
@@ -324,18 +351,6 @@ public sealed partial class PooledStringBuilder(int capacity) :
         return buffer;
     }
 
-    [Pure]
-    public override string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
-
-    [Pure]
-    public string ToString(int start) => new(WrittenSpan[start..]);
-
-    [Pure]
-    public string ToString(int start, int length) => new(WrittenSpan.Slice(start, length));
-
-    [Pure]
-    public string ToString(Range range) => new(WrittenSpan[range]);
-
     public void CopyTo(List<char> destination, int offset = 0)
     {
         CopyWorker<char> copyWorker = new(WrittenSpan);
@@ -378,16 +393,28 @@ public sealed partial class PooledStringBuilder(int capacity) :
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
+    public override string ToString() => Length == 0 ? string.Empty : new(WrittenSpan);
+
+    [Pure]
+    public string ToString(int start) => new(WrittenSpan[start..]);
+
+    [Pure]
+    public string ToString(int start, int length) => new(WrittenSpan.Slice(start, length));
+
+    [Pure]
+    public string ToString(Range range) => new(WrittenSpan[range]);
+
+    [Pure]
     public bool Equals(PooledStringBuilder builder, StringComparison comparisonType) => Equals(builder.WrittenSpan, comparisonType);
 
     [Pure]
     public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => Length == other?.Length && ReferenceEquals(GetBuffer(), other.GetBuffer());
+    public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is PooledStringBuilder other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);

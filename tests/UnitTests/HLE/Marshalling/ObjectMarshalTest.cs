@@ -155,15 +155,15 @@ public sealed unsafe partial class ObjectMarshalTest
         int[] array = new int[8];
         Random.Shared.Fill(array);
 
-        ref RawArrayData data = ref ObjectMarshal.GetRawArrayData(array);
+        ref RawArrayData<int> data = ref ObjectMarshal.GetRawArrayData(array);
 
         Assert.True(data.MethodTable == ObjectMarshal.GetMethodTable<int[]>());
 
         Assert.Equal((uint)array.Length, data.Length);
-        Assert.Equal(array[0], Unsafe.As<byte, int>(ref data.FirstElement));
+        Assert.Equal(array[0], data.FirstElement);
 
-        Assert.True(Unsafe.AreSame(ref MemoryMarshal.GetArrayDataReference(array), ref Unsafe.As<byte, int>(ref data.FirstElement)));
-        Assert.True(MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<byte, int>(ref data.FirstElement), (int)data.Length).SequenceEqual(array));
+        Assert.True(Unsafe.AreSame(ref MemoryMarshal.GetArrayDataReference(array), ref data.FirstElement));
+        Assert.True(MemoryMarshal.CreateReadOnlySpan(ref data.FirstElement, (int)data.Length).SequenceEqual(array));
     }
 
     [Theory]

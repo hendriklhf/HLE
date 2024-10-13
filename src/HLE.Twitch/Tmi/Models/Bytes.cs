@@ -49,8 +49,8 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
             return;
         }
 
-        ArrayPool<byte>.Shared.Return(buffer);
         _buffer = null;
+        ArrayPool<byte>.Shared.Return(buffer);
     }
 
     [Pure]

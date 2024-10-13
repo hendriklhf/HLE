@@ -1,12 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using HLE.Memory;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Text;
 
@@ -14,7 +13,6 @@ internal sealed class LazyStringJsonConverter :
     JsonConverter<LazyString>,
     IEquatable<LazyStringJsonConverter>
 {
-    [MustDisposeResource]
     public override LazyString? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Null)

@@ -11,7 +11,11 @@ public static partial class ListMarshal
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Memory<T> AsMemory<T>(List<T> list) => list.Count == 0 ? Memory<T>.Empty : GetArray(list).AsMemory(0, list.Count);
+    public static Memory<T> AsMemory<T>(List<T> list) => new(GetArray(list), 0, list.Count);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlyMemory<T> AsReadOnlyMemory<T>(List<T> list) => new(GetArray(list), 0, list.Count);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

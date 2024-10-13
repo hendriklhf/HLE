@@ -3,13 +3,12 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Text;
-using JetBrains.Annotations;
-using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
 
 namespace HLE.Memory;
 
@@ -81,14 +80,12 @@ public ref struct ValueBufferWriter<T> :
     private IntBoolUnion<int> _bufferLengthAndIsStackalloced;
     private IntBoolUnion<int> _countAndIsDisposed;
 
-    [MustDisposeResource]
     public ValueBufferWriter()
     {
         _buffer = ref Unsafe.NullRef<T>();
         IsStackalloced = true;
     }
 
-    [MustDisposeResource]
     public ValueBufferWriter(Span<T> buffer)
     {
         _buffer = ref MemoryMarshal.GetReference(buffer);
@@ -96,7 +93,6 @@ public ref struct ValueBufferWriter<T> :
         IsStackalloced = true;
     }
 
-    [MustDisposeResource]
     public ValueBufferWriter(int capacity)
     {
         T[] buffer = ArrayPool<T>.Shared.Rent(capacity);

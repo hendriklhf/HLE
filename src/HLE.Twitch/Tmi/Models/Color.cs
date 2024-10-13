@@ -69,10 +69,8 @@ public readonly struct Color : IBitwiseEquatable<Color>
     public override unsafe int GetHashCode()
     {
         Debug.Assert(sizeof(Color) == sizeof(int));
-        fixed (Color* self = &this)
-        {
-            return *(int*)self;
-        }
+        Color t = this;
+        return *(int*)&t;
     }
 
     public override string ToString()

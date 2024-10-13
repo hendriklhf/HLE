@@ -1,11 +1,11 @@
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Hashing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Marshalling;
 using Xunit;
 
 namespace HLE.TestUtilities;
@@ -48,12 +48,20 @@ public static class TheoryDataHelpers
     public static TheoryData<string> CreateRandomStrings(int stringCount, int minLength, int maxLength)
     {
         TheoryData<string> data = new();
-        for (int i = 0; i < stringCount; i++)
+        char[] buffer = ArrayPool<char>.Shared.Rent(maxLength);
+        try
         {
-            int length = Random.Shared.Next(minLength, maxLength);
-            string str = StringMarshal.FastAllocateString(length, out Span<char> chars);
-            Random.Shared.Fill(chars);
-            data.Add(str);
+            for (int i = 0; i < stringCount; i++)
+            {
+                int length = Random.Shared.Next(minLength, maxLength);
+                Span<char> chars = buffer.AsSpan(..length);
+                Random.Shared.NextBytes(MemoryMarshal.Cast<char, byte>(chars));
+                data.Add(new(chars));
+            }
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
         }
 
         return data;
