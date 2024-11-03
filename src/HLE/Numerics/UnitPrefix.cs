@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -176,16 +176,19 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
         => (float)Convert((double)value, fromPrefix, toPrefix);
 
     [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
+    public static implicit operator double(UnitPrefix prefix) => prefix.Value;
+
+    [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
     public static implicit operator double(UnitPrefix? prefix) => prefix?.Value ?? 0;
 
     [Pure]
     public override string ToString() => Name;
 
     [Pure]
-    public bool Equals(double value) => Math.Abs(Value - value) <= 0;
+    public bool Equals(double value) => Math.Abs(Value - value) <= 0.0001;
 
     [Pure]
-    public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) <= 0;
+    public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) <= 0.0001;
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is UnitPrefix other && Equals(other);

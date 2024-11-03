@@ -183,9 +183,19 @@ public sealed unsafe partial class ObjectMarshalTest
     public void GetMethodTable_Type_Test()
     {
         int[] array = new int[1];
-        Assert.True(ObjectMarshal.GetMethodTable<int[]>() == **(MethodTable***)&array);
+        Assert.True(ObjectMarshal.GetMethodTable<int[]>() == *(MethodTable**)&array);
 
         string str = "hello";
-        Assert.True(ObjectMarshal.GetMethodTable<string>() == **(MethodTable***)&str);
+        Assert.True(ObjectMarshal.GetMethodTable<string>() == *(MethodTable**)&str);
+    }
+
+    [Fact]
+    public void BoxOnStack()
+    {
+        int value = 16;
+        object o = ObjectMarshal.BoxOnStack(ref value, out _);
+        Assert.True(o is int);
+        Assert.Equal(typeof(int), o.GetType());
+        Assert.Equal(value, (int)o);
     }
 }

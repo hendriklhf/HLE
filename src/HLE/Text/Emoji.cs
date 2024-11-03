@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using HLE.Memory;
-using HLE.Text;
 
-namespace HLE.Emojis;
+namespace HLE.Text;
 
 /// <summary>
 /// A class that contains (almost) all existing emojis.
@@ -21,13 +21,20 @@ public static partial class Emoji
     // public const string Grinning = "😀";
 #pragma warning restore S125
 
-    public static ImmutableArray<string> Emojis => s_emojis.Items;
+    public static ImmutableArray<string> All => s_emojis.Items;
 
-    private static readonly FrozenSet<string> s_emojis = typeof(Emoji)
+    private static readonly FrozenDictionary<string, string> s_emojisByName = typeof(Emoji)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(static f => f.FieldType == typeof(string))
-        .Select(static f => Unsafe.As<string>(f.GetValue(null))!)
-        .ToFrozenSet(StringComparer.Ordinal);
+        .ToFrozenDictionary(
+            static f => f.Name,
+            static f => Unsafe.As<string>(f.GetValue(null))!,
+            StringComparer.OrdinalIgnoreCase
+        );
+
+    private static readonly FrozenSet<string> s_emojis = s_emojisByName.Values.ToFrozenSet();
+
+    public static bool TryGetEmoji(string name, [MaybeNullWhen(false)] out string emoji) => s_emojisByName.TryGetValue(name, out emoji);
 
     [Pure]
     public static bool IsEmoji(char c) => IsEmoji(new ReadOnlySpan<char>(ref c));

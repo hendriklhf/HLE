@@ -63,7 +63,9 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         int length = minimumLength >= 1 << 30 ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
         if (length > ArrayPool.MaximumArrayLength)
         {
-            return GC.AllocateUninitializedArray<T>(length);
+            T[] allocatedArray = GC.AllocateUninitializedArray<T>(length);
+            Log.Allocated(allocatedArray);
+            return allocatedArray;
         }
 
         Debug.Assert(BitOperations.PopCount((uint)length) == 1);
@@ -80,7 +82,9 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         switch (length)
         {
             case > ArrayPool.MaximumArrayLength:
-                return GC.AllocateUninitializedArray<T>(length);
+                T[] allocatedArray = GC.AllocateUninitializedArray<T>(length);
+                Log.Allocated(allocatedArray);
+                return allocatedArray;
             case < ArrayPool.MinimumArrayLength:
                 ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
                 return smallArrayPool.Rent(length);
@@ -102,7 +106,14 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         }
 
         Bucket bucket = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
-        return bucket.TryRentExact(length, out array) ? array : GC.AllocateUninitializedArray<T>(length, true);
+        if (bucket.TryRentExact(length, out array))
+        {
+            return array;
+        }
+
+        array = GC.AllocateUninitializedArray<T>(length, true);
+        Log.Allocated(array);
+        return array;
     }
 
     [Pure]
@@ -187,6 +198,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         {
             threadLocalBucket.SetInitialized(arrayLength);
             array = GC.AllocateUninitializedArray<T>(arrayLength, true);
+            Log.Allocated(array);
             return true;
         }
 
@@ -195,6 +207,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         {
             array = arrayReference;
             arrayReference = null; // remove reference from the pool
+            Log.Rented(array);
             return true;
         }
 
@@ -221,6 +234,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
 
         if (!TryGetBucketIndex(array.Length, out int bucketIndex, out int pow2Length))
         {
+            Log.Dropped(array);
             return;
         }
 
@@ -254,6 +268,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             ClearArrayIfNeeded(array, clearArray);
             threadLocalBucket.SetInitialized(pow2Length);
             Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex) = array;
+            Log.Returned(array);
             return true;
         }
 
@@ -266,6 +281,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         ClearArrayIfNeeded(array, clearArray);
         arrayReference = array;
         threadLocalBucket.SetInitialized(pow2Length);
+        Log.Returned(array);
 
         return true;
     }

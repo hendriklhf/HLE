@@ -9,7 +9,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
-using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.IO;
@@ -202,7 +201,7 @@ public sealed class PooledMemoryStream(int capacity) :
             return -1;
         }
 
-        int value = UnsafeIL.GetArrayReference(GetBuffer(), position);
+        int value = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), position);
         _position = position + 1;
         return value;
     }

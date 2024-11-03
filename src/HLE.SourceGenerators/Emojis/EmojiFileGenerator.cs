@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
@@ -30,6 +30,8 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
     };
 
     private static readonly TimeSpan s_cacheTime = TimeSpan.FromDays(1);
+    private static readonly Regex s_emojiPattern = new("\"emoji\":\\s*\"(.*)\"", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+    private static readonly Regex s_namePattern = new("\"aliases\":\\s*\\[\\s*\"(.*)\"(\\s*,\\s*\".*\")*\\s*\\]", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
 
     private const string HttpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
     private const string Indentation = "    ";
@@ -39,9 +41,41 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
     [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
     public async void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        using Stream emojiJsonBytes = await GetEmojiJsonBytesAsync();
-        Emoji[]? emojis = await JsonSerializer.DeserializeAsync<Emoji[]>(emojiJsonBytes);
-        context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, _) => Execute(context, emojis!));
+        using Stream emojiJsonStream = await GetEmojiJsonBytesAsync();
+        EmojiModel[] emojis = await ParseEmojisAsync(emojiJsonStream);
+        context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, _) => Execute(context, emojis));
+    }
+
+    private static async Task<EmojiModel[]> ParseEmojisAsync(Stream emojiJsonStream)
+    {
+        using StreamReader reader = new(emojiJsonStream);
+        string json = await reader.ReadToEndAsync();
+        List<string> emojis = new();
+        foreach (Match match in s_emojiPattern.Matches(json))
+        {
+            string value = match.Groups[1].Value;
+            emojis.Add(value);
+        }
+
+        List<string> names = new(emojis.Count);
+        foreach (Match match in s_namePattern.Matches(json))
+        {
+            string value = match.Groups[1].Value;
+            names.Add(value);
+        }
+
+        if (emojis.Count != names.Count)
+        {
+            throw new InvalidOperationException($"Emoji count: {emojis.Count} != Names count: {names.Count}");
+        }
+
+        EmojiModel[] emojiModels = new EmojiModel[emojis.Count];
+        for (int i = 0; i < emojis.Count; i++)
+        {
+            emojiModels[i] = new(names[i], emojis[i]);
+        }
+
+        return emojiModels;
     }
 
     private static ValueTask<Stream> GetEmojiJsonBytesAsync()
@@ -57,14 +91,15 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         }
     }
 
-    private static void Execute(SourceProductionContext context, Emoji[] emojis)
+    private static void Execute(SourceProductionContext context, EmojiModel[] emojis)
     {
         StringBuilder sourceBuilder = new(ushort.MaxValue);
-        sourceBuilder.AppendLine("namespace HLE.Emojis;").AppendLine();
+        sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
         sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
         AppendEmojis(sourceBuilder, emojis);
         sourceBuilder.AppendLine("}");
-        context.AddSource("HLE.Emojis.Emoji.g.cs", sourceBuilder.ToString());
+        string source = sourceBuilder.ToString();
+        context.AddSource("HLE.Text.Emoji.g.cs", source);
     }
 
     [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
@@ -110,11 +145,12 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         await emojiJsonBytes.CopyToAsync(jsonFile);
     }
 
-    private static void AppendEmojis(StringBuilder sourceBuilder, ReadOnlySpan<Emoji> emojis)
+    private static void AppendEmojis(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
     {
         for (int i = 0; i < emojis.Length; i++)
         {
-            Emoji emoji = emojis[i];
+            EmojiModel emoji = emojis[i];
+            sourceBuilder.Append(Indentation).Append("/// <summary> ").Append(emoji.Value).AppendLine(" </summary>");
             sourceBuilder.Append(Indentation).Append("public const string ").Append(NormalizeName(emoji.Name)).Append(" = ");
             sourceBuilder.Append('"').Append(emoji.Value).AppendLine("\";");
         }

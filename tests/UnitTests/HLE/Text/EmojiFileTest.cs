@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
-using HLE.Emojis;
+using HLE.Text;
 using Xunit;
 
-namespace HLE.UnitTests.Emojis;
+namespace HLE.UnitTests.Text;
 
 public sealed class EmojiFileTest
 {

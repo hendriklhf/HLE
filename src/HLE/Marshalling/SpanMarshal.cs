@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.IL;
 
 namespace HLE.Marshalling;
 
@@ -127,6 +126,6 @@ public static unsafe class SpanMarshal
     public static T[] AsArray<T>(ReadOnlySpan<T> span) => AsArray(ref MemoryMarshal.GetReference(span));
 
     [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public static T[] AsArray<T>(ref T firstElement) => UnsafeIL.AsArray(ref firstElement);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T[] AsArray<T>(ref T firstElement) => ObjectMarshal.ReadObject<T[], T>(ref Unsafe.SubtractByteOffset(ref firstElement, (uint)sizeof(nuint) + (uint)sizeof(nuint)));
 }

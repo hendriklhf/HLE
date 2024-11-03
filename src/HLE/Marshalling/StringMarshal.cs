@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -128,7 +127,8 @@ public static unsafe class StringMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static string AsString(ref char chars) => UnsafeIL.AsString(ref chars);
+    private static string AsString(ref char chars)
+        => ObjectMarshal.ReadObject<string, char>(ref Unsafe.SubtractByteOffset(ref chars, sizeof(int) + sizeof(nuint)));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

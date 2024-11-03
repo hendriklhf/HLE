@@ -41,13 +41,11 @@ public sealed class StringMarshalTest
     [Fact]
     public void AsStringTest()
     {
-        ReadOnlySpan<char> span = "hello";
+        const string Hello = "hello";
+        ReadOnlySpan<char> span = Hello;
         string str = StringMarshal.AsString(span);
         Assert.True(span.SequenceEqual(str));
-
-        ref char spanRef = ref MemoryMarshal.GetReference(span);
-        ref char strRef = ref MemoryMarshal.GetReference(str.AsSpan());
-        Assert.True(Unsafe.AreSame(ref spanRef, ref strRef));
+        Assert.Same(Hello, str);
     }
 
     [Fact]

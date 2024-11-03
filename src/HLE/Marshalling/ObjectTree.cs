@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -119,7 +118,7 @@ internal static unsafe class ObjectTree
         }
 
         delegate*<ref byte, nuint> getSize = (delegate*<ref byte, nuint>)method.MethodHandle.GetFunctionPointer();
-        return type.IsValueType ? getSize(ref UnsafeIL.Unbox<byte>(obj)) : getSize(ref Unsafe.As<object, byte>(ref obj));
+        return type.IsValueType ? getSize(ref ObjectMarshal.Unbox<byte>(obj)) : getSize(ref Unsafe.As<object, byte>(ref obj));
     }
 
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]

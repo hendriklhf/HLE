@@ -6,7 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using HLE.Marshalling;
+using HLE.InteropServices;
 using HLE.Text;
 
 namespace HLE;

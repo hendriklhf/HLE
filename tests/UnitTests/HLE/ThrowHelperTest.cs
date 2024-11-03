@@ -42,4 +42,12 @@ public sealed class ThrowHelperTest
     [Fact]
     public void ThrowOperatingSystemNotSupportedTest()
         => Assert.Throws<NotSupportedException>(ThrowHelper.ThrowOperatingSystemNotSupported);
+
+    [Fact]
+    public void ThrowNotSupportedExceptionTest()
+    {
+        string message = Random.Shared.NextString(16);
+        NotSupportedException exception = Assert.Throws<NotSupportedException>(() => ThrowHelper.ThrowNotSupportedException(message));
+        Assert.Same(message, exception.Message);
+    }
 }

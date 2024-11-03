@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using HLE.Collections;
 
 namespace HLE.Memory;
@@ -19,7 +18,7 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     private readonly int _length = length;
 
     [Pure]
-    public override Span<T> GetSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef<T>(_memory), _length);
+    public override Span<T> GetSpan() => new(_memory, _length);
 
     ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => GetSpan();
 

@@ -27,7 +27,9 @@ public sealed partial class ArrayPool<T>
 
             if (arrays is null)
             {
-                return GC.AllocateUninitializedArray<T>(length, true);
+                T[] allocatedArray = GC.AllocateUninitializedArray<T>(length, true);
+                Log.Allocated(allocatedArray);
+                return allocatedArray;
             }
 
             for (int i = 1; i < SmallPool.SmallBucket.Length; i++)
@@ -39,15 +41,18 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
-                ref T[]? array = ref Unsafe.Add(ref current, -1);
-                T[]? correctArray = array;
-                array = null!; // remove reference from pool
+                ref T[]? arrayRef = ref Unsafe.Add(ref current, -1);
+                T[]? correctArray = arrayRef;
+                arrayRef = null!; // remove reference from pool
 
                 Debug.Assert(correctArray is not null);
+                Log.Rented(correctArray);
                 return correctArray;
             }
 
-            return GC.AllocateUninitializedArray<T>(length, true);
+            T[] array = GC.AllocateUninitializedArray<T>(length, true);
+            Log.Allocated(array);
+            return array;
         }
 
         public void Return(T[] array, bool clearArray)
@@ -73,8 +78,11 @@ public sealed partial class ArrayPool<T>
 
                 ClearArrayIfNeeded(array, clearArray);
                 current = array;
+                Log.Returned(array);
                 return;
             }
+
+            Log.Dropped(array);
         }
     }
 }

@@ -8,13 +8,17 @@ public sealed partial class EnumValuesTest
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private enum TestEnum
     {
+        Y = 1000,
+        Z = -50,
         A = 50,
         B = 35,
         C = 0,
+        W = -2,
         D = 12345,
         E = 55,
         F = 1,
         G = 3,
-        H = 8
+        H = 8,
+        I = -100
     }
 }

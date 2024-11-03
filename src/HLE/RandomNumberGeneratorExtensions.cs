@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using HLE.IL;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
@@ -396,35 +395,35 @@ public static class RandomNumberGeneratorExtensions
         {
             case sizeof(byte):
             {
-                byte maximumValue = UnsafeIL.As<TEnum, byte>(EnumValues<TEnum>.MaximumValue);
+                byte maximumValue = StructMarshal.As<TEnum, byte>(EnumValues<TEnum>.MaximumValue);
                 int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
                 byte mask = random.GetStruct<byte>();
                 ulong flags = LeadingZeroFlagMaskValues[56 + leadingZeroCount] & mask;
-                return UnsafeIL.As<byte, TEnum>((byte)flags);
+                return StructMarshal.As<byte, TEnum>((byte)flags);
             }
             case sizeof(ushort):
             {
-                ushort maximumValue = UnsafeIL.As<TEnum, ushort>(EnumValues<TEnum>.MaximumValue);
+                ushort maximumValue = StructMarshal.As<TEnum, ushort>(EnumValues<TEnum>.MaximumValue);
                 int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
                 ushort mask = random.GetStruct<ushort>();
                 ulong flags = LeadingZeroFlagMaskValues[48 + leadingZeroCount] & mask;
-                return UnsafeIL.As<ushort, TEnum>((ushort)flags);
+                return StructMarshal.As<ushort, TEnum>((ushort)flags);
             }
             case sizeof(uint):
             {
-                uint maximumValue = UnsafeIL.As<TEnum, uint>(EnumValues<TEnum>.MaximumValue);
+                uint maximumValue = StructMarshal.As<TEnum, uint>(EnumValues<TEnum>.MaximumValue);
                 int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
                 uint mask = random.GetStruct<uint>();
                 ulong flags = LeadingZeroFlagMaskValues[32 + leadingZeroCount] & mask;
-                return UnsafeIL.As<uint, TEnum>((uint)flags);
+                return StructMarshal.As<uint, TEnum>((uint)flags);
             }
             case sizeof(ulong):
             {
-                ulong maximumValue = UnsafeIL.As<TEnum, ulong>(EnumValues<TEnum>.MaximumValue);
+                ulong maximumValue = StructMarshal.As<TEnum, ulong>(EnumValues<TEnum>.MaximumValue);
                 int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
                 ulong mask = random.GetStruct<ulong>();
                 ulong flags = LeadingZeroFlagMaskValues[leadingZeroCount] & mask;
-                return UnsafeIL.As<ulong, TEnum>(flags);
+                return StructMarshal.As<ulong, TEnum>(flags);
             }
             default:
                 ThrowHelper.ThrowUnreachableException();

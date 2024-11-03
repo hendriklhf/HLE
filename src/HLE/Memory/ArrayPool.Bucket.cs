@@ -17,7 +17,17 @@ public sealed partial class ArrayPool<T>
         internal readonly Lock _lock = new();
 
         [Pure]
-        public T[] Rent() => TryRent(out T[]? array) ? array : GC.AllocateUninitializedArray<T>(_arrayLength, true);
+        public T[] Rent()
+        {
+            if (TryRent(out T[]? array))
+            {
+                return array;
+            }
+
+            array = GC.AllocateUninitializedArray<T>(_arrayLength, true);
+            Log.Allocated(array);
+            return array;
+        }
 
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
@@ -34,6 +44,7 @@ public sealed partial class ArrayPool<T>
                 _count = count;
                 array = reference;
                 reference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
+                Log.Rented(array);
                 return true;
             }
         }
@@ -61,6 +72,7 @@ public sealed partial class ArrayPool<T>
                     array = currentRef;
                     SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), count - i - 1);
                     _count = count - 1;
+                    Log.Rented(array);
                     return true;
                 }
 
@@ -76,12 +88,14 @@ public sealed partial class ArrayPool<T>
                 uint count = _count;
                 if (count == _stack.Length)
                 {
+                    Log.Dropped(array);
                     return;
                 }
 
                 ClearArrayIfNeeded(array, clearArray);
                 Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), count++) = array;
                 _count = count;
+                Log.Returned(array);
             }
         }
 

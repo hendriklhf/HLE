@@ -19,12 +19,12 @@ namespace HLE.Text;
 /// which makes search operations significantly faster,
 /// but comes at the cost of higher memory usage and initialization time.
 /// </summary>
-public sealed class VerticalStringArray :
+public sealed class BloomFilterStringArray :
     ICollection<string>,
     IReadOnlyCollection<string>,
     ICopyable<string>,
     IIndexable<string>,
-    IEquatable<VerticalStringArray>,
+    IEquatable<BloomFilterStringArray>,
     IReadOnlySpanProvider<string>,
     IReadOnlyMemoryProvider<string>,
     ICollectionProvider<string>
@@ -61,23 +61,23 @@ public sealed class VerticalStringArray :
 
     private const int BitsPerMap = sizeof(uint) * 8;
 
-    public static VerticalStringArray Empty { get; } = new(0);
+    public static BloomFilterStringArray Empty { get; } = new(0);
 
-    public VerticalStringArray(int length) => CtorCore(length, out _strings, out _lengths);
+    public BloomFilterStringArray(int length) => CtorCore(length, out _strings, out _lengths);
 
-    public VerticalStringArray(List<string> strings) : this(strings.Count)
+    public BloomFilterStringArray(List<string> strings) : this(strings.Count)
         => FillArray(CollectionsMarshal.AsSpan(strings));
 
-    public VerticalStringArray(string[] strings) : this(strings.Length)
+    public BloomFilterStringArray(string[] strings) : this(strings.Length)
         => FillArray(strings);
 
-    public VerticalStringArray(Span<string> strings) : this(strings.Length)
+    public BloomFilterStringArray(Span<string> strings) : this(strings.Length)
         => FillArray(strings);
 
-    public VerticalStringArray(params ReadOnlySpan<string> strings) : this(strings.Length)
+    public BloomFilterStringArray(params ReadOnlySpan<string> strings) : this(strings.Length)
         => FillArray(strings);
 
-    public VerticalStringArray(IEnumerable<string> strings)
+    public BloomFilterStringArray(IEnumerable<string> strings)
     {
         if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string> span))
         {
@@ -500,7 +500,7 @@ public sealed class VerticalStringArray :
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] VerticalStringArray? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] BloomFilterStringArray? other) => ReferenceEquals(this, other);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
@@ -508,7 +508,7 @@ public sealed class VerticalStringArray :
     [Pure]
     public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
 
-    public static bool operator ==(VerticalStringArray? left, VerticalStringArray? right) => Equals(left, right);
+    public static bool operator ==(BloomFilterStringArray? left, BloomFilterStringArray? right) => Equals(left, right);
 
-    public static bool operator !=(VerticalStringArray? left, VerticalStringArray? right) => !(left == right);
+    public static bool operator !=(BloomFilterStringArray? left, BloomFilterStringArray? right) => !(left == right);
 }

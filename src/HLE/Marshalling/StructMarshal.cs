@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Text;
 using HLE.Collections;
-using HLE.IL;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -91,7 +90,11 @@ public static unsafe class StructMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte AsByte(this bool b) => UnsafeIL.As<bool, byte>(b);
+    public static TTo As<TFrom, TTo>(TFrom value) => Unsafe.As<TFrom, TTo>(ref value);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte AsByte(this bool b) => Unsafe.As<bool, byte>(ref b);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,15 +134,4 @@ public static unsafe class StructMarshal
            typeof(T) == typeof(RangeEnumerator) ||
            typeof(T).IsEnum ||
            typeof(T).IsAssignableTo(typeof(IBitwiseEquatable<T>));
-
-    /// <summary>
-    /// Unboxes a struct without a type check.
-    /// It will not be checked if the type of the boxed struct inside <paramref name="obj"/> matches the type <typeparamref name="T"/>.
-    /// </summary>
-    /// <param name="obj">The box.</param>
-    /// <typeparam name="T">The type of the struct that will be read from the box.</typeparam>
-    /// <returns>A reference to the struct in the box.</returns>
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T Unbox<T>(object obj) => ref UnsafeIL.Unbox<T>(obj);
 }

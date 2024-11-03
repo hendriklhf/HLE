@@ -12,6 +12,13 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     private readonly TypeFormattingOptions _options = options;
     private readonly ConcurrentDictionary<Type, string> _cache = new();
 
+    public static TypeFormatter Default { get; } = new(new()
+    {
+        NamespaceSeparator = '.',
+        GenericTypesSeparator = ", ",
+        GenericDelimiters = new("<", ">")
+    });
+
     [Pure]
     public string Format<T>() => Format(typeof(T));
 
