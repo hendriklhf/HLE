@@ -69,6 +69,13 @@ public sealed class PooledList<T> :
         Count = items.Length;
     }
 
+    public PooledList(ReadOnlySpan<T> items, int capacity) : this(int.Max(items.Length, capacity))
+    {
+        AssertBufferNotNull();
+        SpanHelpers.Copy(items, _buffer);
+        Count = items.Length;
+    }
+
     public void Dispose()
     {
         T[]? buffer = _buffer;

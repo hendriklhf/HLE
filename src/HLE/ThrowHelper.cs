@@ -51,4 +51,8 @@ internal static class ThrowHelper
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowNotSupportedException(string message) => throw new NotSupportedException(message);
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowInvalidOperationException(string message) => throw new InvalidOperationException(message);
 }

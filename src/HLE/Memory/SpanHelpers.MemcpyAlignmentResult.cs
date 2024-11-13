@@ -12,8 +12,10 @@ public static partial class SpanHelpers
 
         public nuint ByteCount { get; }
 
+#pragma warning disable IDE0032 // Use auto property (are assigned by ref in ctor, doesn't work currently)
         private readonly ref byte _destination;
         private readonly ref byte _source;
+#pragma warning restore IDE0032 // Use auto property
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MemcpyAlignmentResult(ref byte source, ref byte destination, nuint byteCount)

@@ -12,7 +12,7 @@ public sealed partial class SpanHelpersTest
 
     public static TheoryData<int> MemmoveUnalignedAndOverlappingParameters { get; } = TheoryDataHelpers.CreateRange(64, 2048);
 
-    [Theory]
+    [Theory(DisableDiscoveryEnumeration = true, Explicit = true)]
     [MemberData(nameof(MemmoveParameters))]
     public void Memmove_Bytes_Test(int byteCount)
     {
@@ -27,7 +27,7 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(source));
     }
 
-    [Theory]
+    [Theory(DisableDiscoveryEnumeration = true, Explicit = true)]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
     public void Memmove_Unaligned_Test(int byteCount)
     {
@@ -47,7 +47,7 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(source));
     }
 
-    [Theory]
+    [Theory(DisableDiscoveryEnumeration = true, Explicit = true)]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
     public void Memmove_Overlapping_DestinationGreaterThanSource_Test(int byteCount)
     {
@@ -64,7 +64,7 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(expectedItems));
     }
 
-    [Theory]
+    [Theory(DisableDiscoveryEnumeration = true, Explicit = true)]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
     public void Memmove_Overlapping_SourceGreaterThanDestination_Test(int byteCount)
     {

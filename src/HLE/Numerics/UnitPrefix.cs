@@ -39,129 +39,107 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
     /// <summary>
     /// The representation of the unit prefix Yotta.
     /// </summary>
-    public static ref readonly UnitPrefix Yotta => ref s_yotta;
+    public static UnitPrefix Yotta { get; } = new("Yotta", "Y", 1e24);
 
     /// <summary>
     /// The representation of the unit prefix Zetta.
     /// </summary>
-    public static ref readonly UnitPrefix Zetta => ref s_zetta;
+    public static UnitPrefix Zetta { get; } = new("Zetta", "Z", 1e21);
 
     /// <summary>
     /// The representation of the unit prefix Exa.
     /// </summary>
-    public static ref readonly UnitPrefix Exa => ref s_exa;
+    public static UnitPrefix Exa { get; } = new("Exa", "E", 1e18);
 
     /// <summary>
     /// The representation of the unit prefix Peta.
     /// </summary>
-    public static ref readonly UnitPrefix Peta => ref s_peta;
+    public static UnitPrefix Peta { get; } = new("Peta", "P", 1e15);
 
     /// <summary>
     /// The representation of the unit prefix Tera.
     /// </summary>
-    public static ref readonly UnitPrefix Tera => ref s_tera;
+    public static UnitPrefix Tera { get; } = new("Tera", "T", 1e12);
 
     /// <summary>
     /// The representation of the unit prefix Giga.
     /// </summary>
-    public static ref readonly UnitPrefix Giga => ref s_giga;
+    public static UnitPrefix Giga { get; } = new("Giga", "G", 1e9);
 
     /// <summary>
     /// The representation of the unit prefix Mega.
     /// </summary>
-    public static ref readonly UnitPrefix Mega => ref s_mega;
+    public static UnitPrefix Mega { get; } = new("Mega", "M", 1e6);
 
     /// <summary>
     /// The representation of the unit prefix Kilo.
     /// </summary>
-    public static ref readonly UnitPrefix Kilo => ref s_kilo;
+    public static UnitPrefix Kilo { get; } = new("Kilo", "k", 1e3);
 
     /// <summary>
     /// The representation of the unit prefix Hecto.
     /// </summary>
-    public static ref readonly UnitPrefix Hecto => ref s_hecto;
+    public static UnitPrefix Hecto { get; } = new("Hecto", "h", 1e2);
 
     /// <summary>
     /// The representation of the unit prefix Deca.
     /// </summary>
-    public static ref readonly UnitPrefix Deca => ref s_deca;
+    public static UnitPrefix Deca { get; } = new("Deca", "da", 1e1);
 
     /// <summary>
     /// The representation of no unit prefix.
     /// </summary>
-    public static ref readonly UnitPrefix None => ref s_none;
+    public static UnitPrefix None { get; } = new(string.Empty, string.Empty, 1e0);
 
     /// <summary>
     /// The representation of the unit prefix Deci.
     /// </summary>
-    public static ref readonly UnitPrefix Deci => ref s_deci;
+    public static UnitPrefix Deci { get; } = new("Deci", "d", 1e-1);
 
     /// <summary>
     /// The representation of the unit prefix Centi.
     /// </summary>
-    public static ref readonly UnitPrefix Centi => ref s_centi;
+    public static UnitPrefix Centi { get; } = new("Centi", "c", 1e-2);
 
     /// <summary>
     /// The representation of the unit prefix Milli.
     /// </summary>
-    public static ref readonly UnitPrefix Milli => ref s_milli;
+    public static UnitPrefix Milli { get; } = new("Milli", "m", 1e-3);
 
     /// <summary>
     /// The representation of the unit prefix Micro.
     /// </summary>
-    public static ref readonly UnitPrefix Micro => ref s_micro;
+    public static UnitPrefix Micro { get; } = new("Micro", "µ", 1e-6);
 
     /// <summary>
     /// The representation of the unit prefix Nano.
     /// </summary>
-    public static ref readonly UnitPrefix Nano => ref s_nano;
+    public static UnitPrefix Nano { get; } = new("Nano", "n", 1e-9);
 
     /// <summary>
     /// The representation of the unit prefix Pico.
     /// </summary>
-    public static ref readonly UnitPrefix Pico => ref s_pico;
+    public static UnitPrefix Pico { get; } = new("Pico", "p", 1e-12);
 
     /// <summary>
     /// The representation of the unit prefix Femto.
     /// </summary>
-    public static ref readonly UnitPrefix Femto => ref s_femto;
+    public static UnitPrefix Femto { get; } = new("Femto", "f", 1e-15);
 
     /// <summary>
     /// The representation of the unit prefix Atto.
     /// </summary>
-    public static ref readonly UnitPrefix Atto => ref s_atto;
+    public static UnitPrefix Atto { get; } = new("Atto", "a", 1e-18);
 
     /// <summary>
     /// The representation of the unit prefix Zepto.
     /// </summary>
-    public static ref readonly UnitPrefix Zepto => ref s_zepto;
+    public static UnitPrefix Zepto { get; } = new("Zepto", "z", 1e-21);
 
     /// <summary>
     /// The representation of the unit prefix Yocto.
     /// </summary>
-    public static ref readonly UnitPrefix Yocto => ref s_yocto;
-
-    private static readonly UnitPrefix s_yotta = new("Yotta", "Y", 1e24);
-    private static readonly UnitPrefix s_zetta = new("Zetta", "Z", 1e21);
-    private static readonly UnitPrefix s_exa = new("Exa", "E", 1e18);
-    private static readonly UnitPrefix s_peta = new("Peta", "P", 1e15);
-    private static readonly UnitPrefix s_tera = new("Tera", "T", 1e12);
-    private static readonly UnitPrefix s_giga = new("Giga", "G", 1e9);
-    private static readonly UnitPrefix s_mega = new("Mega", "M", 1e6);
-    private static readonly UnitPrefix s_kilo = new("Kilo", "k", 1e3);
-    private static readonly UnitPrefix s_hecto = new("Hecto", "h", 1e2);
-    private static readonly UnitPrefix s_deca = new("Deca", "da", 1e1);
-    private static readonly UnitPrefix s_none = new(string.Empty, string.Empty, 1e0);
-    private static readonly UnitPrefix s_deci = new("Deci", "d", 1e-1);
-    private static readonly UnitPrefix s_centi = new("Centi", "c", 1e-2);
-    private static readonly UnitPrefix s_milli = new("Milli", "m", 1e-3);
-    private static readonly UnitPrefix s_micro = new("Micro", "µ", 1e-6);
-    private static readonly UnitPrefix s_nano = new("Nano", "n", 1e-9);
-    private static readonly UnitPrefix s_pico = new("Pico", "p", 1e-12);
-    private static readonly UnitPrefix s_femto = new("Femto", "f", 1e-15);
-    private static readonly UnitPrefix s_atto = new("Atto", "a", 1e-18);
-    private static readonly UnitPrefix s_zepto = new("Zepto", "z", 1e-21);
-    private static readonly UnitPrefix s_yocto = new("Yocto", "y", 1e-24);
+    public static UnitPrefix Yocto { get; } = new("Yocto", "y", 1e-24);
 
     #endregion Static UnitPrefixes
 

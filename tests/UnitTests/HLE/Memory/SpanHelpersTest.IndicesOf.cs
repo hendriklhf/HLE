@@ -44,7 +44,7 @@ public sealed partial class SpanHelpersTest
 
     private static unsafe void IndicesOfCore<T>(T[] items) where T : struct, IEquatable<T>
     {
-        // ReSharper disable once NotDisposedResource (it is dispoed. can't use a "using" statement, as "loopedIndices" is passed by mutable ref)
+        // ReSharper disable once NotDisposedResource (it is disposed. can't use a "using" statement, as "loopedIndices" is passed by mutable ref)
         ValueList<int> loopedIndices = new(items.Length);
         try
         {

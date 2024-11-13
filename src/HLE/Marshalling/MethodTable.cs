@@ -25,6 +25,7 @@ public readonly struct MethodTable
     public bool HasComponentSize => (_flags & HasComponentSizeFlag) != 0;
 
     [FieldOffset(0)]
+    [SuppressMessage("Style", "IDE0032:Use auto property")]
     private readonly ushort _componentSize;
 
     [FieldOffset(0)]

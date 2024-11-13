@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
@@ -17,76 +16,6 @@ namespace HLE;
 
 public static class RandomExtensions
 {
-    [SuppressMessage("Major Code Smell", "S109:Magic numbers should not be used")]
-    private static ReadOnlySpan<ulong> LeadingZeroFlagMaskValues =>
-    [
-        ulong.MaxValue,
-        ulong.MaxValue >> 1,
-        ulong.MaxValue >> 2,
-        ulong.MaxValue >> 3,
-        ulong.MaxValue >> 4,
-        ulong.MaxValue >> 5,
-        ulong.MaxValue >> 6,
-        ulong.MaxValue >> 7,
-        ulong.MaxValue >> 8,
-        ulong.MaxValue >> 9,
-        ulong.MaxValue >> 10,
-        ulong.MaxValue >> 11,
-        ulong.MaxValue >> 12,
-        ulong.MaxValue >> 13,
-        ulong.MaxValue >> 14,
-        ulong.MaxValue >> 15,
-        ulong.MaxValue >> 16,
-        ulong.MaxValue >> 17,
-        ulong.MaxValue >> 18,
-        ulong.MaxValue >> 19,
-        ulong.MaxValue >> 20,
-        ulong.MaxValue >> 21,
-        ulong.MaxValue >> 22,
-        ulong.MaxValue >> 23,
-        ulong.MaxValue >> 24,
-        ulong.MaxValue >> 25,
-        ulong.MaxValue >> 26,
-        ulong.MaxValue >> 27,
-        ulong.MaxValue >> 28,
-        ulong.MaxValue >> 29,
-        ulong.MaxValue >> 30,
-        ulong.MaxValue >> 31,
-        ulong.MaxValue >> 32,
-        ulong.MaxValue >> 33,
-        ulong.MaxValue >> 34,
-        ulong.MaxValue >> 35,
-        ulong.MaxValue >> 36,
-        ulong.MaxValue >> 37,
-        ulong.MaxValue >> 38,
-        ulong.MaxValue >> 39,
-        ulong.MaxValue >> 40,
-        ulong.MaxValue >> 41,
-        ulong.MaxValue >> 42,
-        ulong.MaxValue >> 43,
-        ulong.MaxValue >> 44,
-        ulong.MaxValue >> 45,
-        ulong.MaxValue >> 46,
-        ulong.MaxValue >> 47,
-        ulong.MaxValue >> 48,
-        ulong.MaxValue >> 49,
-        ulong.MaxValue >> 50,
-        ulong.MaxValue >> 51,
-        ulong.MaxValue >> 52,
-        ulong.MaxValue >> 53,
-        ulong.MaxValue >> 54,
-        ulong.MaxValue >> 55,
-        ulong.MaxValue >> 56,
-        ulong.MaxValue >> 57,
-        ulong.MaxValue >> 58,
-        ulong.MaxValue >> 59,
-        ulong.MaxValue >> 60,
-        ulong.MaxValue >> 61,
-        ulong.MaxValue >> 62,
-        ulong.MaxValue >> 63,
-        0
-    ];
-
     [Pure]
     public static char NextChar(this Random random) => (char)random.NextUInt16();
 
@@ -428,52 +357,6 @@ public static class RandomExtensions
     [Pure]
     public static TEnum NextEnumValue<TEnum>(this Random random) where TEnum : struct, Enum
         => Unsafe.Add(ref EnumValues<TEnum>.Reference, random.Next(0, EnumValues<TEnum>.Count));
-
-    [Pure]
-    internal static unsafe TEnum NextEnumFlags<TEnum>(this Random random) where TEnum : struct, Enum
-    {
-        Debug.Assert(typeof(TEnum).GetCustomAttribute<FlagsAttribute>() is not null, $"{typeof(Enum)} is not annotated with {typeof(FlagsAttribute)}, " +
-                                                                                     "therefore might not be flags enum.");
-
-        switch (sizeof(TEnum))
-        {
-            case sizeof(byte):
-            {
-                byte maximumValue = StructMarshal.As<TEnum, byte>(EnumValues<TEnum>.MaximumValue);
-                int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
-                byte mask = random.NextStruct<byte>();
-                ulong flags = LeadingZeroFlagMaskValues[56 + leadingZeroCount] & mask;
-                return StructMarshal.As<byte, TEnum>((byte)flags);
-            }
-            case sizeof(ushort):
-            {
-                ushort maximumValue = StructMarshal.As<TEnum, ushort>(EnumValues<TEnum>.MaximumValue);
-                int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
-                ushort mask = random.NextStruct<ushort>();
-                ulong flags = LeadingZeroFlagMaskValues[48 + leadingZeroCount] & mask;
-                return StructMarshal.As<ushort, TEnum>((ushort)flags);
-            }
-            case sizeof(uint):
-            {
-                uint maximumValue = StructMarshal.As<TEnum, uint>(EnumValues<TEnum>.MaximumValue);
-                int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
-                uint mask = random.NextStruct<uint>();
-                ulong flags = LeadingZeroFlagMaskValues[32 + leadingZeroCount] & mask;
-                return StructMarshal.As<uint, TEnum>((uint)flags);
-            }
-            case sizeof(ulong):
-            {
-                ulong maximumValue = StructMarshal.As<TEnum, ulong>(EnumValues<TEnum>.MaximumValue);
-                int leadingZeroCount = BitOperations.LeadingZeroCount(maximumValue);
-                ulong mask = random.NextStruct<ulong>();
-                ulong flags = LeadingZeroFlagMaskValues[leadingZeroCount] & mask;
-                return StructMarshal.As<ulong, TEnum>(flags);
-            }
-            default:
-                ThrowHelper.ThrowUnreachableException();
-                return default;
-        }
-    }
 
     public static unsafe void Write<T>(this Random random, T* destination, nuint elementCount)
         where T : unmanaged, allows ref struct

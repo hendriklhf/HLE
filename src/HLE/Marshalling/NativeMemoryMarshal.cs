@@ -48,6 +48,8 @@ public static unsafe class NativeMemoryMarshal
             Throw();
         }
 
+        return;
+
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void Throw() => throw new InvalidOperationException("Types with undefined sizes can't be allocated.");
