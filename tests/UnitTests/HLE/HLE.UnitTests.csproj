@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\HLE\HLE.csproj"/>
-    <ProjectReference Include="..\..\HLE.TestUtilities\HLE.TestUtilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

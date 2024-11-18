@@ -1,11 +1,20 @@
 <Project>
 
+  <Import Project="..\Directory.Build.targets"/>
+
   <PropertyGroup Condition="'$(IsTestProject)'=='true'">
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsTestProject)'=='true'">
+    <PackageReference Include="System.IO.Hashing"/>
+    <Compile Include="..\..\HLE.TestUtilities\TestHelpers.cs"/>
+    <Compile Include="..\..\HLE.TestUtilities\TheoryDataHelpers.cs"/>
+  </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)'=='true'">
     <Content Include="..\..\xunit.runner.json" CopyToOutputDirectory="Always"/>
