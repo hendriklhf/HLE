@@ -50,4 +50,12 @@ public sealed class ThrowHelperTest
         NotSupportedException exception = Assert.Throws<NotSupportedException>(() => ThrowHelper.ThrowNotSupportedException(message));
         Assert.Same(message, exception.Message);
     }
+
+    [Fact]
+    public void ThrowInvalidOperationExceptionTest()
+    {
+        string message = Random.Shared.NextString(16);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => ThrowHelper.ThrowInvalidOperationException(message));
+        Assert.Same(message, exception.Message);
+    }
 }

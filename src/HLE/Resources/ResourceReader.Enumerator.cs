@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using HLE.Collections;
 
 namespace HLE.Resources;
@@ -26,10 +27,13 @@ public sealed partial class ResourceReader
         {
         }
 
+        [Pure]
         public readonly bool Equals(Enumerator other) => _enumerator.Equals(other._enumerator);
 
+        [Pure]
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Enumerator enumerator && Equals(enumerator);
 
+        [Pure]
         public override readonly int GetHashCode() => _enumerator.GetHashCode();
 
         public static bool operator ==(Enumerator left, Enumerator right) => left.Equals(right);

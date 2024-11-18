@@ -91,7 +91,7 @@ public sealed unsafe partial class NativeMemory<T> :
         T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, (uint)sizeof(nuint));
         if (zeroed)
         {
-            ClearMemory((byte*)memory, byteCount);
+            SpanHelpers.Clear((byte*)memory, byteCount);
         }
 
         _memory = (nuint)memory;
@@ -115,23 +115,6 @@ public sealed unsafe partial class NativeMemory<T> :
 
         Debug.Assert(MemoryHelpers.IsAligned((void*)memory, (uint)sizeof(nuint)));
         NativeMemory.AlignedFree((void*)memory);
-    }
-
-    private static void ClearMemory(byte* memory, nuint byteCount)
-    {
-        Debug.Assert(byteCount != 0);
-
-        while (byteCount >= uint.MaxValue)
-        {
-            Unsafe.InitBlock(memory, 0, uint.MaxValue);
-            byteCount -= uint.MaxValue;
-            memory += uint.MaxValue;
-        }
-
-        if (byteCount != 0)
-        {
-            Unsafe.InitBlock(memory, 0, (uint)byteCount);
-        }
     }
 
     [Pure]
@@ -242,7 +225,7 @@ public sealed unsafe partial class NativeMemory<T> :
 
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public void Clear() => ClearMemory((byte*)_memory, (uint)sizeof(T) * (uint)Length);
+    public void Clear() => SpanHelpers.Clear((byte*)_memory, (uint)sizeof(T) * (uint)Length);
 
     bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
 

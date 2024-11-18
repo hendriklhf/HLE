@@ -9,35 +9,38 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using HLE.Collections;
+using HLE.Memory;
 using HLE.Text;
 
 namespace HLE.Resources;
 
-public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposable, IEquatable<ResourceReader>, IReadOnlyCollection<Resource>
+public sealed unsafe partial class ResourceReader(Assembly assembly) :
+    IDisposable,
+    IEquatable<ResourceReader>,
+    IReadOnlyCollection<Resource>
 {
     int IReadOnlyCollection<Resource>.Count => _resourceMap.Count;
 
     private readonly Assembly _assembly = assembly;
     private readonly ConcurrentDictionary<string, Resource?> _resourceMap = new();
     private readonly List<Resource> _resources = [];
-    private List<GCHandle>? _handles;
+    private List<NativeMemory<byte>>? _handles;
 
     public void Dispose()
     {
-        List<GCHandle>? handlesList = _handles;
+        List<NativeMemory<byte>>? handlesList = Interlocked.Exchange(ref _handles, null);
         if (handlesList is null)
         {
             return;
         }
 
-        Span<GCHandle> handles = CollectionsMarshal.AsSpan(handlesList);
+        ReadOnlySpan<NativeMemory<byte>> handles = CollectionsMarshal.AsSpan(handlesList);
         for (int i = 0; i < handles.Length; i++)
         {
-            handles[i].Free();
+            handles[i].Dispose();
         }
-
-        _handles = null;
     }
 
     [Pure]
@@ -132,17 +135,12 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposab
 
         // fallback for the case that the implementation of GetManifestResourceStream has changed or the Assembly is collectible
 
-        if (streamLength > Array.MaxLength)
-        {
-            ThrowStreamLengthExceedsMaxArrayLength();
-        }
+        NativeMemory<byte> buffer = new(streamLength, false);
+        StoreHandle(buffer);
 
-        byte[] buffer = GC.AllocateUninitializedArray<byte>(streamLength, true);
-        StoreHandle(GCHandle.Alloc(buffer));
+        stream.ReadExactly(buffer.AsSpan());
 
-        stream.ReadExactly(buffer);
-        byte* bufferPointer = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetArrayDataReference(buffer));
-        resource = new(bufferPointer, streamLength);
+        resource = new(buffer.Pointer, streamLength);
         _resourceMap.AddOrSet(resourcePath, resource);
         AddResource(resource);
         return true;
@@ -151,18 +149,13 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) : IDisposab
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowStreamLengthExceedsInt32()
             => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
-
-        [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static void ThrowStreamLengthExceedsMaxArrayLength()
-            => throw new InvalidOperationException($"The stream length exceeds the maximum array length ({Array.MaxLength}).");
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
     private void AddResource(Resource resource) => _resources.Add(resource);
 
     [MethodImpl(MethodImplOptions.Synchronized)]
-    private void StoreHandle(GCHandle handle)
+    private void StoreHandle(NativeMemory<byte> handle)
     {
         _handles ??= [];
         _handles.Add(handle);

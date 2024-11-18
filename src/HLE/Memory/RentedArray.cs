@@ -237,8 +237,7 @@ public struct RentedArray<T> :
         }
 
         T[] array = Array;
-        ReadOnlySpan<char> chars = Unsafe.As<char[]>(array);
-        return new(chars);
+        return array.Length == 0 ? string.Empty : new(Unsafe.As<char[]>(array));
     }
 
     public readonly ArrayEnumerator<T> GetEnumerator() => new(Array);
