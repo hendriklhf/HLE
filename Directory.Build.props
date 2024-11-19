@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <NugetPackageVersion>2.2.0</NugetPackageVersion>
+    <NugetPackageVersion>2.2.1</NugetPackageVersion>
   </PropertyGroup>
 
   <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->

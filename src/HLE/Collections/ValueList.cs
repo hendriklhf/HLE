@@ -98,6 +98,8 @@ public ref struct ValueList<T> :
     private IntBoolUnion<int> _bufferLengthAndIsDisposed;
     private IntBoolUnion<int> _countAndIsStackalloced;
 
+    private const int MinimumCapacity = 4;
+
     public ValueList()
     {
         _buffer = ref Unsafe.NullRef<T>();
@@ -212,7 +214,7 @@ public ref struct ValueList<T> :
 
         Span<T> oldBuffer = GetBuffer();
         int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
-        Span<T> newBuffer = ArrayPool<T>.Shared.Rent(newSize);
+        Span<T> newBuffer = ArrayPool<T>.Shared.Rent(int.Max(newSize, MinimumCapacity));
         int count = Count;
         if (count != 0)
         {

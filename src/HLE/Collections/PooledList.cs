@@ -58,6 +58,8 @@ public sealed class PooledList<T> :
 
     internal T[]? _buffer;
 
+    private const int MinimumCapacity = 4;
+
     public PooledList() => _buffer = [];
 
     public PooledList(int capacity) => _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
@@ -189,7 +191,7 @@ public sealed class PooledList<T> :
         int count = Count;
         T[] oldBuffer = GetBuffer();
         int newSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
-        T[] newBuffer = ArrayPool<T>.Shared.Rent(newSize);
+        T[] newBuffer = ArrayPool<T>.Shared.Rent(int.Max(newSize, MinimumCapacity));
         if (count != 0)
         {
             SpanHelpers.Copy(oldBuffer.AsSpan(..count), newBuffer);
@@ -197,7 +199,7 @@ public sealed class PooledList<T> :
 
         ArrayPool<T>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
-        return ref MemoryMarshal.GetArrayDataReference(newBuffer);
+        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(newBuffer), count);
     }
 
     public void Add(T item)
