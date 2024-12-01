@@ -1,70 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace HLE;
 
-public static class EnumValues<TEnum> where TEnum : struct, Enum
+internal static unsafe class EnumValues
 {
-    [SuppressMessage("ReSharper", "StaticMemberInGenericType", Justification = "exactly what i want")]
-    private static readonly TEnum[] s_values = Enum.GetValues<TEnum>();
+    [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
+    private static readonly delegate*<Type, Array> s_getValues =
+        (delegate*<Type, Array>)typeof(Enum)
+            .GetMethod("GetValuesAsUnderlyingTypeNoCopy", BindingFlags.NonPublic | BindingFlags.Static)!
+            .MethodHandle
+            .GetFunctionPointer();
 
-    public static int Count => s_values.Length;
-
-    internal static ref TEnum Reference => ref MemoryMarshal.GetArrayDataReference(s_values);
-
-    [Pure]
-    public static ReadOnlySpan<TEnum> AsSpan() => s_values;
-
-    [Pure]
-    public static unsafe ReadOnlySpan<TUnderlyingType> AsSpan<TUnderlyingType>()
-        where TUnderlyingType : unmanaged
-    {
-        if (sizeof(TEnum) != sizeof(TUnderlyingType))
-        {
-            ThrowDifferentInstanceSize(typeof(TEnum), typeof(TUnderlyingType));
-        }
-
-        ReadOnlySpan<TEnum> values = AsSpan();
-        return Unsafe.As<ReadOnlySpan<TEnum>, ReadOnlySpan<TUnderlyingType>>(ref values);
-
-        [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
-            => throw new InvalidOperationException(
-                $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type of {enumType}."
-            );
-    }
-
-    [Pure]
-    public static ReadOnlyMemory<TEnum> AsMemory() => s_values;
-
-    [Pure]
-    public static ImmutableArray<TEnum> AsImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(s_values);
-
-    [Pure]
-    public static IEnumerable<TEnum> AsEnumerable() => s_values;
-
-    [Pure]
-    public static unsafe bool IsDefined(TEnum value)
-    {
-        switch (sizeof(TEnum))
-        {
-            case sizeof(byte):
-                return AsSpan<byte>().Contains(Unsafe.As<TEnum, byte>(ref value));
-            case sizeof(ushort):
-                return AsSpan<ushort>().Contains(Unsafe.As<TEnum, ushort>(ref value));
-            case sizeof(uint):
-                return AsSpan<uint>().Contains(Unsafe.As<TEnum, uint>(ref value));
-            case sizeof(ulong):
-                return AsSpan<ulong>().Contains(Unsafe.As<TEnum, ulong>(ref value));
-            default:
-                ThrowHelper.ThrowUnreachableException();
-                return false;
-        }
-    }
+    public static TEnum[] GetValues<TEnum>() where TEnum : struct, Enum
+        => (TEnum[])s_getValues(typeof(TEnum));
 }

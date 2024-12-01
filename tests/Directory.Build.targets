@@ -5,6 +5,7 @@
   <PropertyGroup Condition="'$(IsTestProject)'=='true'">
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
   </PropertyGroup>
@@ -24,7 +25,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     <PackageReference Include="xunit.v3"/>
   </ItemGroup>
 

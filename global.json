@@ -3,5 +3,8 @@
     "version": "9.0.0",
     "rollForward": "latestFeature",
     "allowPrerelease": true
+  },
+  "msbuild-sdks": {
+    "MSTest.Sdk": "3.6.3"
   }
 }
