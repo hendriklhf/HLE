@@ -317,15 +317,41 @@ public sealed class LazyString :
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<char>)this).GetEnumerator();
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] LazyString? other) => ReferenceEquals(this, other);
+    public bool Equals([NotNullWhen(true)] LazyString? other) => Equals(other, StringComparison.Ordinal);
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is LazyString other && Equals(other);
+    public bool Equals([NotNullWhen(true)] LazyString? other, StringComparison comparisonType)
+        => ReferenceEquals(this, other) || (other is not null && Equals(other.AsSpan(), comparisonType));
+
+    [Pure]
+    public bool Equals([NotNullWhen(true)] string? other) => Equals(other.AsSpan(), StringComparison.Ordinal);
+
+    [Pure]
+    public bool Equals([NotNullWhen(true)] string? other, StringComparison comparisonType)
+        => other is not null && Equals(other.AsSpan(), comparisonType);
+
+    private bool Equals(ReadOnlySpan<char> chars, StringComparison comparisonType) => AsSpan().Equals(chars, comparisonType);
+
+    [Pure]
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj switch
+    {
+        LazyString lazyString => Equals(lazyString, StringComparison.Ordinal),
+        string str => Equals(str, StringComparison.Ordinal),
+        _ => false
+    };
 
     [Pure]
     public override int GetHashCode() => string.GetHashCode(AsSpan(), StringComparison.Ordinal);
 
-    public static bool operator ==(LazyString left, LazyString right) => Equals(left, right);
+    [Pure]
+    public int GetHashCode(StringComparison comparisonType) => string.GetHashCode(AsSpan(), comparisonType);
 
-    public static bool operator !=(LazyString left, LazyString right) => !(left == right);
+    public static bool operator ==(LazyString? left, LazyString? right) => Equals(left, right);
+
+    public static bool operator !=(LazyString? left, LazyString? right) => !(left == right);
+
+    [SuppressMessage("ReSharper", "SuspiciousTypeConversion.Global")]
+    public static bool operator ==(LazyString? left, string? right) => Equals(left, right);
+
+    public static bool operator !=(LazyString? left, string? right) => !(left == right);
 }

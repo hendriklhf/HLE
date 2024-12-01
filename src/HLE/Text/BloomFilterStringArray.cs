@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Text;
@@ -183,8 +184,8 @@ public sealed class BloomFilterStringArray :
         int iteration = 0;
         ref string strings = ref MemoryMarshal.GetArrayDataReference(_strings);
         int length = Length - startIndex;
-        ref int stringLengths = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_lengths), startIndex);
-        ref char chars = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_chars), startIndex);
+        ref int stringLengths = ref ArrayMarshal.GetUnsafeElementAt(_lengths, startIndex);
+        ref char chars = ref ArrayMarshal.GetUnsafeElementAt(_chars, startIndex);
         while (length >= BitsPerMap)
         {
             uint map = GetMatchingLengthsMap(ref stringLengths, str.Length);
@@ -412,7 +413,7 @@ public sealed class BloomFilterStringArray :
         _lengths[index] = str.Length;
 
         int length = Length;
-        ref char chars = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_chars), index);
+        ref char chars = ref ArrayMarshal.GetUnsafeElementAt(_chars, index);
         for (int i = 0; i < str.Length; i++)
         {
             Unsafe.Add(ref chars, length * i) = str[i];

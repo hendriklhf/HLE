@@ -14,13 +14,13 @@ namespace HLE.Text;
 
 [DebuggerDisplay("\"{ToString()}\"")]
 public unsafe ref partial struct ValueStringBuilder :
+    IStringBuilder,
     IDisposable,
     ICollection<char>,
     IEquatable<ValueStringBuilder>,
     ICopyable<char>,
     IIndexable<char>,
-    IReadOnlyCollection<char>,
-    ISpanProvider<char>
+    IReadOnlyCollection<char>
 {
     public readonly ref char this[int index] => ref WrittenSpan[index];
 
@@ -137,6 +137,12 @@ public unsafe ref partial struct ValueStringBuilder :
     }
 
     public void Advance(int length) => Length += length;
+
+    void IStringBuilder.Append(ref PooledInterpolatedStringHandler chars)
+    {
+        Append(chars.Text);
+        chars.Dispose();
+    }
 
     public void Append([InterpolatedStringHandlerArgument("")] InterpolatedStringHandler chars) => this = chars.Builder;
 

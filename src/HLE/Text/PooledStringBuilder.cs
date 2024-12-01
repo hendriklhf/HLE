@@ -14,13 +14,13 @@ namespace HLE.Text;
 
 [DebuggerDisplay("\"{ToString()}\"")]
 public sealed partial class PooledStringBuilder :
+    IStringBuilder,
     IDisposable,
     ICollection<char>,
     IEquatable<PooledStringBuilder>,
     ICopyable<char>,
     IIndexable<char>,
     IReadOnlyCollection<char>,
-    ISpanProvider<char>,
     IMemoryProvider<char>
 {
     public ref char this[int index] => ref WrittenSpan[index];
@@ -91,6 +91,12 @@ public sealed partial class PooledStringBuilder :
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
     public void Advance(int length) => Length += length;
+
+    void IStringBuilder.Append(ref PooledInterpolatedStringHandler chars)
+    {
+        Append(chars.Text);
+        chars.Dispose();
+    }
 
     [SuppressMessage("Performance", "CA1822:Mark members as static")]
     [SuppressMessage("Minor Code Smell", "S2325:Methods and properties that don't access instance data should be static")]
@@ -254,7 +260,7 @@ public sealed partial class PooledStringBuilder :
             => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
     }
 
-    public static bool TryFormat<T>(T value, Span<char> destination, out int charsWritten, string? format)
+    private static bool TryFormat<T>(T value, Span<char> destination, out int charsWritten, string? format)
     {
         if (typeof(T).IsEnum)
         {
@@ -322,7 +328,7 @@ public sealed partial class PooledStringBuilder :
 
         ArrayPool<char>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
-        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(newBuffer), Length);
+        return ref ArrayMarshal.GetUnsafeElementAt(newBuffer, Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
@@ -333,7 +339,7 @@ public sealed partial class PooledStringBuilder :
         int freeBufferSize = buffer.Length - length;
         if (freeBufferSize >= sizeHint)
         {
-            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buffer), length);
+            return ref ArrayMarshal.GetUnsafeElementAt(buffer, length);
         }
 
         return ref Grow(sizeHint - freeBufferSize);

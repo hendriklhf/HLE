@@ -7,7 +7,6 @@
     <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
-    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsTestProject)'=='true'">
@@ -21,11 +20,12 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)'=='true'">
-    <PackageReference Include="xunit.v3"/>
     <PackageReference Include="coverlet.collector">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="xunit.v3"/>
   </ItemGroup>
 
 </Project>

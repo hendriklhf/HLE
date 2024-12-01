@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Memory;
@@ -11,26 +10,20 @@ using HLE.Memory;
 namespace HLE.TestRunner;
 
 [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
-internal sealed class ProcessOutputReader(Process process, TextWriter outputWriter) : IDisposable, IEquatable<ProcessOutputReader>
+internal readonly struct ProcessOutputReader(Process process, TextWriter outputWriter) : IEquatable<ProcessOutputReader>
 {
     private readonly Process _process = process;
     private readonly TextWriter _outputWriter = outputWriter;
-    private readonly ManualResetEventSlim _processStartSignal = new(false);
 
     private static readonly SemaphoreSlim s_outputWriterLock = new(1);
 
-    public void Dispose() => _processStartSignal.Dispose();
-
-    public void NotifyProcessStarted() => _processStartSignal.Set();
-
     public async Task StartReadingAsync()
     {
-        _processStartSignal.Wait();
+        using PooledBufferWriter<char> bufferWriter = new(4096);
+        Process process = _process;
+        StreamReader outputReader = process.StandardOutput;
 
         Debug.Assert(!_process.HasExited);
-
-        using PooledBufferWriter<char> bufferWriter = new(4096);
-        StreamReader outputReader = _process.StandardOutput;
 
         do
         {
@@ -38,7 +31,7 @@ internal sealed class ProcessOutputReader(Process process, TextWriter outputWrit
             int charsRead = await outputReader.ReadAsync(buffer);
             bufferWriter.Advance(charsRead);
         }
-        while (!_process.HasExited);
+        while (!process.HasExited);
 
         await s_outputWriterLock.WaitAsync();
         try
@@ -52,13 +45,13 @@ internal sealed class ProcessOutputReader(Process process, TextWriter outputWrit
     }
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] ProcessOutputReader? other) => ReferenceEquals(this, other);
+    public bool Equals(ProcessOutputReader other) => _process.Equals(other._process) && _outputWriter.Equals(other._outputWriter);
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
+    public override bool Equals([NotNullWhen(true)] object? obj) => obj is ProcessOutputReader other && Equals(other);
 
     [Pure]
-    public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+    public override int GetHashCode() => HashCode.Combine(_process, _outputWriter);
 
     public static bool operator ==(ProcessOutputReader? left, ProcessOutputReader? right) => Equals(left, right);
 

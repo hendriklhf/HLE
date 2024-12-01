@@ -28,10 +28,10 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
     {
         List<Task<UnitTestRunResult>> tasks = new();
 
-        ImmutableArray<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combinate();
+        ReadOnlyMemory<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combinate();
         foreach (TestProject testProject in _testProjects)
         {
-            foreach (EnvironmentConfiguration environment in environmentConfigurations)
+            foreach (EnvironmentConfiguration environment in environmentConfigurations.Span)
             {
                 UnitTestRun run = new(_outputWriter, testProject, environment);
                 tasks.Add(run.StartAsync());

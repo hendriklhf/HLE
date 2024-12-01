@@ -51,14 +51,16 @@ public sealed class ArrayEnumeratorTest
         const int Start = 5;
         const int AdditionalEndOffset = 3;
 
-        ArrayEnumerator<int> enumerator = new(s_array, Start, s_array.Length - Start - AdditionalEndOffset);
+        int length = s_array.Length - Start - AdditionalEndOffset;
+        ArrayEnumerator<int> enumerator = new(s_array, Start, length);
         int index = Start;
         while (enumerator.MoveNext())
         {
             Assert.Equal(s_array[index++], enumerator.Current);
         }
 
-        Assert.Equal(s_array.Length - AdditionalEndOffset - 1, index);
+        Assert.Equal(length, index - Start);
+        Assert.Equal(s_array.Length - AdditionalEndOffset, index);
     }
 
     [Fact]
@@ -116,6 +118,8 @@ public sealed class ArrayEnumeratorTest
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
 
+        return;
+
         static void Act() => _ = new ArrayEnumerator<int>(s_array, -1, 0);
     }
 
@@ -123,6 +127,8 @@ public sealed class ArrayEnumeratorTest
     public void Ctor_ThrowsArgumentOutOfRangeException_WhenArrayIsEmpty_And_StartIsZero()
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        return;
 
         static void Act() => _ = new ArrayEnumerator<int>([], 0, 0);
     }
@@ -132,6 +138,8 @@ public sealed class ArrayEnumeratorTest
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
 
+        return;
+
         static void Act() => _ = new ArrayEnumerator<int>(s_array, 0, -1);
     }
 
@@ -139,6 +147,8 @@ public sealed class ArrayEnumeratorTest
     public void Ctor_ThrowsArgumentOutOfRangeException_WhenStartAndLengthAreNegative()
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        return;
 
         static void Act() => _ = new ArrayEnumerator<int>(s_array, -1, -1);
     }
@@ -148,6 +158,8 @@ public sealed class ArrayEnumeratorTest
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
 
+        return;
+
         static void Act() => _ = new ArrayEnumerator<int>(s_array, s_array.Length, 0);
     }
 
@@ -155,6 +167,8 @@ public sealed class ArrayEnumeratorTest
     public void Ctor_ThrowsArgumentOutOfRangeException_WhenLengthIsGreaterThanArrayLength()
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        return;
 
         static void Act() => _ = new ArrayEnumerator<int>(s_array, 0, s_array.Length + 1);
     }
@@ -164,6 +178,8 @@ public sealed class ArrayEnumeratorTest
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
 
+        return;
+
         static void Act() => _ = new ArrayEnumerator<int>(s_array, 5, s_array.Length - 4);
     }
 
@@ -171,6 +187,8 @@ public sealed class ArrayEnumeratorTest
     public void Ctor_ThrowsArgumentOutOfRangeException_WhenStartPlusLengthIsTooLong()
     {
         Assert.Throws<ArgumentOutOfRangeException>(Act);
+
+        return;
 
         static void Act() => _ = new ArrayEnumerator<int>(s_array, 6, s_array.Length - 5);
     }

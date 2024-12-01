@@ -70,11 +70,30 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
             => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
     }
 
+    /// <inheritdoc cref="TryRead(System.ReadOnlySpan{Char},out HLE.Resources.Resource)"/>
     public bool TryRead(ref PooledInterpolatedStringHandler resourcePath, out Resource resource)
     {
         bool success = TryRead(resourcePath.Text, out resource);
         resourcePath.Dispose();
         return success;
+    }
+
+    /// <inheritdoc cref="TryRead(System.ReadOnlySpan{Char},out HLE.Resources.Resource)"/>
+    public bool TryRead(string resourcePath, out Resource resource)
+    {
+        if (!_resourceMap.TryGetValue(resourcePath, out Resource? nullableResource))
+        {
+            return TryReadCore(resourcePath, out resource);
+        }
+
+        if (nullableResource is null)
+        {
+            resource = default;
+            return false;
+        }
+
+        resource = nullableResource.Value;
+        return true;
     }
 
     /// <summary>
@@ -83,13 +102,12 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
     /// <param name="resourcePath">The path of the resource.</param>
     /// <param name="resource">The resource bytes.</param>
     /// <returns>True, if the resource exists, false otherwise.</returns>
-    public bool TryRead(ReadOnlySpan<char> resourcePath, out Resource resource) => TryRead(StringPool.Shared.GetOrAdd(resourcePath), out resource);
-
-    public bool TryRead(string resourcePath, out Resource resource)
+    public bool TryRead(ReadOnlySpan<char> resourcePath, out Resource resource)
     {
-        if (!_resourceMap.TryGetValue(resourcePath, out Resource? nullableResource))
+        ConcurrentDictionary<string, Resource?>.AlternateLookup<ReadOnlySpan<char>> alternateLookup = _resourceMap.GetAlternateLookup<ReadOnlySpan<char>>();
+        if (!alternateLookup.TryGetValue(resourcePath, out Resource? nullableResource))
         {
-            return TryReadCore(resourcePath, out resource);
+            return TryReadCore(StringPool.Shared.GetOrAdd(resourcePath), out resource);
         }
 
         if (nullableResource is null)

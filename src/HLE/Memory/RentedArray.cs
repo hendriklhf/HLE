@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Text;
 
 namespace HLE.Memory;
@@ -36,7 +37,7 @@ public struct RentedArray<T> :
         {
             T[] array = Array;
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)array.Length);
-            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index);
+            return ref ArrayMarshal.GetUnsafeElementAt(array, index);
         }
     }
 

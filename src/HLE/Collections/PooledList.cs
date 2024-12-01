@@ -163,7 +163,7 @@ public sealed class PooledList<T> :
         int freeBufferSpace = buffer.Length - count;
         if (freeBufferSpace >= sizeHint)
         {
-            return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buffer), count);
+            return ref ArrayMarshal.GetUnsafeElementAt(buffer, count);
         }
 
         return ref GrowAndGetDestination(sizeHint - freeBufferSpace);
@@ -199,7 +199,7 @@ public sealed class PooledList<T> :
 
         ArrayPool<T>.Shared.Return(oldBuffer);
         _buffer = newBuffer;
-        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(newBuffer), count);
+        return ref ArrayMarshal.GetUnsafeElementAt(newBuffer, count);
     }
 
     public void Add(T item)
@@ -427,7 +427,7 @@ public sealed class PooledList<T> :
 
     [Conditional("DEBUG")]
     [MemberNotNull(nameof(_buffer))]
-    private void AssertBufferNotNull() => Debug.Assert(_buffer is not null, $"{nameof(_buffer)} can't be null. An exception should have been thrown before.");
+    private void AssertBufferNotNull() => Debug.Assert(_buffer is not null, $"{nameof(_buffer)} shouldn't be null. An exception should have been thrown before.");
 
     [Pure]
     public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);

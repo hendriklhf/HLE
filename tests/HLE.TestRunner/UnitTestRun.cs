@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HLE.TestRunner;
@@ -16,6 +17,7 @@ internal sealed class UnitTestRun(TextWriter outputWriter, TestProject testProje
     private readonly EnvironmentConfiguration _environment = environment;
 
     private static readonly string s_executableFileExtensions = OperatingSystem.IsWindows() ? ".exe" : string.Empty;
+    private static readonly SemaphoreSlim s_maxRunSemaphore = new(4, 4);
 
     public async Task<UnitTestRunResult> StartAsync()
     {
@@ -44,21 +46,26 @@ internal sealed class UnitTestRun(TextWriter outputWriter, TestProject testProje
             startInfo.Environment.Add(variable.Key, variable.Value);
         }
 
-        using Process testRunProcess = new()
+        await s_maxRunSemaphore.WaitAsync();
+        try
         {
-            StartInfo = startInfo
-        };
+            using Process? testRunProcess = Process.Start(startInfo);
+            ArgumentNullException.ThrowIfNull(testRunProcess);
 
-        using ProcessOutputReader outputReader = new(testRunProcess, _outputWriter);
-        Task readerTask = outputReader.StartReadingAsync();
+            ProcessOutputReader outputReader = new(testRunProcess, _outputWriter);
 
-        testRunProcess.Start();
-        outputReader.NotifyProcessStarted();
+            testRunProcess.Start();
+            Task readerTask = outputReader.StartReadingAsync();
 
-        await testRunProcess.WaitForExitAsync();
-        await readerTask;
+            await testRunProcess.WaitForExitAsync();
+            await readerTask;
 
-        return testRunProcess.ExitCode == 0 ? UnitTestRunResult.Success : UnitTestRunResult.Failure;
+            return testRunProcess.ExitCode == 0 ? UnitTestRunResult.Success : UnitTestRunResult.Failure;
+        }
+        finally
+        {
+            s_maxRunSemaphore.Release();
+        }
     }
 
     [Pure]

@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using HLE.Marshalling;
 
 namespace HLE.Memory;
 
@@ -40,7 +41,7 @@ public sealed partial class ArrayPool<T>
                     return false;
                 }
 
-                ref T[] reference = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), --count);
+                ref T[] reference = ref ArrayMarshal.GetUnsafeElementAt(_stack, --count);
                 _count = count;
                 array = reference;
                 reference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
@@ -93,7 +94,7 @@ public sealed partial class ArrayPool<T>
                 }
 
                 ClearArrayIfNeeded(array, clearArray);
-                Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_stack), count++) = array;
+                ArrayMarshal.GetUnsafeElementAt(_stack, count++) = array;
                 _count = count;
                 Log.Returned(array);
             }

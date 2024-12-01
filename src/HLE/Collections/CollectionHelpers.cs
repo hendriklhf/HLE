@@ -112,6 +112,9 @@ public static partial class CollectionHelpers
             case IReadOnlySpanProvider<T> spanProvider:
                 span = spanProvider.GetReadOnlySpan();
                 return true;
+            case IReadOnlyMemoryProvider<T> memoryProvider:
+                span = memoryProvider.GetReadOnlyMemory().Span;
+                return true;
             case FrozenSet<T> frozenSet:
                 span = frozenSet.Items.AsSpan();
                 return true;
@@ -133,6 +136,9 @@ public static partial class CollectionHelpers
                 return true;
             case ISpanProvider<T> spanProvider:
                 span = spanProvider.GetSpan();
+                return true;
+            case IMemoryProvider<T> memoryProvider:
+                span = memoryProvider.GetMemory().Span;
                 return true;
             default:
                 span = [];

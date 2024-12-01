@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 
 namespace HLE.Memory;
 
@@ -105,7 +106,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
             bucketIndex--;
         }
 
-        Bucket bucket = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        Bucket bucket = ArrayMarshal.GetUnsafeElementAt(_buckets, bucketIndex);
         if (bucket.TryRentExact(length, out array))
         {
             return array;
@@ -168,7 +169,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     {
         const int MaximumTryCount = 3;
 
-        ref Bucket startingBucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        ref Bucket startingBucket = ref ArrayMarshal.GetUnsafeElementAt(_buckets, bucketIndex);
         int bucketsLength = _buckets.Length;
         ref Bucket bucket = ref startingBucket;
         int tryCount = 0;
@@ -249,7 +250,7 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private void ReturnToSharedBucket(T[] array, int bucketIndex, bool clearArray)
     {
-        ref Bucket bucket = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_buckets), bucketIndex);
+        ref Bucket bucket = ref ArrayMarshal.GetUnsafeElementAt(_buckets, bucketIndex);
         bucket.Return(array, clearArray);
     }
 

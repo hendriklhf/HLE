@@ -45,19 +45,16 @@ internal sealed class TestProject(TextWriter outputWriter, string filePath) : ID
             RedirectStandardOutput = true
         };
 
-        using Process buildProcess = new()
-        {
-            StartInfo = startInfo
-        };
+        using Process? buildProcess = Process.Start(startInfo);
+        ArgumentNullException.ThrowIfNull(buildProcess);
 
         await s_projectBuildLock.WaitAsync();
         try
         {
-            using ProcessOutputReader outputReader = new(buildProcess, _outputWriter);
-            Task readerTask = outputReader.StartReadingAsync();
+            ProcessOutputReader outputReader = new(buildProcess, _outputWriter);
 
             buildProcess.Start();
-            outputReader.NotifyProcessStarted();
+            Task readerTask = outputReader.StartReadingAsync();
 
             await buildProcess.WaitForExitAsync();
             await readerTask;

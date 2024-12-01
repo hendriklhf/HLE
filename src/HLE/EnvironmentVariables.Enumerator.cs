@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 
 namespace HLE;
 
@@ -11,13 +12,17 @@ public readonly partial struct EnvironmentVariables
 {
     public struct Enumerator(EnvironmentVariables environmentVariables) : IEnumerator<EnvironmentVariable>, IEquatable<Enumerator>
     {
-        public readonly EnvironmentVariable Current => new(_names[_current], _values[_current]);
+        public readonly EnvironmentVariable Current
+            => new(
+                ArrayMarshal.GetUnsafeElementAt(_names, _current),
+                ArrayMarshal.GetUnsafeElementAt(_values, _current)
+            );
 
         readonly object IEnumerator.Current => Current;
 
         private readonly string[] _names = ImmutableCollectionsMarshal.AsArray(environmentVariables._environmentVariables.Keys) ?? [];
         private readonly string[] _values = ImmutableCollectionsMarshal.AsArray(environmentVariables._environmentVariables.Values) ?? [];
-        private int _current = -1;
+        private uint _current = uint.MaxValue;
 
         // ReSharper disable once MemberHidesStaticFromOuterClass
         [SuppressMessage("Critical Code Smell", "S3218:Inner class members should not shadow outer class \"static\" or type members")]

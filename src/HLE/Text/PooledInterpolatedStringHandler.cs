@@ -41,6 +41,12 @@ public ref struct PooledInterpolatedStringHandler :
         _builder.Append(str);
     }
 
+    public void AppendFormatted(LazyString? str)
+    {
+        ReadOnlySpan<char> span = str is null ? [] : str.AsSpan();
+        AppendFormatted(span);
+    }
+
     public void AppendFormatted(List<char>? chars)
     {
         if (chars is null)

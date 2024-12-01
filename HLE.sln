@@ -16,7 +16,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CDE88CDD
 	ProjectSection(SolutionItems) = preProject
 		tests\Directory.Build.targets = tests\Directory.Build.targets
 		tests\xunit.runner.json = tests\xunit.runner.json
-		tests\Directory.Build.props = tests\Directory.Build.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "debug", "debug", "{BB652E74-A6D6-42FD-AF0A-3A0A2D3090C3}"

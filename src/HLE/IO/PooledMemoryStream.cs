@@ -5,10 +5,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.IO;
@@ -47,7 +47,7 @@ public sealed class PooledMemoryStream(int capacity) :
         {
             Debug.Assert(Length <= int.MaxValue);
             ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)Length, (uint)index);
-            return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), index);
+            return ArrayMarshal.GetUnsafeElementAt(GetBuffer(), index);
         }
     }
 
@@ -78,7 +78,7 @@ public sealed class PooledMemoryStream(int capacity) :
 
     private Span<byte> GetPositionalBuffer() => GetBuffer().AsSpan(_position, _length - _position);
 
-    private ref byte GetPositionalReference() => ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), _position);
+    private ref byte GetPositionalReference() => ref ArrayMarshal.GetUnsafeElementAt(GetBuffer(), _position);
 
     public override void Close()
     {
@@ -201,7 +201,7 @@ public sealed class PooledMemoryStream(int capacity) :
             return -1;
         }
 
-        int value = Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), position);
+        int value = ArrayMarshal.GetUnsafeElementAt(GetBuffer(), position);
         _position = position + 1;
         return value;
     }

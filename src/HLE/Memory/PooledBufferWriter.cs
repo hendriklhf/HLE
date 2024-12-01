@@ -8,6 +8,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
+using HLE.Marshalling;
 using HLE.Text;
 
 namespace HLE.Memory;
@@ -99,7 +100,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     public ref T GetReference(int sizeHint = 0)
     {
         GrowIfNeeded(sizeHint);
-        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Count);
+        return ref ArrayMarshal.GetUnsafeElementAt(GetBuffer(), Count);
     }
 
     public void Write(T item)
