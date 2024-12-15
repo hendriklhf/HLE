@@ -10,48 +10,52 @@ namespace HLE.Memory;
 
 public ref struct MemoryEnumerator<T> : IEnumerator<T>, IEquatable<MemoryEnumerator<T>>
 {
-    public readonly T Current => _current;
+    public readonly ref T Current => ref _current;
+
+    readonly T IEnumerator<T>.Current => _current;
 
     readonly object? IEnumerator.Current => Current;
 
     private ref T _current;
     private readonly ref T _end;
 
-    public static MemoryEnumerator<T> Empty => new(ref Unsafe.NullRef<T>(), 0);
+    public static MemoryEnumerator<T> Empty => default;
 
     public MemoryEnumerator(ref T memory, int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        _current = ref memory;
+        _current = ref Unsafe.Add(ref memory, -1);
         _end = ref Unsafe.Add(ref memory, length);
     }
 
     public MemoryEnumerator(T[] items)
     {
-        ref T current = ref MemoryMarshal.GetArrayDataReference(items);
-        _current = ref Unsafe.Add(ref current, -1);
-        _end = ref Unsafe.Add(ref current, items.Length);
+        _current = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(items), -1);
+        _end = ref Unsafe.Add(ref _current, items.Length);
     }
 
     public MemoryEnumerator(Span<T> items)
     {
-        ref T current = ref MemoryMarshal.GetReference(items);
-        _current = ref Unsafe.Add(ref current, -1);
-        _end = ref Unsafe.Add(ref current, items.Length);
+        _current = ref Unsafe.Add(ref MemoryMarshal.GetReference(items), -1);
+        _end = ref Unsafe.Add(ref _current, items.Length);
     }
 
     public MemoryEnumerator(ReadOnlySpan<T> items)
     {
-        ref T current = ref MemoryMarshal.GetReference(items);
-        _current = ref Unsafe.Add(ref current, -1);
-        _end = ref Unsafe.Add(ref current, items.Length);
+        _current = ref Unsafe.Add(ref MemoryMarshal.GetReference(items), -1);
+        _end = ref Unsafe.Add(ref _current, items.Length);
     }
 
     public bool MoveNext()
     {
+        if (Unsafe.AreSame(ref _current, ref _end))
+        {
+            return false;
+        }
+
         _current = ref Unsafe.Add(ref _current, 1);
-        return !Unsafe.AreSame(ref _current, ref _end);
+        return true;
     }
 
     void IEnumerator.Reset() => throw new NotSupportedException();

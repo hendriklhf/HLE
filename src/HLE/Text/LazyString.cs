@@ -55,6 +55,9 @@ public sealed class LazyString :
     int ICountable.Count => Length;
 
     private char[]? _chars;
+
+    [SuppressMessage("Major Code Smell", "S2933:Fields that are only assigned in the constructor should be \"readonly\"",
+        Justification = "analyzer is wrong. a mutable ref has been taken of the field.")]
     private string? _string;
 
     public static LazyString Empty { get; } = new();
@@ -65,7 +68,6 @@ public sealed class LazyString :
 
     private LazyString(string str)
     {
-        _chars = null;
         _string = str;
         Length = str.Length;
     }
@@ -90,6 +92,13 @@ public sealed class LazyString :
 
     internal LazyString(char[] chars, int length)
     {
+        if (length == 0)
+        {
+            _string = string.Empty;
+            ArrayPool<char>.Shared.Return(chars);
+            return;
+        }
+
         _chars = chars;
         Length = length;
     }
@@ -98,18 +107,6 @@ public sealed class LazyString :
     public static LazyString FromString(string str) => str.Length == 0 ? Empty : new(str);
 
     public void Dispose()
-    {
-        char[]? chars = _chars;
-        if (chars is null)
-        {
-            return;
-        }
-
-        _chars = null;
-        ArrayPool<char>.Shared.Return(chars);
-    }
-
-    internal void DisposeInterlocked()
     {
         char[]? chars = Interlocked.Exchange(ref _chars, null);
         if (chars is null)
@@ -122,7 +119,7 @@ public sealed class LazyString :
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref char GetReference()
+    private ref char GetReference()
     {
         char[]? chars = _chars;
         if (chars is not null)
@@ -130,14 +127,8 @@ public sealed class LazyString :
             return ref MemoryMarshal.GetArrayDataReference(chars);
         }
 
-        string? str = _string;
-        if (str is not null)
-        {
-            return ref StringMarshal.GetReference(str);
-        }
-
-        ThrowHelper.ThrowUnreachableException();
-        return ref Unsafe.NullRef<char>();
+        string str = AwaitStringCreation(ref _string);
+        return ref StringMarshal.GetReference(str);
     }
 
     [Pure]
@@ -151,20 +142,7 @@ public sealed class LazyString :
             return ReadOnlyMemory<char>.Empty;
         }
 
-        char[]? chars = _chars;
-        if (chars is not null)
-        {
-            return chars.AsMemory();
-        }
-
-        string? str = _string;
-        if (str is not null)
-        {
-            return str.AsMemory();
-        }
-
-        ThrowHelper.ThrowUnreachableException();
-        return ReadOnlyMemory<char>.Empty;
+        return _chars?.AsMemory() ?? AwaitStringCreation(ref _string).AsMemory();
     }
 
     [Pure]
@@ -214,27 +192,65 @@ public sealed class LazyString :
     [Pure]
     public string ToString(bool poolString)
     {
-        return _string ?? ToStringCore(this, poolString);
+        return _string ?? ToStringSlow(this, poolString);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        static string ToStringCore(LazyString lazyString, bool poolString)
+        static string ToStringSlow(LazyString lazyString, bool poolString)
         {
             if (lazyString.Length == 0)
             {
+                lazyString._string = string.Empty;
                 return string.Empty;
             }
 
-            char[]? charBuffer = lazyString._chars;
-            lazyString._chars = null;
+            ref string? str = ref lazyString._string;
+            char[]? charBuffer = Interlocked.Exchange(ref lazyString._chars, null);
+            if (charBuffer is null)
+            {
+                // "charBuffer" being null means that "ToStringSlow" has been called
+                // approximately at the same time from another thread.
+                // The other thread should have already set the "_string" field in LazyString or
+                // will in a short time, so we wait until it will be set.
 
-            Debug.Assert(charBuffer is not null);
+                return AwaitStringCreation(ref str);
+            }
 
             ReadOnlySpan<char> chars = charBuffer.AsSpanUnsafe(..lazyString.Length);
-            string str = poolString ? StringPool.Shared.GetOrAdd(chars) : new(chars);
+            str = poolString ? StringPool.Shared.GetOrAdd(chars) : new(chars);
             ArrayPool<char>.Shared.Return(charBuffer);
-
-            lazyString._string = str;
             return str;
+        }
+    }
+
+    private static string AwaitStringCreation(ref string? str)
+    {
+        return str ?? AwaitStringCreationCore(ref str);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static string AwaitStringCreationCore(ref string? reference)
+        {
+            const int MaximumSpinCount = 64;
+
+            SpinWait spinWait = new();
+            do
+            {
+                string? str = Volatile.Read(ref reference);
+                if (str is not null)
+                {
+                    return str;
+                }
+
+                spinWait.SpinOnce();
+            }
+            while (spinWait.Count < MaximumSpinCount);
+
+            // if we spun for too long, expected the string to be set,
+            // but instead it has not been set by another thread,
+            // we throw an exception, as the only possibility is
+            // that the LazyString has been disposed.
+
+            ThrowHelper.ThrowObjectDisposedException<LazyString>();
+            return null!;
         }
     }
 
@@ -278,17 +294,20 @@ public sealed class LazyString :
 
     void ICollection<char>.Clear() => throw new NotSupportedException();
 
+    bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
+
+    [Pure]
+    public int IndexOf(char item) => AsSpan().IndexOf(item);
+
     [Pure]
     public bool Contains(char item) => AsSpan().Contains(item);
-
-    bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 
     ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => AsSpan();
 
     ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
     [Pure]
-    public MemoryEnumerator<char> GetEnumerator() => new(AsSpan());
+    public ReadOnlyMemoryEnumerator<char> GetEnumerator() => new(AsSpan());
 
     IEnumerator<char> IEnumerable<char>.GetEnumerator()
     {

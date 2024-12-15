@@ -111,7 +111,7 @@ public readonly unsafe ref struct CopyWorker<T> : IEquatable<CopyWorker<T>>
 
     public void CopyTo(T[] destination, int offset = 0)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)offset, (uint)destination.Length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)offset, (uint)destination.Length);
         CopyTo(destination.AsSpan(offset));
     }
 

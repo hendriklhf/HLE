@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Text;
@@ -69,13 +70,12 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 
     public void Dispose()
     {
-        T[]? buffer = _buffer;
+        T[]? buffer = Interlocked.Exchange(ref _buffer, null);
         if (buffer is null)
         {
             return;
         }
 
-        _buffer = null;
         ArrayPool<T>.Shared.Return(buffer);
     }
 
@@ -212,8 +212,7 @@ public sealed class PooledBufferWriter<T>(int capacity) :
     /// </example>
     public void TrimBuffer()
     {
-        int count = Count;
-        int trimmedBufferSize = BufferHelpers.GrowArray((uint)count, 0);
+        int trimmedBufferSize = BufferHelpers.GrowArray((uint)Count, 0);
         if (trimmedBufferSize == Capacity)
         {
             return;

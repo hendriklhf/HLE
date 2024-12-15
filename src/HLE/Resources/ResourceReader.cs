@@ -70,7 +70,7 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
             => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
     }
 
-    /// <inheritdoc cref="TryRead(System.ReadOnlySpan{Char},out HLE.Resources.Resource)"/>
+    /// <inheritdoc cref="TryRead(ReadOnlySpan{char},out Resource)"/>
     public bool TryRead(ref PooledInterpolatedStringHandler resourcePath, out Resource resource)
     {
         bool success = TryRead(resourcePath.Text, out resource);
@@ -78,7 +78,7 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
         return success;
     }
 
-    /// <inheritdoc cref="TryRead(System.ReadOnlySpan{Char},out HLE.Resources.Resource)"/>
+    /// <inheritdoc cref="TryRead(ReadOnlySpan{char},out Resource)"/>
     public bool TryRead(string resourcePath, out Resource resource)
     {
         if (!_resourceMap.TryGetValue(resourcePath, out Resource? nullableResource))

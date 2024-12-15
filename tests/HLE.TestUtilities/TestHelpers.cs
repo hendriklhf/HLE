@@ -12,4 +12,11 @@ public static class TestHelpers
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static object Box<T>(T t) where T : struct
         => t;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static TTo Cast<TFrom, TTo>(TFrom from) where TFrom : class, TTo
+        => from;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static T Return<T>(T t) => t;
 }

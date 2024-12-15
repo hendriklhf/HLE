@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using HLE.Marshalling;
 using HLE.Memory;
 using PureAttribute = System.Diagnostics.Contracts.PureAttribute;
@@ -80,13 +81,12 @@ public sealed class PooledList<T> :
 
     public void Dispose()
     {
-        T[]? buffer = _buffer;
+        T[]? buffer = Interlocked.Exchange(ref _buffer, null);
         if (buffer is null)
         {
             return;
         }
 
-        _buffer = null;
         ArrayPool<T>.Shared.Return(buffer);
     }
 

@@ -57,10 +57,14 @@ public static class NumberHelpers
         T result = T.Zero;
         T ten = T.CreateTruncating(10);
         T charZero = T.CreateTruncating('0');
-        for (int i = 0; i < number.Length; i++)
+        ref char current = ref MemoryMarshal.GetReference(number);
+        ref char end = ref Unsafe.Add(ref current, number.Length);
+        do
         {
-            result = ten * result + T.CreateTruncating(number[i]) - charZero;
+            result = ten * result + T.CreateTruncating(current) - charZero;
+            current = ref Unsafe.Add(ref current, 1);
         }
+        while (!Unsafe.AreSame(ref current, ref end));
 
         return result;
     }
@@ -71,10 +75,14 @@ public static class NumberHelpers
         T result = T.Zero;
         T ten = T.CreateTruncating(10);
         T charZero = T.CreateTruncating('0');
-        for (int i = 0; i < number.Length; i++)
+        ref byte current = ref MemoryMarshal.GetReference(number);
+        ref byte end = ref Unsafe.Add(ref current, number.Length);
+        do
         {
-            result = ten * result + T.CreateTruncating(number[i]) - charZero;
+            result = ten * result + T.CreateTruncating(current) - charZero;
+            current = ref Unsafe.Add(ref current, 1);
         }
+        while (!Unsafe.AreSame(ref current, ref end));
 
         return result;
     }

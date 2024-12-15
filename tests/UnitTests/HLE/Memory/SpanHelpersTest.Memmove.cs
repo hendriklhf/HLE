@@ -12,7 +12,7 @@ public sealed partial class SpanHelpersTest
 
     public static TheoryData<int> MemmoveUnalignedAndOverlappingParameters { get; } = TheoryDataHelpers.CreateRange(64, 2048);
 
-    [Theory(DisableDiscoveryEnumeration = true)]
+    [Theory]
     [MemberData(nameof(MemmoveParameters))]
     public void Memmove_Bytes_Test(int byteCount)
     {
@@ -27,7 +27,7 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(source));
     }
 
-    [Theory(DisableDiscoveryEnumeration = true)]
+    [Theory]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
     public void Memmove_Unaligned_Test(int byteCount)
     {
@@ -47,7 +47,7 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(source));
     }
 
-    [Theory(DisableDiscoveryEnumeration = true)]
+    [Theory]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
     public void Memmove_Overlapping_DestinationGreaterThanSource_Test(int byteCount)
     {
@@ -64,7 +64,7 @@ public sealed partial class SpanHelpersTest
         Assert.True(destination.SequenceEqual(expectedItems));
     }
 
-    [Theory(DisableDiscoveryEnumeration = true)]
+    [Theory]
     [MemberData(nameof(MemmoveUnalignedAndOverlappingParameters))]
     public void Memmove_Overlapping_SourceGreaterThanDestination_Test(int byteCount)
     {
@@ -87,14 +87,14 @@ public sealed partial class SpanHelpersTest
         const int MaxElementCount = ushort.MaxValue * 2;
 
         TheoryData<int> data = new();
-        for (int i = 0; i <= MaxElementCount; i++)
+        for (int i = 64; i <= 2048; i++)
         {
             data.Add(i);
         }
 
-        for (int i = 1; i <= 6; i++)
+        for (int i = 1; i <= MaxElementCount; i <<= 1)
         {
-            data.Add(0xFFFF << i);
+            data.Add(i);
         }
 
         return data;

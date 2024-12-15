@@ -7,6 +7,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Text;
@@ -98,13 +99,12 @@ public struct RentedArray<T> :
 
     public void Dispose()
     {
-        T[]? array = _array;
+        T[]? array = Interlocked.Exchange(ref _array, null);
         if (array is null)
         {
             return;
         }
 
-        _array = null;
         _pool.Return(array);
     }
 

@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
@@ -43,11 +42,10 @@ public static partial class EventInvoker
         return Task.WhenAll(tasks.AsSpan());
     }
 
-    [SkipLocalsInit]
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
     private static Task InvokeMultiTargetAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs> eventHandler, TSender sender, TEventArgs args)
     {
-        Unsafe.SkipInit(out TaskBuffer buffer);
+        TaskBuffer buffer = default;
         using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
         foreach (AsyncEventHandler<TSender, TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {

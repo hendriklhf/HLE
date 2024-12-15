@@ -100,13 +100,21 @@ public sealed class NumberHelperTest
     [MemberData(nameof(BringIntoRangeParameters))]
     public void BringIntoRangeTest(object min, object max)
     {
+        Assert.Equal(min.GetType(), max.GetType());
+
         MethodInfo bringIntoRangeCore = typeof(NumberHelperTest)
             .GetMethod(nameof(BringIntoRangeTestCore), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(min.GetType());
 
-        Assert.Equal(min.GetType(), max.GetType());
-
-        bringIntoRangeCore.Invoke(null, [min, max]);
+        object?[] parameters = ArrayPool<object?>.Shared.RentFor(min, max);
+        try
+        {
+            bringIntoRangeCore.Invoke(null, parameters);
+        }
+        finally
+        {
+            ArrayPool<object?>.Shared.Return(parameters);
+        }
     }
 
     private static void BringIntoRangeTestCore<T>(T min, T max) where T : INumber<T>, IMinMaxValue<T>

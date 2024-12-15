@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -53,23 +54,38 @@ public static unsafe partial class SpanHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Memmove<T>(ref T destination, ref T source, nuint elementCount)
     {
-        if (elementCount == 0 || Unsafe.AreSame(ref destination, ref source))
+        if (elementCount <= int.MaxValue)
         {
+            MemoryMarshal.CreateReadOnlySpan(ref source, (int)elementCount)
+                .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
             return;
         }
 
-        nuint byteCount = checked(elementCount * (uint)sizeof(T));
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || Overlaps(ref source, ref destination, byteCount))
-        {
-            MemmoveImpl<T>.s_memmove(ref destination, ref source, elementCount);
-            return;
-        }
+        MemmoveCore(ref destination, ref source, elementCount);
 
-        Memcpy(ref Unsafe.As<T, byte>(ref destination), ref Unsafe.As<T, byte>(ref source), byteCount);
+        return;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void MemmoveCore(ref T destination, ref T source, nuint elementCount)
+        {
+            Debug.Assert(elementCount > int.MaxValue);
+
+            do
+            {
+                MemoryMarshal.CreateReadOnlySpan(ref source, int.MaxValue)
+                    .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+
+                source = ref Unsafe.Add(ref source, int.MaxValue);
+                destination = ref Unsafe.Add(ref destination, int.MaxValue);
+                elementCount -= int.MaxValue;
+            }
+            while (elementCount >= int.MaxValue);
+
+            if (elementCount != 0)
+            {
+                MemoryMarshal.CreateReadOnlySpan(ref source, (int)elementCount)
+                    .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+            }
+        }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool Overlaps<T>(ref T source, ref T destination, nuint byteCount) =>
-        (nuint)Unsafe.ByteOffset(ref source, ref destination) < byteCount ||
-        (nuint)Unsafe.ByteOffset(ref destination, ref source) < byteCount;
 }

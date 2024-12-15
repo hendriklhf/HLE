@@ -11,7 +11,7 @@ public sealed class EventInvokerTest
 {
     public static TheoryData<int> TargetCountParameters { get; } = TheoryDataHelpers.CreateRange(0, Environment.ProcessorCount * 2);
 
-    private volatile int _counter;
+    private int _counter;
 
     [Theory]
     [MemberData(nameof(TargetCountParameters))]
@@ -42,8 +42,8 @@ public sealed class EventInvokerTest
 
         EventInvoker.QueueOnThreadPool(eventHandler, this, "hello");
 
-        SpinWait spinWait = default;
-        while (_counter < targetCount)
+        SpinWait spinWait = new();
+        while (Volatile.Read(ref _counter) < targetCount)
         {
             spinWait.SpinOnce();
         }
