@@ -155,6 +155,7 @@ public sealed partial class LazyStringTest
     [Fact]
     public void Ctor_PooledInterpolatedStringHandler()
     {
+        // ReSharper disable once CollectionNeverUpdated.Local
         using LazyString lazy = new($"{TestString}{123}");
         Assert.Equal($"{TestString}{123}", lazy.ToString());
     }
@@ -162,6 +163,7 @@ public sealed partial class LazyStringTest
     [Fact]
     public void Ctor_ReadOnlySpan()
     {
+        // ReSharper disable once CollectionNeverUpdated.Local
         using LazyString lazy = new(TestString.AsSpan());
         Assert.Equal(TestString, lazy.ToString());
     }
@@ -676,5 +678,5 @@ public sealed partial class LazyStringTest
         Assert.False(a.Equals(b));
     }
 
-    // TODO: GetHashCode, operator tests
+    // TODO: GetHashCode, operator tests, json tests
 }

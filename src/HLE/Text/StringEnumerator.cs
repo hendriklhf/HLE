@@ -8,7 +8,9 @@ namespace HLE.Text;
 
 public struct StringEnumerator(string str) : IEnumerator<char>, IEquatable<StringEnumerator>
 {
-    public readonly char Current => Unsafe.Add(ref StringMarshal.GetReference(_str), _current);
+    public readonly ref readonly char Current => ref Unsafe.Add(ref StringMarshal.GetReference(_str), (uint)_current);
+
+    readonly char IEnumerator<char>.Current => Current;
 
     readonly object IEnumerator.Current => Current;
 

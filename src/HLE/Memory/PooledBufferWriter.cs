@@ -18,9 +18,8 @@ namespace HLE.Memory;
 /// Represents an output sink consisting of a buffer from an <see cref="ArrayPool{T}"/> into which <typeparamref name="T"/> data can be written.
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
-/// <param name="capacity">The starting capacity of the buffer.</param>
 [DebuggerDisplay("{ToString()}")]
-public sealed class PooledBufferWriter<T>(int capacity) :
+public sealed class PooledBufferWriter<T> :
     IBufferWriter<T>,
     ICollection<T>,
     IDisposable,
@@ -55,11 +54,13 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 
     bool ICollection<T>.IsReadOnly => false;
 
-    private T[]? _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
+    private T[]? _buffer;
 
-    public PooledBufferWriter() : this(0)
-    {
-    }
+    private const int MinimumCapacity = 4;
+
+    public PooledBufferWriter() => _buffer = [];
+
+    public PooledBufferWriter(int capacity) => _buffer = ArrayPool<T>.Shared.Rent(int.Max(capacity, MinimumCapacity));
 
     public PooledBufferWriter(ReadOnlySpan<T> data) : this(data.Length)
     {
@@ -265,6 +266,8 @@ public sealed class PooledBufferWriter<T>(int capacity) :
 
         T[] oldBuffer = GetBuffer();
         int newBufferSize = BufferHelpers.GrowArray((uint)oldBuffer.Length, (uint)neededSize);
+        newBufferSize = int.Max(newBufferSize, MinimumCapacity);
+
         T[] newBuffer = ArrayPool<T>.Shared.Rent(newBufferSize);
         if (Count != 0)
         {

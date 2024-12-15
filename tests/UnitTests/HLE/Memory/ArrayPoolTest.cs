@@ -17,7 +17,7 @@ public sealed class ArrayPoolTest
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
-        => Assert.Equal(ArrayPool.BucketIndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
+        => Assert.Equal(ArrayPool.TrailingZeroCountBucketIndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
 
     [Fact]
     public void MinimumAndMaximumLengthArePow2()
@@ -32,7 +32,7 @@ public sealed class ArrayPoolTest
         ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(0);
-        Assert.Empty(array);
+        Assert.True(array.Length >= ArrayPool.MinimumArrayLength);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public sealed class ArrayPoolTest
     {
         ArrayPool<int> pool = new();
         int[] array = pool.Rent(length);
-        Assert.Equal(length, array.Length);
+        Assert.True(array.Length >= ArrayPool.MinimumArrayLength);
     }
 
     [Theory]
@@ -226,7 +226,7 @@ public sealed class ArrayPoolTest
         Assert.Equal(length, secondArray.Length);
         if (roundedLength < ArrayPool.MinimumArrayLength)
         {
-            Assert.Equal(roundedLength, thirdArray.Length);
+            Assert.True(thirdArray.Length >= ArrayPool.MinimumArrayLength);
         }
         else
         {

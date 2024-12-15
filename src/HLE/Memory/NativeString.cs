@@ -50,13 +50,13 @@ public readonly unsafe struct NativeString :
 
     public static NativeString Empty { get; } = new();
 
-    public NativeString() => _memory = NativeMemory<byte>.Empty;
+    public NativeString() => _memory = [];
 
     public NativeString(int length)
     {
         if (length == 0)
         {
-            _memory = NativeMemory<byte>.Empty;
+            _memory = [];
             Length = 0;
             return;
         }
@@ -81,7 +81,7 @@ public readonly unsafe struct NativeString :
     {
         if (chars.Length == 0)
         {
-            _memory = NativeMemory<byte>.Empty;
+            _memory = [];
             Length = 0;
             return;
         }

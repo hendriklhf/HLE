@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Memory;
@@ -14,6 +15,7 @@ internal sealed class RandomWriterChoicesLengthIs8Bits : RandomWriter, IEquatabl
     public override void Write<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
     {
         Debug.Assert(choicesLength <= byte.MaxValue);
+        Debug.Assert(!BitOperations.IsPow2(choicesLength));
 
         if (!MemoryHelpers.UseStackalloc<byte>(destinationLength))
         {

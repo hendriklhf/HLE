@@ -224,7 +224,7 @@ public sealed class LazyString :
 
     private static string AwaitStringCreation(ref string? str)
     {
-        return str ?? AwaitStringCreationCore(ref str);
+        return Volatile.Read(ref str) ?? AwaitStringCreationCore(ref str);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         static string AwaitStringCreationCore(ref string? reference)
@@ -244,7 +244,7 @@ public sealed class LazyString :
             }
             while (spinWait.Count < MaximumSpinCount);
 
-            // if we spun for too long, expected the string to be set,
+            // if we spun for too long and expected the string to be set,
             // but instead it has not been set by another thread,
             // we throw an exception, as the only possibility is
             // that the LazyString has been disposed.

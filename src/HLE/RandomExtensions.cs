@@ -196,7 +196,7 @@ public static class RandomExtensions
 
         random.Fill(chars);
         ref char charsReference = ref MemoryMarshal.GetReference(chars);
-        if (BitOperations.IsPow2(max - 1))
+        if (BitOperations.IsPow2(max))
         {
             SpanHelpers.And(ref Unsafe.As<char, ushort>(ref charsReference), chars.Length, (char)(max - 1));
         }

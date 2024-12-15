@@ -27,7 +27,7 @@ internal static class ArrayPool
         8, 8, 8
     ];
 
-    public static int BucketIndexOffset
+    public static int TrailingZeroCountBucketIndexOffset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => BitOperations.TrailingZeroCount(MinimumArrayLength);
@@ -35,6 +35,7 @@ internal static class ArrayPool
 
     public const int MinimumArrayLength = 0x10; // has to be pow of 2
     public const int MaximumArrayLength = 0x800000; // has to be pow of 2
+    public const int MaximumPow2Length = 1 << 30;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

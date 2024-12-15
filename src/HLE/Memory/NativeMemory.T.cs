@@ -14,7 +14,7 @@ namespace HLE.Memory;
 
 [DebuggerDisplay("{ToString()}")]
 public sealed unsafe partial class NativeMemory<T> :
-    IDisposable,
+    SafeHandle,
     ICollection<T>,
     ICopyable<T>,
     IIndexable<T>,
@@ -46,7 +46,7 @@ public sealed unsafe partial class NativeMemory<T> :
     {
         get
         {
-            nuint memory = _memory;
+            nint memory = handle;
             if (memory == 0)
             {
                 ThrowHelper.ThrowObjectDisposedException<NativeMemory<T>>();
@@ -66,17 +66,18 @@ public sealed unsafe partial class NativeMemory<T> :
 
     int ICountable.Count => Length;
 
-    bool ICollection<T>.IsReadOnly => false;
+    public override bool IsInvalid => handle == 0;
 
-    private nuint _memory;
+    bool ICollection<T>.IsReadOnly => false;
 
     public static NativeMemory<T> Empty { get; } = new();
 
-    private NativeMemory()
+    public NativeMemory() : base(0, false)
     {
     }
 
     public NativeMemory(int length, bool zeroed = true)
+        : base(0, true)
     {
         if (length == 0)
         {
@@ -94,20 +95,28 @@ public sealed unsafe partial class NativeMemory<T> :
             SpanHelpers.Clear((byte*)memory, byteCount);
         }
 
-        _memory = (nuint)memory;
+        handle = (nint)memory;
     }
 
-    ~NativeMemory() => DisposeCore();
-
-    public void Dispose()
+    protected override bool ReleaseHandle()
     {
         DisposeCore();
-        GC.SuppressFinalize(this);
+        return true;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposeCore();
+        }
+
+        base.Dispose(disposing);
     }
 
     private void DisposeCore()
     {
-        nuint memory = Interlocked.Exchange(ref _memory, 0);
+        nint memory = Interlocked.Exchange(ref handle, 0);
         if (memory == 0)
         {
             return;
@@ -225,13 +234,13 @@ public sealed unsafe partial class NativeMemory<T> :
 
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public void Clear() => SpanHelpers.Clear((byte*)_memory, (uint)sizeof(T) * (uint)Length);
+    public void Clear() => SpanHelpers.Clear((byte*)Pointer, (uint)sizeof(T) * (uint)Length);
 
     bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
 
     bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
-    public NativeMemoryEnumerator<T> GetEnumerator() => new((T*)_memory, Length);
+    public NativeMemoryEnumerator<T> GetEnumerator() => new(Pointer, Length);
 
     // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<T>.Enumerator : GetEnumerator();
