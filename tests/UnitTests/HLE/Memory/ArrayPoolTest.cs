@@ -29,7 +29,7 @@ public sealed class ArrayPoolTest
     [Fact]
     public void RentReturnsEmptyArrayForLengthZero()
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(0);
         Assert.True(array.Length >= ArrayPool.MinimumArrayLength);
@@ -44,7 +44,7 @@ public sealed class ArrayPoolTest
     public void RentThrowsForNegativeLength(int negativeLength)
         => Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            ArrayPool<int> pool = new();
+            using ArrayPool<int> pool = new();
             return pool.Rent(negativeLength);
         });
 
@@ -52,7 +52,7 @@ public sealed class ArrayPoolTest
     [MemberData(nameof(ConsecutiveValues0ToMinimumLengthMinus1))]
     public void RentArrayShorterThanMinimumLength(int length)
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
         int[] array = pool.Rent(length);
         Assert.True(array.Length >= ArrayPool.MinimumArrayLength);
     }
@@ -61,7 +61,7 @@ public sealed class ArrayPoolTest
     [MemberData(nameof(ConsecutiveValues0To4096Parameters))]
     public void RentArrayMinimumLength(int minimumLength)
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(minimumLength);
         int[] previousArray = array;
@@ -84,7 +84,7 @@ public sealed class ArrayPoolTest
     [SuppressMessage("Major Code Smell", "S4144:Methods should not have identical implementations")]
     public void RentArrayOfPow2Length(int minimumLength)
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(minimumLength);
         int[] previousArray = array;
@@ -110,7 +110,7 @@ public sealed class ArrayPoolTest
     [InlineData(4096)]
     public void RentAsRentedArrayTest(int minimumLength)
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         using RentedArray<int> rentedArray = pool.RentAsRentedArray(minimumLength);
         Assert.True(rentedArray.Length >= minimumLength);
@@ -121,7 +121,7 @@ public sealed class ArrayPoolTest
     [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions")]
     public void ReturnNullArrayDoesntThrow()
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
         pool.Return(null);
     }
 
@@ -129,14 +129,14 @@ public sealed class ArrayPoolTest
     [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions")]
     public void ReturnEmptyArrayDoesntThrow()
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
         pool.Return([]);
     }
 
     [Fact]
     public void ClearArray_WithClearOnlyIfManagedType_ManagedType()
     {
-        ArrayPool<string> pool = new();
+        using ArrayPool<string> pool = new();
 
         string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
@@ -147,7 +147,7 @@ public sealed class ArrayPoolTest
     [Fact]
     public void DontClearArray_ValueType_Test()
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
@@ -158,7 +158,7 @@ public sealed class ArrayPoolTest
     [Fact]
     public void ClearArray_ValueType_ReturnOptionClear()
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(32);
         Array.Fill(array, int.MaxValue);
@@ -169,7 +169,7 @@ public sealed class ArrayPoolTest
     [Fact]
     public void ClearArray_ManagedType_ReturnOptionClear()
     {
-        ArrayPool<string> pool = new();
+        using ArrayPool<string> pool = new();
 
         string[] array = pool.Rent(32);
         Array.Fill(array, "hello");
@@ -180,7 +180,7 @@ public sealed class ArrayPoolTest
     [Fact]
     public void ClearPoolTest()
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         for (int i = 0; i < 8; i++)
         {
@@ -203,7 +203,7 @@ public sealed class ArrayPoolTest
     [MemberData(nameof(ConsecutiveValues0To4096Parameters))]
     public void RentExactTest(int length)
     {
-        ArrayPool<int> pool = new();
+        using ArrayPool<int> pool = new();
 
         int[] firstArray = pool.RentExact(length);
         pool.Return(firstArray);

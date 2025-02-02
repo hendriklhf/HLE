@@ -414,7 +414,7 @@ public sealed partial class PooledStringBuilder :
     public bool Equals(PooledStringBuilder builder, StringComparison comparisonType) => Equals(builder.WrittenSpan, comparisonType);
 
     [Pure]
-    public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
+    public bool Equals(ReadOnlySpan<char> str, StringComparison comparisonType) => WrittenSpan.Equals(str, comparisonType);
 
     [Pure]
     public bool Equals([NotNullWhen(true)] PooledStringBuilder? other) => ReferenceEquals(this, other);

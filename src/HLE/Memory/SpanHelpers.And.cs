@@ -17,16 +17,16 @@ public static partial class SpanHelpers
         switch (sizeof(T))
         {
             case sizeof(byte):
-                And(ref Unsafe.As<T, byte>(ref reference), values.Length, Unsafe.As<T, byte>(ref mask));
+                And(ref Unsafe.As<T, byte>(ref reference), values.Length, Unsafe.BitCast<T, byte>(mask));
                 return;
             case sizeof(ushort):
-                And(ref Unsafe.As<T, ushort>(ref reference), values.Length, Unsafe.As<T, ushort>(ref mask));
+                And(ref Unsafe.As<T, ushort>(ref reference), values.Length, Unsafe.BitCast<T, ushort>(mask));
                 return;
             case sizeof(uint):
-                And(ref Unsafe.As<T, uint>(ref reference), values.Length, Unsafe.As<T, uint>(ref mask));
+                And(ref Unsafe.As<T, uint>(ref reference), values.Length, Unsafe.BitCast<T, uint>(mask));
                 return;
             case sizeof(ulong):
-                And(ref Unsafe.As<T, ulong>(ref reference), values.Length, Unsafe.As<T, ulong>(ref mask));
+                And(ref Unsafe.As<T, ulong>(ref reference), values.Length, Unsafe.BitCast<T, ulong>(mask));
                 return;
         }
 

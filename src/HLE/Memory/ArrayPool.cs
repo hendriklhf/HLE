@@ -33,9 +33,14 @@ internal static class ArrayPool
         get => BitOperations.TrailingZeroCount(MinimumArrayLength);
     }
 
+    public static TimeSpan TrimmingInterval { get; } = TimeSpan.FromSeconds(20);
+
     public const int MinimumArrayLength = 0x10; // has to be pow of 2
     public const int MaximumArrayLength = 0x800000; // has to be pow of 2
     public const int MaximumPow2Length = 1 << 30;
+
+    public const double TrimThreshold = 0.725;
+    public const double CommonlyPooledTypeTrimThreshold = 0.875;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

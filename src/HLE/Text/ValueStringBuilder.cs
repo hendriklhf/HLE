@@ -488,7 +488,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
     [Pure]
     public readonly bool Equals(scoped ReadOnlySpan<char> str, StringComparison comparisonType)
-        => ((ReadOnlySpan<char>)WrittenSpan).Equals(str, comparisonType);
+        => WrittenSpan.Equals(str, comparisonType);
 
     [Pure]
     public override readonly int GetHashCode() => GetHashCode(StringComparison.Ordinal);

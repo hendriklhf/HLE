@@ -56,13 +56,13 @@ public static unsafe class StructMarshal
         switch (sizeof(TLeft))
         {
             case sizeof(byte):
-                return Unsafe.As<TLeft, byte>(ref left) == Unsafe.As<TRight, byte>(ref right);
+                return Unsafe.BitCast<TLeft, byte>(left) == Unsafe.BitCast<TRight, byte>(right);
             case sizeof(short):
-                return Unsafe.As<TLeft, short>(ref left) == Unsafe.As<TRight, short>(ref right);
+                return Unsafe.BitCast<TLeft, short>(left) == Unsafe.BitCast<TRight, short>(right);
             case sizeof(int):
-                return Unsafe.As<TLeft, int>(ref left) == Unsafe.As<TRight, int>(ref right);
+                return Unsafe.BitCast<TLeft, int>(left) == Unsafe.BitCast<TRight, int>(right);
             case sizeof(long):
-                return Unsafe.As<TLeft, long>(ref left) == Unsafe.As<TRight, long>(ref right);
+                return Unsafe.BitCast<TLeft, long>(left) == Unsafe.BitCast<TRight, long>(right);
         }
 
         if (Unsafe.AreSame(ref Unsafe.As<TLeft, byte>(ref left), ref Unsafe.As<TRight, byte>(ref right)))
@@ -72,25 +72,21 @@ public static unsafe class StructMarshal
 
         if (Vector512.IsHardwareAccelerated && sizeof(TLeft) == Vector512<byte>.Count)
         {
-            return Unsafe.As<TLeft, Vector512<byte>>(ref left) == Unsafe.As<TRight, Vector512<byte>>(ref right);
+            return Unsafe.BitCast<TLeft, Vector512<byte>>(left) == Unsafe.BitCast<TRight, Vector512<byte>>(right);
         }
 
         if (Vector256.IsHardwareAccelerated && sizeof(TLeft) == Vector256<byte>.Count)
         {
-            return Unsafe.As<TLeft, Vector256<byte>>(ref left) == Unsafe.As<TRight, Vector256<byte>>(ref right);
+            return Unsafe.BitCast<TLeft, Vector256<byte>>(left) == Unsafe.BitCast<TRight, Vector256<byte>>(right);
         }
 
         if (Vector128.IsHardwareAccelerated && sizeof(TLeft) == Vector128<byte>.Count)
         {
-            return Unsafe.As<TLeft, Vector128<byte>>(ref left) == Unsafe.As<TRight, Vector128<byte>>(ref right);
+            return Unsafe.BitCast<TLeft, Vector128<byte>>(left) == Unsafe.BitCast<TRight, Vector128<byte>>(right);
         }
 
         return GetBytes(ref left).SequenceEqual(GetBytes(ref right));
     }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TTo As<TFrom, TTo>(TFrom value) => Unsafe.As<TFrom, TTo>(ref value);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

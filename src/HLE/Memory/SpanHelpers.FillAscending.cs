@@ -23,16 +23,16 @@ public static partial class SpanHelpers
         switch (sizeof(T))
         {
             case sizeof(byte):
-                FillAscending(ref Unsafe.As<T, byte>(ref destinationReference), destination.Length, Unsafe.As<T, byte>(ref start));
+                FillAscending(ref Unsafe.As<T, byte>(ref destinationReference), destination.Length, Unsafe.BitCast<T, byte>(start));
                 return;
             case sizeof(ushort):
-                FillAscending(ref Unsafe.As<T, ushort>(ref destinationReference), destination.Length, Unsafe.As<T, ushort>(ref start));
+                FillAscending(ref Unsafe.As<T, ushort>(ref destinationReference), destination.Length, Unsafe.BitCast<T, ushort>(start));
                 return;
             case sizeof(uint):
-                FillAscending(ref Unsafe.As<T, uint>(ref destinationReference), destination.Length, Unsafe.As<T, uint>(ref start));
+                FillAscending(ref Unsafe.As<T, uint>(ref destinationReference), destination.Length, Unsafe.BitCast<T, uint>(start));
                 return;
             case sizeof(ulong):
-                FillAscending(ref Unsafe.As<T, ulong>(ref destinationReference), destination.Length, Unsafe.As<T, ulong>(ref start));
+                FillAscending(ref Unsafe.As<T, ulong>(ref destinationReference), destination.Length, Unsafe.BitCast<T, ulong>(start));
                 return;
         }
 

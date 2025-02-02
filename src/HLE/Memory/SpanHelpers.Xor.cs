@@ -18,16 +18,16 @@ public static partial class SpanHelpers
         switch (sizeof(T))
         {
             case sizeof(byte):
-                Xor(ref Unsafe.As<T, byte>(ref reference), values.Length, Unsafe.As<T, byte>(ref mask));
+                Xor(ref Unsafe.As<T, byte>(ref reference), values.Length, Unsafe.BitCast<T, byte>(mask));
                 return;
             case sizeof(ushort):
-                Xor(ref Unsafe.As<T, ushort>(ref reference), values.Length, Unsafe.As<T, ushort>(ref mask));
+                Xor(ref Unsafe.As<T, ushort>(ref reference), values.Length, Unsafe.BitCast<T, ushort>(mask));
                 return;
             case sizeof(uint):
-                Xor(ref Unsafe.As<T, uint>(ref reference), values.Length, Unsafe.As<T, uint>(ref mask));
+                Xor(ref Unsafe.As<T, uint>(ref reference), values.Length, Unsafe.BitCast<T, uint>(mask));
                 return;
             case sizeof(ulong):
-                Xor(ref Unsafe.As<T, ulong>(ref reference), values.Length, Unsafe.As<T, ulong>(ref mask));
+                Xor(ref Unsafe.As<T, ulong>(ref reference), values.Length, Unsafe.BitCast<T, ulong>(mask));
                 return;
         }
 

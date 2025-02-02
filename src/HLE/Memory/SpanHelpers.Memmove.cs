@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -8,84 +9,136 @@ namespace HLE.Memory;
 public static unsafe partial class SpanHelpers
 {
     public static void Copy<T>(T[] source, T* destination)
-        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
+        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetArrayDataReference(source), source.Length);
 
     public static void Copy<T>(T[] source, ref T destination)
-        => Memmove(ref destination, ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
+        => Memmove(ref destination, ref MemoryMarshal.GetArrayDataReference(source), source.Length);
 
     public static void Copy<T>(T[] source, T[] destination)
-        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetArrayDataReference(source), (uint)source.Length);
+        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetArrayDataReference(source), source.Length);
 
     public static void Copy<T>(Span<T> source, T[] destination)
-        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(Span<T> source, Span<T> destination)
-        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(Span<T> source, ref T destination)
-        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(Span<T> source, T* destination)
-        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(ReadOnlySpan<T> source, T[] destination)
-        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(ReadOnlySpan<T> source, Span<T> destination)
-        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(ReadOnlySpan<T> source, ref T destination)
-        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), source.Length);
 
     public static void Copy<T>(ReadOnlySpan<T> source, T* destination)
-        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), (uint)source.Length);
+        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), source.Length);
 
-    /// <inheritdoc cref="Memmove{T}(ref T,ref T,nuint)"/>
-    public static void Memmove<T>(T* destination, T* source, nuint elementCount)
+    /// <inheritdoc cref="Memmove{T,TElementCount}(ref T,ref T,TElementCount)"/>
+    public static void Memmove<T, TElementCount>(T* destination, T* source, TElementCount elementCount)
+        where TElementCount : unmanaged, IBinaryInteger<TElementCount>
         => Memmove(ref Unsafe.AsRef<T>(destination), ref Unsafe.AsRef<T>(source), elementCount);
 
     /// <summary>
     /// Copies the given amount of elements from the source into the destination.
     /// </summary>
     /// <typeparam name="T">The element type that will be copied.</typeparam>
+    /// <typeparam name="TElementCount">The type that represents the amount of elements that will be copied.</typeparam>
     /// <param name="destination">The destination of the elements.</param>
     /// <param name="source">The source of the elements.</param>
     /// <param name="elementCount">The amount of elements that will be copied from source to destination.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Memmove<T>(ref T destination, ref T source, nuint elementCount)
+    public static void Memmove<T, TElementCount>(ref T destination, ref T source, TElementCount elementCount)
+        where TElementCount : unmanaged, IBinaryInteger<TElementCount>
     {
-        if (elementCount <= int.MaxValue)
+        ValidateElementCountType<TElementCount>();
+
+        Debug.Assert(elementCount > TElementCount.Zero);
+
+        if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {
-            MemoryMarshal.CreateReadOnlySpan(ref source, (int)elementCount)
+            MemoryMarshal.CreateReadOnlySpan(ref source, Unsafe.BitCast<TElementCount, byte>(elementCount))
                 .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
             return;
         }
 
-        MemmoveCore(ref destination, ref source, elementCount);
-
-        return;
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static void MemmoveCore(ref T destination, ref T source, nuint elementCount)
+        if (typeof(TElementCount) == typeof(short) || typeof(TElementCount) == typeof(ushort))
         {
-            Debug.Assert(elementCount > int.MaxValue);
+            MemoryMarshal.CreateReadOnlySpan(ref source, Unsafe.BitCast<TElementCount, ushort>(elementCount))
+                .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+            return;
+        }
 
-            do
+        if (typeof(TElementCount) == typeof(int) || (sizeof(int) == sizeof(nint) && typeof(TElementCount) == typeof(nint)))
+        {
+            MemoryMarshal.CreateReadOnlySpan(ref source, Unsafe.BitCast<TElementCount, int>(elementCount))
+                .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+            return;
+        }
+
+        if (typeof(TElementCount) == typeof(uint) || (sizeof(uint) == sizeof(nuint) && typeof(TElementCount) == typeof(nuint)))
+        {
+            uint count = Unsafe.BitCast<TElementCount, uint>(elementCount);
+            if (count > int.MaxValue)
             {
                 MemoryMarshal.CreateReadOnlySpan(ref source, int.MaxValue)
                     .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
-
-                source = ref Unsafe.Add(ref source, int.MaxValue);
-                destination = ref Unsafe.Add(ref destination, int.MaxValue);
-                elementCount -= int.MaxValue;
+                count -= int.MaxValue;
             }
-            while (elementCount >= int.MaxValue);
 
-            if (elementCount != 0)
+            MemoryMarshal.CreateReadOnlySpan(ref source, (int)count)
+                .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+            return;
+        }
+
+        if (typeof(TElementCount) == typeof(long) || typeof(TElementCount) == typeof(nint) ||
+            typeof(TElementCount) == typeof(ulong) || typeof(TElementCount) == typeof(nuint))
+        {
+            ulong count = Unsafe.BitCast<TElementCount, ulong>(elementCount);
+            if (count <= int.MaxValue)
             {
-                MemoryMarshal.CreateReadOnlySpan(ref source, (int)elementCount)
-                    .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+                Memmove(ref destination, ref source, (int)count);
+                return;
             }
+
+            do
+            {
+                Memmove(ref destination, ref source, int.MaxValue);
+                count -= int.MaxValue;
+            }
+            while (count >= int.MaxValue);
+
+            if (count != 0)
+            {
+                Memmove(ref destination, ref source, (int)count);
+            }
+        }
+
+        ThrowHelper.ThrowUnreachableException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ValidateElementCountType<T>()
+    {
+        if (typeof(T) != typeof(sbyte) &&
+            typeof(T) != typeof(byte) &&
+            typeof(T) != typeof(short) &&
+            typeof(T) != typeof(ushort) &&
+            typeof(T) != typeof(int) &&
+            typeof(T) != typeof(uint) &&
+            typeof(T) != typeof(long) &&
+            typeof(T) != typeof(ulong) &&
+            typeof(T) != typeof(nint) &&
+            typeof(T) != typeof(nuint))
+        {
+            throw new NotSupportedException("The element count type must be a signed or unsigned integer type.");
         }
     }
 }

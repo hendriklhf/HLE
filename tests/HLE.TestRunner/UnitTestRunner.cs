@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -7,6 +6,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using HLE.Collections;
 
 namespace HLE.TestRunner;
 
@@ -26,7 +26,7 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
 
     public async Task<ImmutableArray<UnitTestRunResult>> RunAsync()
     {
-        List<Task<UnitTestRunResult>> tasks = new();
+        using PooledList<Task<UnitTestRunResult>> tasks = new();
 
         ReadOnlyMemory<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combinate();
         foreach (TestProject testProject in _testProjects)

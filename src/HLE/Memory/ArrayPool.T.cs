@@ -14,11 +14,12 @@ namespace HLE.Memory;
 /// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
-public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
+public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 {
     public static ArrayPool<T> Shared { get; } = new();
 
     internal readonly Bucket[] _buckets;
+    private readonly Trimmer _trimmer;
 
     [ThreadStatic]
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
@@ -48,7 +49,21 @@ public sealed partial class ArrayPool<T> : IEquatable<ArrayPool<T>>
         _buckets = buckets;
 
         Debug.Assert(arrayLength >>> 1 == ArrayPool.MaximumArrayLength);
+
+        Trimmer trimmer = new(this);
+        trimmer.StartTrimmingThread();
+        _trimmer = trimmer;
     }
+
+    ~ArrayPool() => DisposeCore();
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        DisposeCore();
+    }
+
+    private void DisposeCore() => _trimmer.StopTrimmingThread();
 
     [Pure]
     public T[] Rent(int minimumLength)

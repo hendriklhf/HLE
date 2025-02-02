@@ -119,49 +119,49 @@ public static class NumberHelpers
             return number % max;
         }
 
-        // TODO: can be special cased for min and max both having popcnt == 1
+        // TODO: can be special cased for min and max both having popcnt == 1 (or <= 1)
 
         if (typeof(T) == typeof(sbyte))
         {
-            byte numberAsUInt8 = Unsafe.As<T, byte>(ref number);
-            byte maxAsUInt8 = Unsafe.As<T, byte>(ref max);
-            byte minAsUInt8 = Unsafe.As<T, byte>(ref min);
+            byte numberAsUInt8 = Unsafe.BitCast<T, byte>(number);
+            byte maxAsUInt8 = Unsafe.BitCast<T, byte>(max);
+            byte minAsUInt8 = Unsafe.BitCast<T, byte>(min);
             byte rangeAsUInt8 = (byte)(maxAsUInt8 - minAsUInt8);
             return T.CreateTruncating((numberAsUInt8 % rangeAsUInt8) + minAsUInt8);
         }
 
         if (typeof(T) == typeof(short))
         {
-            ushort numberAsUInt16 = Unsafe.As<T, ushort>(ref number);
-            ushort maxAsUInt16 = Unsafe.As<T, ushort>(ref max);
-            ushort minAsUInt16 = Unsafe.As<T, ushort>(ref min);
+            ushort numberAsUInt16 = Unsafe.BitCast<T, ushort>(number);
+            ushort maxAsUInt16 = Unsafe.BitCast<T, ushort>(max);
+            ushort minAsUInt16 = Unsafe.BitCast<T, ushort>(min);
             ushort rangeAsUInt16 = (ushort)(maxAsUInt16 - minAsUInt16);
             return T.CreateTruncating((numberAsUInt16 % rangeAsUInt16) + minAsUInt16);
         }
 
         if (typeof(T) == typeof(int))
         {
-            uint numberAsUInt32 = Unsafe.As<T, uint>(ref number);
-            uint maxAsUInt32 = Unsafe.As<T, uint>(ref max);
-            uint minAsUInt32 = Unsafe.As<T, uint>(ref min);
+            uint numberAsUInt32 = Unsafe.BitCast<T, uint>(number);
+            uint maxAsUInt32 = Unsafe.BitCast<T, uint>(max);
+            uint minAsUInt32 = Unsafe.BitCast<T, uint>(min);
             uint rangeAsUInt32 = maxAsUInt32 - minAsUInt32;
             return T.CreateTruncating((numberAsUInt32 % rangeAsUInt32) + minAsUInt32);
         }
 
         if (typeof(T) == typeof(long))
         {
-            ulong numberAsUInt64 = Unsafe.As<T, ulong>(ref number);
-            ulong maxAsUInt64 = Unsafe.As<T, ulong>(ref max);
-            ulong minAsUInt64 = Unsafe.As<T, ulong>(ref min);
+            ulong numberAsUInt64 = Unsafe.BitCast<T, ulong>(number);
+            ulong maxAsUInt64 = Unsafe.BitCast<T, ulong>(max);
+            ulong minAsUInt64 = Unsafe.BitCast<T, ulong>(min);
             ulong rangeAsUInt64 = maxAsUInt64 - minAsUInt64;
             return T.CreateTruncating((numberAsUInt64 % rangeAsUInt64) + minAsUInt64);
         }
 
         if (typeof(T) == typeof(Int128))
         {
-            UInt128 numberAsUInt128 = Unsafe.As<T, UInt128>(ref number);
-            UInt128 maxAsUInt128 = Unsafe.As<T, UInt128>(ref max);
-            UInt128 minAsUInt128 = Unsafe.As<T, UInt128>(ref min);
+            UInt128 numberAsUInt128 = Unsafe.BitCast<T, UInt128>(number);
+            UInt128 maxAsUInt128 = Unsafe.BitCast<T, UInt128>(max);
+            UInt128 minAsUInt128 = Unsafe.BitCast<T, UInt128>(min);
             UInt128 rangeAsUInt128 = maxAsUInt128 - minAsUInt128;
             return T.CreateTruncating((numberAsUInt128 % rangeAsUInt128) + minAsUInt128);
         }

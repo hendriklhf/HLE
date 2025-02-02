@@ -11,7 +11,7 @@ namespace HLE;
 public static class EnumValues<TEnum> where TEnum : struct, Enum
 {
     // ⚠️ this array is the runtime's internal value storage.
-    // do not mutate it :)
+    // do not mutate it :) ⚠️
     private static readonly TEnum[] s_values = EnumValues.GetValues<TEnum>();
 
     public static int Count => s_values.Length;

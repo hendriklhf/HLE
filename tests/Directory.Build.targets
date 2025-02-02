@@ -3,8 +3,6 @@
   <Import Project="..\Directory.Build.targets"/>
 
   <PropertyGroup Condition="'$(IsTestProject)'=='true'">
-    <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
   </PropertyGroup>
@@ -20,12 +18,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)'=='true'">
-    <PackageReference Include="coverlet.collector">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-    <PackageReference Include="Microsoft.Testing.Platform"/>
     <PackageReference Include="xunit.v3"/>
   </ItemGroup>
 

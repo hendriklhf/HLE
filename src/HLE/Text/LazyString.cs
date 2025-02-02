@@ -15,8 +15,8 @@ using HLE.Memory;
 namespace HLE.Text;
 
 [DebuggerDisplay("{AsSpan()}")]
-[JsonConverter(typeof(LazyStringJsonConverter))]
-public sealed class LazyString :
+[JsonConverter(typeof(JsonConverter))]
+public sealed partial class LazyString :
     IDisposable,
     IEquatable<LazyString>,
     IReadOnlySpanProvider<char>,
@@ -142,7 +142,7 @@ public sealed class LazyString :
             return ReadOnlyMemory<char>.Empty;
         }
 
-        return _chars?.AsMemory() ?? AwaitStringCreation(ref _string).AsMemory();
+        return _chars?.AsMemory(0, Length) ?? AwaitStringCreation(ref _string).AsMemory();
     }
 
     [Pure]
@@ -316,20 +316,14 @@ public sealed class LazyString :
             return EmptyEnumeratorCache<char>.Enumerator;
         }
 
-        string? str = _string;
-        if (str is not null)
-        {
-            return new StringEnumerator(str);
-        }
-
         char[]? chars = _chars;
         if (chars is not null)
         {
             return new ArrayEnumerator<char>(chars, 0, Length);
         }
 
-        ThrowHelper.ThrowUnreachableException();
-        return null!;
+        string str = AwaitStringCreation(ref _string);
+        return new StringEnumerator(str);
     }
 
     // ReSharper disable once NotDisposedResourceIsReturned
@@ -343,13 +337,15 @@ public sealed class LazyString :
         => ReferenceEquals(this, other) || (other is not null && Equals(other.AsSpan(), comparisonType));
 
     [Pure]
-    public bool Equals([NotNullWhen(true)] string? other) => Equals(other.AsSpan(), StringComparison.Ordinal);
+    public bool Equals([NotNullWhen(true)] string? other)
+        => Equals(other.AsSpan(), StringComparison.Ordinal);
 
     [Pure]
     public bool Equals([NotNullWhen(true)] string? other, StringComparison comparisonType)
         => other is not null && Equals(other.AsSpan(), comparisonType);
 
-    private bool Equals(ReadOnlySpan<char> chars, StringComparison comparisonType) => AsSpan().Equals(chars, comparisonType);
+    private bool Equals(ReadOnlySpan<char> chars, StringComparison comparisonType)
+        => AsSpan().Equals(chars, comparisonType);
 
     [Pure]
     public override bool Equals([NotNullWhen(true)] object? obj) => obj switch

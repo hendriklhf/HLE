@@ -19,7 +19,7 @@ public static unsafe class SpanMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Memory<T> AsMutableMemory<T>(ReadOnlyMemory<T> memory)
-        => Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
+        => Unsafe.BitCast<ReadOnlyMemory<T>, Memory<T>>(memory);
 
     /// <inheritdoc cref="AsMemory{T}(ReadOnlySpan{T})"/>
     [Pure]

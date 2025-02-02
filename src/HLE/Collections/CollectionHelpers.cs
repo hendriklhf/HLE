@@ -151,7 +151,7 @@ public static partial class CollectionHelpers
         if (typeof(T) == typeof(char) && enumerable is string str)
         {
             ReadOnlyMemory<char> stringMemory = str.AsMemory();
-            memory = Unsafe.As<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(ref stringMemory);
+            memory = Unsafe.BitCast<ReadOnlyMemory<char>, ReadOnlyMemory<T>>(stringMemory);
             return true;
         }
 

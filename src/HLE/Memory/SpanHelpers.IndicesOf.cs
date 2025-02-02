@@ -73,17 +73,17 @@ public static partial class SpanHelpers
         ref int destinationRef = ref MemoryMarshal.GetReference(destination);
         return sizeof(T) switch
         {
-            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), span.Length, Unsafe.As<T, byte>(ref item), ref destinationRef),
-            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), span.Length, Unsafe.As<T, ushort>(ref item), ref destinationRef),
-            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), span.Length, Unsafe.As<T, uint>(ref item), ref destinationRef),
-            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), span.Length, Unsafe.As<T, ulong>(ref item), ref destinationRef),
+            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), span.Length, Unsafe.BitCast<T, byte>(item), ref destinationRef),
+            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), span.Length, Unsafe.BitCast<T, ushort>(item), ref destinationRef),
+            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), span.Length, Unsafe.BitCast<T, uint>(item), ref destinationRef),
+            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), span.Length, Unsafe.BitCast<T, ulong>(item), ref destinationRef),
             _ => IndicesOfNonOptimizedFallback(span, item, destination)
         };
 
         [DoesNotReturn]
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowDestinationTooShort()
-            => throw new InvalidOperationException($"The destination needs to be at least as long as the {nameof(Span<T>)} of items provided.");
+            => throw new InvalidOperationException($"The destination needs to be at least as long as the {typeof(Span<T>)} of items provided.");
     }
 
     public static int IndicesOf<T>(ref T items, int length, T item, ref int destination) where T : unmanaged, IEquatable<T>
