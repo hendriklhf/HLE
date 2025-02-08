@@ -5,29 +5,52 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-public readonly ref partial struct Slicer<T>
+internal static class Slicer
 {
-    /// <inheritdoc cref="GetStart(Span{T},int,int)"/>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T GetStart(ReadOnlySpan<T> span, int start, int length)
-        => ref GetStart(ref MemoryMarshal.GetReference(span), span.Length, start, length);
-
-    /// <summary>
-    /// Gets the reference to the start of the slice and validates <paramref name="start"/> and <paramref name="length"/>.
-    /// </summary>
-    /// <param name="span">The <see cref="Span{T}"/> that will be sliced.</param>
-    /// <param name="start">The index of the start.</param>
-    /// <param name="length">The length of the sliced, beginning at <paramref name="start"/>.</param>
-    /// <returns>The reference to the start of the slice.</returns>
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T GetStart(Span<T> span, int start, int length)
-        => ref GetStart(ref MemoryMarshal.GetReference(span), span.Length, start, length);
+    public static ReadOnlySpan<T> SliceReadOnly<T>(ref T buffer, int bufferLength, int start)
+        => MemoryMarshal.CreateReadOnlySpan(ref GetStart(ref buffer, bufferLength, start), bufferLength - start);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T GetStart(ref T buffer, int bufferLength, int start, int length)
+    public static ReadOnlySpan<T> SliceReadOnly<T>(ref T buffer, int bufferLength, Range range)
+    {
+        (int start, int length) = range.GetOffsetAndLength(bufferLength);
+        return MemoryMarshal.CreateReadOnlySpan(ref GetStart(ref buffer, bufferLength, start, length), length);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<T> SliceReadOnly<T>(ref T buffer, int bufferLength, int start, int length)
+        => MemoryMarshal.CreateReadOnlySpan(ref GetStart(ref buffer, bufferLength, start, length), length);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<T> Slice<T>(ref T buffer, int bufferLength, int start)
+        => MemoryMarshal.CreateSpan(ref GetStart(ref buffer, bufferLength, start), bufferLength - start);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<T> Slice<T>(ref T buffer, int bufferLength, Range range)
+    {
+        (int start, int length) = range.GetOffsetAndLength(bufferLength);
+        return MemoryMarshal.CreateSpan(ref GetStart(ref buffer, bufferLength, start, length), length);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Span<T> Slice<T>(ref T buffer, int bufferLength, int start, int length)
+        => MemoryMarshal.CreateSpan(ref GetStart(ref buffer, bufferLength, start, length), length);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ref T GetStart<T>(ref T buffer, int bufferLength, int start)
+        => ref GetStart(ref buffer, bufferLength, start, bufferLength - start);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ref T GetStart<T>(ref T buffer, int bufferLength, int start, int length)
     {
         if (Environment.Is64BitProcess)
         {

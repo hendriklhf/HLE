@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 namespace HLE.Collections;
 
@@ -29,7 +28,6 @@ public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowRangeEndStartsFromEnd()
             => throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
     }

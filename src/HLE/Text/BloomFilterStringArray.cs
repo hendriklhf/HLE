@@ -124,7 +124,25 @@ public sealed class BloomFilterStringArray :
     public ReadOnlySpan<string> AsSpan() => _strings;
 
     [Pure]
+    public ReadOnlySpan<string> AsSpan(int start) => _strings.AsSpan(start);
+
+    [Pure]
+    public ReadOnlySpan<string> AsSpan(int start, int length) => _strings.AsSpan(start, length);
+
+    [Pure]
+    public ReadOnlySpan<string> AsSpan(Range range) => _strings.AsSpan(range);
+
+    [Pure]
     public ReadOnlyMemory<string> AsMemory() => _strings;
+
+    [Pure]
+    public ReadOnlyMemory<string> AsMemory(int start) => _strings.AsMemory(start);
+
+    [Pure]
+    public ReadOnlyMemory<string> AsMemory(int start, int length) => _strings.AsMemory(start, length);
+
+    [Pure]
+    public ReadOnlyMemory<string> AsMemory(Range range) => _strings.AsMemory(range);
 
     [Pure]
     public string[] ToArray()
@@ -160,10 +178,6 @@ public sealed class BloomFilterStringArray :
 
     [Pure]
     public List<string> ToList(Range range) => AsSpan().ToList(range);
-
-    ReadOnlySpan<string> IReadOnlySpanProvider<string>.GetReadOnlySpan() => AsSpan();
-
-    ReadOnlyMemory<string> IReadOnlyMemoryProvider<string>.GetReadOnlyMemory() => AsMemory();
 
     [Pure]
     public int IndexOf(string str, int startIndex = 0) => IndexOf(str.AsSpan(), startIndex);

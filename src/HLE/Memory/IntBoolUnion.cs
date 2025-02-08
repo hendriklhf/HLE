@@ -75,7 +75,6 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowIntegerTypeNotSupported()
             => throw new NotSupportedException($"Only {typeof(sbyte)}, {typeof(short)}, {typeof(int)} and {typeof(long)} are supported.");
     }

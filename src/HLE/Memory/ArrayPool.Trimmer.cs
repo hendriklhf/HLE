@@ -45,13 +45,10 @@ public sealed partial class ArrayPool<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void TrimCore(ArrayPool<T> pool)
         {
-            if (!NeedsTrimming(out long memoryToFree))
-            {
-                return;
-            }
+            bool hasHighMemoryPressure = HasHighMemoryPressure(out long memoryToRelease);
 
             Span<Bucket> buckets = pool._buckets;
-            for (int i = buckets.Length - 1; i >= 0 && memoryToFree > 0; i--)
+            for (int i = buckets.Length - 1; i >= 0; i--)
             {
                 ref Bucket bucket = ref buckets[i];
                 if (Volatile.Read(ref bucket._count) == 0)
@@ -66,40 +63,50 @@ public sealed partial class ArrayPool<T>
                         continue;
                     }
 
-                    TrimBucket(ref bucket, ref memoryToFree);
+                    TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - bucket._lastAccessTick);
+                    if (timeSinceLastAccess > ArrayPool.MaximumLastAccessTime)
+                    {
+                        long releasedMemory = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength) * bucket._count;
+                        bucket.ClearWithoutLock();
+                        memoryToRelease -= releasedMemory;
+                        continue;
+                    }
+
+                    if (hasHighMemoryPressure && memoryToRelease > 0)
+                    {
+                        TrimBucket(ref bucket, ref memoryToRelease);
+                    }
                 }
             }
         }
 
-        private static void TrimBucket(ref Bucket bucket, ref long memoryToFree)
+        private static void TrimBucket(ref Bucket bucket, ref long memoryToRelease)
         {
             Span<T[]?> stack = bucket._stack!;
-            for (int j = (int)bucket._count - 1; j >= 0 && memoryToFree > 0; j--)
+            long arraySize = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength);
+            for (int j = (int)bucket._count - 1; j >= 0 && memoryToRelease > 0; j--)
             {
-                ref T[]? arrayRef = ref stack[j];
-                T[]? array = arrayRef;
-
-                arrayRef = null;
+                ref T[]? array = ref stack[j];
+                Debug.Assert(array is not null);
+                array = null;
                 bucket._count--;
 
-                Debug.Assert(array is not null);
-                long size = (long)ObjectMarshal.GetRawArraySize(array);
-                memoryToFree -= size;
+                memoryToRelease -= arraySize;
             }
         }
 
-        private static bool NeedsTrimming(out long memoryToFree)
+        private static bool HasHighMemoryPressure(out long memoryToRelease)
         {
             GCMemoryInfo memoryInfo = GC.GetGCMemoryInfo();
             double ratio = ArrayPool.IsCommonlyPooledType<T>() ? ArrayPool.CommonlyPooledTypeTrimThreshold : ArrayPool.TrimThreshold;
             long threshold = (long)(memoryInfo.HighMemoryLoadThresholdBytes * ratio);
             if (memoryInfo.MemoryLoadBytes >= threshold)
             {
-                memoryToFree = memoryInfo.MemoryLoadBytes - threshold;
+                memoryToRelease = memoryInfo.MemoryLoadBytes - threshold;
                 return true;
             }
 
-            memoryToFree = 0;
+            memoryToRelease = 0;
             return false;
         }
     }

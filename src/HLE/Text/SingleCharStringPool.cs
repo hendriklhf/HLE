@@ -63,7 +63,6 @@ public static partial class SingleCharStringPool
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowStringIsNotASingleCharString(string str)
             => throw new InvalidOperationException($"The provided string's (\"{str}\") length is not 1.");
     }

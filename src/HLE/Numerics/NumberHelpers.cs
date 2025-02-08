@@ -186,7 +186,6 @@ public static class NumberHelpers
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowNumberTypeNotSupported()
             => throw new NotSupportedException($"The type {typeof(T)} is not supported.");
     }
@@ -212,7 +211,6 @@ public static class NumberHelpers
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static T ThrowInvalidEnumArgumentException<T>(AlignmentMethod method) where T : INumber<T>
         => throw new InvalidEnumArgumentException(nameof(method), (int)method, typeof(AlignmentMethod));
 

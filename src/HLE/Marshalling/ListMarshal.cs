@@ -30,7 +30,6 @@ public static partial class ListMarshal
         return ref MemoryMarshal.GetArrayDataReference(array);
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowListIsEmpty()
             => throw new InvalidOperationException("The list is empty, therefore it is not possible to get a reference to the items.");
     }

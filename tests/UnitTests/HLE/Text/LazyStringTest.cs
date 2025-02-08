@@ -499,7 +499,7 @@ public sealed partial class LazyStringTest
         string str = parameter.Value;
         IReadOnlySpanProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlySpanProvider<char>>(parameter.Lazy);
 
-        Assert.True(lazy.GetReadOnlySpan().SequenceEqual(str));
+        Assert.True(lazy.AsSpan().SequenceEqual(str));
     }
 
     [Theory]
@@ -509,7 +509,7 @@ public sealed partial class LazyStringTest
         string str = parameter.Value;
         IReadOnlyMemoryProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyMemoryProvider<char>>(parameter.Lazy);
 
-        Assert.True(lazy.GetReadOnlyMemory().Span.SequenceEqual(str));
+        Assert.True(lazy.AsMemory().Span.SequenceEqual(str));
     }
 
     [Theory]

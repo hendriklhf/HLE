@@ -98,7 +98,6 @@ public static class BufferHelpers
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static T ThrowMaximumBufferCapacityReached<T>()
         => throw new InvalidOperationException("The maximum buffer capacity has been reached.");
 }

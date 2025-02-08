@@ -42,7 +42,7 @@ public sealed partial class LazyString :
 
     public ref readonly char this[Index index] => ref this[index.GetOffset(Length)];
 
-    public ReadOnlySpan<char> this[Range range] => new Slicer<char>(ref GetReference(), Length).SliceReadOnlySpan(range);
+    public ReadOnlySpan<char> this[Range range] => Slicer.SliceReadOnly(ref GetReference(), Length, range);
 
     public int Length { get; }
 
@@ -135,6 +135,15 @@ public sealed partial class LazyString :
     public ReadOnlySpan<char> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref GetReference(), Length);
 
     [Pure]
+    public ReadOnlySpan<char> AsSpan(int start) => Slicer.SliceReadOnly(ref GetReference(), Length, start);
+
+    [Pure]
+    public ReadOnlySpan<char> AsSpan(int start, int length) => Slicer.SliceReadOnly(ref GetReference(), Length, start, length);
+
+    [Pure]
+    public ReadOnlySpan<char> AsSpan(Range range) => Slicer.SliceReadOnly(ref GetReference(), Length, range);
+
+    [Pure]
     public ReadOnlyMemory<char> AsMemory()
     {
         if (Length == 0)
@@ -146,6 +155,15 @@ public sealed partial class LazyString :
     }
 
     [Pure]
+    public ReadOnlyMemory<char> AsMemory(int start) => AsMemory()[start..];
+
+    [Pure]
+    public ReadOnlyMemory<char> AsMemory(int start, int length) => AsMemory().Slice(start, length);
+
+    [Pure]
+    public ReadOnlyMemory<char> AsMemory(Range range) => AsMemory()[range];
+
+    [Pure]
     public char[] ToArray()
     {
         if (Length == 0)
@@ -155,7 +173,7 @@ public sealed partial class LazyString :
 
         ref char chars = ref GetReference();
         char[] result = GC.AllocateUninitializedArray<char>(Length);
-        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref chars, (uint)Length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref chars, Length);
         return result;
     }
 
@@ -229,7 +247,7 @@ public sealed partial class LazyString :
         [MethodImpl(MethodImplOptions.NoInlining)]
         static string AwaitStringCreationCore(ref string? reference)
         {
-            const int MaximumSpinCount = 64;
+            const int MaximumSpinCount = 512;
 
             SpinWait spinWait = new();
             do
@@ -301,10 +319,6 @@ public sealed partial class LazyString :
 
     [Pure]
     public bool Contains(char item) => AsSpan().Contains(item);
-
-    ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => AsSpan();
-
-    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
 
     [Pure]
     public ReadOnlyMemoryEnumerator<char> GetEnumerator() => new(AsSpan());

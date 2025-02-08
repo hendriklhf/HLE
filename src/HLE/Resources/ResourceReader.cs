@@ -65,7 +65,6 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
         return resource;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowResourceDoesntExist(ReadOnlySpan<char> resourcePath)
             => throw new InvalidOperationException($"The resource \"{resourcePath}\" doesn't exist.");
     }
@@ -164,7 +163,6 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
         return true;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowStreamLengthExceedsInt32()
             => throw new InvalidOperationException($"The stream length exceeds the maximum {typeof(int)} value.");
     }

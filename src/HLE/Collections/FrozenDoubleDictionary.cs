@@ -79,9 +79,29 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     [Pure]
     public bool Contains(TValue item) => _values.Values.Contains(item);
 
-    ReadOnlySpan<TValue> IReadOnlySpanProvider<TValue>.GetReadOnlySpan() => Values.AsSpan();
+    [Pure]
+    public ReadOnlySpan<TValue> AsSpan() => Values.AsSpan();
 
-    ReadOnlyMemory<TValue> IReadOnlyMemoryProvider<TValue>.GetReadOnlyMemory() => Values.AsMemory();
+    [Pure]
+    public ReadOnlySpan<TValue> AsSpan(int start) => Values.AsSpan(start..);
+
+    [Pure]
+    public ReadOnlySpan<TValue> AsSpan(int start, int length) => Values.AsSpan(start, length);
+
+    [Pure]
+    public ReadOnlySpan<TValue> AsSpan(Range range) => Values.AsSpan(range);
+
+    [Pure]
+    public ReadOnlyMemory<TValue> AsMemory() => Values.AsMemory();
+
+    [Pure]
+    public ReadOnlyMemory<TValue> AsMemory(int start) => Values.AsMemory()[start..];
+
+    [Pure]
+    public ReadOnlyMemory<TValue> AsMemory(int start, int length) => Values.AsMemory().Slice(start, length);
+
+    [Pure]
+    public ReadOnlyMemory<TValue> AsMemory(Range range) => Values.AsMemory()[range];
 
     [Pure]
     public TValue[] ToArray()
@@ -101,7 +121,7 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     public TValue[] ToArray(int start) => ToArray(start..Count);
 
     [Pure]
-    public TValue[] ToArray(int start, int length) => _values.Values.AsSpan().ToArray(start, length);
+    public TValue[] ToArray(int start, int length) => Values.AsSpan().ToArray(start, length);
 
     [Pure]
     public TValue[] ToArray(Range range)

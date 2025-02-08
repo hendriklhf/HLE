@@ -66,7 +66,25 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     public ReadOnlySpan<byte> AsSpan() => MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef<byte>(_resource), Length);
 
     [Pure]
+    public ReadOnlySpan<byte> AsSpan(int start) => Slicer.SliceReadOnly(ref Unsafe.AsRef<byte>(_resource), Length, start);
+
+    [Pure]
+    public ReadOnlySpan<byte> AsSpan(int start, int length) => Slicer.SliceReadOnly(ref Unsafe.AsRef<byte>(_resource), Length, start, length);
+
+    [Pure]
+    public ReadOnlySpan<byte> AsSpan(Range range) => Slicer.SliceReadOnly(ref Unsafe.AsRef<byte>(_resource), Length, range);
+
+    [Pure]
     public ReadOnlyMemory<byte> AsMemory() => new NativeMemoryManager<byte>(_resource, Length).Memory;
+
+    [Pure]
+    public ReadOnlyMemory<byte> AsMemory(int start) => AsMemory()[start..];
+
+    [Pure]
+    public ReadOnlyMemory<byte> AsMemory(int start, int length) => AsMemory().Slice(start, length);
+
+    [Pure]
+    public ReadOnlyMemory<byte> AsMemory(Range range) => AsMemory()[range];
 
     [Pure]
     public byte[] ToArray()
@@ -80,7 +98,7 @@ public readonly unsafe struct Resource(byte* resource, int length) :
         byte[] result = GC.AllocateUninitializedArray<byte>(length);
         ref byte destination = ref MemoryMarshal.GetArrayDataReference(result);
         ref byte source = ref Unsafe.AsRef<byte>(_resource);
-        SpanHelpers.Memmove(ref destination, ref source, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref source, length);
         return result;
     }
 
@@ -140,10 +158,6 @@ public readonly unsafe struct Resource(byte* resource, int length) :
         CopyWorker<byte> copyWorker = new(_resource, Length);
         copyWorker.CopyTo(destination);
     }
-
-    ReadOnlySpan<byte> IReadOnlySpanProvider<byte>.GetReadOnlySpan() => AsSpan();
-
-    ReadOnlyMemory<byte> IReadOnlyMemoryProvider<byte>.GetReadOnlyMemory() => AsMemory();
 
     void ICollection<byte>.Add(byte item) => throw new NotSupportedException();
 

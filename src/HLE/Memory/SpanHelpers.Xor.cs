@@ -127,7 +127,6 @@ public static partial class SpanHelpers
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowLengthsAreNotEqual()
             => throw new InvalidOperationException("The length of the values and the mask have to be the same.");
     }

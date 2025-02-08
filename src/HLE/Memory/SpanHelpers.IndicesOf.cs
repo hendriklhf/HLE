@@ -81,7 +81,6 @@ public static partial class SpanHelpers
         };
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowDestinationTooShort()
             => throw new InvalidOperationException($"The destination needs to be at least as long as the {typeof(Span<T>)} of items provided.");
     }

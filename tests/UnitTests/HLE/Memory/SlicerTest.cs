@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using HLE.Memory;
 using Xunit;
 
@@ -13,8 +14,7 @@ public sealed class SlicerTest
         int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
-        Slicer<int> slicer = new(array);
-        Span<int> span = slicer.SliceSpan(5);
+        Span<int> span = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5);
         Assert.Equal(ArrayLength - 5, span.Length);
         Assert.True(span is [5, .., 99]);
     }
@@ -26,8 +26,7 @@ public sealed class SlicerTest
         int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
-        Slicer<int> slicer = new(array);
-        Span<int> span = slicer.SliceSpan(5, 50);
+        Span<int> span = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5, 50);
         Assert.Equal(50, span.Length);
         Assert.True(span is [5, .., 54]);
     }
@@ -39,8 +38,7 @@ public sealed class SlicerTest
         int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
-        Slicer<int> slicer = new(array);
-        Span<int> span = slicer.SliceSpan(5..50);
+        Span<int> span = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5..50);
         Assert.Equal(45, span.Length);
         Assert.True(span is [5, .., 49]);
     }
@@ -51,15 +49,13 @@ public sealed class SlicerTest
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(101);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-1);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -1);
         });
     }
 
@@ -69,50 +65,43 @@ public sealed class SlicerTest
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(0, 101);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 0, 101);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(101, 0);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101, 0);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(101, 100);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101, 100);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-1, 50);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -1, 50);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(50, -1);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 50, -1);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-1, -1);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -1, -1);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(int.MinValue, int.MinValue);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, int.MinValue, int.MinValue);
         });
     }
 
@@ -122,58 +111,50 @@ public sealed class SlicerTest
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(..101);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, ..101);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(101..);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101..);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(101..200);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101..200);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(50..30);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 50..30);
         });
 
         // ReSharper disable NegativeIndex
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-5..30);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -5..30);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(5..-30);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5..-30);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-5..-30);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -5..-30);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(int.MinValue..int.MinValue);
+            _ = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, int.MinValue..int.MinValue);
         });
         // ReSharper restore NegativeIndex
     }
@@ -185,8 +166,7 @@ public sealed class SlicerTest
         int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
-        Slicer<int> slicer = new(array);
-        ReadOnlySpan<int> span = slicer.SliceReadOnlySpan(5);
+        ReadOnlySpan<int> span = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5);
         Assert.Equal(ArrayLength - 5, span.Length);
         Assert.True(span is [5, .., 99]);
     }
@@ -198,8 +178,7 @@ public sealed class SlicerTest
         int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
-        Slicer<int> slicer = new(array);
-        ReadOnlySpan<int> span = slicer.SliceReadOnlySpan(5, 50);
+        ReadOnlySpan<int> span = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5, 50);
         Assert.Equal(50, span.Length);
         Assert.True(span is [5, .., 54]);
     }
@@ -211,8 +190,7 @@ public sealed class SlicerTest
         int[] array = new int[ArrayLength];
         SpanHelpers.FillAscending<int>(array);
 
-        Slicer<int> slicer = new(array);
-        ReadOnlySpan<int> span = slicer.SliceReadOnlySpan(5..50);
+        ReadOnlySpan<int> span = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5..50);
         Assert.Equal(45, span.Length);
         Assert.True(span is [5, .., 49]);
     }
@@ -223,15 +201,13 @@ public sealed class SlicerTest
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(101);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-1);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -1);
         });
     }
 
@@ -241,50 +217,43 @@ public sealed class SlicerTest
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(0, 101);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 0, 101);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(101, 0);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101, 0);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(101, 100);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101, 100);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-1, 50);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -1, 50);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(50, -1);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 50, -1);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-1, -1);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -1, -1);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(int.MinValue, int.MinValue);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, int.MinValue, int.MinValue);
         });
     }
 
@@ -294,51 +263,44 @@ public sealed class SlicerTest
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(..101);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, ..101);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(101..);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101..);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceReadOnlySpan(101..200);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 101..200);
         });
 
         // ReSharper disable NegativeIndex
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-5..30);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -5..30);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(5..-30);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5..-30);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(-5..-30);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, -5..-30);
         });
 
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
             int[] array = new int[100];
-            Slicer<int> slicer = new(array);
-            _ = slicer.SliceSpan(int.MinValue..int.MinValue);
+            _ = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, int.MinValue..int.MinValue);
         });
         // ReSharper restore NegativeIndex
     }

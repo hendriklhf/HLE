@@ -110,10 +110,10 @@ public static partial class CollectionHelpers
                 span = immutableArray.AsSpan();
                 return true;
             case IReadOnlySpanProvider<T> spanProvider:
-                span = spanProvider.GetReadOnlySpan();
+                span = spanProvider.AsSpan();
                 return true;
             case IReadOnlyMemoryProvider<T> memoryProvider:
-                span = memoryProvider.GetReadOnlyMemory().Span;
+                span = memoryProvider.AsMemory().Span;
                 return true;
             case FrozenSet<T> frozenSet:
                 span = frozenSet.Items.AsSpan();
@@ -135,10 +135,10 @@ public static partial class CollectionHelpers
                 span = CollectionsMarshal.AsSpan(list);
                 return true;
             case ISpanProvider<T> spanProvider:
-                span = spanProvider.GetSpan();
+                span = spanProvider.AsSpan();
                 return true;
             case IMemoryProvider<T> memoryProvider:
-                span = memoryProvider.GetMemory().Span;
+                span = memoryProvider.AsMemory().Span;
                 return true;
             default:
                 span = [];
@@ -167,7 +167,7 @@ public static partial class CollectionHelpers
                 memory = ImmutableCollectionsMarshal.AsArray(immutableArray);
                 return true;
             case IReadOnlyMemoryProvider<T> readOnlyMemoryProvider:
-                memory = readOnlyMemoryProvider.GetReadOnlyMemory();
+                memory = readOnlyMemoryProvider.AsMemory();
                 return true;
             case FrozenSet<T> frozenSet:
                 memory = frozenSet.Items.AsMemory();
@@ -189,7 +189,7 @@ public static partial class CollectionHelpers
                 memory = ListMarshal.AsMemory(list);
                 return true;
             case IMemoryProvider<T> memoryProvider:
-                memory = memoryProvider.GetMemory();
+                memory = memoryProvider.AsMemory();
                 return true;
             default:
                 memory = Memory<T>.Empty;

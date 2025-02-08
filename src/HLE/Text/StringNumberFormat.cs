@@ -76,7 +76,6 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowContainsCharMultipleTimes(char c)
             => throw new InvalidOperationException($"The provided chars contain char '{c}' multiple times.");
     }

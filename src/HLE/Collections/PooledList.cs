@@ -65,17 +65,31 @@ public sealed class PooledList<T> :
 
     public PooledList(int capacity) => _buffer = capacity == 0 ? [] : ArrayPool<T>.Shared.Rent(capacity);
 
-    public PooledList(ReadOnlySpan<T> items) : this(items.Length)
+    public PooledList(ReadOnlySpan<T> items)
     {
-        AssertBufferNotNull();
-        SpanHelpers.Copy(items, _buffer);
+        if (items.Length == 0)
+        {
+            _buffer = [];
+            return;
+        }
+
+        T[] buffer = ArrayPool<T>.Shared.Rent(items.Length);
+        SpanHelpers.Copy(items, buffer);
+        _buffer = buffer;
         Count = items.Length;
     }
 
-    public PooledList(ReadOnlySpan<T> items, int capacity) : this(int.Max(items.Length, capacity))
+    public PooledList(ReadOnlySpan<T> items, int capacity) : this()
     {
-        AssertBufferNotNull();
-        SpanHelpers.Copy(items, _buffer);
+        if (items.Length == 0)
+        {
+            _buffer = ArrayPool<T>.Shared.Rent(capacity);
+            return;
+        }
+
+        T[] buffer = ArrayPool<T>.Shared.Rent(int.Max(items.Length, capacity));
+        SpanHelpers.Copy(items, buffer);
+        _buffer = buffer;
         Count = items.Length;
     }
 
@@ -94,16 +108,25 @@ public sealed class PooledList<T> :
     public Span<T> AsSpan() => GetBuffer().AsSpanUnsafe(..Count);
 
     [Pure]
-    public Span<T> AsSpan(int start) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(start);
+    public Span<T> AsSpan(int start) => Slicer.Slice(ref GetBufferReference(), Count, start);
 
     [Pure]
-    public Span<T> AsSpan(int start, int length) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(start, length);
+    public Span<T> AsSpan(int start, int length) => Slicer.Slice(ref GetBufferReference(), Count, start, length);
 
     [Pure]
-    public Span<T> AsSpan(Range range) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(range);
+    public Span<T> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Count, range);
 
     [Pure]
     public Memory<T> AsMemory() => GetBuffer().AsMemory(..Count);
+
+    [Pure]
+    public Memory<T> AsMemory(int start) => AsMemory()[start..];
+
+    [Pure]
+    public Memory<T> AsMemory(int start, int length) => AsMemory().Slice(start, length);
+
+    [Pure]
+    public Memory<T> AsMemory(Range range) => AsMemory()[range];
 
     [Pure]
     public T[] ToArray()
@@ -139,14 +162,6 @@ public sealed class PooledList<T> :
 
     [Pure]
     public List<T> ToList(Range range) => AsSpan(range).ToList();
-
-    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
-
-    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
-
-    Memory<T> IMemoryProvider<T>.GetMemory() => AsMemory();
-
-    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => AsMemory();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private ref T GetDestination(int sizeHint)
@@ -264,7 +279,7 @@ public sealed class PooledList<T> :
             return;
         }
 
-        SpanHelpers.Memmove(ref GetDestination(length), ref items, (uint)length);
+        SpanHelpers.Memmove(ref GetDestination(length), ref items, length);
         Count += length;
     }
 
@@ -297,7 +312,7 @@ public sealed class PooledList<T> :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
         ref T source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-        SpanHelpers.Memmove(ref destination, ref source, (uint)count);
+        SpanHelpers.Memmove(ref destination, ref source, count);
         _buffer = newBuffer;
     }
 
@@ -345,7 +360,7 @@ public sealed class PooledList<T> :
 
         if (index != count)
         {
-            SpanHelpers.Memmove(ref Unsafe.Add(ref destination, 1), ref destination, (uint)(count - index - 1));
+            SpanHelpers.Memmove(ref Unsafe.Add(ref destination, 1), ref destination, count - index - 1);
         }
 
         destination = item;
@@ -362,7 +377,7 @@ public sealed class PooledList<T> :
         {
             ref T source = ref Unsafe.Add(ref buffer, index + 1);
             ref T destination = ref Unsafe.Add(ref buffer, index);
-            SpanHelpers.Memmove(ref destination, ref source, (uint)(count - index - 1));
+            SpanHelpers.Memmove(ref destination, ref source, count - index - 1);
         }
 
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())

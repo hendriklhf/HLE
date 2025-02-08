@@ -13,7 +13,7 @@ internal static class EnvironmentCombinator
     private static readonly string[] s_runtimeIdentifiers = DetermineRuntimeIdentifiers();
 
     [Pure]
-    public static ReadOnlyMemory<EnvironmentConfiguration> Combinate()
+    public static ReadOnlyMemory<EnvironmentConfiguration> Combine()
     {
         List<EnvironmentConfiguration> environmentConfigurations = new();
 

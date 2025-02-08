@@ -51,11 +51,9 @@ public static class SpanExtensions
             return [];
         }
 
-        ref T source = ref Slicer<T>.GetStart(ref span, spanLength, start, length);
-
+        ReadOnlySpan<T> source = Slicer.SliceReadOnly(ref span, spanLength, start, length);
         T[] result = GC.AllocateUninitializedArray<T>(length);
-        ref T destination = ref MemoryMarshal.GetArrayDataReference(result);
-        SpanHelpers.Memmove(ref destination, ref source, (uint)length);
+        SpanHelpers.Copy(source, result);
         return result;
     }
 
@@ -129,10 +127,9 @@ public static class SpanExtensions
             return [];
         }
 
-        ref T source = ref Slicer<T>.GetStart(ref span, spanLength, start, length);
+        ReadOnlySpan<T> source = Slicer.SliceReadOnly(ref span, spanLength, start, length);
         T[] buffer = GC.AllocateUninitializedArray<T>(length);
-        ref T destination = ref MemoryMarshal.GetArrayDataReference(buffer);
-        SpanHelpers.Memmove(ref destination, ref source, (uint)length);
+        SpanHelpers.Copy(source, buffer);
         return ListMarshal.ConstructList(buffer, length);
     }
 }

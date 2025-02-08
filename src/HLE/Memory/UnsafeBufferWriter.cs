@@ -51,7 +51,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) :
     public void Write(scoped ref T source, int count)
     {
         ref T destination = ref Unsafe.Add(ref _buffer, Count);
-        SpanHelpers.Memmove(ref destination, ref source, (uint)count);
+        SpanHelpers.Memmove(ref destination, ref source, count);
         Count += count;
     }
 

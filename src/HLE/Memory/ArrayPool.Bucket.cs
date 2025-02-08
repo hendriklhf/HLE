@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using HLE.Collections;
 using HLE.Marshalling;
 
 namespace HLE.Memory;
@@ -13,9 +14,10 @@ public sealed partial class ArrayPool<T>
     internal struct Bucket(int arrayLength, int capacity) : IEquatable<Bucket>
     {
         internal readonly T[][] _stack = GC.AllocateArray<T[]>(capacity, true);
-        private readonly int _arrayLength = arrayLength;
+        internal readonly int _arrayLength = arrayLength;
         internal uint _count;
         internal readonly Lock _lock = new();
+        internal long _lastAccessTick;
 
         [Pure]
         public T[] Rent()
@@ -26,6 +28,7 @@ public sealed partial class ArrayPool<T>
             }
 
             array = GC.AllocateUninitializedArray<T>(_arrayLength, true);
+            _lastAccessTick = Environment.TickCount64;
             Log.Allocated(array);
             return array;
         }
@@ -41,10 +44,11 @@ public sealed partial class ArrayPool<T>
                     return false;
                 }
 
-                ref T[] reference = ref ArrayMarshal.GetUnsafeElementAt(_stack, --count);
-                _count = count;
+                ref T[] reference = ref ArrayMarshal.GetUnsafeElementAt(_stack, count - 1);
+                _count--;
                 array = reference;
                 reference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
+                _lastAccessTick = Environment.TickCount64;
                 Log.Rented(array);
                 return true;
             }
@@ -54,6 +58,8 @@ public sealed partial class ArrayPool<T>
         {
             lock (_lock)
             {
+                _lastAccessTick = Environment.TickCount64;
+
                 uint count = _count;
                 if (count == 0)
                 {
@@ -72,7 +78,7 @@ public sealed partial class ArrayPool<T>
 
                     array = currentRef;
                     SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), count - i - 1);
-                    _count = count - 1;
+                    _count--;
                     Log.Rented(array);
                     return true;
                 }
@@ -93,9 +99,10 @@ public sealed partial class ArrayPool<T>
                     return;
                 }
 
+                _lastAccessTick = Environment.TickCount64;
                 ClearArrayIfNeeded(array, clearArray);
-                ArrayMarshal.GetUnsafeElementAt(_stack, count++) = array;
-                _count = count;
+                ArrayMarshal.GetUnsafeElementAt(_stack, count) = array;
+                _count++;
                 Log.Returned(array);
             }
         }
@@ -104,9 +111,14 @@ public sealed partial class ArrayPool<T>
         {
             lock (_lock)
             {
-                Array.Clear(_stack);
-                _count = 0;
+                ClearWithoutLock();
             }
+        }
+
+        public void ClearWithoutLock()
+        {
+            _stack.AsSpanUnsafe(0, (int)_count).Clear();
+            _count = 0;
         }
 
         public readonly bool Equals(Bucket other) => ReferenceEquals(_stack, other._stack) && _arrayLength == other._arrayLength && _count == other._count;

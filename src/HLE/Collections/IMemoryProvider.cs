@@ -2,7 +2,13 @@ using System;
 
 namespace HLE.Collections;
 
-public interface IMemoryProvider<T> : IReadOnlyMemoryProvider<T>
+public interface IMemoryProvider<T>
 {
-    Memory<T> GetMemory();
+    Memory<T> AsMemory();
+
+    Memory<T> AsMemory(int start);
+
+    Memory<T> AsMemory(int start, int length);
+
+    Memory<T> AsMemory(Range range);
 }

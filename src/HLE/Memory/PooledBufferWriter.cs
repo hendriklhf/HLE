@@ -149,7 +149,7 @@ public sealed class PooledBufferWriter<T> :
     public void Write(ref T data, int length)
     {
         ref T destination = ref GetReference(length);
-        SpanHelpers.Memmove(ref destination, ref data, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref data, length);
         Count += length;
     }
 
@@ -166,6 +166,30 @@ public sealed class PooledBufferWriter<T> :
     }
 
     public void EnsureCapacity(int capacity) => GrowIfNeeded(capacity - Capacity);
+
+    [Pure]
+    public Span<T> AsSpan() => GetBuffer().AsSpanUnsafe(..Count);
+
+    [Pure]
+    public Span<T> AsSpan(int start) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Count, start);
+
+    [Pure]
+    public Span<T> AsSpan(int start, int length) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Count, start, length);
+
+    [Pure]
+    public Span<T> AsSpan(Range range) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Count, range);
+
+    [Pure]
+    public Memory<T> AsMemory() => GetBuffer().AsMemory(0, Count);
+
+    [Pure]
+    public Memory<T> AsMemory(int start) => AsMemory()[start..];
+
+    [Pure]
+    public Memory<T> AsMemory(int start, int length) => AsMemory().Slice(start, length);
+
+    [Pure]
+    public Memory<T> AsMemory(Range range) => AsMemory()[range];
 
     [Pure]
     public T[] ToArray()
@@ -314,19 +338,24 @@ public sealed class PooledBufferWriter<T> :
         copyWorker.CopyTo(destination);
     }
 
-    Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
-
-    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => WrittenSpan;
-
-    Memory<T> IMemoryProvider<T>.GetMemory() => WrittenMemory;
-
-    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => WrittenMemory;
-
     void ICollection<T>.Add(T item) => Write(item);
 
-    bool ICollection<T>.Contains(T item) => throw new NotSupportedException();
+    bool ICollection<T>.Contains(T item) => Array.IndexOf(GetBuffer(), item, 0, Count) >= 0;
 
-    bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
+    bool ICollection<T>.Remove(T item)
+    {
+        T[] buffer = GetBuffer();
+        int index = Array.IndexOf(buffer, item, 0, Count);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        ref T src = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(buffer), index + 1);
+        ref T dst = ref Unsafe.Add(ref src, -1);
+        SpanHelpers.Memmove(ref dst, ref src, Count - index - 1);
+        return true;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal T[] GetBuffer()
@@ -342,7 +371,7 @@ public sealed class PooledBufferWriter<T> :
 
     [Pure]
     public override string ToString() => typeof(char) == typeof(T)
-        ? new(Unsafe.As<char[]>(GetBuffer()).AsSpan(..Count))
+        ? new(Unsafe.As<char[]>(GetBuffer()).AsSpanUnsafe(0, Count))
         : ToStringHelpers.FormatCollection(this);
 
     public ArrayEnumerator<T> GetEnumerator() => new(GetBuffer(), 0, Count);

@@ -140,9 +140,17 @@ public ref struct ValueBufferWriter<T> :
 
     readonly Memory<T> IBufferWriter<T>.GetMemory(int sizeHint) => throw new NotSupportedException();
 
-    readonly Span<T> ISpanProvider<T>.GetSpan() => WrittenSpan;
+    [Pure]
+    public readonly Span<T> AsSpan() => GetBuffer().SliceUnsafe(0, Count);
 
-    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => WrittenSpan;
+    [Pure]
+    public readonly Span<T> AsSpan(int start) => Slicer.Slice(ref GetBufferReference(), Count, start);
+
+    [Pure]
+    public readonly Span<T> AsSpan(int start, int length) => Slicer.Slice(ref GetBufferReference(), Count, start, length);
+
+    [Pure]
+    public readonly Span<T> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Count, range);
 
     public void Write(T item)
     {
@@ -183,7 +191,7 @@ public ref struct ValueBufferWriter<T> :
     public void Write(scoped ref T data, int length)
     {
         ref T destination = ref GetReference(length);
-        SpanHelpers.Memmove(ref destination, ref data, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref data, length);
         Count += length;
     }
 

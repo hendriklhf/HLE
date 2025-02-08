@@ -198,7 +198,6 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
         };
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static int ThrowInvalidArgumentType(string paramName) => throw new ArgumentException("Invalid argument type.", paramName);
     }
 

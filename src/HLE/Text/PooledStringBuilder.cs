@@ -61,10 +61,11 @@ public sealed partial class PooledStringBuilder :
 
     public PooledStringBuilder(int capacity) => _buffer = ArrayPool<char>.Shared.Rent(capacity);
 
-    public PooledStringBuilder(ReadOnlySpan<char> str) : this(str.Length)
+    public PooledStringBuilder(ReadOnlySpan<char> str)
     {
-        Debug.Assert(_buffer is not null);
-        SpanHelpers.Copy(str, _buffer);
+        char[] buffer = ArrayPool<char>.Shared.Rent(str.Length);
+        SpanHelpers.Copy(str, buffer);
+        _buffer = buffer;
         Length = str.Length;
     }
 
@@ -80,13 +81,29 @@ public sealed partial class PooledStringBuilder :
         ArrayPool<char>.Shared.Return(buffer);
     }
 
-    Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
+    [Pure]
+    public Span<char> AsSpan() => GetBuffer().AsSpanUnsafe(0, Length);
 
-    ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => WrittenSpan;
+    [Pure]
+    public Span<char> AsSpan(int start) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, start);
 
-    Memory<char> IMemoryProvider<char>.GetMemory() => WrittenMemory;
+    [Pure]
+    public Span<char> AsSpan(int start, int length) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, start, length);
 
-    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => WrittenMemory;
+    [Pure]
+    public Span<char> AsSpan(Range range) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, range);
+
+    [Pure]
+    public Memory<char> AsMemory() => GetBuffer().AsMemory(0, Length);
+
+    [Pure]
+    public Memory<char> AsMemory(int start) => AsMemory()[start..];
+
+    [Pure]
+    public Memory<char> AsMemory(int start, int length) => AsMemory().Slice(start, length);
+
+    [Pure]
+    public Memory<char> AsMemory(Range range) => AsMemory()[range];
 
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
@@ -121,7 +138,7 @@ public sealed partial class PooledStringBuilder :
     private void Append(ref char chars, int length)
     {
         ref char destination = ref GetDestination(length);
-        SpanHelpers.Memmove(ref destination, ref chars, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref chars, length);
         Length += length;
     }
 
@@ -164,7 +181,7 @@ public sealed partial class PooledStringBuilder :
         for (int i = 0; i < length; i++)
         {
             string s = Unsafe.Add(ref strings, i);
-            SpanHelpers.Memmove(ref destination, ref StringMarshal.GetReference(s), (uint)s.Length);
+            SpanHelpers.Memmove(ref destination, ref StringMarshal.GetReference(s), s.Length);
             destination = ref Unsafe.Add(ref destination, s.Length);
         }
 
@@ -255,7 +272,6 @@ public sealed partial class PooledStringBuilder :
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowMaximumFormatTriesExceeded(int countOfFailedTries)
             => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
     }
@@ -323,7 +339,7 @@ public sealed partial class PooledStringBuilder :
         {
             ref char source = ref MemoryMarshal.GetArrayDataReference(oldBuffer);
             ref char destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-            SpanHelpers.Memmove(ref destination, ref source, (uint)Length);
+            SpanHelpers.Memmove(ref destination, ref source, Length);
         }
 
         ArrayPool<char>.Shared.Return(oldBuffer);
@@ -389,7 +405,20 @@ public sealed partial class PooledStringBuilder :
 
     bool ICollection<char>.Contains(char item) => WrittenSpan.Contains(item);
 
-    bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
+    bool ICollection<char>.Remove(char item)
+    {
+        Span<char> writtenSpan = WrittenSpan;
+        int index = writtenSpan.IndexOf(item);
+        if (index == -1)
+        {
+            return false;
+        }
+
+        ref char src = ref Unsafe.Add(ref MemoryMarshal.GetReference(writtenSpan), index + 1);
+        ref char dst = ref Unsafe.Add(ref src, -1);
+        SpanHelpers.Memmove(ref dst, ref src, writtenSpan.Length - index - 1);
+        return true;
+    }
 
     public ArrayEnumerator<char> GetEnumerator() => new(GetBuffer(), 0, Length);
 

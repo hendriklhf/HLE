@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -76,7 +75,6 @@ public sealed class SingleCharStringPoolGenerator : IIncrementalGenerator
         context.AddSource("HLE.Text.SingleCharStringPool.g.cs", sourceBuilder.ToString());
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowAmountLessThanZero(string paramName)
         => throw new ArgumentOutOfRangeException(paramName, "Amount of cached single char strings is below zero.");
 }

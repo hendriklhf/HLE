@@ -275,7 +275,6 @@ public static class RandomNumberGeneratorExtensions
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowArrayElementTypeMustBeUnmanaged()
             => throw new InvalidOperationException("The array element type must be an unmanaged type.");
     }
@@ -380,10 +379,9 @@ public static class RandomNumberGeneratorExtensions
 
         int randomIndex = random.GetInt32(0, length);
         return ref Unsafe.Add(ref items, randomIndex);
-    }
 
-    [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowCantGetRandomItemFromEmptyCollection()
-        => throw new InvalidOperationException("Can't get a random item from an empty collection.");
+        [DoesNotReturn]
+        static void ThrowCantGetRandomItemFromEmptyCollection()
+            => throw new InvalidOperationException("Can't get a random item from an empty collection.");
+    }
 }

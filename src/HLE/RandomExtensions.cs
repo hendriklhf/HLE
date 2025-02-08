@@ -317,7 +317,6 @@ public static class RandomExtensions
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowArrayElementTypeMustBeUnmanaged()
             => throw new InvalidOperationException("The array element type must be an unmanaged type.");
     }

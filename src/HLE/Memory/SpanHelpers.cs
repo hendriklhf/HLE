@@ -21,7 +21,6 @@ public static partial class SpanHelpers
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowInvalidIntegerType() => throw new NotSupportedException($"{typeof(T)} is not a valid integer type.");
     }
 }

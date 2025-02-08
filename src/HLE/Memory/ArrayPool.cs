@@ -33,7 +33,9 @@ internal static class ArrayPool
         get => BitOperations.TrailingZeroCount(MinimumArrayLength);
     }
 
-    public static TimeSpan TrimmingInterval { get; } = TimeSpan.FromSeconds(20);
+    public static TimeSpan TrimmingInterval { get; } = TimeSpan.FromSeconds(30);
+
+    public static TimeSpan MaximumLastAccessTime { get; } = TimeSpan.FromMinutes(1);
 
     public const int MinimumArrayLength = 0x10; // has to be pow of 2
     public const int MaximumArrayLength = 0x800000; // has to be pow of 2

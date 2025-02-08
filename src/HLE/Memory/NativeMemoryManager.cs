@@ -3,15 +3,12 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HLE.Collections;
 
 namespace HLE.Memory;
 
 public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     MemoryManager<T>,
-    IEquatable<NativeMemoryManager<T>>,
-    ISpanProvider<T>,
-    IMemoryProvider<T>
+    IEquatable<NativeMemoryManager<T>>
     where T : unmanaged, IEquatable<T>
 {
     private readonly T* _memory = memory;
@@ -20,15 +17,9 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     [Pure]
     public override Span<T> GetSpan() => new(_memory, _length);
 
-    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => GetSpan();
-
-    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => Memory;
-
-    Memory<T> IMemoryProvider<T>.GetMemory() => Memory;
-
     /// <summary>
     /// Throws a <see cref="NotSupportedException"/>.<br/>
-    /// The <see cref="NativeMemoryManager{T}"/> manages native memory, thus does not require nor support pinning."
+    /// The <see cref="NativeMemoryManager{T}"/> manages native memory, thus does not require nor support pinning.
     /// </summary>
     /// <param name="elementIndex">The offset to the element within the memory at which the returned <see cref="MemoryHandle"/> points to. (default = 0)</param>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
@@ -48,7 +39,6 @@ public sealed unsafe class NativeMemoryManager<T>(T* memory, int length) :
     public override void Unpin() => ThrowNativeMemoryRequiresNoPinning();
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowNativeMemoryRequiresNoPinning()
         => throw new NotSupportedException($"The {typeof(NativeMemoryManager<T>)} manages native memory, thus does not require nor support pinning.");
 

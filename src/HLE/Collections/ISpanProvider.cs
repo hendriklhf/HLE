@@ -2,10 +2,13 @@ using System;
 
 namespace HLE.Collections;
 
-public interface ISpanProvider<T> : IReadOnlySpanProvider<T>
+public interface ISpanProvider<T>
 {
-    /// <summary>
-    /// Gets a span of objects associated with the collection.
-    /// </summary>
-    Span<T> GetSpan();
+    Span<T> AsSpan();
+
+    Span<T> AsSpan(int start);
+
+    Span<T> AsSpan(int start, int length);
+
+    Span<T> AsSpan(Range range);
 }

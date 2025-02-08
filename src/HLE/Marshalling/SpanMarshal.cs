@@ -80,7 +80,6 @@ public static unsafe class SpanMarshal
         return ref Unsafe.NullRef<byte>();
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowCantGetMethodTableOfUnknownType() => throw new InvalidOperationException(
             $"The {typeof(Span<TSpanElement>)} is backed by an unknown type or native memory. " +
             $"It's not possible to convert it to a {typeof(Span<TSpanElement>)}"

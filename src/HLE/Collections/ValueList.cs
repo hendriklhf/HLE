@@ -23,6 +23,7 @@ public ref struct ValueList<T> :
     IIndexable<T>,
     IReadOnlyList<T>,
     ISpanProvider<T>,
+    IReadOnlySpanProvider<T>,
     ICollectionProvider<T>
 {
     public readonly ref T this[int index]
@@ -147,17 +148,21 @@ public ref struct ValueList<T> :
     public readonly Span<T> AsSpan() => GetBuffer().SliceUnsafe(..Count);
 
     [Pure]
-    public readonly Span<T> AsSpan(int start) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(start);
+    public readonly Span<T> AsSpan(int start) => Slicer.Slice(ref GetBufferReference(), Count, start);
 
     [Pure]
-    public readonly Span<T> AsSpan(int start, int length) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(start, length);
+    public readonly Span<T> AsSpan(int start, int length) => Slicer.Slice(ref GetBufferReference(), Count, start, length);
 
     [Pure]
-    public readonly Span<T> AsSpan(Range range) => new Slicer<T>(ref GetBufferReference(), Count).SliceSpan(range);
+    public readonly Span<T> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Count, range);
 
-    readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan() => AsSpan();
 
-    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start) => AsSpan(start..);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(Range range) => AsSpan(range);
 
     [Pure]
     public readonly T[] ToArray()
@@ -297,7 +302,7 @@ public ref struct ValueList<T> :
         }
 
         int count = Count;
-        SpanHelpers.Memmove(ref GetDestination(length), ref items, (uint)length);
+        SpanHelpers.Memmove(ref GetDestination(length), ref items, length);
         Count = count + length;
     }
 
@@ -337,7 +342,7 @@ public ref struct ValueList<T> :
         T[] newBuffer = ArrayPool<T>.Shared.Rent(trimmedBufferSize);
         ref T source = ref MemoryMarshal.GetReference(oldBuffer);
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-        SpanHelpers.Memmove(ref destination, ref source, (uint)count);
+        SpanHelpers.Memmove(ref destination, ref source, count);
 
         if (!IsStackalloced)
         {

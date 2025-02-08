@@ -14,7 +14,7 @@ public static class TestHelpers
         => t;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static TTo Cast<TFrom, TTo>(TFrom from) where TFrom : class, TTo
+    public static TTo Cast<TFrom, TTo>(TFrom from) where TFrom : TTo
         => from;
 
     [MethodImpl(MethodImplOptions.NoInlining)]

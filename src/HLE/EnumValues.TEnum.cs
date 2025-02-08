@@ -34,7 +34,6 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
         return Unsafe.As<ReadOnlySpan<TEnum>, ReadOnlySpan<TUnderlyingType>>(ref values);
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)
             => throw new InvalidOperationException(
                 $"{enumType} and {underlyingType} have different instance sizes, so {underlyingType} can't be an underlying type of {enumType}."
@@ -56,13 +55,13 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
         switch (sizeof(TEnum))
         {
             case sizeof(byte):
-                return AsSpan<byte>().Contains(Unsafe.As<TEnum, byte>(ref value));
+                return AsSpan<byte>().Contains(Unsafe.BitCast<TEnum, byte>(value));
             case sizeof(ushort):
-                return AsSpan<ushort>().Contains(Unsafe.As<TEnum, ushort>(ref value));
+                return AsSpan<ushort>().Contains(Unsafe.BitCast<TEnum, ushort>(value));
             case sizeof(uint):
-                return AsSpan<uint>().Contains(Unsafe.As<TEnum, uint>(ref value));
+                return AsSpan<uint>().Contains(Unsafe.BitCast<TEnum, uint>(value));
             case sizeof(ulong):
-                return AsSpan<ulong>().Contains(Unsafe.As<TEnum, ulong>(ref value));
+                return AsSpan<ulong>().Contains(Unsafe.BitCast<TEnum, ulong>(value));
             default:
                 ThrowHelper.ThrowUnreachableException();
                 return false;

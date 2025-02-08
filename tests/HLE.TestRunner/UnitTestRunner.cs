@@ -28,7 +28,7 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
     {
         using PooledList<Task<UnitTestRunResult>> tasks = new();
 
-        ReadOnlyMemory<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combinate();
+        ReadOnlyMemory<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combine();
         foreach (TestProject testProject in _testProjects)
         {
             foreach (EnvironmentConfiguration environment in environmentConfigurations.Span)

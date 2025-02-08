@@ -13,12 +13,13 @@ namespace HLE.Memory;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("\"{AsString()}\"")]
-public readonly unsafe struct NativeString :
+public readonly unsafe partial struct NativeString :
     IReadOnlyList<char>,
     IDisposable,
     IEquatable<NativeString>,
     IIndexable<char>,
     ISpanProvider<char>,
+    IReadOnlySpanProvider<char>,
     IMemoryProvider<char>
 {
     public ref char this[int index]
@@ -103,58 +104,50 @@ public readonly unsafe struct NativeString :
     public void Dispose() => _memory.Dispose();
 
     [Pure]
-    public RawStringData* AsRawStringData()
-    {
-        if (Length == 0)
-        {
-            ThrowCantGetRawDataOnEmptyString();
-        }
-
-        return (RawStringData*)(_memory.Pointer + sizeof(nuint));
-
-        [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static void ThrowCantGetRawDataOnEmptyString() => throw new InvalidOperationException("The string is empty, therefore getting the raw data is not possible.");
-    }
+    public RawStringData* AsRawStringData() => (RawStringData*)(_memory.Pointer + sizeof(nuint));
 
     [Pure]
     public string AsString() => Length == 0 ? string.Empty : ObjectMarshal.ReadObject<string>(AsRawStringData());
 
     [Pure]
-    public Span<char> AsSpan() => Length == 0 ? [] : MemoryMarshal.CreateSpan(ref GetCharsReference(), Length);
+    public Span<char> AsSpan() => MemoryMarshal.CreateSpan(ref GetCharsReference(), Length);
 
     [Pure]
-    public Span<char> AsSpan(int start) => new Slicer<char>(AsSpan()).SliceSpan(start);
+    public Span<char> AsSpan(int start) => Slicer.Slice(ref GetCharsReference(), Length, start);
 
     [Pure]
-    public Span<char> AsSpan(int start, int length) => new Slicer<char>(AsSpan()).SliceSpan(start, length);
+    public Span<char> AsSpan(int start, int length) => Slicer.Slice(ref GetCharsReference(), Length, start, length);
 
     [Pure]
-    public Span<char> AsSpan(Range range) => new Slicer<char>(AsSpan()).SliceSpan(range);
+    public Span<char> AsSpan(Range range) => Slicer.Slice(ref GetCharsReference(), Length, range);
+
+    ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan() => AsSpan();
+
+    ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(int start) => AsSpan(start..);
+
+    ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(Range range) => AsSpan(range);
 
     [Pure]
-    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "not needed")]
-    public Memory<char> AsMemory() => Length == 0 ? Memory<char>.Empty : new NativeMemoryManager<char>(&AsRawStringData()->FirstChar, Length).Memory;
+    public Memory<char> AsMemory() => new MemoryManager(this).Memory;
 
-    Span<char> ISpanProvider<char>.GetSpan() => AsSpan();
+    [Pure]
+    public Memory<char> AsMemory(int start) => AsMemory()[start..];
 
-    ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => AsSpan();
+    [Pure]
+    public Memory<char> AsMemory(int start, int length) => AsMemory().Slice(start, length);
 
-    Memory<char> IMemoryProvider<char>.GetMemory() => AsMemory();
-
-    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.GetReadOnlyMemory() => AsMemory();
+    [Pure]
+    public Memory<char> AsMemory(Range range) => AsMemory()[range];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ref char GetCharsReference()
-    {
-        Debug.Assert(Length != 0);
-        return ref Unsafe.AsRef<char>(&AsRawStringData()->FirstChar);
-    }
+    private ref char GetCharsReference() => ref Unsafe.AsRef<char>(&AsRawStringData()->FirstChar);
 
     [Pure]
-    public override string ToString() => Length == 0 ? string.Empty : new(AsSpan());
+    public override string ToString() => new(AsSpan());
 
-    public NativeMemoryEnumerator<char> GetEnumerator() => Length == 0 ? new(null, 0) : new((char*)Unsafe.AsPointer(ref GetCharsReference()), Length);
+    public NativeMemoryEnumerator<char> GetEnumerator() => new((char*)Unsafe.AsPointer(ref GetCharsReference()), Length);
 
     // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<char> IEnumerable<char>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<char>.Enumerator : GetEnumerator();

@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Collections;
 using HLE.Memory;
+using HLE.TestUtilities;
 using Xunit;
 
 namespace HLE.UnitTests.Memory;
@@ -198,6 +199,8 @@ public sealed class RentedArrayTest
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
         array.Dispose();
+        Assert.Null(array._array);
+
         array.Dispose();
         array.Dispose();
 
@@ -321,16 +324,16 @@ public sealed class RentedArrayTest
     public void ISpanProvider_GetSpan()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        ISpanProvider<int> spanProvider = array;
-        Assert.True(spanProvider.GetSpan() == array._array.AsSpan());
+        ISpanProvider<int> spanProvider = TestHelpers.Cast<RentedArray<int>, ISpanProvider<int>>(array);
+        Assert.True(spanProvider.AsSpan() == array._array.AsSpan());
     }
 
     [Fact]
     public void IReadOnlySpanProvider_GetSpan()
     {
         using RentedArray<int> array = ArrayPool<int>.Shared.RentAsRentedArray(16);
-        IReadOnlySpanProvider<int> spanProvider = array;
-        Assert.True(spanProvider.GetReadOnlySpan() == array._array.AsSpan());
+        IReadOnlySpanProvider<int> spanProvider = TestHelpers.Cast<RentedArray<int>, IReadOnlySpanProvider<int>>(array);
+        Assert.True(spanProvider.AsSpan() == array._array.AsSpan());
     }
 
     [Fact]

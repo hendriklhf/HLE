@@ -130,13 +130,13 @@ public sealed unsafe partial class NativeMemory<T> :
     public Span<T> AsSpan() => new(Pointer, Length);
 
     [Pure]
-    public Span<T> AsSpan(int start) => new Slicer<T>(Pointer, Length).SliceSpan(start);
+    public Span<T> AsSpan(int start) => Slicer.Slice(ref Unsafe.AsRef<T>(Pointer), Length, start);
 
     [Pure]
-    public Span<T> AsSpan(int start, int length) => new Slicer<T>(Pointer, Length).SliceSpan(start, length);
+    public Span<T> AsSpan(int start, int length) => Slicer.Slice(ref Unsafe.AsRef<T>(Pointer), Length, start, length);
 
     [Pure]
-    public Span<T> AsSpan(Range range) => new Slicer<T>(Pointer, Length).SliceSpan(range);
+    public Span<T> AsSpan(Range range) => Slicer.Slice(ref Unsafe.AsRef<T>(Pointer), Length, range);
 
     [Pure]
     public Memory<T> AsMemory() => new MemoryManager(this).Memory;
@@ -151,14 +151,6 @@ public sealed unsafe partial class NativeMemory<T> :
     [Pure]
     public Memory<T> AsMemory(Range range) => new MemoryManager(this).Memory[range];
 #pragma warning restore CA2000
-
-    Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
-
-    ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
-
-    Memory<T> IMemoryProvider<T>.GetMemory() => AsMemory();
-
-    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => AsMemory();
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
@@ -207,7 +199,7 @@ public sealed unsafe partial class NativeMemory<T> :
 
         ref T source = ref Reference;
         T[] result = GC.AllocateUninitializedArray<T>(length);
-        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref source, (uint)length);
+        SpanHelpers.Memmove(ref MemoryMarshal.GetArrayDataReference(result), ref source, length);
         return result;
     }
 

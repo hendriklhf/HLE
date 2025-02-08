@@ -213,10 +213,11 @@ public static unsafe class ObjectMarshal
     /// <typeparam name="T">The type of the boxed value.</typeparam>
     /// <returns>The boxed struct.</returns>
     /// <remarks>
-    /// The box should always be disposed, i.e.: <c>object box = ObjectMarshal.BoxOnStack(ref myStruct, out _);</c>.
+    /// The box should always be discarded, i.e.: <c>object box = ObjectMarshal.BoxOnStack(ref myStruct, out _);</c>.
     /// The parameter is only needed to reserve the stack space for the box.
     /// </remarks>
     [Pure]
+    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static object BoxOnStack<T>(ref T value, out Box<T> box)
     {

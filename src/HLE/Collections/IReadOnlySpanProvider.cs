@@ -4,8 +4,11 @@ namespace HLE.Collections;
 
 public interface IReadOnlySpanProvider<T>
 {
-    /// <summary>
-    /// Gets a span of objects associated with the collection.
-    /// </summary>
-    ReadOnlySpan<T> GetReadOnlySpan();
+    ReadOnlySpan<T> AsSpan();
+
+    ReadOnlySpan<T> AsSpan(int start);
+
+    ReadOnlySpan<T> AsSpan(int start, int length);
+
+    ReadOnlySpan<T> AsSpan(Range range);
 }

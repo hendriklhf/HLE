@@ -29,6 +29,7 @@ public struct RentedArray<T> :
     IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
+    IReadOnlySpanProvider<T>,
     ICollectionProvider<T>,
     IMemoryProvider<T>
 {
@@ -120,6 +121,14 @@ public struct RentedArray<T> :
     [Pure]
     public readonly Span<T> AsSpan(Range range) => Array.AsSpan(range);
 
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan() => AsSpan();
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start) => AsSpan(start..);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(Range range) => AsSpan(range);
+
     [Pure]
     public readonly Memory<T> AsMemory() => Array;
 
@@ -131,14 +140,6 @@ public struct RentedArray<T> :
 
     [Pure]
     public readonly Memory<T> AsMemory(Range range) => Array.AsMemory(range);
-
-    readonly Span<T> ISpanProvider<T>.GetSpan() => AsSpan();
-
-    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.GetReadOnlySpan() => AsSpan();
-
-    readonly Memory<T> IMemoryProvider<T>.GetMemory() => AsMemory();
-
-    readonly ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.GetReadOnlyMemory() => AsMemory();
 
     [Pure]
     public readonly T[] ToArray()

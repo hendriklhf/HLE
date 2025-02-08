@@ -79,7 +79,6 @@ public static unsafe class MemoryHelpers
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowAlignmentNeedsToBeNonZeroPowerOfTwo()
         => throw new ArgumentException("The alignment needs to be a non-zero power of 2.");
 }

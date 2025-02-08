@@ -115,7 +115,6 @@ public sealed class PooledMemoryStream(int capacity) :
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowLengthExceedsMaximumArrayLength()
             => throw new InvalidOperationException("The length exceeds the maximum array length.");
     }
@@ -433,15 +432,25 @@ public sealed class PooledMemoryStream(int capacity) :
     public Span<byte> AsSpan() => GetBuffer().AsSpanUnsafe(.._length);
 
     [Pure]
+    public Span<byte> AsSpan(int start) => Slicer.Slice(ref GetPositionalReference(), _length, start);
+
+    [Pure]
+    public Span<byte> AsSpan(int start, int length) => Slicer.Slice(ref GetPositionalReference(), _length, start, length);
+
+    [Pure]
+    public Span<byte> AsSpan(Range range) => Slicer.Slice(ref GetPositionalReference(), _length, range);
+
+    [Pure]
     public Memory<byte> AsMemory() => GetBuffer().AsMemory(.._length);
 
-    ReadOnlyMemory<byte> IReadOnlyMemoryProvider<byte>.GetReadOnlyMemory() => AsMemory();
+    [Pure]
+    public Memory<byte> AsMemory(int start) => AsMemory()[start..];
 
-    Memory<byte> IMemoryProvider<byte>.GetMemory() => AsMemory();
+    [Pure]
+    public Memory<byte> AsMemory(int start, int length) => AsMemory().Slice(start, length);
 
-    ReadOnlySpan<byte> IReadOnlySpanProvider<byte>.GetReadOnlySpan() => AsSpan();
-
-    Span<byte> ISpanProvider<byte>.GetSpan() => AsSpan();
+    [Pure]
+    public Memory<byte> AsMemory(Range range) => AsMemory()[range];
 
     [Pure]
     public bool Equals([NotNullWhen(true)] PooledMemoryStream? other) => ReferenceEquals(this, other);

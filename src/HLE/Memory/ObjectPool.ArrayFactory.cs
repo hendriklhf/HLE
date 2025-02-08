@@ -28,12 +28,10 @@ public sealed partial class ObjectPool<T>
             return;
 
             [DoesNotReturn]
-            [MethodImpl(MethodImplOptions.NoInlining)]
             static void ThrowGenericParameterIsNotArray()
                 => throw new InvalidOperationException($"Generic parameter {typeof(T)} is not a single dimension array type.");
 
             [DoesNotReturn]
-            [MethodImpl(MethodImplOptions.NoInlining)]
             static void ThrowGenericParameterIsNotArrayElementType()
                 => throw new InvalidOperationException($"Generic parameter {typeof(TElement)} is not the element type of generic parameter {typeof(T)}");
         }

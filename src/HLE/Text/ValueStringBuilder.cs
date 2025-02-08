@@ -136,6 +136,18 @@ public unsafe ref partial struct ValueStringBuilder :
         IsDisposed = true;
     }
 
+    [Pure]
+    public readonly Span<char> AsSpan() => GetBuffer().SliceUnsafe(0, Length);
+
+    [Pure]
+    public readonly Span<char> AsSpan(int start) => Slicer.Slice(ref GetBufferReference(), Length, start);
+
+    [Pure]
+    public readonly Span<char> AsSpan(int start, int length) => Slicer.Slice(ref GetBufferReference(), Length, start, length);
+
+    [Pure]
+    public readonly Span<char> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Length, range);
+
     public void Advance(int length) => Length += length;
 
     void IStringBuilder.Append(ref PooledInterpolatedStringHandler chars)
@@ -158,7 +170,7 @@ public unsafe ref partial struct ValueStringBuilder :
     private void Append(scoped ref char chars, int length)
     {
         ref char destination = ref GetDestination(length);
-        SpanHelpers.Memmove(ref destination, ref chars, (uint)length);
+        SpanHelpers.Memmove(ref destination, ref chars, length);
         Length += length;
     }
 
@@ -201,7 +213,7 @@ public unsafe ref partial struct ValueStringBuilder :
         for (int i = 0; i < length; i++)
         {
             string s = Unsafe.Add(ref strings, i);
-            SpanHelpers.Memmove(ref destination, ref StringMarshal.GetReference(s), (uint)s.Length);
+            SpanHelpers.Memmove(ref destination, ref StringMarshal.GetReference(s), s.Length);
             destination = ref Unsafe.Add(ref destination, s.Length);
         }
 
@@ -294,7 +306,6 @@ public unsafe ref partial struct ValueStringBuilder :
         return;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowMaximumFormatTriesExceeded(int countOfFailedTries)
             => throw new InvalidOperationException($"Trying to format the {typeof(T)} failed {countOfFailedTries} times. The method aborted.");
     }
@@ -352,13 +363,22 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
-    readonly Span<char> ISpanProvider<char>.GetSpan() => WrittenSpan;
-
-    readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.GetReadOnlySpan() => WrittenSpan;
-
     void ICollection<char>.Add(char item) => Append(item);
 
-    readonly bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
+    readonly bool ICollection<char>.Remove(char item)
+    {
+        Span<char> writtenSpan = WrittenSpan;
+        int index = writtenSpan.IndexOf(item);
+        if (index == -1)
+        {
+            return false;
+        }
+
+        ref char src = ref Unsafe.Add(ref MemoryMarshal.GetReference(writtenSpan), index + 1);
+        ref char dst = ref Unsafe.Add(ref src, -1);
+        SpanHelpers.Memmove(ref dst, ref src, writtenSpan.Length - index - 1);
+        return true;
+    }
 
     readonly bool ICollection<char>.Contains(char item) => WrittenSpan.Contains(item);
 

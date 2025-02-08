@@ -9,11 +9,12 @@ namespace HLE.Memory;
 public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatable<NativeMemoryEnumerator<T>>
     where T : unmanaged
 {
-    public readonly T Current => *_current;
+    public T* Current { get; private set; }
 
-    readonly object IEnumerator.Current => Current;
+    readonly T IEnumerator<T>.Current => *Current;
 
-    private T* _current;
+    readonly object IEnumerator.Current => *Current;
+
     private readonly T* _end;
 
     public static NativeMemoryEnumerator<T> Empty => new(null, 0);
@@ -22,11 +23,11 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        _current = memory - 1;
+        Current = memory - 1;
         _end = memory + length;
     }
 
-    public bool MoveNext() => ++_current != _end;
+    public bool MoveNext() => ++Current != _end;
 
     void IEnumerator.Reset() => throw new NotSupportedException();
 
@@ -36,14 +37,14 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
 
     [Pure]
     public readonly bool Equals(NativeMemoryEnumerator<T> other)
-        => _current == other._current && _end == other._end;
+        => Current == other.Current && _end == other._end;
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj)
         => obj is NativeMemoryEnumerator<T> other && Equals(other);
 
     [Pure]
-    public override readonly int GetHashCode() => HashCode.Combine((nuint)_current, (nuint)_end);
+    public override readonly int GetHashCode() => HashCode.Combine((nuint)Current, (nuint)_end);
 
     public static bool operator ==(NativeMemoryEnumerator<T> left, NativeMemoryEnumerator<T> right) => left.Equals(right);
 

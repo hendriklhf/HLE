@@ -97,7 +97,6 @@ public readonly struct StringNumberFormatter(StringNumberFormat format) : IEquat
         return result;
 
         [DoesNotReturn]
-        [MethodImpl(MethodImplOptions.NoInlining)]
         static void ThrowWrongNumberFormat()
             => throw new FormatException($"The provided number is in an invalid format. It does not match the provided {typeof(StringNumberFormat)}");
     }
