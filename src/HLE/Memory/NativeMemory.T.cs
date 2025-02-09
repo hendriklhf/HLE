@@ -20,8 +20,10 @@ public sealed unsafe partial class NativeMemory<T> :
     IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
-    ICollectionProvider<T>,
+    IReadOnlySpanProvider<T>,
     IMemoryProvider<T>,
+    IReadOnlyMemoryProvider<T>,
+    ICollectionProvider<T>,
     IEquatable<NativeMemory<T>>
     where T : unmanaged, IEquatable<T>
 {
@@ -70,32 +72,30 @@ public sealed unsafe partial class NativeMemory<T> :
 
     bool ICollection<T>.IsReadOnly => false;
 
-    public static NativeMemory<T> Empty { get; } = new();
+    public static NativeMemory<T> Empty { get; } = new(0, 0, false);
 
-    public NativeMemory() : base(0, false)
-    {
-    }
+    private NativeMemory(nint memory, int length, bool ownsHandle) : base(memory, ownsHandle)
+        => Length = length;
 
-    public NativeMemory(int length, bool zeroed = true)
-        : base(0, true)
+    [Pure]
+    public static NativeMemory<T> Alloc(int length, bool zeroed = true)
     {
         if (length == 0)
         {
-            return;
+            return Empty;
         }
 
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        Length = length;
-
         nuint byteCount = checked((uint)sizeof(T) * (nuint)(uint)length);
         T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, (uint)sizeof(nuint));
+
         if (zeroed)
         {
-            SpanHelpers.Clear((byte*)memory, byteCount);
+            SpanHelpers.Clear(memory, length);
         }
 
-        handle = (nint)memory;
+        return new((nint)memory, length, true);
     }
 
     protected override bool ReleaseHandle()
@@ -138,10 +138,18 @@ public sealed unsafe partial class NativeMemory<T> :
     [Pure]
     public Span<T> AsSpan(Range range) => Slicer.Slice(ref Unsafe.AsRef<T>(Pointer), Length, range);
 
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan() => AsSpan();
+
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start) => AsSpan(start..);
+
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(Range range) => AsSpan(range);
+
+#pragma warning disable CA2000 // disposing the memory manager would free the memory
     [Pure]
     public Memory<T> AsMemory() => new MemoryManager(this).Memory;
 
-#pragma warning disable CA2000 // dispose NativeMemoryManager not called. That would free the memory.
     [Pure]
     public Memory<T> AsMemory(int start) => new MemoryManager(this).Memory[start..];
 
@@ -151,6 +159,14 @@ public sealed unsafe partial class NativeMemory<T> :
     [Pure]
     public Memory<T> AsMemory(Range range) => new MemoryManager(this).Memory[range];
 #pragma warning restore CA2000
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory() => AsMemory();
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(int start) => AsMemory(start..);
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(int start, int length) => AsMemory(start, length);
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(Range range) => AsMemory(range);
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
@@ -226,7 +242,7 @@ public sealed unsafe partial class NativeMemory<T> :
 
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
-    public void Clear() => SpanHelpers.Clear((byte*)Pointer, (uint)sizeof(T) * (uint)Length);
+    public void Clear() => SpanHelpers.Clear(Pointer, Length);
 
     bool ICollection<T>.Contains(T item) => AsSpan().Contains(item);
 

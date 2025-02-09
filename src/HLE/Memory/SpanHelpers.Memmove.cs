@@ -93,6 +93,8 @@ public static unsafe partial class SpanHelpers
             {
                 MemoryMarshal.CreateReadOnlySpan(ref source, int.MaxValue)
                     .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
+                source = ref Unsafe.Add(ref source, int.MaxValue);
+                destination = ref Unsafe.Add(ref destination, int.MaxValue);
                 count -= int.MaxValue;
             }
 
@@ -114,6 +116,8 @@ public static unsafe partial class SpanHelpers
             do
             {
                 Memmove(ref destination, ref source, int.MaxValue);
+                source = ref Unsafe.Add(ref source, int.MaxValue);
+                destination = ref Unsafe.Add(ref destination, int.MaxValue);
                 count -= int.MaxValue;
             }
             while (count >= int.MaxValue);
@@ -122,26 +126,10 @@ public static unsafe partial class SpanHelpers
             {
                 Memmove(ref destination, ref source, (int)count);
             }
+
+            return;
         }
 
         ThrowHelper.ThrowUnreachableException();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ValidateElementCountType<T>()
-    {
-        if (typeof(T) != typeof(sbyte) &&
-            typeof(T) != typeof(byte) &&
-            typeof(T) != typeof(short) &&
-            typeof(T) != typeof(ushort) &&
-            typeof(T) != typeof(int) &&
-            typeof(T) != typeof(uint) &&
-            typeof(T) != typeof(long) &&
-            typeof(T) != typeof(ulong) &&
-            typeof(T) != typeof(nint) &&
-            typeof(T) != typeof(nuint))
-        {
-            throw new NotSupportedException("The element count type must be a signed or unsigned integer type.");
-        }
     }
 }

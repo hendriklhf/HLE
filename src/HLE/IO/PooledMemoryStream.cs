@@ -13,7 +13,7 @@ using HLE.Memory;
 
 namespace HLE.IO;
 
-public sealed class PooledMemoryStream(int capacity) :
+internal sealed class PooledMemoryStream(int capacity) :
     Stream,
     IEquatable<PooledMemoryStream>,
     IMemoryProvider<byte>,

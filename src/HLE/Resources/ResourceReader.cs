@@ -152,7 +152,7 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
 
         // fallback for the case that the implementation of GetManifestResourceStream has changed or the Assembly is collectible
 
-        NativeMemory<byte> buffer = new(streamLength, false);
+        NativeMemory<byte> buffer = NativeMemory<byte>.Alloc(streamLength, false);
         StoreHandle(buffer);
 
         stream.ReadExactly(buffer.AsSpan());

@@ -141,6 +141,7 @@ internal static unsafe class ObjectTree
     {
         Debug.Assert(array.Rank == 1);
         Debug.Assert(ObjectMarshal.IsReferenceOrContainsReferences(array.GetType().GetElementType()!));
+        Debug.Assert(array.GetType().GetElementType() == elementType);
 
         if (!s_getArrayElementsSizeCache.TryGetValue(elementType, out MethodInfo? method))
         {

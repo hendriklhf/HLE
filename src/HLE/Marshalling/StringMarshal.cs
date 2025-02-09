@@ -136,4 +136,9 @@ public static unsafe class StringMarshal
 
     [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_firstChar")]
     private static extern ref char GetReferenceCore(string str);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<byte> AsBytes(string str)
+        => MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<char, byte>(ref GetReference(str)), str.Length << 1);
 }

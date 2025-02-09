@@ -21,7 +21,8 @@ public sealed partial class PooledStringBuilder :
     ICopyable<char>,
     IIndexable<char>,
     IReadOnlyCollection<char>,
-    IMemoryProvider<char>
+    IMemoryProvider<char>,
+    IReadOnlyMemoryProvider<char>
 {
     public ref char this[int index] => ref WrittenSpan[index];
 
@@ -104,6 +105,14 @@ public sealed partial class PooledStringBuilder :
 
     [Pure]
     public Memory<char> AsMemory(Range range) => AsMemory()[range];
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory() => AsMemory();
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory(int start) => AsMemory(start..);
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory(int start, int length) => AsMemory(start, length);
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory(Range range) => AsMemory(range);
 
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 

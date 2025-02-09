@@ -26,6 +26,7 @@ public ref struct ValueBufferWriter<T> :
     IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
+    IReadOnlySpanProvider<T>,
     ICollectionProvider<T>
 {
     readonly T IIndexable<T>.this[int index] => WrittenSpan[index];
@@ -151,6 +152,14 @@ public ref struct ValueBufferWriter<T> :
 
     [Pure]
     public readonly Span<T> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Count, range);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan() => AsSpan();
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start) => AsSpan(start..);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    readonly ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(Range range) => AsSpan(range);
 
     public void Write(T item)
     {

@@ -27,7 +27,7 @@ public sealed partial class ArrayPool<T>
 
             if (arrays is null)
             {
-                T[] allocatedArray = GC.AllocateUninitializedArray<T>(length, true);
+                T[] allocatedArray = GC.AllocateUninitializedArray<T>(length);
                 Log.Allocated(allocatedArray);
                 return allocatedArray;
             }
@@ -50,7 +50,7 @@ public sealed partial class ArrayPool<T>
                 return correctArray;
             }
 
-            T[] array = GC.AllocateUninitializedArray<T>(length, true);
+            T[] array = GC.AllocateUninitializedArray<T>(length);
             Log.Allocated(array);
             return array;
         }

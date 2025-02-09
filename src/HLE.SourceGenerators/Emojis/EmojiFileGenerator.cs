@@ -72,7 +72,7 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         EmojiModel[] emojiModels = new EmojiModel[emojis.Count];
         for (int i = 0; i < emojis.Count; i++)
         {
-            emojiModels[i] = new(names[i], emojis[i]);
+            emojiModels[i] = new(NormalizeName(names[i]), emojis[i]);
         }
 
         return emojiModels;
@@ -93,10 +93,12 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
 
     private static void Execute(SourceProductionContext context, EmojiModel[] emojis)
     {
-        StringBuilder sourceBuilder = new(ushort.MaxValue);
+        StringBuilder sourceBuilder = new(ushort.MaxValue * 8);
+        sourceBuilder.AppendLine("using System.Collections.Frozen;").AppendLine();
         sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
         sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
-        AppendEmojis(sourceBuilder, emojis);
+        CreateEmojiConstants(sourceBuilder, emojis);
+        CreateEmojiByNameSet(sourceBuilder, emojis);
         sourceBuilder.AppendLine("}");
         string source = sourceBuilder.ToString();
         context.AddSource("HLE.Text.Emoji.g.cs", source);
@@ -145,15 +147,38 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         await emojiJsonBytes.CopyToAsync(jsonFile);
     }
 
-    private static void AppendEmojis(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
+    private static void CreateEmojiConstants(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
     {
         for (int i = 0; i < emojis.Length; i++)
         {
             EmojiModel emoji = emojis[i];
             sourceBuilder.Append(Indentation).Append("/// <summary> ").Append(emoji.Value).AppendLine(" </summary>");
-            sourceBuilder.Append(Indentation).Append("public const string ").Append(NormalizeName(emoji.Name)).Append(" = ");
+            sourceBuilder.Append(Indentation).Append("public const string ").Append(emoji.Name).Append(" = ");
             sourceBuilder.Append('"').Append(emoji.Value).AppendLine("\";");
         }
+    }
+
+    private static void CreateEmojiByNameSet(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
+    {
+        sourceBuilder.AppendLine()
+            .Append(Indentation)
+            .AppendLine("private static partial global::System.Collections.Frozen.FrozenDictionary<string, string> EmojisByName => s_emojisByName;")
+            .AppendLine();
+
+        sourceBuilder.Append(Indentation)
+            .Append("private static readonly global::System.Collections.Frozen.FrozenDictionary<string, string> s_emojisByName = new global::System.Collections.Generic.KeyValuePair<string, string>[")
+            .Append(emojis.Length).AppendLine("]").Append(Indentation).AppendLine("{");
+
+        for (int i = 0; i < emojis.Length; i++)
+        {
+            sourceBuilder.Append(Indentation, 2).Append("new(nameof(").Append(emojis[i].Name)
+                .Append("), ").Append(emojis[i].Name).Append(")");
+
+            string trail = i == emojis.Length - 1 ? string.Empty : ",";
+            sourceBuilder.AppendLine(trail);
+        }
+
+        sourceBuilder.Append(Indentation).AppendLine("}.ToFrozenDictionary(global::System.StringComparer.OrdinalIgnoreCase);");
     }
 
     private static string NormalizeName(string name)

@@ -23,8 +23,10 @@ public sealed class PooledList<T> :
     IIndexable<T>,
     IReadOnlyList<T>,
     ISpanProvider<T>,
-    ICollectionProvider<T>,
-    IMemoryProvider<T>
+    IReadOnlySpanProvider<T>,
+    IMemoryProvider<T>,
+    IReadOnlyMemoryProvider<T>,
+    ICollectionProvider<T>
 {
     public ref T this[int index]
     {
@@ -116,6 +118,14 @@ public sealed class PooledList<T> :
     [Pure]
     public Span<T> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Count, range);
 
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan() => AsSpan();
+
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start) => AsSpan(start..);
+
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    ReadOnlySpan<T> IReadOnlySpanProvider<T>.AsSpan(Range range) => AsSpan(range);
+
     [Pure]
     public Memory<T> AsMemory() => GetBuffer().AsMemory(..Count);
 
@@ -127,6 +137,14 @@ public sealed class PooledList<T> :
 
     [Pure]
     public Memory<T> AsMemory(Range range) => AsMemory()[range];
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory() => AsMemory();
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(int start) => AsMemory(start..);
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(int start, int length) => AsMemory(start, length);
+
+    ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(Range range) => AsMemory(range);
 
     [Pure]
     public T[] ToArray()

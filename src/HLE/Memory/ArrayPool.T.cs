@@ -123,7 +123,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             return array;
         }
 
-        array = GC.AllocateUninitializedArray<T>(length, true);
+        array = GC.AllocateUninitializedArray<T>(length);
         Log.Allocated(array);
         return array;
     }
@@ -209,7 +209,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         if (!threadLocalBucket.IsInitialized(arrayLength))
         {
             threadLocalBucket.SetInitialized(arrayLength);
-            array = GC.AllocateUninitializedArray<T>(arrayLength, true);
+            array = GC.AllocateUninitializedArray<T>(arrayLength);
             Log.Allocated(array);
             return true;
         }
@@ -268,11 +268,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryReturnToThreadLocalBucket(T[] array, int pow2Length, int bucketIndex, bool clearArray)
     {
-        // TODO: check if array can still be returned even though it is not a pow2 length
-        if (BitOperations.PopCount((uint)array.Length) != 1)
-        {
-            return false;
-        }
+        Debug.Assert(array.Length != 0);
 
         ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
         if (!threadLocalBucket.IsInitialized(pow2Length))

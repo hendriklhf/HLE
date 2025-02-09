@@ -35,10 +35,12 @@ public sealed partial class ArrayPool<T>
             Trimmer trimmer = state.Trimmer;
             ArrayPool<T> pool = state.Pool;
 
+            Thread.Sleep(ArrayPool.TrimmingInterval);
+
             while (trimmer._running)
             {
-                Thread.Sleep(ArrayPool.TrimmingInterval);
                 TrimCore(pool);
+                Thread.Sleep(ArrayPool.TrimmingInterval);
             }
         }
 

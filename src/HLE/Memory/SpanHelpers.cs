@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Memory;
@@ -15,12 +14,25 @@ public static partial class SpanHelpers
             typeof(T) != typeof(long) && typeof(T) != typeof(ulong) &&
             typeof(T) != typeof(nint) && typeof(T) != typeof(nuint))
         {
-            ThrowInvalidIntegerType();
+            throw new NotSupportedException($"{typeof(T)} is not a valid integer type.");
         }
+    }
 
-        return;
-
-        [DoesNotReturn]
-        static void ThrowInvalidIntegerType() => throw new NotSupportedException($"{typeof(T)} is not a valid integer type.");
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ValidateElementCountType<T>()
+    {
+        if (typeof(T) != typeof(sbyte) &&
+            typeof(T) != typeof(byte) &&
+            typeof(T) != typeof(short) &&
+            typeof(T) != typeof(ushort) &&
+            typeof(T) != typeof(int) &&
+            typeof(T) != typeof(uint) &&
+            typeof(T) != typeof(long) &&
+            typeof(T) != typeof(ulong) &&
+            typeof(T) != typeof(nint) &&
+            typeof(T) != typeof(nuint))
+        {
+            throw new NotSupportedException("The element count type must be a signed or unsigned integer type.");
+        }
     }
 }

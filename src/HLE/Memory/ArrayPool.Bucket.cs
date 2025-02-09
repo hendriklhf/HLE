@@ -27,7 +27,7 @@ public sealed partial class ArrayPool<T>
                 return array;
             }
 
-            array = GC.AllocateUninitializedArray<T>(_arrayLength, true);
+            array = GC.AllocateUninitializedArray<T>(_arrayLength);
             _lastAccessTick = Environment.TickCount64;
             Log.Allocated(array);
             return array;
@@ -77,7 +77,11 @@ public sealed partial class ArrayPool<T>
                     }
 
                     array = currentRef;
-                    SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), count - i - 1);
+                    if (i != count - 1)
+                    {
+                        SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), count - i - 1);
+                    }
+
                     _count--;
                     Log.Rented(array);
                     return true;

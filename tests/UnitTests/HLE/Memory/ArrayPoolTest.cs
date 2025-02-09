@@ -72,7 +72,6 @@ public sealed class ArrayPoolTest
 
             Assert.True(array.Length >= minimumLength);
             Assert.Same(previousArray, array);
-            Assert.True(ReferenceEquals(array, Array.Empty<int>()) || GC.GetGeneration(array) == GC.MaxGeneration); // array is pinned
 
             pool.Return(array);
             previousArray = array;
@@ -95,7 +94,6 @@ public sealed class ArrayPoolTest
 
             Assert.True(array.Length >= minimumLength);
             Assert.Same(previousArray, array);
-            Assert.Equal(GC.MaxGeneration, GC.GetGeneration(array)); // array is pinned
 
             pool.Return(array);
             previousArray = array;
@@ -238,11 +236,6 @@ public sealed class ArrayPoolTest
         {
             Assert.Same(firstArray, thirdArray);
             Assert.Same(thirdArray, secondArray);
-        }
-
-        if (firstArray.Length != 0)
-        {
-            Assert.Equal(GC.MaxGeneration, GC.GetGeneration(firstArray)); // array is pinned
         }
     }
 

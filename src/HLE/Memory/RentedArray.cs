@@ -30,8 +30,9 @@ public struct RentedArray<T> :
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
     IReadOnlySpanProvider<T>,
-    ICollectionProvider<T>,
-    IMemoryProvider<T>
+    IMemoryProvider<T>,
+    IReadOnlyMemoryProvider<T>,
+    ICollectionProvider<T>
 {
     public readonly ref T this[int index]
     {
@@ -140,6 +141,14 @@ public struct RentedArray<T> :
 
     [Pure]
     public readonly Memory<T> AsMemory(Range range) => Array.AsMemory(range);
+
+    readonly ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory() => AsMemory();
+
+    readonly ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(int start) => AsMemory(start..);
+
+    readonly ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(int start, int length) => AsMemory(start, length);
+
+    readonly ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(Range range) => AsMemory(range);
 
     [Pure]
     public readonly T[] ToArray()

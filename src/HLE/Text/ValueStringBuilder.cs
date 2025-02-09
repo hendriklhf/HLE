@@ -20,7 +20,8 @@ public unsafe ref partial struct ValueStringBuilder :
     IEquatable<ValueStringBuilder>,
     ICopyable<char>,
     IIndexable<char>,
-    IReadOnlyCollection<char>
+    IReadOnlyCollection<char>,
+    IReadOnlySpanProvider<char>
 {
     public readonly ref char this[int index] => ref WrittenSpan[index];
 
@@ -147,6 +148,14 @@ public unsafe ref partial struct ValueStringBuilder :
 
     [Pure]
     public readonly Span<char> AsSpan(Range range) => Slicer.Slice(ref GetBufferReference(), Length, range);
+
+    readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan() => AsSpan();
+
+    readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(int start) => AsSpan(start..);
+
+    readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(int start, int length) => AsSpan(start, length);
+
+    readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(Range range) => AsSpan(range);
 
     public void Advance(int length) => Length += length;
 

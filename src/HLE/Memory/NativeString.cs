@@ -20,7 +20,8 @@ public readonly unsafe partial struct NativeString :
     IIndexable<char>,
     ISpanProvider<char>,
     IReadOnlySpanProvider<char>,
-    IMemoryProvider<char>
+    IMemoryProvider<char>,
+    IReadOnlyMemoryProvider<char>
 {
     public ref char this[int index]
     {
@@ -51,13 +52,13 @@ public readonly unsafe partial struct NativeString :
 
     public static NativeString Empty { get; } = new();
 
-    public NativeString() => _memory = [];
+    public NativeString() => _memory = NativeMemory<byte>.Empty;
 
     public NativeString(int length)
     {
         if (length == 0)
         {
-            _memory = [];
+            _memory = NativeMemory<byte>.Empty;
             Length = 0;
             return;
         }
@@ -65,7 +66,7 @@ public readonly unsafe partial struct NativeString :
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         nuint neededBufferSize = ObjectMarshal.GetRawStringSize(length);
-        NativeMemory<byte> memory = new(int.CreateChecked(neededBufferSize));
+        NativeMemory<byte> memory = NativeMemory<byte>.Alloc(int.CreateChecked(neededBufferSize));
         byte* buffer = memory.Pointer;
 
         *(nuint*)buffer = 0;
@@ -82,13 +83,13 @@ public readonly unsafe partial struct NativeString :
     {
         if (chars.Length == 0)
         {
-            _memory = [];
+            _memory = NativeMemory<byte>.Empty;
             Length = 0;
             return;
         }
 
         nuint neededBufferSize = ObjectMarshal.GetRawStringSize(chars.Length);
-        NativeMemory<byte> memory = new(int.CreateChecked(neededBufferSize));
+        NativeMemory<byte> memory = NativeMemory<byte>.Alloc(int.CreateChecked(neededBufferSize), false);
         byte* buffer = memory.Pointer;
 
         *(nuint*)buffer = 0;
@@ -140,6 +141,14 @@ public readonly unsafe partial struct NativeString :
 
     [Pure]
     public Memory<char> AsMemory(Range range) => AsMemory()[range];
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory() => AsMemory();
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory(int start) => AsMemory(start..);
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory(int start, int length) => AsMemory(start, length);
+
+    ReadOnlyMemory<char> IReadOnlyMemoryProvider<char>.AsMemory(Range range) => AsMemory(range);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref char GetCharsReference() => ref Unsafe.AsRef<char>(&AsRawStringData()->FirstChar);

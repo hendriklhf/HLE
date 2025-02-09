@@ -5,13 +5,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
-#if !TEST_RUN
-using System.Linq;
-#endif
 
 namespace HLE.Collections;
 
@@ -199,12 +197,12 @@ public static partial class CollectionHelpers
 
     public static bool TryGetNonEnumeratedCount<T>(this IEnumerable<T> enumerable, out int elementCount)
     {
-#if !TEST_RUN // this might prevent the tests from reaching the bottom branches, so it will be removed for test runs as it is runtime code
+        // this might prevent the tests from reaching the bottom branches
         if (Enumerable.TryGetNonEnumeratedCount(enumerable, out elementCount))
         {
             return true;
         }
-#endif
+
         if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
         {
             elementCount = span.Length;
