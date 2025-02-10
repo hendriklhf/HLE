@@ -11,6 +11,8 @@ public sealed class TypeFormattingOptions : IEquatable<TypeFormattingOptions>
 
     public required string GenericTypesSeparator { get; init; }
 
+    public required string DimensionSeparator { get; init; }
+
     public required GenericTypeDelimiters GenericDelimiters { get; init; }
 
     [Pure]

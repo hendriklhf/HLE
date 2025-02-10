@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -15,12 +13,7 @@ namespace HLE.IO;
 
 internal sealed class PooledMemoryStream(int capacity) :
     Stream,
-    IEquatable<PooledMemoryStream>,
-    IMemoryProvider<byte>,
-    ISpanProvider<byte>,
-    ICollectionProvider<byte>,
-    ICopyable<byte>,
-    IIndexable<byte>
+    IEquatable<PooledMemoryStream>
 {
     public override bool CanRead => _buffer is not null;
 
@@ -30,33 +23,12 @@ internal sealed class PooledMemoryStream(int capacity) :
 
     public override long Length => (uint)_length;
 
-    int ICountable.Count
-    {
-        get
-        {
-            Debug.Assert(Length <= int.MaxValue);
-            return (int)Length;
-        }
-    }
-
-    public byte this[Index index] => ((IIndexable<byte>)this)[index.GetOffset(_length)];
-
-    byte IIndexable<byte>.this[int index]
-    {
-        get
-        {
-            Debug.Assert(Length <= int.MaxValue);
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)Length, (uint)index);
-            return ArrayMarshal.GetUnsafeElementAt(GetBuffer(), index);
-        }
-    }
-
     public override long Position
     {
         get => (uint)_position;
         set
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)value, (uint)_length);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)value, (uint)_length);
             _position = (int)value;
         }
     }
@@ -82,13 +54,12 @@ internal sealed class PooledMemoryStream(int capacity) :
 
     public override void Close()
     {
-        byte[]? buffer = _buffer;
+        byte[]? buffer = Interlocked.Exchange(ref _buffer, null);
         if (buffer is null)
         {
             return;
         }
 
-        _buffer = null;
         ArrayPool<byte>.Shared.Return(buffer);
     }
 
@@ -143,7 +114,7 @@ internal sealed class PooledMemoryStream(int capacity) :
             }
             default:
                 ThrowHelper.ThrowUnreachableException();
-                return default;
+                return 0;
         }
     }
 
@@ -306,7 +277,11 @@ internal sealed class PooledMemoryStream(int capacity) :
         uint currentLength = (uint)currentBuffer.Length;
         int newLength = BufferHelpers.GrowArray(currentLength, (uint)_position + sizeHint - currentLength);
         byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newLength);
-        SpanHelpers.Copy(currentBuffer, newBuffer);
+        if (_length != 0)
+        {
+            SpanHelpers.Copy(currentBuffer, newBuffer);
+        }
+
         ArrayPool<byte>.Shared.Return(currentBuffer);
         _buffer = newBuffer;
     }
@@ -322,135 +297,6 @@ internal sealed class PooledMemoryStream(int capacity) :
 
         return buffer;
     }
-
-    public void CopyTo(List<byte> destination, int offset = 0)
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return;
-        }
-
-        CopyWorker<byte> copyWorker = new(source);
-        copyWorker.CopyTo(destination, offset);
-    }
-
-    public void CopyTo(byte[] destination, int offset = 0)
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return;
-        }
-
-        CopyWorker<byte> copyWorker = new(source);
-        copyWorker.CopyTo(destination, offset);
-    }
-
-    public void CopyTo(Memory<byte> destination)
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return;
-        }
-
-        CopyWorker<byte> copyWorker = new(source);
-        copyWorker.CopyTo(destination);
-    }
-
-    public void CopyTo(Span<byte> destination)
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return;
-        }
-
-        CopyWorker<byte> copyWorker = new(source);
-        copyWorker.CopyTo(destination);
-    }
-
-    public void CopyTo(ref byte destination)
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return;
-        }
-
-        SpanHelpers.Copy(source, ref destination);
-    }
-
-    public unsafe void CopyTo(byte* destination)
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return;
-        }
-
-        SpanHelpers.Copy(source, destination);
-    }
-
-    [Pure]
-    public byte[] ToArray()
-    {
-        Span<byte> source = AsSpan();
-        if (source.Length == 0)
-        {
-            return [];
-        }
-
-        byte[] result = GC.AllocateUninitializedArray<byte>(source.Length);
-        SpanHelpers.Copy(source, result);
-        return result;
-    }
-
-    [Pure]
-    public byte[] ToArray(int start) => AsSpan().ToArray(start);
-
-    [Pure]
-    public byte[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
-
-    [Pure]
-    public byte[] ToArray(Range range) => AsSpan().ToArray(range);
-
-    [Pure]
-    public List<byte> ToList() => AsSpan().ToList();
-
-    [Pure]
-    public List<byte> ToList(int start) => AsSpan().ToList(start..);
-
-    [Pure]
-    public List<byte> ToList(int start, int length) => AsSpan().ToList(start, length);
-
-    [Pure]
-    public List<byte> ToList(Range range) => AsSpan().ToList(range);
-
-    [Pure]
-    public Span<byte> AsSpan() => GetBuffer().AsSpanUnsafe(.._length);
-
-    [Pure]
-    public Span<byte> AsSpan(int start) => Slicer.Slice(ref GetPositionalReference(), _length, start);
-
-    [Pure]
-    public Span<byte> AsSpan(int start, int length) => Slicer.Slice(ref GetPositionalReference(), _length, start, length);
-
-    [Pure]
-    public Span<byte> AsSpan(Range range) => Slicer.Slice(ref GetPositionalReference(), _length, range);
-
-    [Pure]
-    public Memory<byte> AsMemory() => GetBuffer().AsMemory(.._length);
-
-    [Pure]
-    public Memory<byte> AsMemory(int start) => AsMemory()[start..];
-
-    [Pure]
-    public Memory<byte> AsMemory(int start, int length) => AsMemory().Slice(start, length);
-
-    [Pure]
-    public Memory<byte> AsMemory(Range range) => AsMemory()[range];
 
     [Pure]
     public bool Equals([NotNullWhen(true)] PooledMemoryStream? other) => ReferenceEquals(this, other);

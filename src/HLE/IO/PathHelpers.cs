@@ -11,6 +11,7 @@ public static class PathHelpers
     {
         NamespaceSeparator = Path.DirectorySeparatorChar,
         GenericTypesSeparator = ", ",
+        DimensionSeparator = ",",
         GenericDelimiters = new("{", "}")
     });
 

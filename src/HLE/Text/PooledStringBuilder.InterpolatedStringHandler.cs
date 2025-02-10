@@ -58,7 +58,7 @@ public sealed partial class PooledStringBuilder
             _builder.Append(chars);
         }
 
-        public void AppendFormatted(ReadOnlyMemory<char> memory) => _builder.Append(memory.Span);
+        public void AppendFormatted(ReadOnlyMemory<char> chars) => _builder.Append(chars.Span);
 
         public void AppendFormatted(scoped ReadOnlySpan<char> chars) => _builder.Append(chars);
 

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
+using HLE.TestUtilities;
 using Xunit;
 
 namespace HLE.UnitTests.Marshalling;
@@ -192,12 +193,44 @@ public sealed unsafe partial class ObjectMarshalTest
     }
 
     [Fact]
-    public void BoxOnStack()
+    public void BoxOnStack_Int()
     {
         int value = 16;
         object o = ObjectMarshal.BoxOnStack(ref value, out _);
         Assert.True(o is int);
         Assert.Equal(typeof(int), o.GetType());
         Assert.Equal(value, (int)o);
+    }
+
+    [Fact]
+    public void BoxOnStack_Memory()
+    {
+        Memory<int> mem = new int[16];
+        Random.Shared.Fill(mem.Span);
+
+        object o = ObjectMarshal.BoxOnStack(ref mem, out _);
+        Assert.True(o is Memory<int>);
+        Assert.Equal(typeof(Memory<int>), o.GetType());
+        Assert.Equal(mem, (Memory<int>)o);
+    }
+
+    [Fact]
+    public void Unbox_IntToUInt()
+    {
+        const int Value = 16;
+        object o = TestHelpers.Cast<int, object>(Value);
+        uint u = ObjectMarshal.Unbox<uint>(o);
+        Assert.Equal((uint)Value, u);
+    }
+
+    [Fact]
+    public void Unbox_MemoryToReadOnlyMemory()
+    {
+        Memory<int> mem = new int[16];
+        Random.Shared.Fill(mem.Span);
+
+        object o = TestHelpers.Cast<Memory<int>, object>(mem);
+        ReadOnlyMemory<int> rom = ObjectMarshal.Unbox<ReadOnlyMemory<int>>(o);
+        Assert.True(mem.Span.SequenceEqual(rom.Span));
     }
 }

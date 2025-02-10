@@ -16,6 +16,7 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     {
         NamespaceSeparator = '.',
         GenericTypesSeparator = ", ",
+        DimensionSeparator = ",",
         GenericDelimiters = new("<", ">")
     });
 
@@ -64,13 +65,25 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
 
         builder.Append(FormatTypeName(type.Name));
 
-        ReadOnlySpan<Type> genericArguments = type.GenericTypeArguments;
-        if (genericArguments.Length == 0)
+        if (!type.IsGenericType)
         {
             return;
         }
 
         TypeFormattingOptions options = _options;
+        ReadOnlySpan<Type> genericArguments = type.GetGenericArguments();
+        if (type.IsGenericTypeDefinition)
+        {
+            builder.Append(options.GenericDelimiters.Opening);
+            for (int i = 0; i < genericArguments.Length - 1; i++)
+            {
+                builder.Append(options.DimensionSeparator);
+            }
+
+            builder.Append(options.GenericDelimiters.Closing);
+            return;
+        }
+
         builder.Append(options.GenericDelimiters.Opening);
         AppendTypeAndGenericParameters(genericArguments[0], ref builder, true, false);
 
@@ -94,7 +107,11 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     {
         AppendTypeAndGenericParameters(type.GetElementType()!, ref builder, true, replaceNamespaceSeparators);
         builder.Append('[');
-        builder.Append(',', type.GetArrayRank() - 1);
+        for (int i = 0; i < type.GetArrayRank() - 1; i++)
+        {
+            builder.Append(_options.DimensionSeparator);
+        }
+
         builder.Append(']');
     }
 

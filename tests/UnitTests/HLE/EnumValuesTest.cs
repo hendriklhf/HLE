@@ -1,8 +1,6 @@
 using System;
 using Xunit;
 
-#pragma warning disable RCS1060 // Declare each type in separate file
-
 namespace HLE.UnitTests;
 
 public sealed partial class EnumValuesTest
@@ -33,7 +31,10 @@ public sealed partial class EnumValuesTest
 
     [Fact]
     public void GetValuesAsInvalidUnderlyingType()
-        => Assert.Throws<InvalidOperationException>(static () => _ = EnumValues<TestEnum>.AsSpan<long>());
+    {
+        Assert.NotEqual(sizeof(long), sizeof(TestEnum));
+        Assert.Throws<InvalidOperationException>(static () => _ = EnumValues<TestEnum>.AsSpan<long>());
+    }
 
     [Fact]
     public void CountTest()

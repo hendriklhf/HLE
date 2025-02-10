@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -19,4 +20,10 @@ public static class TestHelpers
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static T Return<T>(T t) => t;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Span<T> AsSpan<T>(T[] array) => array;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static ReadOnlySpan<T> AsReadOnlySpan<T>(T[] array) => array;
 }

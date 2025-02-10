@@ -13,15 +13,15 @@ public sealed class TypeFormatterTest
         new Parameter($"System{DefaultNamespaceSeparator}Int32[]", typeof(int[])),
         new Parameter($"System{DefaultNamespaceSeparator}Int32[][]", typeof(int[][])),
         new Parameter($"System{DefaultNamespaceSeparator}Int32[][][]", typeof(int[][][])),
-        new Parameter($"System{DefaultNamespaceSeparator}Int32[,]", typeof(int[,])),
-        new Parameter($"System{DefaultNamespaceSeparator}Int32[,,]", typeof(int[,,])),
-        new Parameter($"System{DefaultNamespaceSeparator}Int32[,,,]", typeof(int[,,,])),
+        new Parameter($"System{DefaultNamespaceSeparator}Int32[{DefaultDimensionSeparator}]", typeof(int[,])),
+        new Parameter($"System{DefaultNamespaceSeparator}Int32[{DefaultDimensionSeparator}{DefaultDimensionSeparator}]", typeof(int[,,])),
+        new Parameter($"System{DefaultNamespaceSeparator}Int32[{DefaultDimensionSeparator}{DefaultDimensionSeparator}{DefaultDimensionSeparator}]", typeof(int[,,,])),
         new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Generic{DefaultNamespaceSeparator}List{DefaultOpeningDelimiter}{DefaultClosingDelimiter}", typeof(List<>)),
-        new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Generic{DefaultNamespaceSeparator}List{DefaultOpeningDelimiter}System{DefaultNamespaceSeparator}Int32{DefaultClosingDelimiter}", typeof(List<int>)),
+        new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Generic{DefaultNamespaceSeparator}List{DefaultOpeningDelimiter}System.Int32{DefaultClosingDelimiter}", typeof(List<int>)),
         new Parameter($"System{DefaultNamespaceSeparator}String", typeof(string)),
         new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary{DefaultOpeningDelimiter},{DefaultClosingDelimiter}", typeof(FrozenDictionary<,>)),
         new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>)),
-        new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary.Enumerator{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>.Enumerator)),
+        new Parameter($"System{DefaultNamespaceSeparator}Collections{DefaultNamespaceSeparator}Frozen{DefaultNamespaceSeparator}FrozenDictionary{DefaultOpeningDelimiter}{DefaultDimensionSeparator}{DefaultClosingDelimiter}.Enumerator{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>.Enumerator)),
         new Parameter($"HLE{DefaultNamespaceSeparator}UnitTests{DefaultNamespaceSeparator}Text{DefaultNamespaceSeparator}TypeFormatterTest.Parameter", typeof(Parameter)),
         new Parameter($"HLE{DefaultNamespaceSeparator}UnitTests{DefaultNamespaceSeparator}Text{DefaultNamespaceSeparator}TypeFormatterTest.Parameter[]", typeof(Parameter[]))
     );
@@ -30,6 +30,7 @@ public sealed class TypeFormatterTest
     {
         NamespaceSeparator = DefaultNamespaceSeparator,
         GenericTypesSeparator = DefaultGenericTypesSeparator,
+        DimensionSeparator = DefaultDimensionSeparator,
         GenericDelimiters = s_genericDelimiters
     });
 
@@ -37,8 +38,9 @@ public sealed class TypeFormatterTest
 
     private const char DefaultNamespaceSeparator = '/';
     private const string DefaultGenericTypesSeparator = ", ";
-    private const string DefaultOpeningDelimiter = "{";
-    private const string DefaultClosingDelimiter = "}";
+    private const string DefaultDimensionSeparator = ",";
+    private const string DefaultOpeningDelimiter = "[";
+    private const string DefaultClosingDelimiter = "]";
 
     [Theory]
     [MemberData(nameof(FormatParameters))]

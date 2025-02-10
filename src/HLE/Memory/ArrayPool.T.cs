@@ -11,7 +11,7 @@ namespace HLE.Memory;
 
 /// <summary>
 /// A pool of arrays from which you can rent arrays and return arrays to in order to reuse them.<br/>
-/// You can also return random arrays that were create anywhere else in the application to the pool in order to reuse them.
+/// Also accepts random arrays that were create anywhere else in the application in order to reuse them.
 /// </summary>
 /// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
 public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>

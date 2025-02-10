@@ -55,4 +55,12 @@ public sealed class StringMarshalTest
         ref char reference = ref StringMarshal.GetReference(Hello);
         Assert.True(Unsafe.AreSame(ref reference, ref MemoryMarshal.GetReference(Hello.AsSpan())));
     }
+
+    [Fact]
+    public void AsBytes_Test()
+    {
+        const string Hello = "hello";
+        ReadOnlySpan<byte> bytes = StringMarshal.AsBytes(Hello);
+        Assert.True(Hello.AsSpan().SequenceEqual(MemoryMarshal.Cast<byte, char>(bytes)));
+    }
 }

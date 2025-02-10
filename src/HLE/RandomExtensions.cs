@@ -258,7 +258,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static string NextString(this Random random, int length, ReadOnlySpan<char> choices)
     {
         if (length == 0)
@@ -282,7 +281,6 @@ public static class RandomExtensions
     public static void Fill<T>(this Random random, Span<T> destination, ReadOnlySpan<T> choices)
         => random.Fill(ref MemoryMarshal.GetReference(destination), destination.Length, choices);
 
-    [SkipLocalsInit]
     private static void Fill<T>(this Random random, ref T destination, int destinationLength, ReadOnlySpan<T> choices)
     {
         if (destinationLength == 0)

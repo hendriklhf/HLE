@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace HLE;
 
@@ -14,5 +15,5 @@ internal static unsafe class EnumValues
             .GetFunctionPointer();
 
     public static TEnum[] GetValues<TEnum>() where TEnum : struct, Enum
-        => (TEnum[])s_getValues(typeof(TEnum));
+        => Unsafe.As<TEnum[]>(s_getValues(typeof(TEnum)));
 }

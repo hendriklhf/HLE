@@ -21,14 +21,22 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
     IEquatable<ResourceReader>,
     IReadOnlyCollection<Resource>
 {
-    int IReadOnlyCollection<Resource>.Count => _resourceMap.Count;
+    int IReadOnlyCollection<Resource>.Count => _resources.Count;
 
     private readonly Assembly _assembly = assembly;
     private readonly ConcurrentDictionary<string, Resource?> _resourceMap = new();
     private readonly List<Resource> _resources = [];
     private List<NativeMemory<byte>>? _handles;
 
+    ~ResourceReader() => DisposeCore();
+
     public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+        DisposeCore();
+    }
+
+    private void DisposeCore()
     {
         List<NativeMemory<byte>>? handlesList = Interlocked.Exchange(ref _handles, null);
         if (handlesList is null)

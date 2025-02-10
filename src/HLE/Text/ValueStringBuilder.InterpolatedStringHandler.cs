@@ -8,7 +8,7 @@ namespace HLE.Text;
 public ref partial struct ValueStringBuilder
 {
     [InterpolatedStringHandler]
-    public ref struct InterpolatedStringHandler : IEquatable<InterpolatedStringHandler>
+    public ref struct InterpolatedStringHandler : IInterpolatedStringHandler, IEquatable<InterpolatedStringHandler>
     {
         public readonly ValueStringBuilder Builder => _builder;
 
@@ -60,7 +60,7 @@ public ref partial struct ValueStringBuilder
             _builder.Append(chars);
         }
 
-        public void AppendFormatted(ReadOnlyMemory<char> memory) => _builder.Append(memory.Span);
+        public void AppendFormatted(ReadOnlyMemory<char> chars) => _builder.Append(chars.Span);
 
         public void AppendFormatted(scoped ReadOnlySpan<char> chars) => _builder.Append(chars);
 
