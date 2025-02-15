@@ -277,10 +277,7 @@ internal sealed class PooledMemoryStream(int capacity) :
         uint currentLength = (uint)currentBuffer.Length;
         int newLength = BufferHelpers.GrowArray(currentLength, (uint)_position + sizeHint - currentLength);
         byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newLength);
-        if (_length != 0)
-        {
-            SpanHelpers.Copy(currentBuffer, newBuffer);
-        }
+        SpanHelpers.Copy(currentBuffer, newBuffer);
 
         ArrayPool<byte>.Shared.Return(currentBuffer);
         _buffer = newBuffer;

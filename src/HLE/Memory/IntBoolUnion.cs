@@ -48,12 +48,7 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
     private T _value;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public IntBoolUnion(T integer, bool boolean)
-    {
-        EnsureValidIntegerType();
-        Integer = integer;
-        Bool = boolean;
-    }
+    public IntBoolUnion(T integer, bool boolean) => SetValues(integer, boolean);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetIntegerUnsafe(T value)
@@ -61,6 +56,33 @@ public struct IntBoolUnion<T> : IBitwiseEquatable<IntBoolUnion<T>>
         EnsureValidIntegerType();
         Debug.Assert(value >= T.Zero);
         _value = (_value & GetBooleanMask()) | value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetIntegerBoolOverwrite(T value) => _value = value;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetValues(T integer, bool boolean)
+    {
+        EnsureValidIntegerType();
+        ArgumentOutOfRangeException.ThrowIfNegative(integer);
+        _value = (integer & GetIntegerMask()) | (boolean ? GetBooleanMask() : T.Zero);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetValuesUnsafe(T integer, bool boolean)
+    {
+        EnsureValidIntegerType();
+        _value = integer | (boolean ? GetBooleanMask() : T.Zero);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool UnsetBool() // and return the overwritten value
+    {
+        EnsureValidIntegerType();
+        bool b = (_value & GetBooleanMask()) != T.Zero;
+        _value &= GetIntegerMask();
+        return b;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

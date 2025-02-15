@@ -126,5 +126,6 @@ public static unsafe class SpanMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] AsArray<T>(ref T firstElement) => ObjectMarshal.ReadObject<T[], T>(ref Unsafe.SubtractByteOffset(ref firstElement, (uint)sizeof(nuint) + (uint)sizeof(nuint)));
+    public static T[] AsArray<T>(ref T firstElement)
+        => ObjectMarshal.ReadObject<T, T[]>(ref Unsafe.SubtractByteOffset(ref firstElement, (uint)sizeof(nuint) + (uint)sizeof(nuint)));
 }

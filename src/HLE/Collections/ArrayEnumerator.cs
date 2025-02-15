@@ -12,7 +12,9 @@ namespace HLE.Collections;
 [DebuggerDisplay("Current: {Current}")]
 public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>>
 {
-    public readonly T Current => ArrayMarshal.GetUnsafeElementAt(_array, _current);
+    public readonly ref T Current => ref ArrayMarshal.GetUnsafeElementAt(_array, _current);
+
+    readonly T IEnumerator<T>.Current => Current;
 
     readonly object? IEnumerator.Current => Current;
 
@@ -60,7 +62,8 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
         => _array == other._array && _current == other._current && _length == other._length;
 
     [Pure]
-    public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
+    public override readonly bool Equals([NotNullWhen(true)] object? obj)
+        => obj is ArrayEnumerator<T> other && Equals(other);
 
     [Pure]
     public override readonly int GetHashCode() => HashCode.Combine(_array, _current, _length);

@@ -40,11 +40,16 @@ public sealed class ValueListBuilder
     }
 
     [Pure]
-    public static ValueList<T> Create<T>(T item) => new(1)
+    public static ValueList<T> Create<T>(T item)
     {
-        _buffer = item,
-        Count = 1
-    };
+        ValueList<T> list = new(1)
+        {
+            _buffer = item
+        };
+
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(1);
+        return list;
+    }
 
     [Pure]
     public static ValueList<T> Create<T>(T item0, T item1)
@@ -55,7 +60,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 0) = item0;
         Unsafe.Add(ref reference, 1) = item1;
 
-        list.Count = 2;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(2);
         return list;
     }
 
@@ -69,7 +74,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 1) = item1;
         Unsafe.Add(ref reference, 2) = item2;
 
-        list.Count = 3;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(3);
         return list;
     }
 
@@ -84,7 +89,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 2) = item2;
         Unsafe.Add(ref reference, 3) = item3;
 
-        list.Count = 4;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(4);
         return list;
     }
 
@@ -100,7 +105,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 3) = item3;
         Unsafe.Add(ref reference, 4) = item4;
 
-        list.Count = 5;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(5);
         return list;
     }
 
@@ -117,7 +122,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 4) = item4;
         Unsafe.Add(ref reference, 5) = item5;
 
-        list.Count = 6;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(6);
         return list;
     }
 
@@ -135,7 +140,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 5) = item5;
         Unsafe.Add(ref reference, 6) = item6;
 
-        list.Count = 7;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(7);
         return list;
     }
 
@@ -154,7 +159,7 @@ public sealed class ValueListBuilder
         Unsafe.Add(ref reference, 6) = item6;
         Unsafe.Add(ref reference, 7) = item7;
 
-        list.Count = 8;
+        list._countAndIsDisposed.SetIntegerBoolOverwrite(8);
         return list;
     }
 }

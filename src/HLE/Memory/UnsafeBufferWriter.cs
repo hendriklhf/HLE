@@ -10,7 +10,7 @@ using HLE.Text;
 
 namespace HLE.Memory;
 
-public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) :
+public ref struct UnsafeBufferWriter<T>(ref T buffer) :
     IBufferWriter<T>,
     IEquatable<UnsafeBufferWriter<T>>
 {
@@ -34,9 +34,11 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) :
 
     public void Advance(int count) => Count += count;
 
-    public readonly Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException();
+    public readonly ref T GetReference() => ref Unsafe.Add(ref _buffer, Count);
 
-    public readonly Span<T> GetSpan(int sizeHint = 0) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref _buffer, Count), sizeHint);
+    public readonly Span<T> GetSpan(int sizeHint = 0) => MemoryMarshal.CreateSpan(ref GetReference(), sizeHint);
+
+    public readonly Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException();
 
     public void Write(T item) => Unsafe.Add(ref _buffer, Count++) = item;
 
@@ -68,7 +70,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) :
             return string.Empty;
         }
 
-        ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, char>(ref _buffer), Count);
+        Span<char> chars = Unsafe.BitCast<Span<T>, Span<char>>(WrittenSpan);
         return new(chars);
     }
 
@@ -79,7 +81,7 @@ public unsafe ref struct UnsafeBufferWriter<T>(ref T buffer) :
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public override readonly int GetHashCode() => ((nuint)Unsafe.AsPointer(ref _buffer)).GetHashCode();
+    public override readonly int GetHashCode() => Count;
 
     public static bool operator ==(UnsafeBufferWriter<T> left, UnsafeBufferWriter<T> right) => left.Equals(right);
 

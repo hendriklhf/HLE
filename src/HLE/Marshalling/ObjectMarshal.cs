@@ -82,12 +82,13 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref TRef GetMethodTableReference<TRef>(object obj) where TRef : allows ref struct
-        => ref Unsafe.AsRef<TRef>(*(nuint**)&obj);
+    public static ref TRef GetMethodTableReference<TRef>(object obj)
+        => ref Unsafe.As<object, Ref<TRef>>(ref obj).Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref nuint GetMethodTableReference(object obj) => ref Unsafe.AsRef<nuint>(*(nuint**)&obj);
+    public static ref nuint GetMethodTableReference(object obj)
+        => ref Unsafe.As<object, Ref<nuint>>(ref obj).Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -114,15 +115,7 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T ReadObject<T>(ref nuint methodTablePointer) where T : class
-        => ReadObject<T, nuint>(ref methodTablePointer);
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TObject ReadObject<TObject, TRef>(ref TRef methodTableReference) where TObject : class
-    {
-        void* ptr = Unsafe.AsPointer(ref methodTableReference);
-        return *(TObject*)&ptr;
-    }
+        => ReadObject<nuint, T>(ref methodTablePointer);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -141,6 +134,14 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TObject ReadObject<TRef, TObject>(ref TRef methodTableReference) where TObject : class
+    {
+        Ref<TRef> reference = new(ref methodTableReference);
+        return Unsafe.As<Ref<TRef>, TObject>(ref reference);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T GetField<T>(object obj, nuint byteOffset)
     {
         ref nuint fieldRef = ref Unsafe.AddByteOffset(ref GetMethodTableReference(obj), (uint)sizeof(nuint) + byteOffset);
@@ -149,11 +150,12 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawStringData GetRawStringData(string str) => ref Unsafe.AsRef<RawStringData>(*(RawStringData**)&str);
+    public static ref RawStringData GetRawStringData(string str)
+        => ref Unsafe.As<string, Ref<RawStringData>>(ref str).Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string GetString(ref RawStringData data) => ReadObject<string, RawStringData>(ref data);
+    public static string GetString(ref RawStringData data) => ReadObject<RawStringData, string>(ref data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -173,15 +175,17 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawArrayData<byte> GetRawArrayData(Array array) => ref Unsafe.AsRef<RawArrayData<byte>>(*(RawArrayData<byte>**)&array);
+    public static ref RawArrayData<T> GetRawArrayData<T>(Array array)
+        => ref Unsafe.As<Array, Ref<RawArrayData<T>>>(ref array).Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref RawArrayData<T> GetRawArrayData<T>(T[] array) => ref Unsafe.AsRef<RawArrayData<T>>(*(RawArrayData<T>**)&array);
+    public static ref RawArrayData<T> GetRawArrayData<T>(T[] array)
+        => ref Unsafe.As<T[], Ref<RawArrayData<T>>>(ref array).Value;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] GetArray<T>(ref RawArrayData<T> data) => ReadObject<T[], RawArrayData<T>>(ref data);
+    public static T[] GetArray<T>(ref RawArrayData<T> data) => ReadObject<RawArrayData<T>, T[]>(ref data);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -224,7 +228,7 @@ public static unsafe class ObjectMarshal
         Debug.Assert(typeof(T).IsValueType);
 
         box = new(ref value);
-        return ReadObject<object, Box<T>>(ref box);
+        return ReadObject<Box<T>, object>(ref box);
     }
 
     /// <summary>

@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -62,8 +61,6 @@ public static unsafe partial class SpanHelpers
         where TElementCount : unmanaged, IBinaryInteger<TElementCount>
     {
         ValidateElementCountType<TElementCount>();
-
-        Debug.Assert(elementCount > TElementCount.Zero);
 
         if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {

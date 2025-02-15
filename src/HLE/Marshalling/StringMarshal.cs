@@ -128,7 +128,7 @@ public static unsafe class StringMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string AsString(ref char chars)
-        => ObjectMarshal.ReadObject<string, char>(ref Unsafe.SubtractByteOffset(ref chars, sizeof(int) + sizeof(nuint)));
+        => ObjectMarshal.ReadObject<char, string>(ref Unsafe.SubtractByteOffset(ref chars, sizeof(int) + sizeof(nuint)));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

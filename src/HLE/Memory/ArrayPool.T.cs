@@ -200,7 +200,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         return startingBucket.Rent();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    // [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
         Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
@@ -265,7 +265,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         bucket.Return(array, clearArray);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    // [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
     private static bool TryReturnToThreadLocalBucket(T[] array, int pow2Length, int bucketIndex, bool clearArray)
     {
         Debug.Assert(array.Length != 0);

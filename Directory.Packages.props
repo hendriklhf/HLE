@@ -3,7 +3,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <RoslynatorVersion>4.12.11</RoslynatorVersion>
+    <MicrosoftExtensionsVersion>9.0.2</MicrosoftExtensionsVersion>
+    <RoslynatorVersion>4.13.0</RoslynatorVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,13 +15,13 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.12.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0"/>
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.1"/>
-    <PackageVersion Include="System.IO.Hashing" Version="9.0.1"/>
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageVersion Include="System.IO.Hashing" Version="$(MicrosoftExtensionsVersion)"/>
   </ItemGroup>
 
   <!-- Default Analyzers -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.12.19"/>
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.13.2"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.CodeFixes" Version="$(RoslynatorVersion)"/>

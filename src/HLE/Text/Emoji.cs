@@ -3,7 +3,6 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using HLE.Memory;
 
 namespace HLE.Text;
 
@@ -17,21 +16,19 @@ namespace HLE.Text;
 /// </remarks>
 public static partial class Emoji
 {
-    public static ImmutableArray<string> All => s_emojis.Items;
+    public static ImmutableArray<string> All => AllEmojis.Items;
 
-#pragma warning disable S3459 // it is not unassigned. implementation is source generated.
+#pragma warning disable S3459
     private static partial FrozenDictionary<string, string> EmojisByName { get; }
+
+    private static partial FrozenSet<string> AllEmojis { get; }
 #pragma warning restore S3459
 
-    private static readonly FrozenSet<string> s_emojis = EmojisByName.Values.ToFrozenSet();
-
-    public static bool TryGetEmoji(string name, [MaybeNullWhen(false)] out string emoji) => EmojisByName.TryGetValue(name, out emoji);
-
-    [Pure]
-    public static bool IsEmoji(char c) => IsEmoji(new ReadOnlySpan<char>(ref c));
+    public static bool TryGetEmoji(string name, [MaybeNullWhen(false)] out string emoji)
+        => EmojisByName.TryGetValue(name, out emoji);
 
     [Pure]
-    public static bool IsEmoji(string text) => s_emojis.Contains(text);
+    public static bool IsEmoji(string text) => AllEmojis.Contains(text);
 
     [Pure]
     public static bool IsEmoji(ref PooledInterpolatedStringHandler text)
@@ -44,7 +41,7 @@ public static partial class Emoji
     [Pure]
     public static bool IsEmoji(ReadOnlySpan<char> text)
     {
-        using NativeString str = new(text);
-        return IsEmoji(str.AsString());
+        FrozenSet<string>.AlternateLookup<ReadOnlySpan<char>> lookup = AllEmojis.GetAlternateLookup<ReadOnlySpan<char>>();
+        return lookup.Contains(text);
     }
 }

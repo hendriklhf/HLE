@@ -42,8 +42,8 @@ internal static class ThrowHelper
         => throw new NotSupportedException("The current operating system is not supported.");
 
     [DoesNotReturn]
-    public static void ThrowNotSupportedException(string message) => throw new NotSupportedException(message);
+    public static void ThrowNotSupportedException(string? message = null) => throw new NotSupportedException(message);
 
     [DoesNotReturn]
-    public static void ThrowInvalidOperationException(string message) => throw new InvalidOperationException(message);
+    public static void ThrowInvalidOperationException(string? message = null) => throw new InvalidOperationException(message);
 }

@@ -11,15 +11,15 @@ namespace HLE.UnitTests.Text;
 
 public sealed partial class LazyStringTest
 {
-    private const string TestString = "hello";
+    private const string TestString = StringConstants.HexadecimalsUpperCase;
 
     public static TheoryData<Parameter> Parameters { get; } =
     [
-        new Parameter(TestString, new(TestString)),
-        new Parameter(TestString, LazyString.FromString(TestString)),
-        new Parameter(string.Empty, LazyString.Empty),
-        new Parameter(string.Empty, new(string.Empty)),
-        new Parameter(string.Empty, LazyString.FromString(string.Empty))
+        new Parameter(TestString, static () => new(TestString)),
+        new Parameter(TestString, static () => LazyString.FromString(TestString)),
+        new Parameter(string.Empty, static () => LazyString.Empty),
+        new Parameter(string.Empty, static () => new(string.Empty)),
+        new Parameter(string.Empty, static () => LazyString.FromString(string.Empty))
     ];
 
     [Theory]
@@ -27,7 +27,7 @@ public sealed partial class LazyStringTest
     public void Indexer_Int_RefReadOnlyChar(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        LazyString lazy = parameter.CreateLazy();
 
         for (int i = 0; i < str.Length; i++)
         {
@@ -41,7 +41,7 @@ public sealed partial class LazyStringTest
     public void IndexableChar_Indexer_Int_Char(Parameter parameter)
     {
         string str = parameter.Value;
-        IIndexable<char> lazy = TestHelpers.Cast<LazyString, IIndexable<char>>(parameter.Lazy);
+        IIndexable<char> lazy = TestHelpers.Cast<LazyString, IIndexable<char>>(parameter.CreateLazy());
 
         for (int i = 0; i < str.Length; i++)
         {
@@ -55,7 +55,7 @@ public sealed partial class LazyStringTest
     public void IndexableChar_Indexer_Index_Char(Parameter parameter)
     {
         string str = parameter.Value;
-        IIndexable<char> lazy = TestHelpers.Cast<LazyString, IIndexable<char>>(parameter.Lazy);
+        IIndexable<char> lazy = TestHelpers.Cast<LazyString, IIndexable<char>>(parameter.CreateLazy());
 
         for (int i = 0; i < str.Length; i++)
         {
@@ -69,7 +69,7 @@ public sealed partial class LazyStringTest
     public void Indexer_Index_RefReadOnlyChar(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         for (int i = 0; i < str.Length; i++)
         {
@@ -83,7 +83,7 @@ public sealed partial class LazyStringTest
     public void Indexer_Range_ReadOnlySpan(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         ReadOnlySpan<char> lazySpan = lazy[..];
         ReadOnlySpan<char> strSpan = str.AsSpan(..);
@@ -106,7 +106,7 @@ public sealed partial class LazyStringTest
     public void Length(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
         Assert.Equal(str.Length, lazy.Length);
     }
 
@@ -115,7 +115,7 @@ public sealed partial class LazyStringTest
     public void ICollection_Count(Parameter parameter)
     {
         string str = parameter.Value;
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.Lazy);
+        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
         Assert.Equal(str.Length, lazy.Count);
     }
 
@@ -123,7 +123,7 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(Parameters))]
     public void ICollection_IsReadOnly(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.Lazy);
+        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
         Assert.True(lazy.IsReadOnly);
     }
 
@@ -132,7 +132,7 @@ public sealed partial class LazyStringTest
     public void IReadOnlyCollection_Count(Parameter parameter)
     {
         string str = parameter.Value;
-        IReadOnlyCollection<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyCollection<char>>(parameter.Lazy);
+        IReadOnlyCollection<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyCollection<char>>(parameter.CreateLazy());
         Assert.Equal(str.Length, lazy.Count);
     }
 
@@ -141,7 +141,7 @@ public sealed partial class LazyStringTest
     public void ICountable_Count(Parameter parameter)
     {
         string str = parameter.Value;
-        ICountable lazy = TestHelpers.Cast<LazyString, ICountable>(parameter.Lazy);
+        ICountable lazy = TestHelpers.Cast<LazyString, ICountable>(parameter.CreateLazy());
         Assert.Equal(str.Length, lazy.Count);
     }
 
@@ -204,7 +204,7 @@ public sealed partial class LazyStringTest
     public void AsSpan(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         Assert.True(str.AsSpan().SequenceEqual(lazy.AsSpan()));
     }
@@ -214,7 +214,7 @@ public sealed partial class LazyStringTest
     public void AsMemory(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         Assert.True(lazy.AsMemory().Span.SequenceEqual(str));
     }
@@ -224,7 +224,7 @@ public sealed partial class LazyStringTest
     public void ToArray(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         char[] lazyArray = lazy.ToArray();
         Assert.True(lazyArray.AsSpan().SequenceEqual(str));
@@ -239,7 +239,7 @@ public sealed partial class LazyStringTest
     public void ToArray_Start(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
 #pragma warning disable IDE0057
         char[] lazyArray = lazy.ToArray(2);
@@ -252,7 +252,7 @@ public sealed partial class LazyStringTest
     public void ToArray_StartLength(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         char[] lazyArray = lazy.ToArray(2, 3);
         Assert.True(lazyArray.AsSpan().SequenceEqual(str.AsSpan(2, 3)));
@@ -263,7 +263,7 @@ public sealed partial class LazyStringTest
     public void ToArray_Range(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         char[] lazyArray = lazy.ToArray(2..);
         Assert.True(lazyArray.AsSpan().SequenceEqual(str.AsSpan(2..)));
@@ -274,7 +274,7 @@ public sealed partial class LazyStringTest
     public void ToList(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         List<char> lazyList = lazy.ToList();
         Assert.True(CollectionsMarshal.AsSpan(lazyList).SequenceEqual(str));
@@ -285,7 +285,7 @@ public sealed partial class LazyStringTest
     public void ToList_Start(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
 #pragma warning disable IDE0057
         List<char> lazyList = lazy.ToList(2);
@@ -298,7 +298,7 @@ public sealed partial class LazyStringTest
     public void ToList_StartLength(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         List<char> lazyList = lazy.ToList(2, 3);
         Assert.True(CollectionsMarshal.AsSpan(lazyList).SequenceEqual(str.AsSpan(2, 3)));
@@ -309,7 +309,7 @@ public sealed partial class LazyStringTest
     public void ToList_Range(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         List<char> lazyList = lazy.ToList(2..);
         Assert.True(CollectionsMarshal.AsSpan(lazyList).SequenceEqual(str.AsSpan(2..)));
@@ -336,7 +336,7 @@ public sealed partial class LazyStringTest
     public void ToString_Test(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         Assert.Equal(str, lazy.ToString());
     }
@@ -346,7 +346,7 @@ public sealed partial class LazyStringTest
     public void CopyTo_List(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         List<char> result = [];
         lazy.CopyTo(result);
@@ -360,7 +360,7 @@ public sealed partial class LazyStringTest
     public void CopyTo_List_Offset(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         List<char> result = [];
         lazy.CopyTo(result, 2);
@@ -374,7 +374,7 @@ public sealed partial class LazyStringTest
     public void CopyTo_Array(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         char[] result = new char[str.Length];
         lazy.CopyTo(result);
@@ -388,7 +388,7 @@ public sealed partial class LazyStringTest
     public void CopyTo_Memory(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         Memory<char> result = new char[str.Length];
         lazy.CopyTo(result);
@@ -402,7 +402,7 @@ public sealed partial class LazyStringTest
     public void CopyTo_Span(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         Span<char> result = new char[str.Length];
         lazy.CopyTo(result);
@@ -416,7 +416,7 @@ public sealed partial class LazyStringTest
     public void CopyTo_RefChar(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         Span<char> result = new char[str.Length];
         lazy.CopyTo(ref MemoryMarshal.GetReference(result));
@@ -430,7 +430,7 @@ public sealed partial class LazyStringTest
     public unsafe void CopyTo_PointerChar(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         char* result = stackalloc char[str.Length];
         lazy.CopyTo(result);
@@ -443,7 +443,7 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(Parameters))]
     public void ICollection_Add_ThrowsNoSupportedException(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.Lazy);
+        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
 
         Assert.Throws<NotSupportedException>(() => lazy.Add('a'));
     }
@@ -452,7 +452,7 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(Parameters))]
     public void ICollection_Clear_ThrowsNoSupportedException(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.Lazy);
+        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
 
         Assert.Throws<NotSupportedException>(lazy.Clear);
     }
@@ -461,7 +461,7 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(Parameters))]
     public void ICollection_Remove_ThrowsNoSupportedException(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.Lazy);
+        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
 
         Assert.Throws<NotSupportedException>(() => lazy.Remove('a'));
     }
@@ -471,7 +471,7 @@ public sealed partial class LazyStringTest
     public void IndexOf(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         foreach (char c in StringConstants.AlphaNumerics)
         {
@@ -484,7 +484,7 @@ public sealed partial class LazyStringTest
     public void Contains(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         foreach (char c in StringConstants.AlphaNumerics)
         {
@@ -497,7 +497,7 @@ public sealed partial class LazyStringTest
     public void IReadOnlySpanProvider_GetReadOnlySpan(Parameter parameter)
     {
         string str = parameter.Value;
-        IReadOnlySpanProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlySpanProvider<char>>(parameter.Lazy);
+        IReadOnlySpanProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlySpanProvider<char>>(parameter.CreateLazy());
 
         Assert.True(lazy.AsSpan().SequenceEqual(str));
     }
@@ -507,7 +507,7 @@ public sealed partial class LazyStringTest
     public void IReadOnlyMemoryProvider_GetReadOnlyMemory(Parameter parameter)
     {
         string str = parameter.Value;
-        IReadOnlyMemoryProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyMemoryProvider<char>>(parameter.Lazy);
+        IReadOnlyMemoryProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyMemoryProvider<char>>(parameter.CreateLazy());
 
         Assert.True(lazy.AsMemory().Span.SequenceEqual(str));
     }
@@ -517,7 +517,7 @@ public sealed partial class LazyStringTest
     public void GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.Lazy;
+        using LazyString lazy = parameter.CreateLazy();
 
         using CharEnumerator stringEnumerator = str.GetEnumerator();
         using ReadOnlyMemoryEnumerator<char> lazyEnumerator = lazy.GetEnumerator();
@@ -534,7 +534,7 @@ public sealed partial class LazyStringTest
     public void IEnumerableChar_GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
-        IEnumerable<char> lazy = TestHelpers.Cast<LazyString, IEnumerable<char>>(parameter.Lazy);
+        IEnumerable<char> lazy = TestHelpers.Cast<LazyString, IEnumerable<char>>(parameter.CreateLazy());
 
         using CharEnumerator stringEnumerator = str.GetEnumerator();
         using IEnumerator<char> lazyEnumerator = lazy.GetEnumerator();
@@ -551,7 +551,7 @@ public sealed partial class LazyStringTest
     public void IEnumerable_GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
-        System.Collections.IEnumerable lazy = TestHelpers.Cast<LazyString, System.Collections.IEnumerable>(parameter.Lazy);
+        System.Collections.IEnumerable lazy = TestHelpers.Cast<LazyString, System.Collections.IEnumerable>(parameter.CreateLazy());
 
         using CharEnumerator stringEnumerator = str.GetEnumerator();
         // ReSharper disable once GenericEnumeratorNotDisposed

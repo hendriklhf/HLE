@@ -51,101 +51,60 @@ public ref struct ValueList<T> :
 
     public readonly Span<T> this[Range range] => AsSpan(range);
 
-    public int Count
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        readonly get => _countAndIsStackalloced.Integer;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal set
-        {
-            Debug.Assert(value >= 0);
-            _countAndIsStackalloced.SetIntegerUnsafe(value);
-        }
-    }
+    public readonly int Count => _countAndIsDisposed.Integer;
 
-    private bool IsStackalloced
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        readonly get => _countAndIsStackalloced.Bool;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _countAndIsStackalloced.Bool = value;
-    }
-
-    private int BufferLength
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        readonly get => _bufferLengthAndIsDisposed.Integer;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set
-        {
-            Debug.Assert(value >= 0);
-            _bufferLengthAndIsDisposed.SetIntegerUnsafe(value);
-        }
-    }
-
-    private bool IsDisposed
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        readonly get => _bufferLengthAndIsDisposed.Bool;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _bufferLengthAndIsDisposed.Bool = value;
-    }
-
-    public readonly int Capacity => BufferLength;
+    public readonly int Capacity => _capacityAndIsStackalloced.Integer;
 
     readonly bool ICollection<T>.IsReadOnly => false;
 
     internal ref T _buffer;
-    private IntBoolUnion<int> _bufferLengthAndIsDisposed;
-    private IntBoolUnion<int> _countAndIsStackalloced;
+    internal IntBoolUnion<int> _countAndIsDisposed;
+    private IntBoolUnion<int> _capacityAndIsStackalloced;
 
     private const int MinimumCapacity = 4;
 
     public ValueList()
     {
         _buffer = ref Unsafe.NullRef<T>();
-        IsStackalloced = true;
+        _capacityAndIsStackalloced = default;
+        _capacityAndIsStackalloced.Bool = true;
     }
 
     public ValueList(int capacity)
     {
         T[] buffer = ArrayPool<T>.Shared.Rent(capacity);
         _buffer = ref MemoryMarshal.GetArrayDataReference(buffer);
-        BufferLength = buffer.Length;
+        _capacityAndIsStackalloced = default;
+        _capacityAndIsStackalloced.SetIntegerBoolOverwrite(buffer.Length);
     }
 
     public ValueList(Span<T> buffer)
     {
         _buffer = ref MemoryMarshal.GetReference(buffer);
-        BufferLength = buffer.Length;
-        IsStackalloced = true;
+        _capacityAndIsStackalloced = default;
+        _capacityAndIsStackalloced.SetValuesUnsafe(buffer.Length, true);
     }
 
     public void Dispose()
     {
-        if (IsDisposed)
+        if (_countAndIsDisposed.Bool)
         {
             return;
         }
 
-        if (IsStackalloced)
+        if (!_capacityAndIsStackalloced.Bool)
         {
-            _buffer = ref Unsafe.NullRef<T>();
-            BufferLength = 0;
-            IsDisposed = true;
-            return;
+            T[] array = SpanMarshal.AsArray(ref _buffer);
+            ArrayPool<T>.Shared.Return(array);
         }
-
-        T[] array = SpanMarshal.AsArray(ref _buffer);
-        ArrayPool<T>.Shared.Return(array);
 
         _buffer = ref Unsafe.NullRef<T>();
-        BufferLength = 0;
-        IsDisposed = true;
+        _capacityAndIsStackalloced = default;
+        _countAndIsDisposed.SetValuesUnsafe(0, true);
     }
 
     [Pure]
-    public readonly Span<T> AsSpan() => GetBuffer().SliceUnsafe(..Count);
+    public readonly Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref GetBufferReference(), Count);
 
     [Pure]
     public readonly Span<T> AsSpan(int start) => Slicer.Slice(ref GetBufferReference(), Count, start);
@@ -228,13 +187,14 @@ public ref struct ValueList<T> :
 
         ref T buffer = ref MemoryMarshal.GetReference(newBuffer);
         _buffer = ref buffer;
-        BufferLength = newBuffer.Length;
 
-        if (IsStackalloced)
+        if (_capacityAndIsStackalloced.UnsetBool())
         {
-            IsStackalloced = false;
+            _capacityAndIsStackalloced.SetIntegerBoolOverwrite(newBuffer.Length);
             return ref Unsafe.Add(ref buffer, count);
         }
+
+        _capacityAndIsStackalloced.SetIntegerBoolOverwrite(newBuffer.Length);
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
         ArrayPool<T>.Shared.Return(array);
@@ -245,7 +205,7 @@ public ref struct ValueList<T> :
     public void Add(T item)
     {
         GetDestination(1) = item;
-        Count++;
+        _countAndIsDisposed.SetIntegerBoolOverwrite(Count + 1);
     }
 
     public void AddRange(IEnumerable<T> items)
@@ -262,7 +222,7 @@ public ref struct ValueList<T> :
             if (items.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
             {
                 SpanHelpers.Copy(span, ref destination);
-                Count = count + itemsCount;
+                _countAndIsDisposed.SetIntegerBoolOverwrite(count + itemsCount);
                 return;
             }
 
@@ -271,7 +231,7 @@ public ref struct ValueList<T> :
                 Unsafe.Add(ref destination, count++) = item;
             }
 
-            Count = count;
+            _countAndIsDisposed.SetIntegerBoolOverwrite(count);
             return;
         }
 
@@ -301,9 +261,8 @@ public ref struct ValueList<T> :
             return;
         }
 
-        int count = Count;
         SpanHelpers.Memmove(ref GetDestination(length), ref items, length);
-        Count = count + length;
+        _countAndIsDisposed.SetIntegerBoolOverwrite(Count + length);
     }
 
     /// <summary>
@@ -327,15 +286,15 @@ public ref struct ValueList<T> :
         Span<T> oldBuffer = GetBuffer();
         if (trimmedBufferSize == 0)
         {
-            if (!IsStackalloced)
+            Debug.Assert(count == 0);
+            if (!_capacityAndIsStackalloced.UnsetBool())
             {
                 T[] array = SpanMarshal.AsArray(oldBuffer);
                 ArrayPool<T>.Shared.Return(array);
             }
 
             _buffer = ref Unsafe.NullRef<T>();
-            BufferLength = 0;
-            IsStackalloced = false;
+            _capacityAndIsStackalloced = default;
             return;
         }
 
@@ -344,15 +303,14 @@ public ref struct ValueList<T> :
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
         SpanHelpers.Memmove(ref destination, ref source, count);
 
-        if (!IsStackalloced)
+        if (!_capacityAndIsStackalloced.UnsetBool())
         {
             T[] array = SpanMarshal.AsArray(oldBuffer);
             ArrayPool<T>.Shared.Return(array);
         }
 
         _buffer = ref MemoryMarshal.GetArrayDataReference(newBuffer);
-        BufferLength = newBuffer.Length;
-        IsStackalloced = false;
+        _capacityAndIsStackalloced.SetIntegerBoolOverwrite(newBuffer.Length);
     }
 
     public void Clear()
@@ -362,7 +320,7 @@ public ref struct ValueList<T> :
             AsSpan().Clear();
         }
 
-        Count = 0;
+        _countAndIsDisposed.SetIntegerBoolOverwrite(0);
     }
 
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
@@ -374,7 +332,7 @@ public ref struct ValueList<T> :
     public void Insert(int index, T item)
     {
         GetDestination(1);
-        Count++;
+        _countAndIsDisposed.SetIntegerBoolOverwrite(Count + 1);
         Span<T> buffer = AsSpan();
         buffer[index..^1].CopyTo(buffer[(index + 1)..]);
         buffer[index] = item;
@@ -386,7 +344,7 @@ public ref struct ValueList<T> :
     {
         Span<T> buffer = AsSpan();
         buffer[(index + 1)..].CopyTo(buffer[index..]);
-        Count--;
+        _countAndIsDisposed.SetIntegerBoolOverwrite(Count - 1);
     }
 
     public readonly void CopyTo(List<T> destination, int offset = 0)
@@ -427,7 +385,7 @@ public ref struct ValueList<T> :
 
     private readonly ref T GetBufferReference()
     {
-        if (IsDisposed)
+        if (_countAndIsDisposed.Bool)
         {
             ThrowHelper.ThrowObjectDisposedException<ValueList<T>>();
         }
@@ -435,17 +393,18 @@ public ref struct ValueList<T> :
         return ref _buffer;
     }
 
-    private readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), BufferLength);
+    private readonly Span<T> GetBuffer() => MemoryMarshal.CreateSpan(ref GetBufferReference(), Capacity);
 
     public override readonly string ToString()
     {
+        int count = Count;
         if (typeof(T) != typeof(char))
         {
-            return ToStringHelpers.FormatCollection<ValueList<T>>(Count);
+            return ToStringHelpers.FormatCollection<ValueList<T>>(count);
         }
 
         ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());
-        return new(MemoryMarshal.CreateReadOnlySpan(ref reference, Count));
+        return new(MemoryMarshal.CreateReadOnlySpan(ref reference, count));
     }
 
     [Pure]
@@ -462,7 +421,7 @@ public ref struct ValueList<T> :
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public override readonly int GetHashCode() => Count.GetHashCode();
+    public override readonly int GetHashCode() => HashCode.Combine(_countAndIsDisposed, _capacityAndIsStackalloced);
 
     public static bool operator ==(ValueList<T> left, ValueList<T> right) => left.Equals(right);
 
