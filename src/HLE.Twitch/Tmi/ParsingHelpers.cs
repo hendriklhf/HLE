@@ -25,13 +25,13 @@ internal static class ParsingHelpers
         ref T reference = ref MemoryMarshal.GetReference(span);
         return sizeof(T) switch
         {
-            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), span.Length, Unsafe.As<T, byte>(ref item), destination,
+            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), span.Length, Unsafe.BitCast<T, byte>(item), destination,
                 maximumAmountOfIndicesNeeded),
-            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), span.Length, Unsafe.As<T, ushort>(ref item), destination,
+            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), span.Length, Unsafe.BitCast<T, ushort>(item), destination,
                 maximumAmountOfIndicesNeeded),
-            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), span.Length, Unsafe.As<T, uint>(ref item), destination,
+            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), span.Length, Unsafe.BitCast<T, uint>(item), destination,
                 maximumAmountOfIndicesNeeded),
-            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), span.Length, Unsafe.As<T, ulong>(ref item), destination,
+            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), span.Length, Unsafe.BitCast<T, ulong>(item), destination,
                 maximumAmountOfIndicesNeeded),
             _ => IndicesOfNonOptimizedFallback(span, item, destination, maximumAmountOfIndicesNeeded)
         };

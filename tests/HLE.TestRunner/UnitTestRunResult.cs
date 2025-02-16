@@ -5,13 +5,15 @@ using System.Runtime.CompilerServices;
 
 namespace HLE.TestRunner;
 
-internal sealed class UnitTestRunResult(bool success) : IEquatable<UnitTestRunResult>
+internal sealed class UnitTestRunResult : IEquatable<UnitTestRunResult>
 {
-    public bool IsSuccess { get; } = success;
+    public bool IsSuccess { get; }
 
     public static UnitTestRunResult Success { get; } = new(true);
 
     public static UnitTestRunResult Failure { get; } = new(false);
+
+    private UnitTestRunResult(bool success) => IsSuccess = success;
 
     [Pure]
     public bool Equals([NotNullWhen(true)] UnitTestRunResult? other) => ReferenceEquals(this, other);

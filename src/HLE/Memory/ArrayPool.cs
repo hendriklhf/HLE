@@ -16,13 +16,13 @@ internal static class ArrayPool
     public static ReadOnlySpan<int> BucketCapacities =>
     [
         // 16,32,64,128,256,512
-        512, 512, 512, 512, 256, 256,
+        64, 64, 64, 64, 64, 64,
         // 1024,2048,4096,8192
-        256, 128, 128, 128,
+        32, 32, 32, 32,
         // 16384,32768,65536
-        64, 64, 32,
+        16, 16, 16,
         // 131072,262144,524288,1048576
-        32, 16, 16, 16,
+        16, 16, 8, 8,
         // 2097152,4194304,8388608
         8, 8, 8
     ];
@@ -33,7 +33,7 @@ internal static class ArrayPool
         get => BitOperations.TrailingZeroCount(MinimumArrayLength);
     }
 
-    public static TimeSpan TrimmingInterval { get; } = TimeSpan.FromSeconds(30);
+    public static TimeSpan TrimmingInterval { get; } = TimeSpan.FromMinutes(1);
 
     public static TimeSpan MaximumLastAccessTime { get; } = TimeSpan.FromMinutes(2);
 

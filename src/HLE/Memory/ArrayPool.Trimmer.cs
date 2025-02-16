@@ -9,7 +9,7 @@ namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    private sealed partial class Trimmer(ArrayPool<T> pool)
+    private sealed class Trimmer(ArrayPool<T> pool)
     {
         private readonly ArrayPool<T> _pool = pool;
         private volatile bool _running;
@@ -23,25 +23,23 @@ public sealed partial class ArrayPool<T>
         public void StartTrimmingThread()
         {
             _running = true;
-            _thread.Start(new State(this, _pool));
+            _thread.Start(this);
         }
 
         public void StopTrimmingThread() => _running = false;
 
-        private static void Trim(object? o)
+        private static void Trim(object? obj)
         {
-            Debug.Assert(o is State);
-            State state = Unsafe.As<State>(o);
-            Trimmer trimmer = state.Trimmer;
-            ArrayPool<T> pool = state.Pool;
+            Debug.Assert(obj is Trimmer);
+            Trimmer trimmer = Unsafe.As<Trimmer>(obj);
+            ArrayPool<T> pool = trimmer._pool;
 
-            Thread.Sleep(ArrayPool.TrimmingInterval);
-
-            while (trimmer._running)
+            do
             {
-                TrimCore(pool);
                 Thread.Sleep(ArrayPool.TrimmingInterval);
+                TrimCore(pool);
             }
+            while (trimmer._running);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -65,7 +63,7 @@ public sealed partial class ArrayPool<T>
                         continue;
                     }
 
-                    TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - bucket._lastAccessTick);
+                    TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - Volatile.Read(ref bucket._lastAccessTick));
                     if (timeSinceLastAccess > ArrayPool.MaximumLastAccessTime)
                     {
                         long releasedMemory = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength) * bucket._count;

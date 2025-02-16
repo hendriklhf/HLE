@@ -103,9 +103,9 @@ public sealed class ChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] 
             ArrayPool<Badge>.Shared.Return(badges);
         }
 
-        Username.DisposeInterlocked();
-        DisplayName.DisposeInterlocked();
-        Message.DisposeInterlocked();
+        Username.Dispose();
+        DisplayName.Dispose();
+        Message.Dispose();
     }
 
     /// <summary>

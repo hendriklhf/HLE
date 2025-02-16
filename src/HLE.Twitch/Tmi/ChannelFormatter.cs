@@ -9,6 +9,9 @@ namespace HLE.Twitch.Tmi;
 
 internal static partial class ChannelFormatter
 {
+    [GeneratedRegex(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
+    private static partial Regex ChannelPattern { get; }
+
     public const char ChannelPrefix = '#';
     public const int MinimumChannelNameLength = 3;
     public const int MaximumChannelNameLength = 25;
@@ -26,7 +29,7 @@ internal static partial class ChannelFormatter
 
     private static int FormatChannel(ReadOnlySpan<char> channel, bool prefixWithHashtag, Span<char> result)
     {
-        if (!GetChannelPattern().IsMatch(channel))
+        if (!ChannelPattern.IsMatch(channel))
         {
             ThrowInvalidChannelFormat(channel);
         }
@@ -55,10 +58,6 @@ internal static partial class ChannelFormatter
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowInvalidChannelFormat(ReadOnlySpan<char> channel)
-        => throw new FormatException($"The channel name (\"{channel}\") is in an invalid format. Expected: {GetChannelPattern()}");
-
-    [GeneratedRegex(@"^#?[a-z\d]\w{2,24}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
-    private static partial Regex GetChannelPattern();
+        => throw new FormatException($"The channel name (\"{channel}\") is in an invalid format. Expected: {ChannelPattern}");
 }

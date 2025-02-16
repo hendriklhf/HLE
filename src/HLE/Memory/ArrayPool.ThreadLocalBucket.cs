@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -8,7 +7,9 @@ namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    internal partial struct ThreadLocalBucket : IEquatable<ThreadLocalBucket>
+    [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
+    [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
+    internal partial struct ThreadLocalBucket
     {
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed")]
@@ -34,15 +35,5 @@ public sealed partial class ArrayPool<T>
             Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
             return (_bucketInitializationStatuses & arrayLength) != 0;
         }
-
-        public readonly bool Equals(ThreadLocalBucket other) => _bucketInitializationStatuses == other._bucketInitializationStatuses; // TODO: not correct
-
-        public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is ThreadLocalBucket other && Equals(other);
-
-        public override readonly int GetHashCode() => HashCode.Combine(_bucketInitializationStatuses, _pool); // TODO: not correct
-
-        public static bool operator ==(ThreadLocalBucket left, ThreadLocalBucket right) => left.Equals(right);
-
-        public static bool operator !=(ThreadLocalBucket left, ThreadLocalBucket right) => !left.Equals(right);
     }
 }

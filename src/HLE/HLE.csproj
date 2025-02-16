@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <IsAotCompatible>true</IsAotCompatible>
+    <EnableAotAnalyzers>true</EnableAotAnalyzers>
     <IsNugetPackage>true</IsNugetPackage>
     <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
   </PropertyGroup>

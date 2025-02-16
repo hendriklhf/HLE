@@ -59,7 +59,7 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
             int semicolonIndex = tags.IndexOf((byte)';');
             ReadOnlySpan<byte> key = tags[..equalsSignIndex];
             // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
-            ReadOnlySpan<byte> value = tags[(equalsSignIndex + 1)..Unsafe.As<int, Index>(ref semicolonIndex)];
+            ReadOnlySpan<byte> value = tags[(equalsSignIndex + 1)..Unsafe.BitCast<int, Index>(semicolonIndex)];
             tags = semicolonIndex < 0 ? [] : tags[(semicolonIndex + 1)..];
             equalsSignIndex = tags.IndexOf((byte)'=');
 

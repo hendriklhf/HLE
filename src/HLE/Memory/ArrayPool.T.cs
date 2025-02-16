@@ -27,12 +27,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
     private static ThreadLocalBucket t_threadLocalBucket;
 
-    [ThreadStatic]
-    [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
-    [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
-    [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
-    private static SmallArrayPool t_smallArrayPool;
-
     public ArrayPool()
     {
         int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
@@ -91,15 +85,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        switch (length)
+        if (length > ArrayPool.MaximumArrayLength)
         {
-            case > ArrayPool.MaximumArrayLength:
-                T[] allocatedArray = GC.AllocateUninitializedArray<T>(length);
-                Log.Allocated(allocatedArray);
-                return allocatedArray;
-            case < ArrayPool.MinimumArrayLength:
-                ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
-                return smallArrayPool.Rent(length);
+            T[] allocatedArray = GC.AllocateUninitializedArray<T>(length);
+            Log.Allocated(allocatedArray);
+            return allocatedArray;
         }
 
         T[]? array;
@@ -128,54 +118,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         return array;
     }
 
-    [Pure]
-    public T[] RentFor(T item)
-    {
-        T[] array = RentExact(1);
-        Debug.Assert(array.Length == 1);
-
-        MemoryMarshal.GetArrayDataReference(array) = item;
-        return array;
-    }
-
-    [Pure]
-    public T[] RentFor(T item0, T item1)
-    {
-        T[] array = RentExact(2);
-        Debug.Assert(array.Length == 2);
-
-        ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
-        Unsafe.Add(ref reference, 0) = item0;
-        Unsafe.Add(ref reference, 1) = item1;
-
-        return array;
-    }
-
-    [Pure]
-    public T[] RentFor(T item0, T item1, T item2)
-    {
-        T[] array = RentExact(3);
-        Debug.Assert(array.Length == 3);
-
-        ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
-        Unsafe.Add(ref reference, 0) = item0;
-        Unsafe.Add(ref reference, 1) = item1;
-        Unsafe.Add(ref reference, 2) = item2;
-
-        return array;
-    }
-
-    [Pure]
-    public T[] RentFor(params ReadOnlySpan<T> items)
-    {
-        T[] array = RentExact(items.Length);
-        Debug.Assert(array.Length == items.Length);
-
-        SpanHelpers.Copy(items, array);
-        return array;
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private T[] RentFromSharedBuckets(int bucketIndex)
     {
         const int MaximumTryCount = 3;
@@ -200,7 +142,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         return startingBucket.Rent();
     }
 
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
         Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
@@ -237,13 +179,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             return;
         }
 
-        if (array.Length < ArrayPool.MinimumArrayLength)
-        {
-            ref SmallArrayPool smallArrayPool = ref t_smallArrayPool;
-            smallArrayPool.Return(array, clearArray);
-            return;
-        }
-
         if (!TryGetBucketIndex(array.Length, out int bucketIndex, out int pow2Length))
         {
             Log.Dropped(array);
@@ -258,14 +193,13 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         ReturnToSharedBucket(array, bucketIndex, clearArray);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)] // don't inline as slow path
     private void ReturnToSharedBucket(T[] array, int bucketIndex, bool clearArray)
     {
         ref Bucket bucket = ref ArrayMarshal.GetUnsafeElementAt(_buckets, bucketIndex);
         bucket.Return(array, clearArray);
     }
 
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)] // inline as fast path
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryReturnToThreadLocalBucket(T[] array, int pow2Length, int bucketIndex, bool clearArray)
     {
         Debug.Assert(array.Length != 0);
@@ -288,9 +222,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
         ClearArrayIfNeeded(array, clearArray);
         arrayReference = array;
-        threadLocalBucket.SetInitialized(pow2Length);
         Log.Returned(array);
-
         return true;
     }
 
@@ -313,10 +245,17 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             return false;
         }
 
-        pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)arrayLength);
-        if (pow2Length != arrayLength)
+        if (BitOperations.PopCount((uint)arrayLength) == 1)
         {
-            pow2Length >>= 1;
+            pow2Length = arrayLength;
+        }
+        else
+        {
+            pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)arrayLength);
+            if (pow2Length != arrayLength)
+            {
+                pow2Length >>= 1;
+            }
         }
 
         bucketIndex = BitOperations.TrailingZeroCount(pow2Length) - ArrayPool.TrailingZeroCountBucketIndexOffset;
@@ -325,9 +264,8 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
     public void Clear()
     {
-        Bucket[] buckets = _buckets;
-        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(buckets);
-        int lengths = buckets.Length;
+        ref Bucket bucketReference = ref MemoryMarshal.GetArrayDataReference(_buckets);
+        int lengths = _buckets.Length;
         for (int i = 0; i < lengths; i++)
         {
             ref Bucket bucket = ref Unsafe.Add(ref bucketReference, i);

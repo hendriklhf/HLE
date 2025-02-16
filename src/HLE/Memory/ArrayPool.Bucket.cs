@@ -28,7 +28,7 @@ public sealed partial class ArrayPool<T>
             }
 
             array = GC.AllocateUninitializedArray<T>(_arrayLength);
-            _lastAccessTick = Environment.TickCount64;
+            Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
             Log.Allocated(array);
             return array;
         }
@@ -45,20 +45,21 @@ public sealed partial class ArrayPool<T>
                 }
 
                 ref T[] reference = ref ArrayMarshal.GetUnsafeElementAt(_stack, count - 1);
-                _count--;
                 array = reference;
                 reference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
-                _lastAccessTick = Environment.TickCount64;
-                Log.Rented(array);
-                return true;
+                _count--;
             }
+
+            Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
+            Log.Rented(array);
+            return true;
         }
 
         public bool TryRentExact(int length, [MaybeNullWhen(false)] out T[] array)
         {
             lock (_lock)
             {
-                _lastAccessTick = Environment.TickCount64;
+                Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
 
                 uint count = _count;
                 if (count == 0)
@@ -103,12 +104,13 @@ public sealed partial class ArrayPool<T>
                     return;
                 }
 
-                _lastAccessTick = Environment.TickCount64;
                 ClearArrayIfNeeded(array, clearArray);
                 ArrayMarshal.GetUnsafeElementAt(_stack, count) = array;
                 _count++;
-                Log.Returned(array);
             }
+
+            Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
+            Log.Returned(array);
         }
 
         public void Clear()

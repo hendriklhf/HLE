@@ -38,11 +38,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     public bool IsConnected => _client.State is WebSocketState.Open;
 
     /// <summary>
-    /// Indicates whether the connection uses SSL or not.
-    /// </summary>
-    public bool UseSsl => _client.UseSsl;
-
-    /// <summary>
     /// The list of channels the client is connected to. Channels can be retrieved by the owner's username or user id in order to read the room state, e.g. if slow-mode is on.
     /// </summary>
     public ChannelList Channels { get; } = new();
@@ -300,21 +295,17 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowNotConnectedToChannelException(ReadOnlyMemory<char> channel)
         => throw new NotConnectedToChannelException(new string(channel.Span));
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowNotConnectedToChannelException(long channelId)
         => throw new NotConnectedToChannelException(channelId);
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowAnonymousClientException() => throw new AnonymousClientException();
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowClientNotConnectedException() => throw new ClientNotConnectedException();
 
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>

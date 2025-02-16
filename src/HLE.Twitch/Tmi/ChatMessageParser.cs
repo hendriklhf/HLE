@@ -78,7 +78,7 @@ public static class ChatMessageParser
         {
             int semicolonIndex = tags.IndexOf((byte)';');
             // semicolonIndex is -1 if no semicolon has been found, reinterpreting -1 as Index returns ^0
-            ReadOnlySpan<byte> tag = tags[..Unsafe.As<int, Index>(ref semicolonIndex)];
+            ReadOnlySpan<byte> tag = tags[..Unsafe.BitCast<int, Index>(semicolonIndex)];
             tags = semicolonIndex > 0 ? tags[(semicolonIndex + 1)..] : [];
 
             ReadOnlySpan<byte> key = tag[..equalsSignIndex];
@@ -157,7 +157,7 @@ public static class ChatMessageParser
         {
             int indexOfComma = value.IndexOf((byte)',');
             // indexOfComma is -1 if no comma has been found, reinterpreting -1 as Index returns ^0
-            ReadOnlySpan<byte> info = value[..Unsafe.As<int, Index>(ref indexOfComma)];
+            ReadOnlySpan<byte> info = value[..Unsafe.BitCast<int, Index>(indexOfComma)];
             value = indexOfComma < 0 ? [] : value[(indexOfComma + 1)..];
             int slashIndex = info.IndexOf((byte)'/');
             string name = StringPool.Shared.GetOrAdd(info[..slashIndex], Encoding.UTF8);
@@ -299,5 +299,6 @@ public static class ChatMessageParser
         return new((byte)red, (byte)green, (byte)blue);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsHexLetter(byte hexChar) => hexChar > '9';
 }

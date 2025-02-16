@@ -30,11 +30,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public string Username { get; }
 
     /// <summary>
-    /// Indicates whether the connection uses SSL or not.
-    /// </summary>
-    public bool UseSsl { get; }
-
-    /// <summary>
     /// Is invoked if the client connects to the server.
     /// </summary>
     public event AsyncEventHandler<WebSocketIrcClient>? OnConnected;
@@ -95,7 +90,6 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         Username = username;
         _usernameUtf8 = ImmutableCollectionsMarshal.AsImmutableArray(Encoding.UTF8.GetBytes(username));
         _oAuthToken = oAuthToken;
-        UseSsl = options.UseSsl;
         _isVerifiedBot = options.IsVerifiedBot;
         _connectionUri = options.UseSsl ? s_sslConnectionUri : s_nonSslConnectionUri;
     }
@@ -112,7 +106,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
-    private void StartListeningBackgroundTask() => StartListeningAsync().Ignore();
+    private void StartListeningBackgroundTask()
+        => Task.Factory.StartNew(StartListeningAsync, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default).Ignore();
 
     private async Task StartListeningAsync()
     {
@@ -236,7 +231,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     {
         await ConnectClientAsync();
         StartListeningBackgroundTask();
-        await EventInvoker.InvokeAsync(OnConnected, this);
+        EventInvoker.InvokeAsync(OnConnected, this).Ignore();
 
         using PooledBufferWriter<byte> messageBuilder = new(CapReqMessage.Length);
         if (_oAuthToken != OAuthToken.Empty)
@@ -264,7 +259,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
     public async Task DisconnectAsync()
     {
         await DisconnectClientAsync();
-        await EventInvoker.InvokeAsync(OnDisconnected, this);
+        EventInvoker.InvokeAsync(OnDisconnected, this).Ignore();
     }
 
     internal async Task ReconnectAsync(ReadOnlyMemory<ReadOnlyMemory<byte>> channels)
@@ -329,21 +324,21 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
 
         int maximumJoinsInPeriod = _isVerifiedBot ? 200 : 20;
-        TimeSpan period = TimeSpan.FromSeconds(10);
+        long period = double.ConvertToIntegerNative<long>(TimeSpan.FromSeconds(10).TotalMilliseconds);
 
         CancellationTokenSource cancellationTokenSource = _cancellationTokenSource;
         using PooledBufferWriter<byte> messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
 
-        DateTimeOffset start = DateTimeOffset.UtcNow;
+        long start = Environment.TickCount64;
         for (int i = 0; i < channels.Length; i++)
         {
             if (i != 0 && i % maximumJoinsInPeriod == 0)
             {
-                DateTimeOffset now = DateTimeOffset.UtcNow;
-                TimeSpan waitTime = period - (now - start);
-                if (waitTime.TotalMilliseconds > 0)
+                long now = Environment.TickCount64;
+                long waitTime = period - (now - start);
+                if (waitTime > 0)
                 {
-                    await Task.Delay(waitTime, cancellationTokenSource.Token);
+                    await Task.Delay((int)waitTime, cancellationTokenSource.Token);
                 }
 
                 start = now + waitTime;

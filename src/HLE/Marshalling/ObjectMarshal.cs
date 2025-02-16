@@ -114,27 +114,27 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ReadObject<T>(ref nuint methodTablePointer) where T : class
+    public static T ReadObject<T>(ref nuint methodTablePointer) where T : class?
         => ReadObject<nuint, T>(ref methodTablePointer);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ReadObject<T>(void* methodTablePointer) where T : class
+    public static T ReadObject<T>(void* methodTablePointer) where T : class?
         => ReadObject<T>((nuint)methodTablePointer);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ReadObject<T>(MethodTable** methodTablePointer) where T : class
+    public static T ReadObject<T>(MethodTable** methodTablePointer) where T : class?
         => ReadObject<T>((nuint)methodTablePointer);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ReadObject<T>(nuint methodTablePointer) where T : class
+    public static T ReadObject<T>(nuint methodTablePointer) where T : class?
         => ReadObject<T>(ref Unsafe.AsRef<nuint>((void*)methodTablePointer));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TObject ReadObject<TRef, TObject>(ref TRef methodTableReference) where TObject : class
+    public static TObject ReadObject<TRef, TObject>(ref TRef methodTableReference) where TObject : class?
     {
         Ref<TRef> reference = new(ref methodTableReference);
         return Unsafe.As<Ref<TRef>, TObject>(ref reference);

@@ -105,16 +105,9 @@ internal static unsafe class ObjectTree
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetSize), BindingFlags.Public | BindingFlags.Static)!;
 
-            Type[] types = ArrayPool<Type>.Shared.RentFor(type);
-            try
-            {
-                method = nonGenericMethod.MakeGenericMethod(types);
-                s_getSizeCache.TryAdd(type, method);
-            }
-            finally
-            {
-                ArrayPool<Type>.Shared.Return(types);
-            }
+            Type[] types = [type];
+            method = nonGenericMethod.MakeGenericMethod(types);
+            s_getSizeCache.TryAdd(type, method);
         }
 
         delegate*<ref byte, nuint> getSize = (delegate*<ref byte, nuint>)method.MethodHandle.GetFunctionPointer();
@@ -147,16 +140,9 @@ internal static unsafe class ObjectTree
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetArrayElementsSizeCore), BindingFlags.NonPublic | BindingFlags.Static)!;
 
-            Type[] types = ArrayPool<Type>.Shared.RentFor(elementType);
-            try
-            {
-                method = nonGenericMethod.MakeGenericMethod(types);
-                s_getArrayElementsSizeCache.TryAdd(elementType, method);
-            }
-            finally
-            {
-                ArrayPool<Type>.Shared.Return(types);
-            }
+            Type[] types = [elementType];
+            method = nonGenericMethod.MakeGenericMethod(types);
+            s_getArrayElementsSizeCache.TryAdd(elementType, method);
         }
 
         delegate*<Array, nuint> getArrayElementsSize = (delegate*<Array, nuint>)method.MethodHandle.GetFunctionPointer();
@@ -202,7 +188,8 @@ internal static unsafe class ObjectTree
     [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
     [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     [SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields")]
-    private static nuint GetInlineArrayElementsSize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(ref T array, int length)
+    private static nuint GetInlineArrayElementsSize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(ref T array,
+        int length)
     {
         Debug.Assert(typeof(T).IsValueType);
 
@@ -216,16 +203,9 @@ internal static unsafe class ObjectTree
         {
             MethodInfo nonGenericMethod = typeof(ObjectTree).GetMethod(nameof(GetInlineArrayElementsSizeCore), BindingFlags.Static | BindingFlags.NonPublic)!;
 
-            Type[] types = ArrayPool<Type>.Shared.RentFor(typeof(T), arrayElementType);
-            try
-            {
-                method = nonGenericMethod.MakeGenericMethod(types);
-                s_getInlineArrayElementsSizeCache.TryAdd(typeof(T), method);
-            }
-            finally
-            {
-                ArrayPool<Type>.Shared.Return(types);
-            }
+            Type[] types = [typeof(T), arrayElementType];
+            method = nonGenericMethod.MakeGenericMethod(types);
+            s_getInlineArrayElementsSizeCache.TryAdd(typeof(T), method);
         }
 
         delegate*<ref T, int, nuint> getInlineArrayElementsSize = (delegate*<ref T, int, nuint>)method.MethodHandle.GetFunctionPointer();

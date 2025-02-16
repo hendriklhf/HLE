@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using HLE.Marshalling;
+using HLE.Memory;
 using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
@@ -11,47 +13,48 @@ namespace HLE.Twitch.Tmi.Models;
 [DebuggerDisplay("{ToString()}")]
 public readonly partial struct OAuthToken : IEquatable<OAuthToken>
 {
-    private readonly string _token = string.Empty;
+    private readonly string _token;
 
     public static OAuthToken Empty => new();
 
     [GeneratedRegex("^(oauth:)?[a-z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
-    private static partial Regex GetTokenPattern();
+    private static partial Regex TokenPattern { get; }
 
     private const string TokenPrefix = "oauth:";
-    private const int TokenLength = 36;
+    private const int TokenLength = 30;
+    private const int TotalTokenLength = 36;
 
-    public OAuthToken()
-    {
-    }
+    public OAuthToken() => _token = string.Empty;
 
-    public OAuthToken(string token) : this(token.AsSpan())
-    {
-    }
+    public OAuthToken(string token)
+        => _token = CtorCore(token, true);
 
     [SkipLocalsInit]
     public OAuthToken(ReadOnlySpan<char> token)
+        => _token = CtorCore(token, false);
+
+    private static string CtorCore(ReadOnlySpan<char> token, [ConstantExpected] bool wasString)
     {
-        if (!GetTokenPattern().IsMatch(token))
+        if (!TokenPattern.IsMatch(token))
         {
             ThrowInvalidOAuthTokenFormat();
         }
 
-        using ValueStringBuilder builder = new(stackalloc char[TokenLength]);
-        if (!token.StartsWith(TokenPrefix))
+        if (token.Length == TotalTokenLength)
         {
-            builder.Append(TokenPrefix);
+            return wasString ? StringMarshal.AsString(token) : new(token);
         }
 
-        token.ToLowerInvariant(builder.FreeBufferSpan);
+        UnsafeBufferWriter<char> builder = new(stackalloc char[TotalTokenLength]);
+        builder.Write(TokenPrefix);
+        token.ToLowerInvariant(builder.GetSpan(TokenLength));
         builder.Advance(token.Length);
-        _token = StringPool.Shared.GetOrAdd(builder.WrittenSpan);
+        return StringPool.Shared.GetOrAdd(builder.WrittenSpan);
     }
 
     [DoesNotReturn]
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowInvalidOAuthTokenFormat()
-        => throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {GetTokenPattern()}");
+        => throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {TokenPattern}");
 
     [Pure]
     public ReadOnlySpan<char> AsSpan() => _token;

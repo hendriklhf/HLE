@@ -256,11 +256,6 @@ public ref struct ValueList<T> :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void AddRange(ref T items, int length)
     {
-        if (length == 0)
-        {
-            return;
-        }
-
         SpanHelpers.Memmove(ref GetDestination(length), ref items, length);
         _countAndIsDisposed.SetIntegerBoolOverwrite(Count + length);
     }

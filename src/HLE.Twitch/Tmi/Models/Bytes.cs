@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
 
@@ -35,29 +38,58 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
         SpanHelpers.Copy(data, _buffer);
     }
 
-    public static Bytes AsBytes(byte[] buffer, int length)
+    internal static Bytes AsBytes(byte[] buffer, int length)
     {
-        Debug.Assert(length >= buffer.Length);
+        Debug.Assert(buffer.Length >= length);
         return new(buffer, length);
     }
 
     public void Dispose()
     {
-        byte[]? buffer = _buffer;
+        byte[]? buffer = Interlocked.Exchange(ref _buffer, null);
         if (buffer is null)
         {
             return;
         }
 
-        _buffer = null;
         ArrayPool<byte>.Shared.Return(buffer);
     }
 
-    [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan() => _buffer.AsSpan(0, Length);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private readonly byte[] GetBuffer()
+    {
+        byte[]? buffer = _buffer;
+        if (buffer is null)
+        {
+            ThrowHelper.ThrowObjectDisposedException<Bytes>();
+        }
+
+        return buffer;
+    }
 
     [Pure]
-    public readonly ReadOnlyMemory<byte> AsMemory() => _buffer.AsMemory(0, Length);
+    public readonly ReadOnlySpan<byte> AsSpan() => GetBuffer().AsSpanUnsafe(0, Length);
+
+    [Pure]
+    public readonly ReadOnlySpan<byte> AsSpan(int start) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, start);
+
+    [Pure]
+    public readonly ReadOnlySpan<byte> AsSpan(int start, int length) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, start, length);
+
+    [Pure]
+    public readonly ReadOnlySpan<byte> AsSpan(Range range) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, range);
+
+    [Pure]
+    public readonly ReadOnlyMemory<byte> AsMemory() => GetBuffer().AsMemory(0, Length);
+
+    [Pure]
+    public readonly ReadOnlyMemory<byte> AsMemory(int start) => AsMemory()[start..];
+
+    [Pure]
+    public readonly ReadOnlyMemory<byte> AsMemory(int start, int length) => AsMemory().Slice(start, length);
+
+    [Pure]
+    public readonly ReadOnlyMemory<byte> AsMemory(Range range) => AsMemory()[range];
 
     [Pure]
     public readonly byte[] ToArray()
@@ -93,10 +125,6 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
 
     [Pure]
     public readonly List<byte> ToList(Range range) => AsSpan().ToList(range);
-
-    readonly ReadOnlySpan<byte> IReadOnlySpanProvider<byte>.GetReadOnlySpan() => AsSpan();
-
-    readonly ReadOnlyMemory<byte> IReadOnlyMemoryProvider<byte>.GetReadOnlyMemory() => AsMemory();
 
     public override readonly string ToString() => Length == 0 ? string.Empty : Encoding.UTF8.GetString(AsSpan());
 

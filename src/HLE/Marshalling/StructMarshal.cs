@@ -90,7 +90,7 @@ public static unsafe class StructMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte AsByte(this bool b) => Unsafe.As<bool, byte>(ref b);
+    public static byte AsByte(this bool b) => Unsafe.BitCast<bool, byte>(b);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

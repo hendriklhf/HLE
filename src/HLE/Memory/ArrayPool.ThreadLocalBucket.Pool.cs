@@ -15,6 +15,7 @@ public sealed partial class ArrayPool<T>
         [SuppressMessage("Style", "IDE0044:Add readonly modifier")]
         [SuppressMessage("Roslynator", "RCS1169:Make field read-only")]
         [SuppressMessage("Roslynator", "RCS1213:Remove unused member declaration")]
+        [SuppressMessage("ReSharper", "CollectionNeverQueried.Local")]
         private struct Pool
         {
             private T[]? _pool;

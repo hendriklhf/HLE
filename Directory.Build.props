@@ -7,7 +7,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
     <NoWarn>$(NoWarn);CS8500;IDE0079</NoWarn>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
