@@ -90,7 +90,7 @@ public sealed unsafe partial class ObjectMarshalTest
     public void ReadObject_TObject_TRef_Test()
     {
         const string Hello = "hello";
-        string str = ObjectMarshal.ReadObject<string, nuint>(ref ObjectMarshal.GetMethodTableReference(Hello));
+        string str = ObjectMarshal.ReadObject<nuint, string>(ref ObjectMarshal.GetMethodTableReference(Hello));
         Assert.Same(Hello, str);
     }
 
@@ -195,7 +195,7 @@ public sealed unsafe partial class ObjectMarshalTest
     [Fact]
     public void BoxOnStack_Int()
     {
-        int value = 16;
+        int value = 89435784;
         object o = ObjectMarshal.BoxOnStack(ref value, out _);
         Assert.True(o is int);
         Assert.Equal(typeof(int), o.GetType());
@@ -212,6 +212,7 @@ public sealed unsafe partial class ObjectMarshalTest
         Assert.True(o is Memory<int>);
         Assert.Equal(typeof(Memory<int>), o.GetType());
         Assert.Equal(mem, (Memory<int>)o);
+        Assert.True(mem.Span.SequenceEqual(((Memory<int>)o).Span));
     }
 
     [Fact]

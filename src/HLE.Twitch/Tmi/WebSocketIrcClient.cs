@@ -106,8 +106,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
         }
     }
 
-    private void StartListeningBackgroundTask()
-        => Task.Factory.StartNew(StartListeningAsync, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default).Ignore();
+    private void StartListeningBackgroundTask() => StartListeningAsync().Ignore();
 
     private async Task StartListeningAsync()
     {

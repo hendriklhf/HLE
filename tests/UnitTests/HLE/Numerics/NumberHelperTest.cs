@@ -106,15 +106,8 @@ public sealed class NumberHelperTest
             .GetMethod(nameof(BringIntoRangeTestCore), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(min.GetType());
 
-        object?[] parameters = ArrayPool<object?>.Shared.RentFor(min, max);
-        try
-        {
-            bringIntoRangeCore.Invoke(null, parameters);
-        }
-        finally
-        {
-            ArrayPool<object?>.Shared.Return(parameters);
-        }
+        object[] parameters = [min, max];
+        bringIntoRangeCore.Invoke(null, parameters);
     }
 
     private static void BringIntoRangeTestCore<T>(T min, T max) where T : INumber<T>, IMinMaxValue<T>

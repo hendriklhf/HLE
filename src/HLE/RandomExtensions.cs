@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
@@ -393,27 +391,6 @@ public static class RandomExtensions
             byteCount -= int.MaxValue;
         }
         while (byteCount > int.MaxValue);
-    }
-
-    [Pure]
-    public static T[] Shuffle<T>(this Random random, IEnumerable<T> enumerable)
-    {
-        T[] items;
-        if (CollectionHelpers.TryGetNonEnumeratedCount(enumerable, out int count))
-        {
-            items = GC.AllocateUninitializedArray<T>(count);
-            if (!enumerable.TryNonEnumeratedCopyTo(items, 0, out _))
-            {
-                enumerable.TryEnumerateInto(items, out _);
-            }
-        }
-        else
-        {
-            items = enumerable.ToArray();
-        }
-
-        random.Shuffle(items);
-        return items;
     }
 
     public static void Shuffle<T>(this Random random, List<T> list)
