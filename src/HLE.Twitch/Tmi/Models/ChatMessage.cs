@@ -12,15 +12,7 @@ using HLE.Text;
 
 namespace HLE.Twitch.Tmi.Models;
 
-/// <summary>
-/// The default constructor of <see cref="ChatMessage"/>.
-/// </summary>
-/// <param name="badgeInfos">The badge info buffer.</param>
-/// <param name="badgeInfoCount">The amount of written elements in the badge info buffer.</param>
-/// <param name="badges">The badge buffer.</param>
-/// <param name="badgeCount">The amount of written elements in the badge buffer.</param>
-/// <param name="flags">The chat message flags.</param>
-public sealed class ChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags) :
+public sealed class ChatMessage :
     IDisposable,
     ISpanFormattable,
     IEquatable<ChatMessage>
@@ -81,13 +73,22 @@ public sealed class ChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] 
 
     public required LazyString Message { get; init; }
 
-    private readonly ChatMessageFlags _flags = flags;
+    private readonly ChatMessageFlags _flags;
 
-    private Badge[]? _badgeInfos = badgeInfos;
-    private readonly int _badgeInfoCount = badgeInfoCount;
+    private Badge[]? _badgeInfos;
+    private readonly int _badgeInfoCount;
 
-    private Badge[]? _badges = badges;
-    private readonly int _badgeCount = badgeCount;
+    private Badge[]? _badges;
+    private readonly int _badgeCount;
+
+    internal ChatMessage(Badge[] badgeInfos, int badgeInfoCount, Badge[] badges, int badgeCount, ChatMessageFlags flags)
+    {
+        _flags = flags;
+        _badgeInfos = badgeInfos;
+        _badgeInfoCount = badgeInfoCount;
+        _badges = badges;
+        _badgeCount = badgeCount;
+    }
 
     public void Dispose()
     {

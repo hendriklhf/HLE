@@ -15,11 +15,18 @@ internal static class Program
 /*
 ManualConfig config = new()
 {
-    SummaryStyle = new(null, true, SizeUnit.B, TimeUnit.GetBestTimeUnit())
+    SummaryStyle = new(null, true, SizeUnit.GetBestSizeUnit(), TimeUnit.GetBestTimeUnit())
 };
+
+Job net9Job = Job.Default.With(CsProjCoreToolchain.NetCoreApp90);
+NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.1.25080.5", ".NET 10");
+IToolchain net10ToolChain = CsProjCoreToolchain.From(net10Settings);
+Job net10Job = Job.Default.With(net10ToolChain);
+config.AddJob(net9Job, net10Job);
+
 config.AddLogger(ConsoleLogger.Default);
 config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, BaselineRatioColumn.RatioMean, StatisticColumn.StdDev);
-config.AddColumnProvider(DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
+config.AddColumnProvider(DefaultColumnProviders.Job, DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
 BenchmarkRunner.Run<Bench>(config);
 */
 

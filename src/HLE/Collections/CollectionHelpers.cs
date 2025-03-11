@@ -286,7 +286,7 @@ public static partial class CollectionHelpers
 
         switch (enumerable)
         {
-            case IList<T> list: // TODO: IList<T> might implement IReadOnlyList<T> in .NET 9 so this can be deleted maybe
+            case IList<T> list:
                 element = list[index];
                 return true;
             case IReadOnlyList<T> readOnlyList:

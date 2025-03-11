@@ -60,7 +60,7 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
 
             channel = new(formattedName);
             channels.Add(channel);
-            _utf8NamesCache = null;
+            InvalidateUtf8NamesCache();
             return channel;
         }
     }
@@ -83,7 +83,8 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
             }
 
             channels.Remove(channel);
-            _utf8NamesCache = null;
+            InvalidateUtf8NamesCache();
+
             return channel;
         }
     }
@@ -95,7 +96,7 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
             _channels.Clear();
         }
 
-        _utf8NamesCache = null;
+        InvalidateUtf8NamesCache();
     }
 
     private bool TryGet(ReadOnlySpan<IrcChannel> channels, string name, [MaybeNullWhen(false)] out IrcChannel channel)
@@ -116,6 +117,14 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
 
         channel = null;
         return false;
+    }
+
+    private void InvalidateUtf8NamesCache()
+    {
+        lock (_utf8NamesLock)
+        {
+            _utf8NamesCache = null;
+        }
     }
 
     public bool Equals([NotNullWhen(true)] IrcChannelList? other) => ReferenceEquals(this, other);

@@ -81,7 +81,7 @@ public sealed class PooledList<T> :
         Count = items.Length;
     }
 
-    public PooledList(ReadOnlySpan<T> items, int capacity) : this()
+    public PooledList(ReadOnlySpan<T> items, int capacity)
     {
         if (items.Length == 0)
         {
