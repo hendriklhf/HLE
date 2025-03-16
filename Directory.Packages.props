@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <MicrosoftExtensionsVersion>9.0.2</MicrosoftExtensionsVersion>
+    <DotNetSystemPackagesVersion>9.0.3</DotNetSystemPackagesVersion>
     <RoslynatorVersion>4.13.1</RoslynatorVersion>
   </PropertyGroup>
 
@@ -15,8 +15,8 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.13.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0"/>
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)"/>
-    <PackageVersion Include="System.IO.Hashing" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(DotNetSystemPackagesVersion)"/>
+    <PackageVersion Include="System.IO.Hashing" Version="$(DotNetSystemPackagesVersion)"/>
   </ItemGroup>
 
   <!-- Default Analyzers -->

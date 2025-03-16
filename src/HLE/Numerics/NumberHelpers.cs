@@ -90,6 +90,9 @@ public static class NumberHelpers
     /// <summary>
     /// Brings a number into a range between two numbers.
     /// </summary>
+    /// <remarks>
+    /// Works best when <paramref name="min"/> and <paramref name="max"/> are constant values.
+    /// </remarks>
     /// <param name="number">The number that will be brought into the range.</param>
     /// <param name="min">The lower bound of the range.</param>
     /// <param name="max">The upper bound of the range.</param>
@@ -98,7 +101,7 @@ public static class NumberHelpers
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="min"/> is greater than <paramref name="max"/>.</exception>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T BringIntoRange<T>(T number, T min, T max) where T : INumber<T>, IMinMaxValue<T>
+    public static T ClampMod<T>(T number, T min, T max) where T : IBinaryInteger<T>, IMinMaxValue<T>
     {
         ThrowIfNumberTypeNotSupported<T>();
 
@@ -109,17 +112,23 @@ public static class NumberHelpers
             return min;
         }
 
-        if (min >= T.Zero && max == T.Zero)
+        if (min == T.Zero)
         {
-            return T.Zero;
-        }
+            if (max == T.Zero)
+            {
+                return T.Zero;
+            }
 
-        if (min == T.Zero && number >= T.Zero)
-        {
-            return number % max;
-        }
+            if (number >= T.Zero)
+            {
+                if (PopCount(max) == 1)
+                {
+                    return number & (max - T.One);
+                }
 
-        // TODO: can be special cased for min and max both having popcnt == 1 (or <= 1)
+                return number % max;
+            }
+        }
 
         if (typeof(T) == typeof(sbyte))
         {
@@ -168,6 +177,40 @@ public static class NumberHelpers
 
         T range = max - min;
         return T.CreateTruncating((number % range) + min);
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe int PopCount<T>(T value)
+    {
+        if (typeof(T) == typeof(byte) || typeof(T) == typeof(sbyte))
+        {
+            return BitOperations.PopCount(Unsafe.BitCast<T, byte>(value));
+        }
+
+        if (typeof(T) == typeof(ushort) || typeof(T) == typeof(short))
+        {
+            return BitOperations.PopCount(Unsafe.BitCast<T, ushort>(value));
+        }
+
+        if (typeof(T) == typeof(uint) || typeof(T) == typeof(int))
+        {
+            return BitOperations.PopCount(Unsafe.BitCast<T, uint>(value));
+        }
+
+        if (typeof(T) == typeof(ulong) || typeof(T) == typeof(long))
+        {
+            return BitOperations.PopCount(Unsafe.BitCast<T, ulong>(value));
+        }
+
+        if (typeof(T) == typeof(UInt128) || typeof(T) == typeof(Int128))
+        {
+            ulong* v = (ulong*)&value;
+            return BitOperations.PopCount(v[0]) + BitOperations.PopCount(v[1]);
+        }
+
+        ThrowHelper.ThrowUnreachableException();
+        return 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

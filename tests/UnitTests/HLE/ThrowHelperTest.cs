@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Threading.Tasks;
+using System.Threading;
 using HLE.Collections;
 using Xunit;
 
@@ -36,8 +36,8 @@ public sealed class ThrowHelperTest
         => Assert.Throws<NotSupportedException>(ThrowHelper.ThrowCalledCollectionBuilderConstructor<PooledListBuilder>);
 
     [Fact]
-    public void ThrowTaskCancelledExceptionTest()
-        => Assert.Throws<TaskCanceledException>(ThrowHelper.ThrowTaskCancelledException);
+    public void ThrowOperationCanceledExceptionTest()
+        => Assert.Throws<OperationCanceledException>(static () => ThrowHelper.ThrowOperationCanceledException(CancellationToken.None));
 
     [Fact]
     public void ThrowOperatingSystemNotSupportedTest()

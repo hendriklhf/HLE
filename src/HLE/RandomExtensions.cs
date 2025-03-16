@@ -21,7 +21,7 @@ public static class RandomExtensions
     public static char NextChar(this Random random, char min, char max)
     {
         char result = random.NextChar();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -31,7 +31,7 @@ public static class RandomExtensions
     public static byte NextUInt8(this Random random, byte min, byte max)
     {
         byte result = random.NextUInt8();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -41,7 +41,7 @@ public static class RandomExtensions
     public static sbyte NextInt8(this Random random, sbyte min, sbyte max)
     {
         sbyte result = random.NextInt8();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -51,7 +51,7 @@ public static class RandomExtensions
     public static short NextInt16(this Random random, short min, short max)
     {
         short result = random.NextInt16();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -61,7 +61,7 @@ public static class RandomExtensions
     public static ushort NextUInt16(this Random random, ushort min, ushort max)
     {
         ushort result = random.NextUInt16();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -71,7 +71,7 @@ public static class RandomExtensions
     public static int NextInt32(this Random random, int min, int max)
     {
         int result = random.NextInt32();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -81,7 +81,7 @@ public static class RandomExtensions
     public static uint NextUInt32(this Random random, uint min, uint max)
     {
         uint result = random.NextUInt32();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -91,7 +91,7 @@ public static class RandomExtensions
     public static ulong NextUInt64(this Random random, ulong min, ulong max)
     {
         ulong result = random.NextUInt64();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -113,7 +113,7 @@ public static class RandomExtensions
         Unsafe.SkipInit(out Int128 result);
 #pragma warning restore IDE0059
         random.NextStruct(out result);
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -131,7 +131,7 @@ public static class RandomExtensions
     public static UInt128 NextUInt128(this Random random, UInt128 min, UInt128 max)
     {
         random.NextStruct(out UInt128 result);
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -203,7 +203,7 @@ public static class RandomExtensions
             for (int i = 0; i < length; i++)
             {
                 ref char c = ref Unsafe.Add(ref charsReference, i);
-                c = NumberHelpers.BringIntoRange(c, '\0', max);
+                c = NumberHelpers.ClampMod(c, '\0', max);
             }
         }
 
@@ -249,7 +249,7 @@ public static class RandomExtensions
         for (int i = 0; i < length; i++)
         {
             ref char c = ref Unsafe.Add(ref charsReference, i);
-            c = NumberHelpers.BringIntoRange(c, min, max);
+            c = NumberHelpers.ClampMod(c, min, max);
         }
 
         return result;

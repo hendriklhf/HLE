@@ -1,10 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Library</OutputType>
     <IsNugetPackage>true</IsNugetPackage>
-    <IsAotCompatible>true</IsAotCompatible>
-    <EnableAotAnalyzers>true</EnableAotAnalyzers>
-    <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
   </PropertyGroup>
 
   <ItemGroup>

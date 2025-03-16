@@ -22,7 +22,7 @@ public static class RandomNumberGeneratorExtensions
     public static char GetChar(this RandomNumberGenerator random, char min, char max)
     {
         char result = random.GetChar();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -32,7 +32,7 @@ public static class RandomNumberGeneratorExtensions
     public static byte GetUInt8(this RandomNumberGenerator random, byte min, byte max)
     {
         byte result = random.GetUInt8();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -42,7 +42,7 @@ public static class RandomNumberGeneratorExtensions
     public static sbyte GetInt8(this RandomNumberGenerator random, sbyte min, sbyte max)
     {
         sbyte result = random.GetInt8();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -52,7 +52,7 @@ public static class RandomNumberGeneratorExtensions
     public static short GetInt16(this RandomNumberGenerator random, short min, short max)
     {
         short result = random.GetInt16();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -62,7 +62,7 @@ public static class RandomNumberGeneratorExtensions
     public static ushort GetUInt16(this RandomNumberGenerator random, ushort min, ushort max)
     {
         ushort result = random.GetUInt16();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -72,7 +72,7 @@ public static class RandomNumberGeneratorExtensions
     public static int GetInt32(this RandomNumberGenerator random, int min, int max)
     {
         int result = random.GetInt32();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -82,7 +82,7 @@ public static class RandomNumberGeneratorExtensions
     public static uint GetUInt32(this RandomNumberGenerator random, uint min, uint max)
     {
         uint result = random.GetUInt32();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -92,7 +92,7 @@ public static class RandomNumberGeneratorExtensions
     public static ulong GetUInt64(this RandomNumberGenerator random, ulong min, ulong max)
     {
         ulong result = random.GetUInt64();
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -114,7 +114,7 @@ public static class RandomNumberGeneratorExtensions
         Unsafe.SkipInit(out Int128 result);
 #pragma warning restore IDE0059
         random.GetStruct(out result);
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -132,7 +132,7 @@ public static class RandomNumberGeneratorExtensions
     public static UInt128 GetUInt128(this RandomNumberGenerator random, UInt128 min, UInt128 max)
     {
         random.GetStruct(out UInt128 result);
-        return NumberHelpers.BringIntoRange(result, min, max);
+        return NumberHelpers.ClampMod(result, min, max);
     }
 
     [Pure]
@@ -204,7 +204,7 @@ public static class RandomNumberGeneratorExtensions
             for (int i = 0; i < length; i++)
             {
                 ref char c = ref Unsafe.Add(ref charsReference, i);
-                c = NumberHelpers.BringIntoRange(c, '\0', max);
+                c = NumberHelpers.ClampMod(c, '\0', max);
             }
         }
 
@@ -250,7 +250,7 @@ public static class RandomNumberGeneratorExtensions
         for (int i = 0; i < length; i++)
         {
             ref char c = ref Unsafe.Add(ref charsReference, i);
-            c = NumberHelpers.BringIntoRange(c, min, max);
+            c = NumberHelpers.ClampMod(c, min, max);
         }
 
         return result;

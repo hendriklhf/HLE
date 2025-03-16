@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace HLE;
 
@@ -35,7 +35,7 @@ internal static class ThrowHelper
         => throw new NotSupportedException($"{typeof(TCollectionBuilder)} should not be instantiated. It only has static method that are used by the compiler for building collections.");
 
     [DoesNotReturn]
-    public static void ThrowTaskCancelledException() => throw new TaskCanceledException();
+    public static void ThrowOperationCanceledException(CancellationToken token) => throw new OperationCanceledException(token);
 
     [DoesNotReturn]
     public static void ThrowOperatingSystemNotSupported()

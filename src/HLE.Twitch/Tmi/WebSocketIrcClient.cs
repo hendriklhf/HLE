@@ -345,7 +345,7 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IDispos
 
             if (cancellationTokenSource.IsCancellationRequested)
             {
-                ThrowHelper.ThrowTaskCancelledException();
+                ThrowHelper.ThrowOperationCanceledException(cancellationTokenSource.Token);
             }
 
             messageBuilder.Write(JoinPrefix);

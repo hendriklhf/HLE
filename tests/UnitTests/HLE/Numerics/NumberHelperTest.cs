@@ -110,13 +110,13 @@ public sealed class NumberHelperTest
         bringIntoRangeCore.Invoke(null, parameters);
     }
 
-    private static void BringIntoRangeTestCore<T>(T min, T max) where T : INumber<T>, IMinMaxValue<T>
+    private static void BringIntoRangeTestCore<T>(T min, T max) where T : IBinaryInteger<T>, IMinMaxValue<T>
     {
         T start = T.Max(T.CreateSaturating(-100_000), T.MinValue);
         T end = T.Min(T.CreateSaturating(100_000), T.MaxValue);
         for (T i = start; i < end; i++)
         {
-            T value = NumberHelpers.BringIntoRange(i, min, max);
+            T value = NumberHelpers.ClampMod(i, min, max);
             if (min == max)
             {
                 Assert.Equal(value, min);

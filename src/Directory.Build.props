@@ -1,0 +1,11 @@
+<Project>
+
+  <Import Project="..\Directory.Build.props"/>
+
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableAotAnalyzers>true</EnableAotAnalyzers>
+    <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
+  </PropertyGroup>
+
+</Project>

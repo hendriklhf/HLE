@@ -2,10 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <IsAotCompatible>true</IsAotCompatible>
-    <EnableAotAnalyzers>true</EnableAotAnalyzers>
     <IsNugetPackage>true</IsNugetPackage>
-    <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -14,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="..\..\generators\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
   </ItemGroup>
 
 </Project>

@@ -16,6 +16,8 @@ internal static unsafe class ObjectTree
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getArrayElementsSizeCache = new();
     private static readonly ConcurrentDictionary<Type, MethodInfo> s_getSizeCache = new();
 
+    // TODO: needs cyclic reference check
+
     [Pure]
     [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
     [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
