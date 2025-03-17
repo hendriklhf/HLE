@@ -58,9 +58,11 @@ public static class StringHelpers
         int resultLength;
         if (!MemoryHelpers.UseStackalloc<char>(str.Length))
         {
-            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(str.Length);
+            char[] rentedBuffer = Memory.ArrayPool<char>.Shared.Rent(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
-            return new(rentedBuffer[..resultLength]);
+            string result = new(rentedBuffer.AsSpanUnsafe(..resultLength));
+            Memory.ArrayPool<char>.Shared.Return(rentedBuffer);
+            return result;
         }
 
         Span<char> buffer = stackalloc char[str.Length];
@@ -147,9 +149,11 @@ public static class StringHelpers
         int length;
         if (!MemoryHelpers.UseStackalloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = Memory.ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
+            int[] indicesBuffer = Memory.ArrayPool<int>.Shared.Rent(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
-            return indicesBuffer.ToArray(..length);
+            int[] result = indicesBuffer[..length];
+            Memory.ArrayPool<int>.Shared.Return(indicesBuffer);
+            return result;
         }
 
         Span<int> indices = stackalloc int[span.Length];
@@ -211,9 +215,11 @@ public static class StringHelpers
         int maximumResultLength = input.Length << 1;
         if (!MemoryHelpers.UseStackalloc<char>(maximumResultLength))
         {
-            using RentedArray<char> rentedBuffer = Memory.ArrayPool<char>.Shared.RentAsRentedArray(maximumResultLength);
+            char[] rentedBuffer = Memory.ArrayPool<char>.Shared.Rent(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
-            return inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer[..resultLength]);
+            string result = inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer.AsSpanUnsafe(..resultLength));
+            Memory.ArrayPool<char>.Shared.Return(rentedBuffer);
+            return result;
         }
 
         Span<char> buffer = stackalloc char[maximumResultLength];

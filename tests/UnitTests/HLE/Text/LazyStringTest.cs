@@ -11,7 +11,7 @@ namespace HLE.UnitTests.Text;
 
 public sealed partial class LazyStringTest
 {
-    private const string TestString = StringConstants.HexadecimalsUpperCase;
+    private const string TestString = StringConstants.AlphaNumerics;
 
     public static TheoryData<Parameter> Parameters { get; } =
     [

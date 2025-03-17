@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Marshalling;
@@ -67,9 +68,10 @@ public static unsafe class StringMarshal
 
         if (!MemoryHelpers.UseStackalloc<char>(span.Length))
         {
-            using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
+            char[] rentedCopyBuffer = ArrayPool<char>.Shared.Rent(span.Length);
             SpanHelpers.Copy(span, rentedCopyBuffer.AsSpan());
-            rentedCopyBuffer[..span.Length].ToLowerInvariant(span);
+            rentedCopyBuffer.AsSpanUnsafe(..span.Length).ToLowerInvariant(span);
+            ArrayPool<char>.Shared.Return(rentedCopyBuffer);
             return;
         }
 
@@ -93,9 +95,10 @@ public static unsafe class StringMarshal
 
         if (!MemoryHelpers.UseStackalloc<char>(span.Length))
         {
-            using RentedArray<char> rentedCopyBuffer = ArrayPool<char>.Shared.RentAsRentedArray(span.Length);
+            char[] rentedCopyBuffer = ArrayPool<char>.Shared.Rent(span.Length);
             SpanHelpers.Copy(span, rentedCopyBuffer.AsSpan());
-            rentedCopyBuffer[..span.Length].ToUpperInvariant(span);
+            rentedCopyBuffer.AsSpanUnsafe(..span.Length).ToUpperInvariant(span);
+            ArrayPool<char>.Shared.Return(rentedCopyBuffer);
             return;
         }
 

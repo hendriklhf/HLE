@@ -415,33 +415,4 @@ public static partial class CollectionHelpers
         writer.Write(enumerable);
         return writer;
     }
-
-    [Pure]
-    public static RentedArray<T> ToRentedArray<T>(this IEnumerable<T> enumerable)
-    {
-        T[] array;
-        if (enumerable.TryGetReadOnlySpan(out ReadOnlySpan<T> span))
-        {
-            array = ArrayPool<T>.Shared.RentExact(span.Length);
-            SpanHelpers.Copy(span, array);
-            return new(array, ArrayPool<T>.Shared);
-        }
-
-        switch (enumerable)
-        {
-            case ICopyable<T> copyable:
-                array = ArrayPool<T>.Shared.RentExact(copyable.Count);
-                copyable.CopyTo(array);
-                return new(array, ArrayPool<T>.Shared);
-            case ICollection<T> collection:
-                array = ArrayPool<T>.Shared.RentExact(collection.Count);
-                collection.CopyTo(array, 0);
-                return new(array, ArrayPool<T>.Shared);
-        }
-
-        using PooledList<T> list = enumerable.ToPooledList();
-        array = ArrayPool<T>.Shared.RentExact(list.Count);
-        SpanHelpers.Copy(list.AsSpan(), array);
-        return new(array, ArrayPool<T>.Shared);
-    }
 }

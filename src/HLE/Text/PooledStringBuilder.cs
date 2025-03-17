@@ -135,6 +135,63 @@ public sealed partial class PooledStringBuilder :
         // handler contains all the logic
     }
 
+    public void Append(IEnumerable<char> chars)
+    {
+        if (chars.TryGetNonEnumeratedCount(out int elementCount))
+        {
+            if (elementCount == 0)
+            {
+                return;
+            }
+
+            ref char destination = ref GetDestination(elementCount);
+
+            if (chars.TryGetReadOnlySpan(out ReadOnlySpan<char> span))
+            {
+                SpanHelpers.Memmove(ref destination, ref MemoryMarshal.GetReference(span), span.Length);
+                Length += span.Length;
+                return;
+            }
+
+            switch (chars)
+            {
+                case ICollection<char> collection:
+                    char[] buffer = GetBuffer();
+                    Debug.Assert(buffer.Length >= Length + collection.Count);
+                    collection.CopyTo(buffer, Length);
+                    Length += collection.Count;
+                    return;
+                case ICopyable<char> copyable:
+                    copyable.CopyTo(ref destination);
+                    Length += copyable.Count;
+                    return;
+                case IIndexable<char> indexable:
+                    for (int i = 0; i < indexable.Count; i++)
+                    {
+                        destination = indexable[i];
+                        destination = ref Unsafe.Add(ref destination, 1);
+                    }
+
+                    Length += indexable.Count;
+                    return;
+            }
+
+            foreach (char c in chars)
+            {
+                destination = c;
+                destination = ref Unsafe.Add(ref destination, 1);
+            }
+
+            Length += elementCount;
+            return;
+        }
+
+        foreach (char c in chars)
+        {
+            Append(c);
+        }
+    }
+
     public void Append(List<char> chars) => Append(ref ListMarshal.GetReference(chars), chars.Count);
 
     public void Append(char[] chars) => Append(ref MemoryMarshal.GetArrayDataReference(chars), chars.Length);
@@ -168,6 +225,19 @@ public sealed partial class PooledStringBuilder :
 
         MemoryMarshal.CreateSpan(ref GetDestination(count), count).Fill(c);
         Length += count;
+    }
+
+    public void Append(IEnumerable<string> strings)
+    {
+        if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string> span))
+        {
+            Append(span);
+            return;
+        }
+
+        using ValueList<string> list = [];
+        list.AddRange(strings);
+        Append(list.AsSpan());
     }
 
     public void Append(List<string> strings) => Append(ref ListMarshal.GetReference(strings), strings.Count);

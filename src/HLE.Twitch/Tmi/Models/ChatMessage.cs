@@ -95,12 +95,22 @@ public sealed class ChatMessage :
         Badge[]? badgeInfos = Interlocked.Exchange(ref _badgeInfos, null);
         if (badgeInfos is not null)
         {
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<Badge>())
+            {
+                SpanHelpers.Clear(badgeInfos, _badgeInfoCount);
+            }
+
             ArrayPool<Badge>.Shared.Return(badgeInfos);
         }
 
         Badge[]? badges = Interlocked.Exchange(ref _badges, null);
         if (badges is not null)
         {
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<Badge>())
+            {
+                SpanHelpers.Clear(badges, _badgeCount);
+            }
+
             ArrayPool<Badge>.Shared.Return(badges);
         }
 

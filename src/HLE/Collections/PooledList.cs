@@ -103,6 +103,11 @@ public sealed class PooledList<T> :
             return;
         }
 
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            SpanHelpers.Clear(buffer, Count);
+        }
+
         ArrayPool<T>.Shared.Return(buffer);
     }
 
@@ -228,6 +233,11 @@ public sealed class PooledList<T> :
         if (count != 0)
         {
             SpanHelpers.Copy(oldBuffer.AsSpan(..count), newBuffer);
+
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                SpanHelpers.Clear(oldBuffer, count);
+            }
         }
 
         ArrayPool<T>.Shared.Return(oldBuffer);
@@ -243,21 +253,22 @@ public sealed class PooledList<T> :
 
     public void AddRange(IEnumerable<T> items)
     {
-        if (items.TryGetNonEnumeratedCount(out int itemsCount))
+        if (items.TryGetNonEnumeratedCount(out int elementCount))
         {
-            if (itemsCount == 0)
+            if (elementCount == 0)
             {
                 return;
             }
 
-            GrowIfNeeded(itemsCount);
+            GrowIfNeeded(elementCount);
+
             AssertBufferNotNull();
             T[] buffer = _buffer;
 
             int count = Count;
             if (items.TryNonEnumeratedCopyTo(buffer, count, out _))
             {
-                Count = count + itemsCount;
+                Count = count + elementCount;
                 return;
             }
 
@@ -332,6 +343,13 @@ public sealed class PooledList<T> :
         ref T destination = ref MemoryMarshal.GetArrayDataReference(newBuffer);
         SpanHelpers.Memmove(ref destination, ref source, count);
         _buffer = newBuffer;
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            SpanHelpers.Clear(oldBuffer, count);
+        }
+
+        ArrayPool<T>.Shared.Return(oldBuffer);
     }
 
     public void Clear()

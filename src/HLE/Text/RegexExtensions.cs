@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Text;
@@ -13,17 +14,21 @@ public static class RegexExtensions
     [Pure]
     public static bool IsMatch(this Regex regex, ReadOnlySpan<byte> bytes, Encoding encoding)
     {
-        using RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(encoding.GetMaxCharCount(bytes.Length));
+        char[] chars = ArrayPool<char>.Shared.Rent(encoding.GetMaxCharCount(bytes.Length));
         int charCount = encoding.GetChars(bytes, chars.AsSpan());
-        return regex.IsMatch(chars[..charCount]);
+        bool result = regex.IsMatch(chars.AsSpanUnsafe(..charCount));
+        ArrayPool<char>.Shared.Return(chars);
+        return result;
     }
 
     [Pure]
     public static int Count(this Regex regex, ReadOnlySpan<byte> bytes, Encoding encoding)
     {
-        using RentedArray<char> chars = ArrayPool<char>.Shared.RentAsRentedArray(encoding.GetMaxCharCount(bytes.Length));
+        char[] chars = ArrayPool<char>.Shared.Rent(encoding.GetMaxCharCount(bytes.Length));
         int charCount = encoding.GetChars(bytes, chars.AsSpan());
-        return regex.Count(chars[..charCount]);
+        int result = regex.Count(chars.AsSpanUnsafe(..charCount));
+        ArrayPool<char>.Shared.Return(chars);
+        return result;
     }
 
     public static async Task<int> CountAsync(this Regex regex, Stream stream, Encoding encoding)
@@ -46,15 +51,17 @@ public static class RegexExtensions
         }
 
         int streamLength = (int)stream.Length;
-        using RentedArray<byte> buffer = ArrayPool<byte>.Shared.RentAsRentedArray(4096);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(4096);
         PooledBufferWriter<char> charsWriter = new(streamLength);
         while (stream.Position != stream.Length)
         {
             int bytesRead = await stream.ReadAsync(buffer.AsMemory());
             Span<char> charsBuffer = charsWriter.GetSpan(encoding.GetMaxCharCount(bytesRead));
-            int charCount = encoding.GetChars(buffer[..bytesRead], charsBuffer);
+            int charCount = encoding.GetChars(buffer.AsSpanUnsafe(..bytesRead), charsBuffer);
             charsWriter.Advance(charCount);
         }
+
+        ArrayPool<byte>.Shared.Return(buffer);
 
         return charsWriter;
     }

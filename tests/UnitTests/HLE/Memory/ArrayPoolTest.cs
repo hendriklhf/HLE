@@ -100,21 +100,6 @@ public sealed class ArrayPoolTest
         }
     }
 
-    [Theory]
-    [InlineData(ArrayPool.MinimumArrayLength)]
-    [InlineData(128)]
-    [InlineData(256)]
-    [InlineData(2048)]
-    [InlineData(4096)]
-    public void RentAsRentedArrayTest(int minimumLength)
-    {
-        using ArrayPool<int> pool = new();
-
-        using RentedArray<int> rentedArray = pool.RentAsRentedArray(minimumLength);
-        Assert.True(rentedArray.Length >= minimumLength);
-        Assert.Same(pool, rentedArray._pool);
-    }
-
     [Fact]
     [SuppressMessage("Blocker Code Smell", "S2699:Tests should include assertions")]
     public void ReturnNullArrayDoesntThrow()

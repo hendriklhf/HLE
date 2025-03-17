@@ -248,9 +248,10 @@ internal sealed class PooledMemoryStream(int capacity) :
         int bytesRead;
         if (!MemoryHelpers.UseStackalloc<byte>(bufferSize))
         {
-            using RentedArray<byte> rentedBuffer = ArrayPool<byte>.Shared.RentAsRentedArray(bufferSize);
+            byte[] rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
             bytesRead = Read(rentedBuffer.AsSpan(..bufferSize));
             destination.Write(rentedBuffer.AsSpan(..bytesRead));
+            ArrayPool<byte>.Shared.Return(rentedBuffer);
             return;
         }
 

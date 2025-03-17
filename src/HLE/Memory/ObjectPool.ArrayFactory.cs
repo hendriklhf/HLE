@@ -53,7 +53,7 @@ public sealed partial class ObjectPool<T>
             }
 
             TElement[] array = Unsafe.As<T, TElement[]>(ref obj);
-            Array.Clear(array);
+            SpanHelpers.Clear(array, array.Length);
         }
     }
 }

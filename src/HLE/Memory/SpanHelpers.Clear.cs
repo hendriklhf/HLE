@@ -7,16 +7,22 @@ namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
+    public static void Clear<T>(T[] array, int elementCount)
+    {
+        Debug.Assert(array.Length >= elementCount);
+        Clear(ref MemoryMarshal.GetArrayDataReference(array), elementCount);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe void Clear<T, TElementCount>(T* items, TElementCount elementCount)
         where TElementCount : unmanaged, IBinaryInteger<TElementCount>
         => Clear(ref Unsafe.AsRef<T>(items), elementCount);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe void Clear<T, TElementCount>(ref T items, TElementCount elementCount)
         where TElementCount : unmanaged, IBinaryInteger<TElementCount>
     {
         ValidateElementCountType<TElementCount>();
-
-        Debug.Assert(elementCount > TElementCount.Zero);
 
         if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {

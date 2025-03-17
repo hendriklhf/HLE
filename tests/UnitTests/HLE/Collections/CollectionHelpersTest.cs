@@ -920,32 +920,4 @@ public sealed partial class CollectionHelpersTest
         Assert.Equal(length, bufferWriter.Count);
         Assert.True(bufferWriter.WrittenSpan.SequenceEqual(array));
     }
-
-    [Theory]
-    [MemberData(nameof(ToPooledListParameters))]
-    public void ToRentedArray_Array_Test(int length)
-    {
-        int[] array = new int[length];
-        Random.Shared.Fill(array);
-
-        IEnumerable<int> enumerable = GetEnumerable<int[], int>(array);
-        using RentedArray<int> rentedArray = enumerable.ToRentedArray();
-
-        Assert.Equal(length, rentedArray.Length);
-        Assert.True(rentedArray.AsSpan().SequenceEqual(array));
-    }
-
-    [Theory]
-    [MemberData(nameof(ToPooledListParameters))]
-    public void ToRentedArray_YieldingEnumerable_Test(int length)
-    {
-        int[] array = new int[length];
-        Random.Shared.Fill(array);
-
-        IEnumerable<int> enumerable = GetYieldingEnumerable(array);
-        using RentedArray<int> rentedArray = enumerable.ToRentedArray();
-
-        Assert.Equal(length, rentedArray.Length);
-        Assert.True(rentedArray.AsSpan().SequenceEqual(array));
-    }
 }

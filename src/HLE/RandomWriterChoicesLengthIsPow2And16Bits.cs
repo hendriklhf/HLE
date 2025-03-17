@@ -20,14 +20,16 @@ internal sealed class RandomWriterChoicesLengthIsPow2And16Bits : RandomWriter, I
         int mask = choicesLength - 1;
         if (!MemoryHelpers.UseStackalloc<ushort>(destinationLength))
         {
-            using RentedArray<ushort> randomIndicesBuffer = ArrayPool<ushort>.Shared.RentAsRentedArray(destinationLength);
+            ushort[] randomIndicesBuffer = ArrayPool<ushort>.Shared.Rent(destinationLength);
             random.Fill(randomIndicesBuffer.AsSpan(..destinationLength));
-            ref ushort indicesBufferRef = ref randomIndicesBuffer.Reference;
+            ref ushort indicesBufferRef = ref MemoryMarshal.GetArrayDataReference(randomIndicesBuffer);
             for (int i = 0; i < destinationLength; i++)
             {
                 int randomIndex = Unsafe.Add(ref indicesBufferRef, i) & mask;
                 Unsafe.Add(ref destination, i) = Unsafe.Add(ref choices, randomIndex);
             }
+
+            ArrayPool<ushort>.Shared.Return(randomIndicesBuffer);
 
             return;
         }

@@ -44,6 +44,7 @@ public struct ArrayEnumerator<T> : IEnumerator<T>, IEquatable<ArrayEnumerator<T>
     public ArrayEnumerator(List<T> list)
     {
         _array = ListMarshal.GetArray(list);
+        Debug.Assert(_array.Length >= list.Count);
         _current = uint.MaxValue;
         _length = (uint)list.Count;
     }

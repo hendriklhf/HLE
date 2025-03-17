@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Numerics;
 using HLE.Text;
@@ -31,9 +32,11 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
         int whitespaceCount;
         if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
+            int[] indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.Rent(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
-            Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount], out roomstate);
+            Parse(ircMessage, indicesOfWhitespacesBuffer.AsSpanUnsafe(..whitespaceCount), out roomstate);
+            ArrayPool<int>.Shared.Return(indicesOfWhitespacesBuffer);
+            return;
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];

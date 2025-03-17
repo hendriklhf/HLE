@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
+using HLE.Collections;
 using HLE.Memory;
 using Xunit;
 
@@ -12,7 +13,7 @@ public sealed partial class SpanHelpersTest
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public static TheoryData<object> FillAscendingParameters { get; } =
         new(
-            (object)(byte)0,
+            (byte)0,
             (byte)128,
             (byte)255,
             (sbyte)-127,
@@ -57,14 +58,20 @@ public sealed partial class SpanHelpersTest
 
     private static void FillAscendingTestCore<T>(T start) where T : unmanaged, INumber<T>
     {
-        using RentedArray<T> buffer = ArrayPool<T>.Shared.RentAsRentedArray(500_000);
-
-        Span<T> numbers = buffer[..500_000];
-        SpanHelpers.FillAscending(numbers, start);
-
-        for (int i = 0; i < numbers.Length; i++)
+        T[] buffer = ArrayPool<T>.Shared.Rent(500_000);
+        try
         {
-            Assert.Equal(T.CreateTruncating(i) + start, numbers[i]);
+            Span<T> numbers = buffer.AsSpanUnsafe(..500_000);
+            SpanHelpers.FillAscending(numbers, start);
+
+            for (int i = 0; i < numbers.Length; i++)
+            {
+                Assert.Equal(T.CreateTruncating(i) + start, numbers[i]);
+            }
+        }
+        finally
+        {
+            ArrayPool<T>.Shared.Return(buffer);
         }
     }
 }

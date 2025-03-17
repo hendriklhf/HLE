@@ -112,10 +112,17 @@ public sealed partial class StringHelpersTest
     [MemberData(nameof(JoinAndConcatStringsParameters))]
     public void Join_CharSeparator_ReadOnlySpan_String_Test(string[] strings)
     {
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(strings.Length * 64);
-        int writtenChars = StringHelpers.Join(',', strings, buffer.AsSpan());
-        ReadOnlySpan<char> chars = buffer[..writtenChars];
-        Assert.True(chars.SequenceEqual(string.Join(',', strings)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(strings.Length * 64);
+        try
+        {
+            int writtenChars = StringHelpers.Join(',', strings, buffer.AsSpan());
+            ReadOnlySpan<char> chars = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(chars.SequenceEqual(string.Join(',', strings)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -130,10 +137,17 @@ public sealed partial class StringHelpersTest
     public void Join_CharSeparator_ReadOnlySpan_ReadOnlyMemory_Char_Test(string[] strings)
     {
         ReadOnlySpan<ReadOnlyMemory<char>> stringsAsMemory = strings.Select(static s => s.AsMemory()).ToArray();
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(strings.Length * 64);
-        int writtenChars = StringHelpers.Join(',', stringsAsMemory, buffer.AsSpan());
-        ReadOnlySpan<char> chars = buffer[..writtenChars];
-        Assert.True(chars.SequenceEqual(string.Join(',', strings)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(strings.Length * 64);
+        try
+        {
+            int writtenChars = StringHelpers.Join(',', stringsAsMemory, buffer.AsSpan());
+            ReadOnlySpan<char> chars = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(chars.SequenceEqual(string.Join(',', strings)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -147,10 +161,17 @@ public sealed partial class StringHelpersTest
     [MemberData(nameof(JoinAndConcatStringsParameters))]
     public void Join_StringSeparator_ReadOnlySpan_String_Test(string[] strings)
     {
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(strings.Length * 64);
-        int writtenChars = StringHelpers.Join(", ", strings, buffer.AsSpan());
-        ReadOnlySpan<char> chars = buffer[..writtenChars];
-        Assert.True(chars.SequenceEqual(string.Join(", ", strings)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(strings.Length * 64);
+        try
+        {
+            int writtenChars = StringHelpers.Join(", ", strings, buffer.AsSpan());
+            ReadOnlySpan<char> chars = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(chars.SequenceEqual(string.Join(", ", strings)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -165,10 +186,17 @@ public sealed partial class StringHelpersTest
     public void Join_StringSeparator_ReadOnlySpan_ReadOnlyMemory_Char_Test(string[] strings)
     {
         ReadOnlySpan<ReadOnlyMemory<char>> stringsAsMemory = strings.Select(static s => s.AsMemory()).ToArray();
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(strings.Length * 64);
-        int writtenChars = StringHelpers.Join(", ", stringsAsMemory, buffer.AsSpan());
-        ReadOnlySpan<char> chars = buffer[..writtenChars];
-        Assert.True(chars.SequenceEqual(string.Join(", ", strings)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(strings.Length * 64);
+        try
+        {
+            int writtenChars = StringHelpers.Join(", ", stringsAsMemory, buffer.AsSpan());
+            ReadOnlySpan<char> chars = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(chars.SequenceEqual(string.Join(", ", strings)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -182,10 +210,17 @@ public sealed partial class StringHelpersTest
     [MemberData(nameof(JoinCharsParameters))]
     public void Join_CharSeparator_ReadOnlySpan_Char_Test(char[] chars)
     {
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(chars.Length * 2);
-        int writtenChars = StringHelpers.Join(',', chars, buffer.AsSpan());
-        ReadOnlySpan<char> str = buffer[..writtenChars];
-        Assert.True(str.SequenceEqual(string.Join(',', chars)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length * 2);
+        try
+        {
+            int writtenChars = StringHelpers.Join(',', chars, buffer.AsSpan());
+            ReadOnlySpan<char> str = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(str.SequenceEqual(string.Join(',', chars)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -199,10 +234,17 @@ public sealed partial class StringHelpersTest
     [MemberData(nameof(JoinCharsParameters))]
     public void Join_StringSeparator_ReadOnlySpan_Char_Test(char[] chars)
     {
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(chars.Length * 3);
-        int writtenChars = StringHelpers.Join(", ", chars, buffer.AsSpan());
-        ReadOnlySpan<char> str = buffer[..writtenChars];
-        Assert.True(str.SequenceEqual(string.Join(", ", chars)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length * 3);
+        try
+        {
+            int writtenChars = StringHelpers.Join(", ", chars, buffer.AsSpan());
+            ReadOnlySpan<char> str = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(str.SequenceEqual(string.Join(", ", chars)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -216,10 +258,17 @@ public sealed partial class StringHelpersTest
     [MemberData(nameof(JoinAndConcatStringsParameters))]
     public void Concat_ReadOnlySpan_String_Test(string[] strings)
     {
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(strings.Length * 64);
-        int writtenChars = StringHelpers.Concat(strings, buffer.AsSpan());
-        ReadOnlySpan<char> chars = buffer[..writtenChars];
-        Assert.True(chars.SequenceEqual(string.Concat(strings)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(strings.Length * 64);
+        try
+        {
+            int writtenChars = StringHelpers.Concat(strings, buffer.AsSpan());
+            ReadOnlySpan<char> chars = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(chars.SequenceEqual(string.Concat(strings)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     [Fact]
@@ -234,10 +283,17 @@ public sealed partial class StringHelpersTest
     public void Concat_ReadOnlySpan_ReadOnlyMemory_Char_Test(string[] strings)
     {
         ReadOnlySpan<ReadOnlyMemory<char>> stringsAsMemory = strings.Select(static s => s.AsMemory()).ToArray();
-        using RentedArray<char> buffer = ArrayPool<char>.Shared.RentAsRentedArray(strings.Length * 64);
-        int writtenChars = StringHelpers.Concat(stringsAsMemory, buffer.AsSpan());
-        ReadOnlySpan<char> chars = buffer[..writtenChars];
-        Assert.True(chars.SequenceEqual(string.Concat(strings)));
+        char[] buffer = ArrayPool<char>.Shared.Rent(strings.Length * 64);
+        try
+        {
+            int writtenChars = StringHelpers.Concat(stringsAsMemory, buffer.AsSpan());
+            ReadOnlySpan<char> chars = buffer.AsSpanUnsafe(..writtenChars);
+            Assert.True(chars.SequenceEqual(string.Concat(strings)));
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     private static void GetLoopedIndices(ref ValueList<int> indices, string str, char c)

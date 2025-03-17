@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using HLE.Text;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace HLE.UnitTests.Text;
 

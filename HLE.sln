@@ -37,9 +37,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{20CFACF3-D401-4341-824A-D4D60D52E8D7}"
-	ProjectSection(SolutionItems) = preProject
-		tests\UnitTests\Directory.Build.props = tests\UnitTests\Directory.Build.props
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HLE.TestRunner", "tests\HLE.TestRunner\HLE.TestRunner.csproj", "{99D2B0AE-EACD-4B04-8CDC-B2E1BB7F6B15}"
 EndProject

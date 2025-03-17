@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Text;
@@ -96,9 +97,11 @@ public sealed partial class StringPool : IEquatable<StringPool>
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
         if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
         {
-            using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
+            char[] rentedCharBuffer = ArrayPool<char>.Shared.Rent(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
-            return GetOrAdd(rentedCharBuffer[..charsWritten]);
+            string result = GetOrAdd(rentedCharBuffer.AsSpanUnsafe(..charsWritten));
+            ArrayPool<char>.Shared.Return(rentedCharBuffer);
+            return result;
         }
 
         Span<char> charBuffer = stackalloc char[maxCharCount];
@@ -159,9 +162,11 @@ public sealed partial class StringPool : IEquatable<StringPool>
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
         if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
         {
-            using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
+            char[] rentedCharBuffer = ArrayPool<char>.Shared.Rent(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
-            return TryGet(rentedCharBuffer[..charsWritten], out value);
+            bool result = TryGet(rentedCharBuffer.AsSpanUnsafe(..charsWritten), out value);
+            ArrayPool<char>.Shared.Return(rentedCharBuffer);
+            return result;
         }
 
         Span<char> charBuffer = stackalloc char[maxCharCount];
@@ -208,9 +213,11 @@ public sealed partial class StringPool : IEquatable<StringPool>
         int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
         if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
         {
-            using RentedArray<char> rentedCharBuffer = ArrayPool<char>.Shared.RentAsRentedArray(maxCharCount);
+            char[] rentedCharBuffer = ArrayPool<char>.Shared.Rent(maxCharCount);
             charsWritten = encoding.GetChars(bytes, rentedCharBuffer.AsSpan());
-            return Contains(rentedCharBuffer[..charsWritten]);
+            bool result = Contains(rentedCharBuffer.AsSpanUnsafe(..charsWritten));
+            ArrayPool<char>.Shared.Return(rentedCharBuffer);
+            return result;
         }
 
         Span<char> charBuffer = stackalloc char[maxCharCount];

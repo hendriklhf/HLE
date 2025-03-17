@@ -117,6 +117,12 @@ public ref struct ValueBufferWriter<T> :
         }
 
         T[] array = SpanMarshal.AsArray(ref _buffer);
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            SpanHelpers.Clear(array, Count);
+        }
+
         ArrayPool<T>.Shared.Return(array);
 
         _buffer = ref Unsafe.NullRef<T>();
@@ -298,6 +304,12 @@ public ref struct ValueBufferWriter<T> :
         }
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            SpanHelpers.Clear(array, Count);
+        }
+
         ArrayPool<T>.Shared.Return(array);
     }
 
@@ -346,6 +358,12 @@ public ref struct ValueBufferWriter<T> :
         }
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            SpanHelpers.Clear(array, count);
+        }
+
         ArrayPool<T>.Shared.Return(array);
     }
 

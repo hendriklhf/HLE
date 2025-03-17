@@ -28,7 +28,7 @@ public sealed class PathHelpersTest
         new Parameter($"System{s_namespaceSeperator}String", typeof(string)),
         new Parameter($"System{s_namespaceSeperator}Collections{s_namespaceSeperator}Frozen{s_namespaceSeperator}FrozenDictionary{DefaultOpeningDelimiter}{DefaultDimensionSeparator}{DefaultClosingDelimiter}", typeof(FrozenDictionary<,>)),
         new Parameter($"System{s_namespaceSeperator}Collections{s_namespaceSeperator}Frozen{s_namespaceSeperator}FrozenDictionary{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>)),
-        new Parameter($"System{s_namespaceSeperator}Collections{s_namespaceSeperator}Frozen{s_namespaceSeperator}FrozenDictionary{DefaultOpeningDelimiter}{DefaultDimensionSeparator}{DefaultClosingDelimiter}.Enumerator{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}", typeof(FrozenDictionary<string, Type>.Enumerator)),
+        new Parameter($"System{s_namespaceSeperator}Collections{s_namespaceSeperator}Frozen{s_namespaceSeperator}FrozenDictionary{DefaultOpeningDelimiter}System.String{DefaultGenericTypesSeparator}System.Type{DefaultClosingDelimiter}.Enumerator", typeof(FrozenDictionary<string, Type>.Enumerator)),
         new Parameter($"HLE{s_namespaceSeperator}UnitTests{s_namespaceSeperator}IO{s_namespaceSeperator}{nameof(PathHelpersTest)}.{nameof(Parameter)}", typeof(Parameter)),
         new Parameter($"HLE{s_namespaceSeperator}UnitTests{s_namespaceSeperator}IO{s_namespaceSeperator}{nameof(PathHelpersTest)}.{nameof(Parameter)}[]", typeof(Parameter[]))
     );

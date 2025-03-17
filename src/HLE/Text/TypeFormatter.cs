@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using HLE.Memory;
 
 namespace HLE.Text;
 
@@ -128,18 +127,7 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
             return;
         }
 
-        if (!MemoryHelpers.UseStackalloc<char>(typeNamespace.Length))
-        {
-            using RentedArray<char> rentedBuffer = ArrayPool<char>.Shared.RentAsRentedArray(typeNamespace.Length);
-            SpanHelpers.Copy(typeNamespace, rentedBuffer.AsSpan());
-            builder.Append(rentedBuffer.AsSpan(..typeNamespace.Length));
-        }
-        else
-        {
-            Span<char> buffer = stackalloc char[typeNamespace.Length];
-            SpanHelpers.Copy(typeNamespace, buffer);
-            builder.Append(buffer[..typeNamespace.Length]);
-        }
+        builder.Append(typeNamespace);
 
         if (replaceNamespaceSeparators)
         {

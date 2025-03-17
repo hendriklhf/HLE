@@ -19,14 +19,16 @@ internal sealed class RandomWriterChoicesLengthIs16Bits : RandomWriter, IEquatab
 
         if (!MemoryHelpers.UseStackalloc<ushort>(destinationLength))
         {
-            using RentedArray<ushort> randomIndicesBuffer = ArrayPool<ushort>.Shared.RentAsRentedArray(destinationLength);
+            ushort[] randomIndicesBuffer = ArrayPool<ushort>.Shared.Rent(destinationLength);
             random.Fill(randomIndicesBuffer.AsSpan(..destinationLength));
-            ref ushort indicesBufferRef = ref randomIndicesBuffer.Reference;
+            ref ushort indicesBufferRef = ref MemoryMarshal.GetArrayDataReference(randomIndicesBuffer);
             for (int i = 0; i < destinationLength; i++)
             {
                 int randomIndex = Unsafe.Add(ref indicesBufferRef, i) % choicesLength;
                 Unsafe.Add(ref destination, i) = Unsafe.Add(ref choices, randomIndex);
             }
+
+            ArrayPool<ushort>.Shared.Return(randomIndicesBuffer);
 
             return;
         }

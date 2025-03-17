@@ -133,6 +133,64 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public void Append([InterpolatedStringHandlerArgument("")] InterpolatedStringHandler chars) => this = chars.Builder;
 
+    public void Append(IEnumerable<char> chars)
+    {
+        if (chars.TryGetNonEnumeratedCount(out int elementCount))
+        {
+            if (elementCount == 0)
+            {
+                return;
+            }
+
+            ref char destination = ref GetDestination(elementCount);
+
+            if (chars.TryGetReadOnlySpan(out ReadOnlySpan<char> span))
+            {
+                SpanHelpers.Memmove(ref destination, ref MemoryMarshal.GetReference(span), span.Length);
+                Advance(span.Length);
+                return;
+            }
+
+            switch (chars)
+            {
+                case ICollection<char> collection when !_capacityAndIsStackalloced.Bool:
+                    char[] buffer = SpanMarshal.AsArray(GetBuffer());
+                    Debug.Assert(buffer.GetType() == typeof(char[]));
+                    Debug.Assert(buffer.Length >= Length + collection.Count);
+                    collection.CopyTo(buffer, Length);
+                    Advance(collection.Count);
+                    return;
+                case ICopyable<char> copyable:
+                    copyable.CopyTo(ref destination);
+                    Advance(copyable.Count);
+                    return;
+                case IIndexable<char> indexable:
+                    for (int i = 0; i < indexable.Count; i++)
+                    {
+                        destination = indexable[i];
+                        destination = ref Unsafe.Add(ref destination, 1);
+                    }
+
+                    Advance(indexable.Count);
+                    return;
+            }
+
+            foreach (char c in chars)
+            {
+                destination = c;
+                destination = ref Unsafe.Add(ref destination, 1);
+            }
+
+            Advance(elementCount);
+            return;
+        }
+
+        foreach (char c in chars)
+        {
+            Append(c);
+        }
+    }
+
     public void Append(List<char> chars) => Append(ref ListMarshal.GetReference(chars), chars.Count);
 
     public void Append(char[] chars) => Append(ref MemoryMarshal.GetArrayDataReference(chars), chars.Length);
@@ -165,6 +223,19 @@ public unsafe ref partial struct ValueStringBuilder :
 
         MemoryMarshal.CreateSpan(ref GetDestination(count), count).Fill(c);
         _lengthAndIsDisposed.SetIntegerBoolOverwrite(Length + count);
+    }
+
+    public void Append(IEnumerable<string> strings)
+    {
+        if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string> span))
+        {
+            Append(span);
+            return;
+        }
+
+        using ValueList<string> list = [];
+        list.AddRange(strings);
+        Append(list.AsSpan());
     }
 
     public void Append(List<string> strings) => Append(ref ListMarshal.GetReference(strings), strings.Count);

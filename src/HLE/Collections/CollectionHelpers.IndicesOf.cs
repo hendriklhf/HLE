@@ -97,9 +97,11 @@ public static partial class CollectionHelpers
         int length;
         if (!MemoryHelpers.UseStackalloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
+            int[] indicesBuffer = ArrayPool<int>.Shared.Rent(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
-            return indicesBuffer.ToArray(..length);
+            int[] result = indicesBuffer[..length];
+            ArrayPool<int>.Shared.Return(indicesBuffer);
+            return result;
         }
 
         Span<int> indices = stackalloc int[span.Length];
@@ -213,9 +215,11 @@ public static partial class CollectionHelpers
         int length;
         if (!MemoryHelpers.UseStackalloc<int>(span.Length))
         {
-            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(span.Length);
+            int[] indicesBuffer = ArrayPool<int>.Shared.Rent(span.Length);
             length = IndicesOf(span, predicate, indicesBuffer.AsSpan());
-            return indicesBuffer.ToArray(..length);
+            int[] result = indicesBuffer[..length];
+            ArrayPool<int>.Shared.Return(indicesBuffer);
+            return result;
         }
 
         Span<int> indices = stackalloc int[span.Length];

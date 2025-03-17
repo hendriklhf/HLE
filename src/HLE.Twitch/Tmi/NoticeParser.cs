@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Text;
@@ -19,9 +20,11 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
         int whitespaceCount;
         if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
+            int[] indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.Rent(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
-            return Parse(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
+            Notice result = Parse(ircMessage, indicesOfWhitespacesBuffer.AsSpanUnsafe(..whitespaceCount));
+            ArrayPool<int>.Shared.Return(indicesOfWhitespacesBuffer);
+            return result;
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];

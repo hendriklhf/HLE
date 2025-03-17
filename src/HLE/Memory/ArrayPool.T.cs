@@ -169,9 +169,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         return false;
     }
 
-    [Pure]
-    public RentedArray<T> RentAsRentedArray(int minimumLength) => new(Rent(minimumLength), this);
-
     public void Return(T[]? array, bool clearArray = false)
     {
         if (array is null)

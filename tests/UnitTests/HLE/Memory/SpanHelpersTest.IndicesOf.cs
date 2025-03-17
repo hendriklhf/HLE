@@ -51,11 +51,18 @@ public sealed partial class SpanHelpersTest
             ulong longOne = 1;
             T one = *(T*)&longOne;
             GetLoopedIndices<T>(items, ref loopedIndices);
-            using RentedArray<int> indicesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(items.Length);
-            int indicesCount = SpanHelpers.IndicesOf(items, one, indicesBuffer.AsSpan());
+            int[] indicesBuffer = ArrayPool<int>.Shared.Rent(items.Length);
+            try
+            {
+                int indicesCount = SpanHelpers.IndicesOf(items, one, indicesBuffer.AsSpan());
 
-            ReadOnlySpan<int> indices = indicesBuffer[..indicesCount];
-            Assert.True(indices.SequenceEqual(loopedIndices.AsSpan()));
+                ReadOnlySpan<int> indices = indicesBuffer.AsSpanUnsafe(..indicesCount);
+                Assert.True(indices.SequenceEqual(loopedIndices.AsSpan()));
+            }
+            finally
+            {
+                ArrayPool<int>.Shared.Return(indicesBuffer);
+            }
         }
         finally
         {

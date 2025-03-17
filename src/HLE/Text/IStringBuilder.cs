@@ -23,6 +23,8 @@ public interface IStringBuilder :
 
     void Append(ref PooledInterpolatedStringHandler chars);
 
+    void Append(IEnumerable<char> chars);
+
     void Append(List<char> chars);
 
     void Append(char[] chars);
@@ -34,6 +36,8 @@ public interface IStringBuilder :
     void Append(char c);
 
     void Append(char c, int count);
+
+    void Append(IEnumerable<string> strings);
 
     void Append(List<string> strings);
 

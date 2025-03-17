@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Text;
+using HLE.Collections;
 using HLE.Memory;
 using HLE.Text;
 using HLE.Twitch.Tmi.Models;
@@ -18,9 +19,11 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
         int whitespaceCount;
         if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
+            int[] indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.Rent(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
-            return ParseLeftChannelMessage(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
+            LeftChannelMessage result = ParseLeftChannelMessage(ircMessage, indicesOfWhitespacesBuffer.AsSpanUnsafe(..whitespaceCount));
+            ArrayPool<int>.Shared.Return(indicesOfWhitespacesBuffer);
+            return result;
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
@@ -39,9 +42,11 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
         int whitespaceCount;
         if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
-            using RentedArray<int> indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.RentAsRentedArray(ircMessage.Length);
+            int[] indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.Rent(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
-            return ParseJoinChannelMessage(ircMessage, indicesOfWhitespacesBuffer[..whitespaceCount]);
+            JoinChannelMessage result = ParseJoinChannelMessage(ircMessage, indicesOfWhitespacesBuffer.AsSpanUnsafe(..whitespaceCount));
+            ArrayPool<int>.Shared.Return(indicesOfWhitespacesBuffer);
+            return result;
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];

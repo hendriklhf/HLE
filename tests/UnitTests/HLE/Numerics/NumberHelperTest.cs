@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
+using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
@@ -62,15 +63,21 @@ public sealed class NumberHelperTest
     [Fact]
     public void GetNumberLengthTest()
     {
-        using RentedArray<int> buffer = ArrayPool<int>.Shared.RentAsRentedArray(10_000);
-
-        Span<int> numbers = buffer[..10_000];
-        Random.Shared.Fill(numbers[1..]);
-        for (int i = 0; i < numbers.Length; i++)
+        int[] buffer = ArrayPool<int>.Shared.Rent(10_000);
+        try
         {
-            int number = numbers[i];
-            bool isNegative = number < 0;
-            Assert.Equal(number.ToString().Length - isNegative.AsByte(), NumberHelpers.GetNumberLength(number));
+            Span<int> numbers = buffer.AsSpanUnsafe(..10_000);
+            Random.Shared.Fill(numbers[1..]);
+            for (int i = 0; i < numbers.Length; i++)
+            {
+                int number = numbers[i];
+                bool isNegative = number < 0;
+                Assert.Equal(number.ToString().Length - isNegative.AsByte(), NumberHelpers.GetNumberLength(number));
+            }
+        }
+        finally
+        {
+            ArrayPool<int>.Shared.Return(buffer);
         }
     }
 
