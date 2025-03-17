@@ -9,37 +9,41 @@ namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    private sealed class Trimmer(ArrayPool<T> pool)
+    private static class Trimmer
     {
-        private readonly ArrayPool<T> _pool = pool;
-        private volatile bool _running;
-        private readonly Thread _thread = new(Trim)
+        public static void StartThread(WeakReference<ArrayPool<T>> weakPool)
         {
-            Name = TypeFormatter.Default.Format<Trimmer>(),
-            Priority = ThreadPriority.BelowNormal,
-            IsBackground = true
-        };
+            Thread thread = new(Trim)
+            {
+                Name = TypeFormatter.Default.Format(typeof(Trimmer)),
+                Priority = ThreadPriority.BelowNormal,
+                IsBackground = true
+            };
 
-        public void StartTrimmingThread()
-        {
-            _running = true;
-            _thread.Start(this);
+            thread.Start(weakPool);
         }
-
-        public void StopTrimmingThread() => _running = false;
 
         private static void Trim(object? obj)
         {
-            Debug.Assert(obj is Trimmer);
-            Trimmer trimmer = Unsafe.As<Trimmer>(obj);
-            ArrayPool<T> pool = trimmer._pool;
+            Debug.Assert(obj is WeakReference<ArrayPool<T>>);
+            WeakReference<ArrayPool<T>> weakPool = Unsafe.As<WeakReference<ArrayPool<T>>>(obj);
 
-            do
+            while (true)
             {
                 Thread.Sleep(ArrayPool.TrimmingInterval);
+
+                if (!weakPool.TryGetTarget(out ArrayPool<T>? pool))
+                {
+                    break;
+                }
+
+                if (!pool._isTrimmerRunning)
+                {
+                    break;
+                }
+
                 TrimCore(pool);
             }
-            while (trimmer._running);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

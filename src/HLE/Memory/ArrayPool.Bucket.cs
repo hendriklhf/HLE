@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using HLE.Collections;
 using HLE.Marshalling;
@@ -55,45 +53,7 @@ public sealed partial class ArrayPool<T>
             return true;
         }
 
-        public bool TryRentExact(int length, [MaybeNullWhen(false)] out T[] array)
-        {
-            lock (_lock)
-            {
-                Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
-
-                uint count = _count;
-                if (count == 0)
-                {
-                    array = null;
-                    return false;
-                }
-
-                ref T[] reference = ref MemoryMarshal.GetArrayDataReference(_stack);
-                for (uint i = 0; i < count; i++)
-                {
-                    ref T[] currentRef = ref Unsafe.Add(ref reference, i);
-                    if (currentRef.Length != length)
-                    {
-                        continue;
-                    }
-
-                    array = currentRef;
-                    if (i != count - 1)
-                    {
-                        SpanHelpers.Memmove(ref currentRef, ref Unsafe.Add(ref currentRef, 1), count - i - 1);
-                    }
-
-                    _count--;
-                    Log.Rented(array);
-                    return true;
-                }
-
-                array = null;
-                return false;
-            }
-        }
-
-        public void Return(T[] array, bool clearArray)
+        public void Return(T[] array)
         {
             lock (_lock)
             {
@@ -104,7 +64,6 @@ public sealed partial class ArrayPool<T>
                     return;
                 }
 
-                ClearArrayIfNeeded(array, clearArray);
                 ArrayMarshal.GetUnsafeElementAt(_stack, count) = array;
                 _count++;
             }

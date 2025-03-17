@@ -117,17 +117,6 @@ public sealed class ArrayPoolTest
     }
 
     [Fact]
-    public void ClearArray_WithClearOnlyIfManagedType_ManagedType()
-    {
-        using ArrayPool<string> pool = new();
-
-        string[] array = pool.Rent(32);
-        Array.Fill(array, "hello");
-        pool.Return(array);
-        Assert.All(array, static s => Assert.Null(s));
-    }
-
-    [Fact]
     public void DontClearArray_ValueType_Test()
     {
         using ArrayPool<int> pool = new();
@@ -136,28 +125,6 @@ public sealed class ArrayPoolTest
         Array.Fill(array, int.MaxValue);
         pool.Return(array);
         Assert.All(array, static i => Assert.Equal(int.MaxValue, i));
-    }
-
-    [Fact]
-    public void ClearArray_ValueType_ReturnOptionClear()
-    {
-        using ArrayPool<int> pool = new();
-
-        int[] array = pool.Rent(32);
-        Array.Fill(array, int.MaxValue);
-        pool.Return(array, true);
-        Assert.All(array, static i => Assert.Equal(0, i));
-    }
-
-    [Fact]
-    public void ClearArray_ManagedType_ReturnOptionClear()
-    {
-        using ArrayPool<string> pool = new();
-
-        string[] array = pool.Rent(32);
-        Array.Fill(array, "hello");
-        pool.Return(array, true);
-        Assert.All(array, static s => Assert.Null(s));
     }
 
     [Fact]
@@ -180,48 +147,6 @@ public sealed class ArrayPoolTest
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         Assert.True(Array.TrueForAll(pool._buckets, static b => Array.TrueForAll(b._stack, static a => a is null)));
-    }
-
-    [Theory]
-    [MemberData(nameof(ConsecutiveValues0To4096Parameters))]
-    public void RentExactTest(int length)
-    {
-        using ArrayPool<int> pool = new();
-
-        int[] firstArray = pool.RentExact(length);
-        pool.Return(firstArray);
-        int[] secondArray = pool.RentExact(length);
-        pool.Return(secondArray);
-
-        int roundedLength = (int)BitOperations.RoundUpToPowerOf2((uint)length);
-        if (roundedLength != length) // basically a !IsPow2 check
-        {
-            roundedLength >>>= 1;
-
-            // initializes the thread local bucket
-            // only if "length" is not pow2, the bucket hasn't been initialized
-            _ = pool.Rent(roundedLength);
-        }
-
-        int[] thirdArray = pool.Rent(roundedLength);
-
-        Assert.Equal(length, firstArray.Length);
-        Assert.Equal(length, secondArray.Length);
-        if (roundedLength < ArrayPool.MinimumArrayLength)
-        {
-            Assert.True(thirdArray.Length >= ArrayPool.MinimumArrayLength);
-        }
-        else
-        {
-            Assert.True(thirdArray.Length >= length);
-        }
-
-        Assert.Same(firstArray, secondArray);
-        if (length >= ArrayPool.MinimumArrayLength)
-        {
-            Assert.Same(firstArray, thirdArray);
-            Assert.Same(thirdArray, secondArray);
-        }
     }
 
     private static TheoryData<int> CreatePow2LengthMinimumToMaximumLengthParameters()
