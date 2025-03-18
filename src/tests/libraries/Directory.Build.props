@@ -1,24 +1,22 @@
 <Project>
 
-  <Import Project="..\Directory.Build.targets"/>
+  <Import Project="..\Directory.Build.props"/>
 
-  <PropertyGroup Condition="'$(IsTestProject)'=='true'">
+  <PropertyGroup>
     <UseMicrosoftTestingPlatformRunner>false</UseMicrosoftTestingPlatformRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(IsTestProject)'=='true'">
-    <PackageReference Include="System.IO.Hashing"/>
-    <Compile Include="..\..\HLE.TestUtilities\TestHelpers.cs"/>
-    <Compile Include="..\..\HLE.TestUtilities\TheoryDataHelpers.cs"/>
+  <ItemGroup>
+    <ProjectReference Include="..\..\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsTestProject)'=='true'">
+  <ItemGroup>
     <Content Include="..\..\xunit.runner.json" CopyToOutputDirectory="Always"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsTestProject)'=='true'">
+  <ItemGroup>
     <PackageReference Include="xunit"/>
     <PackageReference Include="xunit.runner.visualstudio"/>
   </ItemGroup>

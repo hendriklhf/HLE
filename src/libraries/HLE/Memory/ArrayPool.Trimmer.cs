@@ -11,6 +11,12 @@ public sealed partial class ArrayPool<T>
 {
     private static class Trimmer
     {
+        // the trimmer uses a weak reference to allow the pool to be collected
+        // while it's not in use, i.e. while the thread is sleeping.
+        // when the pool is collected, the pool won't be retrievable
+        // from the weak reference, or the pool's finalizer will set
+        // "_isTrimmerRunning" to false.
+
         public static void StartThread(WeakReference<ArrayPool<T>> weakPool)
         {
             Thread thread = new(Trim)

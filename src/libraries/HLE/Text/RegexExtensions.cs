@@ -14,21 +14,41 @@ public static class RegexExtensions
     [Pure]
     public static bool IsMatch(this Regex regex, ReadOnlySpan<byte> bytes, Encoding encoding)
     {
-        char[] chars = ArrayPool<char>.Shared.Rent(encoding.GetMaxCharCount(bytes.Length));
-        int charCount = encoding.GetChars(bytes, chars.AsSpan());
-        bool result = regex.IsMatch(chars.AsSpanUnsafe(..charCount));
-        ArrayPool<char>.Shared.Return(chars);
-        return result;
+        int charCount;
+
+        int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
+        if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
+        {
+            char[] rentedChars = ArrayPool<char>.Shared.Rent(maxCharCount);
+            charCount = encoding.GetChars(bytes, rentedChars);
+            bool result = regex.IsMatch(rentedChars.AsSpanUnsafe(..charCount));
+            ArrayPool<char>.Shared.Return(rentedChars);
+            return result;
+        }
+
+        Span<char> chars = stackalloc char[maxCharCount];
+        charCount = encoding.GetChars(bytes, chars);
+        return regex.IsMatch(chars.SliceUnsafe(..charCount));
     }
 
     [Pure]
     public static int Count(this Regex regex, ReadOnlySpan<byte> bytes, Encoding encoding)
     {
-        char[] chars = ArrayPool<char>.Shared.Rent(encoding.GetMaxCharCount(bytes.Length));
-        int charCount = encoding.GetChars(bytes, chars.AsSpan());
-        int result = regex.Count(chars.AsSpanUnsafe(..charCount));
-        ArrayPool<char>.Shared.Return(chars);
-        return result;
+        int charCount;
+
+        int maxCharCount = encoding.GetMaxCharCount(bytes.Length);
+        if (!MemoryHelpers.UseStackalloc<char>(maxCharCount))
+        {
+            char[] rentedChars = ArrayPool<char>.Shared.Rent(maxCharCount);
+            charCount = encoding.GetChars(bytes, rentedChars);
+            int result = regex.Count(rentedChars.AsSpanUnsafe(..charCount));
+            ArrayPool<char>.Shared.Return(rentedChars);
+            return result;
+        }
+
+        Span<char> chars = stackalloc char[maxCharCount];
+        charCount = encoding.GetChars(bytes, chars);
+        return regex.Count(chars.SliceUnsafe(..charCount));
     }
 
     public static async Task<int> CountAsync(this Regex regex, Stream stream, Encoding encoding)

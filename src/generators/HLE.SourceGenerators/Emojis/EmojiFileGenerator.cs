@@ -45,7 +45,29 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
     {
         using Stream emojiJsonStream = await GetEmojiJsonBytesAsync();
         EmojiModel[] emojis = await ParseEmojisAsync(emojiJsonStream);
-        context.RegisterImplementationSourceOutput(context.CompilationProvider, (context, _) => Execute(context, emojis));
+        context.RegisterPostInitializationOutput(context => Execute(context, emojis));
+    }
+
+    private static void Execute(IncrementalGeneratorPostInitializationContext context, EmojiModel[] emojis)
+    {
+        StringBuilder sourceBuilder = new(ushort.MaxValue * 8);
+        sourceBuilder.AppendLine("using System.Collections.Frozen;").AppendLine();
+        sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
+        sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
+
+        Array.Sort(emojis, static (x, y) => string.CompareOrdinal(x.Name, y.Name));
+        CreateEmojiConstants(sourceBuilder, emojis);
+
+        CreateEmojiByNameSet(sourceBuilder, emojis);
+
+        Array.Sort(emojis, static (x, y) => string.CompareOrdinal(x.Value, y.Value));
+        CreateEmojiSet(sourceBuilder, emojis);
+
+        CreateIsEmojiMethod(sourceBuilder, emojis);
+
+        sourceBuilder.AppendLine("}");
+        string source = sourceBuilder.ToString();
+        context.AddSource("HLE.Text.Emoji.g.cs", source);
     }
 
     private static async Task<EmojiModel[]> ParseEmojisAsync(Stream emojiJsonStream)
@@ -138,28 +160,6 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         string emojiJsonPath = Path.Combine(cacheDirectory, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
         using FileStream jsonFile = File.OpenWrite(emojiJsonPath);
         await emojiJsonBytes.CopyToAsync(jsonFile);
-    }
-
-    private static void Execute(SourceProductionContext context, EmojiModel[] emojis)
-    {
-        StringBuilder sourceBuilder = new(ushort.MaxValue * 8);
-        sourceBuilder.AppendLine("using System.Collections.Frozen;").AppendLine();
-        sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
-        sourceBuilder.AppendLine("public static partial class Emoji").AppendLine("{");
-
-        Array.Sort(emojis, static (x, y) => string.CompareOrdinal(x.Name, y.Name));
-        CreateEmojiConstants(sourceBuilder, emojis);
-
-        CreateEmojiByNameSet(sourceBuilder, emojis);
-
-        Array.Sort(emojis, static (x, y) => string.CompareOrdinal(x.Value, y.Value));
-        CreateEmojiSet(sourceBuilder, emojis);
-
-        CreateIsEmojiMethod(sourceBuilder, emojis);
-
-        sourceBuilder.AppendLine("}");
-        string source = sourceBuilder.ToString();
-        context.AddSource("HLE.Text.Emoji.g.cs", source);
     }
 
     private static void CreateEmojiConstants(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)

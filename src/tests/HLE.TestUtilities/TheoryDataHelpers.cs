@@ -56,7 +56,7 @@ public static class TheoryDataHelpers
                 int length = Random.Shared.Next(minLength, maxLength);
                 Span<char> chars = buffer.AsSpan(..length);
                 Random.Shared.NextBytes(MemoryMarshal.Cast<char, byte>(chars));
-                data.Add(new string(chars));
+                data.Add(new(chars));
             }
         }
         finally

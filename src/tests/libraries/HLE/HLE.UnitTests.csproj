@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\HLE\HLE.csproj"/>
+    <ProjectReference Include="..\..\..\libraries\HLE\HLE.csproj"/>
   </ItemGroup>
 
   <ItemGroup>
