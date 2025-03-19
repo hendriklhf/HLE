@@ -5,9 +5,9 @@ namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    internal partial struct ThreadLocalBucket
+    internal sealed partial class ThreadLocalBucket
     {
-        [InlineArray(Length)]
+        [InlineArray(Length * ThreadLocalArraysPerLength)]
         [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
         [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
         [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members")]

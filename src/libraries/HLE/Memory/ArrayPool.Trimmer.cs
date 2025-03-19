@@ -61,31 +61,20 @@ public sealed partial class ArrayPool<T>
             for (int i = buckets.Length - 1; i >= 0; i--)
             {
                 ref Bucket bucket = ref buckets[i];
-                if (Volatile.Read(ref bucket._count) == 0)
+
+                TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - Volatile.Read(ref bucket._lastAccessTick));
+                if (timeSinceLastAccess > ArrayPool.MaximumLastAccessTime)
                 {
+                    // TODO: mem is wrong, needs to be manually accumulated
+                    long releasedMemory = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength) * bucket._stack.Length;
+                    bucket.Clear();
+                    memoryToRelease -= releasedMemory;
                     continue;
                 }
 
-                lock (bucket._lock)
+                if (hasHighMemoryPressure && memoryToRelease > 0)
                 {
-                    if (Volatile.Read(ref bucket._count) == 0)
-                    {
-                        continue;
-                    }
-
-                    TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - Volatile.Read(ref bucket._lastAccessTick));
-                    if (timeSinceLastAccess > ArrayPool.MaximumLastAccessTime)
-                    {
-                        long releasedMemory = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength) * bucket._count;
-                        bucket.ClearWithoutLock();
-                        memoryToRelease -= releasedMemory;
-                        continue;
-                    }
-
-                    if (hasHighMemoryPressure && memoryToRelease > 0)
-                    {
-                        TrimBucket(ref bucket, ref memoryToRelease);
-                    }
+                    TrimBucket(ref bucket, ref memoryToRelease);
                 }
             }
         }
@@ -94,13 +83,10 @@ public sealed partial class ArrayPool<T>
         {
             Span<T[]?> stack = bucket._stack!;
             long arraySize = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength);
-            for (int j = (int)bucket._count - 1; j >= 0 && memoryToRelease > 0; j--)
+            for (int i = 0; i <= stack.Length && memoryToRelease > 0; i++)
             {
-                ref T[]? array = ref stack[j];
-                Debug.Assert(array is not null);
-                array = null;
-                bucket._count--;
-
+                stack[i] = null;
+                // TODO: needs to check if the array at the position is not null
                 memoryToRelease -= arraySize;
             }
         }

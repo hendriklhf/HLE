@@ -26,7 +26,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
     [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
-    private static ThreadLocalBucket t_threadLocalBucket;
+    private static ThreadLocalBucket? t_threadLocalBucket;
 
     public ArrayPool()
     {
@@ -71,20 +71,20 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(minimumLength);
 
-        int length = minimumLength >= ArrayPool.MaximumPow2Length ? Array.MaxLength : (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength);
-        if (length > ArrayPool.MaximumArrayLength)
+        if (minimumLength > ArrayPool.MaximumArrayLength)
         {
-            T[] allocatedArray = GC.AllocateUninitializedArray<T>(length);
+            T[] allocatedArray = GC.AllocateUninitializedArray<T>(minimumLength);
             Log.Allocated(allocatedArray);
             return allocatedArray;
         }
 
-        length = int.Max(length, ArrayPool.MinimumArrayLength);
+        int length = (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength | ArrayPool.MinimumArrayLength);
 
+        Debug.Assert(length >= minimumLength);
         Debug.Assert(BitOperations.PopCount((uint)length) == 1);
 
         int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPool.TrailingZeroCountBucketIndexOffset;
-        return TryRentFromThreadLocalBucket(length, bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
+        return TryRentFromThreadLocalBucket(bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
     }
 
     private T[] RentFromSharedBuckets(int bucketIndex)
@@ -112,30 +112,20 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryRentFromThreadLocalBucket(int arrayLength, int bucketIndex, [MaybeNullWhen(false)] out T[] array)
+    private static bool TryRentFromThreadLocalBucket(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
-        Debug.Assert(BitOperations.PopCount((uint)arrayLength) == 1);
-
-        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
-        if (!threadLocalBucket.IsInitialized(arrayLength))
+        ThreadLocalBucket threadLocalBucket = (t_threadLocalBucket ??= new());
+#if RELEASE
+        return threadLocalBucket.TryRent(bucketIndex, out array);
+#else
+        if (!threadLocalBucket.TryRent(bucketIndex, out array))
         {
-            threadLocalBucket.SetInitialized(arrayLength);
-            array = GC.AllocateUninitializedArray<T>(arrayLength);
-            Log.Allocated(array);
-            return true;
+            return false;
         }
 
-        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex);
-        if (arrayReference is not null)
-        {
-            array = arrayReference;
-            arrayReference = null; // remove reference from the pool
-            Log.Rented(array);
-            return true;
-        }
-
-        array = null;
-        return false;
+        Log.Rented(array);
+        return true;
+#endif
     }
 
     public void Return(T[]? array)
@@ -145,15 +135,15 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             return;
         }
 
-        if (!TryGetBucketIndex(array.Length, out int bucketIndex, out int pow2Length))
+        if (!TryGetBucketIndex(array.Length, out int bucketIndex))
         {
             Log.Dropped(array);
             return;
         }
 
-        AssertArrayIsCleared(array);
+        AssertArrayWithReferencesIsCleared(array);
 
-        if (TryReturnToThreadLocalBucket(array, pow2Length, bucketIndex))
+        if (TryReturnToThreadLocalBucket(array, bucketIndex))
         {
             return;
         }
@@ -162,7 +152,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     }
 
     [Conditional("DEBUG")]
-    private static void AssertArrayIsCleared(T[] array)
+    private static void AssertArrayWithReferencesIsCleared(T[] array)
     {
         if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
@@ -182,40 +172,34 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryReturnToThreadLocalBucket(T[] array, int pow2Length, int bucketIndex)
+    private static bool TryReturnToThreadLocalBucket(T[] array, int bucketIndex)
     {
         Debug.Assert(array.Length != 0);
 
-        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
-        if (!threadLocalBucket.IsInitialized(pow2Length))
-        {
-            threadLocalBucket.SetInitialized(pow2Length);
-            Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex) = array;
-            Log.Returned(array);
-            return true;
-        }
-
-        ref T[]? arrayReference = ref Unsafe.Add(ref threadLocalBucket.GetPoolReference(), bucketIndex);
-        if (arrayReference is not null)
+        ThreadLocalBucket threadLocalBucket = (t_threadLocalBucket ??= new());
+#if RELEASE
+        return threadLocalBucket.TryReturn(bucketIndex, array);
+#else
+        if (!threadLocalBucket.TryReturn(bucketIndex, array))
         {
             return false;
         }
 
-        arrayReference = array;
         Log.Returned(array);
         return true;
+#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryGetBucketIndex(int arrayLength, out int bucketIndex, out int pow2Length)
+    private static bool TryGetBucketIndex(int arrayLength, out int bucketIndex)
     {
         if (arrayLength is < ArrayPool.MinimumArrayLength or > ArrayPool.MaximumArrayLength)
         {
             bucketIndex = -1;
-            pow2Length = -1;
             return false;
         }
 
+        int pow2Length;
         if (BitOperations.PopCount((uint)arrayLength) == 1)
         {
             pow2Length = arrayLength;

@@ -1,8 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using HLE.Collections;
 using HLE.Marshalling;
 
 namespace HLE.Memory;
@@ -11,10 +11,8 @@ public sealed partial class ArrayPool<T>
 {
     internal struct Bucket(int arrayLength, int capacity) : IEquatable<Bucket>
     {
-        internal readonly T[][] _stack = GC.AllocateArray<T[]>(capacity, true);
+        internal readonly T[]?[] _stack = GC.AllocateArray<T[]>(capacity, true);
         internal readonly int _arrayLength = arrayLength;
-        internal uint _count;
-        internal readonly Lock _lock = new();
         internal long _lastAccessTick;
 
         [Pure]
@@ -33,64 +31,57 @@ public sealed partial class ArrayPool<T>
 
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
-            lock (_lock)
+            ref T[]? current = ref ArrayMarshal.GetUnsafeElementAt(_stack, _stack.Length);
+            ref T[]? start = ref ArrayMarshal.GetUnsafeElementAt(_stack, -1);
+
+            do
             {
-                uint count = _count;
-                if (count == 0)
+                T[]? value = Interlocked.Exchange(ref current, null);
+                if (value is not null)
                 {
-                    array = null;
-                    return false;
+                    Log.Rented(value);
+                    array = value;
+                    Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
+                    return true;
                 }
 
-                ref T[] reference = ref ArrayMarshal.GetUnsafeElementAt(_stack, count - 1);
-                array = reference;
-                reference = null!; // remove the reference from the pool, so arrays can be collected even if not returned to the pool
-                _count--;
+                current = ref Unsafe.Subtract(ref current, 1)!;
             }
+            while (!Unsafe.AreSame(ref current, ref start));
 
-            Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
-            Log.Rented(array);
-            return true;
+            array = null;
+            return false;
         }
 
         public void Return(T[] array)
         {
-            lock (_lock)
+            ref T[]? current = ref ArrayMarshal.GetUnsafeElementAt(_stack, _stack.Length);
+            ref T[]? start = ref ArrayMarshal.GetUnsafeElementAt(_stack, -1);
+
+            do
             {
-                uint count = _count;
-                if (count == _stack.Length)
+                T[]? prev = Interlocked.CompareExchange(ref current, array, null);
+                if (prev is null)
                 {
-                    Log.Dropped(array);
+                    Log.Returned(array);
+                    Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
                     return;
                 }
 
-                ArrayMarshal.GetUnsafeElementAt(_stack, count) = array;
-                _count++;
+                current = ref Unsafe.Subtract(ref current, 1)!;
             }
+            while (!Unsafe.AreSame(ref current, ref start));
 
-            Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
-            Log.Returned(array);
+            Log.Dropped(array);
         }
 
-        public void Clear()
-        {
-            lock (_lock)
-            {
-                ClearWithoutLock();
-            }
-        }
+        public readonly void Clear() => SpanHelpers.Clear(_stack, _stack.Length);
 
-        public void ClearWithoutLock()
-        {
-            _stack.AsSpanUnsafe(0, (int)_count).Clear();
-            _count = 0;
-        }
-
-        public readonly bool Equals(Bucket other) => ReferenceEquals(_stack, other._stack) && _arrayLength == other._arrayLength && _count == other._count;
+        public readonly bool Equals(Bucket other) => ReferenceEquals(_stack, other._stack) && _arrayLength == other._arrayLength && _lastAccessTick == other._lastAccessTick;
 
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
-        public override readonly int GetHashCode() => HashCode.Combine(_stack, _arrayLength, _count);
+        public override readonly int GetHashCode() => HashCode.Combine(_stack, _arrayLength, _lastAccessTick);
 
         public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
 

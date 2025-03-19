@@ -21,7 +21,7 @@ ManualConfig config = new()
 Job net9Job = Job.Default.With(CsProjCoreToolchain.NetCoreApp90);
 config.AddJob(net9Job);
 
-NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.1.25080.5", ".NET 10");
+NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.2.25163.2", ".NET 10");
 IToolchain net10ToolChain = CsProjCoreToolchain.From(net10Settings);
 Job net10Job = Job.Default.With(net10ToolChain);
 config.AddJob(net10Job);
