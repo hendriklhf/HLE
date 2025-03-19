@@ -134,10 +134,17 @@ public sealed class ArrayPoolTest
 
         for (int i = 0; i < 8; i++)
         {
-            int[] array = pool.Rent(ArrayPool.MinimumArrayLength << i);
+            int[] array1 = pool.Rent(ArrayPool.MinimumArrayLength << i);
             int[] array2 = pool.Rent(ArrayPool.MinimumArrayLength << i);
-            pool.Return(array);
+            int[] array3 = pool.Rent(ArrayPool.MinimumArrayLength << i);
+            int[] array4 = pool.Rent(ArrayPool.MinimumArrayLength << i);
+            int[] array5 = pool.Rent(ArrayPool.MinimumArrayLength << i);
+
+            pool.Return(array1);
             pool.Return(array2);
+            pool.Return(array3);
+            pool.Return(array4);
+            pool.Return(array5);
         }
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract

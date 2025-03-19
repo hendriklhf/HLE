@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -7,7 +8,7 @@ public sealed partial class ArrayPool<T>
 {
     [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
     [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
-    internal sealed partial class ThreadLocalBucket
+    internal partial struct ThreadLocalBucket
     {
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed")]
@@ -19,50 +20,71 @@ public sealed partial class ArrayPool<T>
 
         public bool TryRent(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
         {
-            ref T[]? start = ref Unsafe.Subtract(ref GetReference(bucketIndex), 1);
-            ref T[]? current = ref Unsafe.Add(ref start, ThreadLocalArraysPerLength - 1);
+#pragma warning disable CA1508
+            // if the constant's value changes, the code will break
+            Debug.Assert(ThreadLocalArraysPerLength == 3);
+#pragma warning restore CA1508
 
-            do
+            ref T[]? bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
+
+            ref T[]? current = ref Unsafe.Add(ref bucket, 0);
+            T[]? value = current;
+            if (value is not null)
             {
-                array = current;
-                if (array is not null)
-                {
-                    current = null; // remove reference from pool
-                    return true;
-                }
-
-                current = ref Unsafe.Subtract(ref current, 1);
+                goto ArrayFound;
             }
-            while (!Unsafe.AreSame(ref current, ref start));
 
-            array = null;
-            return false;
+            current = ref Unsafe.Add(ref bucket, 1);
+            value = current;
+            if (value is not null)
+            {
+                goto ArrayFound;
+            }
+
+            current = ref Unsafe.Add(ref bucket, 2);
+            value = current;
+            if (value is null)
+            {
+                array = null;
+                return false;
+            }
+
+        ArrayFound:
+            array = value;
+            current = null; // remove reference from pool
+            return true;
         }
 
         public bool TryReturn(int bucketIndex, T[] array)
         {
-            ref T[]? current = ref GetReference(bucketIndex);
-            ref T[]? end = ref Unsafe.Add(ref current, ThreadLocalArraysPerLength);
+#pragma warning disable CA1508
+            // if the constant's value changes, the code will break
+            Debug.Assert(ThreadLocalArraysPerLength == 3);
+#pragma warning restore CA1508
 
-            do
+            ref T[]? bucket = ref Unsafe.Add(ref Unsafe.As<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
+
+            ref T[]? current = ref Unsafe.Add(ref bucket, 0);
+            if (current is null)
             {
-                if (current is null)
-                {
-                    current = array;
-                    return true;
-                }
-
-                current = ref Unsafe.Add(ref current, 1)!;
+                goto ReturnArray;
             }
-            while (!Unsafe.AreSame(ref current, ref end));
 
-            return false;
-        }
+            current = ref Unsafe.Add(ref bucket, 1);
+            if (current is null)
+            {
+                goto ReturnArray;
+            }
 
-        private ref T[]? GetReference(int bucketIndex)
-        {
-            ref T[]? pool = ref Unsafe.As<Pool, T[]?>(ref _pool);
-            return ref Unsafe.Add(ref pool, bucketIndex * ThreadLocalArraysPerLength);
+            current = ref Unsafe.Add(ref bucket, 2);
+            if (current is not null)
+            {
+                return false;
+            }
+
+        ReturnArray:
+            current = array;
+            return true;
         }
     }
 }

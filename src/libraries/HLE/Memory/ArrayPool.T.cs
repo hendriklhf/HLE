@@ -26,18 +26,17 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
     [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
-    private static ThreadLocalBucket? t_threadLocalBucket;
+    private static ThreadLocalBucket t_threadLocalBucket;
 
     public ArrayPool()
     {
         int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
-        Debug.Assert(ArrayPool.BucketCapacities.Length == bucketCount);
 
         Bucket[] buckets = GC.AllocateArray<Bucket>(bucketCount, true);
         int arrayLength = ArrayPool.MinimumArrayLength;
         for (int i = 0; i < buckets.Length; i++)
         {
-            buckets[i] = new(arrayLength, ArrayPool.BucketCapacities[i]);
+            buckets[i] = new(arrayLength);
             arrayLength <<= 1;
         }
 
@@ -78,15 +77,29 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             return allocatedArray;
         }
 
-        int length = (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength | ArrayPool.MinimumArrayLength);
+        int length;
+#pragma warning disable IDE0045, S3240
+        if (minimumLength >= ArrayPool.MinimumArrayLength)
+#pragma warning restore IDE0045, S3240
+        {
+            length = BitOperations.PopCount((uint)minimumLength) != 1
+                ? (int)BitOperations.RoundUpToPowerOf2((uint)minimumLength)
+                : minimumLength;
+        }
+        else
+        {
+            length = ArrayPool.MinimumArrayLength;
+        }
 
         Debug.Assert(length >= minimumLength);
+        Debug.Assert(length >= ArrayPool.MinimumArrayLength);
         Debug.Assert(BitOperations.PopCount((uint)length) == 1);
 
         int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPool.TrailingZeroCountBucketIndexOffset;
         return TryRentFromThreadLocalBucket(bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private T[] RentFromSharedBuckets(int bucketIndex)
     {
         const int MaximumTryCount = 3;
@@ -108,24 +121,22 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         }
         while (tryCount < MaximumTryCount && bucketIndex < bucketsLength);
 
-        return startingBucket.Rent();
+        T[] result = GC.AllocateUninitializedArray<T>(startingBucket.ArrayLength);
+        Log.Allocated(result);
+        return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryRentFromThreadLocalBucket(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
-        ThreadLocalBucket threadLocalBucket = (t_threadLocalBucket ??= new());
-#if RELEASE
-        return threadLocalBucket.TryRent(bucketIndex, out array);
-#else
+        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
         if (!threadLocalBucket.TryRent(bucketIndex, out array))
         {
             return false;
         }
 
-        Log.Rented(array);
+        Log.RentedThreadLocal(array);
         return true;
-#endif
     }
 
     public void Return(T[]? array)
@@ -165,10 +176,27 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private void ReturnToSharedBucket(T[] array, int bucketIndex)
     {
+        const int MaximumTryCount = 3;
+
         ref Bucket bucket = ref ArrayMarshal.GetUnsafeElementAt(_buckets, bucketIndex);
-        bucket.Return(array);
+        int tryCount = 0;
+        do
+        {
+            if (bucket.TryReturn(array))
+            {
+                return;
+            }
+
+            bucket = ref Unsafe.Subtract(ref bucket, 1);
+            bucketIndex--;
+            tryCount++;
+        }
+        while (tryCount < MaximumTryCount && bucketIndex >= 0);
+
+        Log.Dropped(array);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -176,18 +204,14 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     {
         Debug.Assert(array.Length != 0);
 
-        ThreadLocalBucket threadLocalBucket = (t_threadLocalBucket ??= new());
-#if RELEASE
-        return threadLocalBucket.TryReturn(bucketIndex, array);
-#else
+        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
         if (!threadLocalBucket.TryReturn(bucketIndex, array))
         {
             return false;
         }
 
-        Log.Returned(array);
+        Log.ReturnedThreadLocal(array);
         return true;
-#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

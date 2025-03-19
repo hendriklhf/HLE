@@ -1,87 +1,90 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using HLE.Marshalling;
 
 namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    internal struct Bucket(int arrayLength, int capacity) : IEquatable<Bucket>
+    internal partial struct Bucket(int arrayLength) : IEquatable<Bucket>
     {
-        internal readonly T[]?[] _stack = GC.AllocateArray<T[]>(capacity, true);
-        internal readonly int _arrayLength = arrayLength;
+        public int ArrayLength { get; } = arrayLength;
+
+        internal Pool _pool;
+        internal volatile uint _positions;
         internal long _lastAccessTick;
-
-        [Pure]
-        public T[] Rent()
-        {
-            if (TryRent(out T[]? array))
-            {
-                return array;
-            }
-
-            array = GC.AllocateUninitializedArray<T>(_arrayLength);
-            Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
-            Log.Allocated(array);
-            return array;
-        }
 
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
-            ref T[]? current = ref ArrayMarshal.GetUnsafeElementAt(_stack, _stack.Length);
-            ref T[]? start = ref ArrayMarshal.GetUnsafeElementAt(_stack, -1);
+            const int MaxTryCount = 5;
 
-            do
+            for (int i = 0; i < MaxTryCount; i++)
             {
-                T[]? value = Interlocked.Exchange(ref current, null);
-                if (value is not null)
+                uint positions = _positions;
+                if (positions == 0)
                 {
-                    Log.Rented(value);
-                    array = value;
-                    Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
-                    return true;
+                    array = null;
+                    return false;
                 }
 
-                current = ref Unsafe.Subtract(ref current, 1)!;
+                int index = BitOperations.TrailingZeroCount(positions);
+                ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), index);
+                Interlocked.And(ref _positions, ~(1U << index));
+                T[]? value = Interlocked.Exchange(ref reference, null);
+                if (value is null)
+                {
+                    continue;
+                }
+
+                array = value;
+                Log.RentedShared(array);
+                Interlocked.Exchange(ref _lastAccessTick, Environment.TickCount64);
+                return true;
             }
-            while (!Unsafe.AreSame(ref current, ref start));
 
             array = null;
             return false;
         }
 
-        public void Return(T[] array)
+        public bool TryReturn(T[] array)
         {
-            ref T[]? current = ref ArrayMarshal.GetUnsafeElementAt(_stack, _stack.Length);
-            ref T[]? start = ref ArrayMarshal.GetUnsafeElementAt(_stack, -1);
+            const int MaxTryCount = 5;
 
-            do
+            for (int i = 0; i < MaxTryCount; i++)
             {
-                T[]? prev = Interlocked.CompareExchange(ref current, array, null);
-                if (prev is null)
+                uint positions = ~_positions;
+                if (positions == 0)
                 {
-                    Log.Returned(array);
-                    Volatile.Write(ref _lastAccessTick, Environment.TickCount64);
-                    return;
+                    return false;
                 }
 
-                current = ref Unsafe.Subtract(ref current, 1)!;
-            }
-            while (!Unsafe.AreSame(ref current, ref start));
+                int index = BitOperations.TrailingZeroCount(positions);
+                Interlocked.Or(ref _positions, 1U << index);
+                ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), index);
+                T[]? previous = Interlocked.CompareExchange(ref reference, array, null);
+                if (previous is not null)
+                {
+                    continue;
+                }
 
-            Log.Dropped(array);
+                Log.ReturnedShared(array);
+                Interlocked.Exchange(ref _lastAccessTick, Environment.TickCount64);
+                return true;
+            }
+
+            return false;
         }
 
-        public readonly void Clear() => SpanHelpers.Clear(_stack, _stack.Length);
+        public void Clear()
+            => SpanHelpers.Clear(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), Pool.Length);
 
-        public readonly bool Equals(Bucket other) => ReferenceEquals(_stack, other._stack) && _arrayLength == other._arrayLength && _lastAccessTick == other._lastAccessTick;
+        public readonly bool Equals(Bucket other) => ArrayLength == other.ArrayLength && _positions == other._positions && _lastAccessTick == other._lastAccessTick;
 
         public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bucket other && Equals(other);
 
-        public override readonly int GetHashCode() => HashCode.Combine(_stack, _arrayLength, _lastAccessTick);
+        public override readonly int GetHashCode() => HashCode.Combine(ArrayLength, _positions, _lastAccessTick);
 
         public static bool operator ==(Bucket left, Bucket right) => left.Equals(right);
 

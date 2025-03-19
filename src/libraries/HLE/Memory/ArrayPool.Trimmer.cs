@@ -11,11 +11,11 @@ public sealed partial class ArrayPool<T>
 {
     private static class Trimmer
     {
-        // the trimmer uses a weak reference to allow the pool to be collected
+        // The trimmer uses a weak reference to allow the pool to be collected
         // while it's not in use, i.e. while the thread is sleeping.
-        // when the pool is collected, the pool won't be retrievable
-        // from the weak reference, or the pool's finalizer will set
-        // "_isTrimmerRunning" to false.
+        // When the pool is collected, it won't be retrievable
+        // from the weak reference, or the pool's finalizer has set
+        // "_isTrimmerRunning" to false, which will end the thread.
 
         public static void StartThread(WeakReference<ArrayPool<T>> weakPool)
         {
@@ -62,13 +62,10 @@ public sealed partial class ArrayPool<T>
             {
                 ref Bucket bucket = ref buckets[i];
 
-                TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - Volatile.Read(ref bucket._lastAccessTick));
+                TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - Interlocked.Read(ref bucket._lastAccessTick));
                 if (timeSinceLastAccess > ArrayPool.MaximumLastAccessTime)
                 {
-                    // TODO: mem is wrong, needs to be manually accumulated
-                    long releasedMemory = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength) * bucket._stack.Length;
-                    bucket.Clear();
-                    memoryToRelease -= releasedMemory;
+                    ClearBucket(ref bucket, ref memoryToRelease);
                     continue;
                 }
 
@@ -79,16 +76,54 @@ public sealed partial class ArrayPool<T>
             }
         }
 
+        private static void ClearBucket(ref Bucket bucket, ref long memoryToRelease)
+        {
+            ref T[]? current = ref InlineArrayHelpers.GetReference<Bucket.Pool, T[]?>(ref bucket._pool);
+            ref T[]? end = ref Unsafe.Add(ref current, Bucket.Pool.Length);
+
+            long releasedMemory = 0;
+
+            int i = 0;
+
+            do
+            {
+                T[]? array = Interlocked.Exchange(ref current, null);
+                Interlocked.And(ref bucket._positions, ~(1U << i));
+                if (array is not null)
+                {
+                    long arraySize = (long)ObjectMarshal.GetRawArraySize(array);
+                    releasedMemory += arraySize;
+                }
+
+                current = ref Unsafe.Add(ref current, 1);
+                i++;
+            }
+            while (!Unsafe.AreSame(ref current, ref end));
+
+            memoryToRelease -= releasedMemory;
+        }
+
         private static void TrimBucket(ref Bucket bucket, ref long memoryToRelease)
         {
-            Span<T[]?> stack = bucket._stack!;
-            long arraySize = (long)ObjectMarshal.GetRawArraySize<T>(bucket._arrayLength);
-            for (int i = 0; i <= stack.Length && memoryToRelease > 0; i++)
+            ref T[]? current = ref InlineArrayHelpers.GetReference<Bucket.Pool, T[]?>(ref bucket._pool);
+            ref T[]? end = ref Unsafe.Add(ref current, Bucket.Pool.Length);
+
+            int i = 0;
+
+            do
             {
-                stack[i] = null;
-                // TODO: needs to check if the array at the position is not null
-                memoryToRelease -= arraySize;
+                T[]? array = Interlocked.Exchange(ref current, null);
+                Interlocked.And(ref bucket._positions, ~(1U << i));
+                if (array is not null)
+                {
+                    long arraySize = (long)ObjectMarshal.GetRawArraySize(array);
+                    memoryToRelease -= arraySize;
+                }
+
+                current = ref Unsafe.Add(ref current, 1);
+                i++;
             }
+            while (!Unsafe.AreSame(ref current, ref end) && memoryToRelease > 0);
         }
 
         private static bool HasHighMemoryPressure(out long memoryToRelease)

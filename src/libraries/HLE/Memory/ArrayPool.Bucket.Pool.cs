@@ -5,7 +5,7 @@ namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
-    internal partial struct ThreadLocalBucket
+    internal partial struct Bucket
     {
         [InlineArray(Length)]
         [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
@@ -16,11 +16,11 @@ public sealed partial class ArrayPool<T>
         [SuppressMessage("Roslynator", "RCS1169:Make field read-only")]
         [SuppressMessage("Roslynator", "RCS1213:Remove unused member declaration")]
         [SuppressMessage("ReSharper", "CollectionNeverQueried.Local")]
-        private struct Pool
+        internal struct Pool
         {
-            private T[]? _pool;
+            internal T[]? _pool;
 
-            private const int Length = 32 * ThreadLocalArraysPerLength; // 32 is too much. has to be ArrayPool.BucketCapacities.Length, but it's not const
+            public const int Length = 32;
         }
     }
 }

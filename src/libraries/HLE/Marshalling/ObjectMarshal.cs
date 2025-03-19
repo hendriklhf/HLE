@@ -92,16 +92,18 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TPointer* GetMethodTablePointer<TPointer>(object obj) where TPointer : allows ref struct
-        => *(TPointer**)&obj;
+    public static TPointer* GetMethodTablePointer<TPointer>(object obj)
+        => (TPointer*)Unsafe.AsPointer(ref GetMethodTableReference<TPointer>(obj));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static nuint* GetMethodTablePointer(object obj) => *(nuint**)&obj;
+    public static nuint* GetMethodTablePointer(object obj)
+        => (nuint*)Unsafe.AsPointer(ref GetMethodTableReference(obj));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable(object obj) => **(MethodTable***)&obj;
+    public static MethodTable* GetMethodTable(object obj)
+        => (MethodTable*)Unsafe.AsPointer(ref Unsafe.As<nuint, Ref<MethodTable>>(ref GetMethodTableReference(obj)));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
