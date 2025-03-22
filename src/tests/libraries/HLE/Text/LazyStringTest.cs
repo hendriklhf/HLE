@@ -13,17 +13,22 @@ public sealed partial class LazyStringTest
 {
     private const string TestString = StringConstants.AlphaNumerics;
 
-    public static TheoryData<Parameter> Parameters { get; } =
+    public static TheoryData<Parameter> NonEmptyStringParameters { get; } =
     [
-        new Parameter(TestString, static () => new(TestString)),
-        new Parameter(TestString, static () => LazyString.FromString(TestString)),
-        new Parameter(string.Empty, static () => LazyString.Empty),
-        new Parameter(string.Empty, static () => new(string.Empty)),
-        new Parameter(string.Empty, static () => LazyString.FromString(string.Empty))
+        new(TestString, static () => new(TestString)),
+        new(TestString, static () => LazyString.FromString(TestString))
+    ];
+
+    public static TheoryData<Parameter> EmptyStringParameters { get; } =
+    [
+        new(string.Empty, static () => LazyString.Empty),
+        new(string.Empty, static () => new(string.Empty)),
+        new(string.Empty, static () => LazyString.FromString(string.Empty))
     ];
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void Indexer_Int_RefReadOnlyChar(Parameter parameter)
     {
         string str = parameter.Value;
@@ -37,7 +42,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IndexableChar_Indexer_Int_Char(Parameter parameter)
     {
         string str = parameter.Value;
@@ -51,7 +57,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IndexableChar_Indexer_Index_Char(Parameter parameter)
     {
         string str = parameter.Value;
@@ -65,7 +72,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void Indexer_Index_RefReadOnlyChar(Parameter parameter)
     {
         string str = parameter.Value;
@@ -79,8 +87,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
-    public void Indexer_Range_ReadOnlySpan(Parameter parameter)
+    [MemberData(nameof(NonEmptyStringParameters))]
+    public void Indexer_Range_ReadOnlySpan_NonEmpty(Parameter parameter)
     {
         string str = parameter.Value;
         using LazyString lazy = parameter.CreateLazy();
@@ -90,19 +98,36 @@ public sealed partial class LazyStringTest
 
         Assert.True(lazySpan.SequenceEqual(strSpan));
 
-        lazySpan = lazy[2..];
-        strSpan = str.AsSpan(2..);
+        if (str.Length >= 2)
+        {
+            lazySpan = lazy[2..];
+            strSpan = str.AsSpan(2..);
 
-        Assert.True(lazySpan.SequenceEqual(strSpan));
+            Assert.True(lazySpan.SequenceEqual(strSpan));
 
-        lazySpan = lazy[..3];
-        strSpan = str.AsSpan(..3);
+            lazySpan = lazy[..3];
+            strSpan = str.AsSpan(..3);
+
+            Assert.True(lazySpan.SequenceEqual(strSpan));
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void Indexer_Range_ReadOnlySpan_Empty(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+
+        ReadOnlySpan<char> lazySpan = lazy[..];
+        ReadOnlySpan<char> strSpan = str.AsSpan(..);
 
         Assert.True(lazySpan.SequenceEqual(strSpan));
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void Length(Parameter parameter)
     {
         string str = parameter.Value;
@@ -111,7 +136,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Count(Parameter parameter)
     {
         string str = parameter.Value;
@@ -120,7 +146,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_IsReadOnly(Parameter parameter)
     {
         ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
@@ -128,7 +155,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IReadOnlyCollection_Count(Parameter parameter)
     {
         string str = parameter.Value;
@@ -137,7 +165,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ICountable_Count(Parameter parameter)
     {
         string str = parameter.Value;
@@ -200,7 +229,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void AsSpan(Parameter parameter)
     {
         string str = parameter.Value;
@@ -210,7 +240,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void AsMemory(Parameter parameter)
     {
         string str = parameter.Value;
@@ -220,7 +251,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ToArray(Parameter parameter)
     {
         string str = parameter.Value;
@@ -235,7 +267,7 @@ public sealed partial class LazyStringTest
         => Assert.Same(Array.Empty<char>(), LazyString.Empty.ToArray());
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void ToArray_Start(Parameter parameter)
     {
         string str = parameter.Value;
@@ -248,7 +280,7 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void ToArray_StartLength(Parameter parameter)
     {
         string str = parameter.Value;
@@ -259,7 +291,7 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void ToArray_Range(Parameter parameter)
     {
         string str = parameter.Value;
@@ -270,7 +302,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ToList(Parameter parameter)
     {
         string str = parameter.Value;
@@ -281,7 +314,7 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void ToList_Start(Parameter parameter)
     {
         string str = parameter.Value;
@@ -294,7 +327,7 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void ToList_StartLength(Parameter parameter)
     {
         string str = parameter.Value;
@@ -305,7 +338,7 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void ToList_Range(Parameter parameter)
     {
         string str = parameter.Value;
@@ -332,7 +365,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ToString_Test(Parameter parameter)
     {
         string str = parameter.Value;
@@ -342,7 +376,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void CopyTo_List(Parameter parameter)
     {
         string str = parameter.Value;
@@ -356,7 +391,7 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
     public void CopyTo_List_Offset(Parameter parameter)
     {
         string str = parameter.Value;
@@ -370,7 +405,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void CopyTo_Array(Parameter parameter)
     {
         string str = parameter.Value;
@@ -384,7 +420,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void CopyTo_Memory(Parameter parameter)
     {
         string str = parameter.Value;
@@ -398,7 +435,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void CopyTo_Span(Parameter parameter)
     {
         string str = parameter.Value;
@@ -412,7 +450,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void CopyTo_RefChar(Parameter parameter)
     {
         string str = parameter.Value;
@@ -426,7 +465,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public unsafe void CopyTo_PointerChar(Parameter parameter)
     {
         string str = parameter.Value;
@@ -440,7 +480,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Add_ThrowsNoSupportedException(Parameter parameter)
     {
         ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
@@ -449,7 +490,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Clear_ThrowsNoSupportedException(Parameter parameter)
     {
         ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
@@ -458,7 +500,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Remove_ThrowsNoSupportedException(Parameter parameter)
     {
         ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
@@ -467,7 +510,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IndexOf(Parameter parameter)
     {
         string str = parameter.Value;
@@ -480,7 +524,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void Contains(Parameter parameter)
     {
         string str = parameter.Value;
@@ -493,7 +538,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IReadOnlySpanProvider_GetReadOnlySpan(Parameter parameter)
     {
         string str = parameter.Value;
@@ -503,7 +549,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IReadOnlyMemoryProvider_GetReadOnlyMemory(Parameter parameter)
     {
         string str = parameter.Value;
@@ -513,7 +560,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
@@ -530,7 +578,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IEnumerableChar_GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
@@ -547,7 +596,8 @@ public sealed partial class LazyStringTest
     }
 
     [Theory]
-    [MemberData(nameof(Parameters))]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
     public void IEnumerable_GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;

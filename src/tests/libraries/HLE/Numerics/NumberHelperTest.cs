@@ -105,19 +105,19 @@ public sealed class NumberHelperTest
 
     [Theory]
     [MemberData(nameof(BringIntoRangeParameters))]
-    public void BringIntoRangeTest(object min, object max)
+    public void ClampModTest(object min, object max)
     {
         Assert.Equal(min.GetType(), max.GetType());
 
         MethodInfo bringIntoRangeCore = typeof(NumberHelperTest)
-            .GetMethod(nameof(BringIntoRangeTestCore), BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetMethod(nameof(ClampModTestCore), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(min.GetType());
 
         object[] parameters = [min, max];
         bringIntoRangeCore.Invoke(null, parameters);
     }
 
-    private static void BringIntoRangeTestCore<T>(T min, T max) where T : IBinaryInteger<T>, IMinMaxValue<T>
+    private static void ClampModTestCore<T>(T min, T max) where T : IBinaryInteger<T>, IMinMaxValue<T>
     {
         T start = T.Max(T.CreateSaturating(-100_000), T.MinValue);
         T end = T.Min(T.CreateSaturating(100_000), T.MaxValue);

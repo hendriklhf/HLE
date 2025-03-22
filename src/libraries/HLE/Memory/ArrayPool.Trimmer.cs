@@ -19,7 +19,7 @@ public sealed partial class ArrayPool<T>
 
         public static void StartThread(WeakReference<ArrayPool<T>> weakPool)
         {
-            Thread thread = new(Trim)
+            Thread thread = new(TrimmerThreadStart)
             {
                 Name = TypeFormatter.Default.Format(typeof(Trimmer)),
                 Priority = ThreadPriority.BelowNormal,
@@ -29,31 +29,26 @@ public sealed partial class ArrayPool<T>
             thread.Start(weakPool);
         }
 
-        private static void Trim(object? obj)
+        private static void TrimmerThreadStart(object? obj)
         {
             Debug.Assert(obj is WeakReference<ArrayPool<T>>);
             WeakReference<ArrayPool<T>> weakPool = Unsafe.As<WeakReference<ArrayPool<T>>>(obj);
 
             while (true)
             {
-                Thread.Sleep(ArrayPool.TrimmingInterval);
+                Thread.Sleep(ArrayPoolSettings.TrimmingInterval);
 
-                if (!weakPool.TryGetTarget(out ArrayPool<T>? pool))
+                if (!weakPool.TryGetTarget(out ArrayPool<T>? pool) || !pool._isTrimmerRunning)
                 {
                     break;
                 }
 
-                if (!pool._isTrimmerRunning)
-                {
-                    break;
-                }
-
-                TrimCore(pool);
+                Trim(pool);
             }
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void TrimCore(ArrayPool<T> pool)
+        private static void Trim(ArrayPool<T> pool)
         {
             bool hasHighMemoryPressure = HasHighMemoryPressure(out long memoryToRelease);
 
@@ -63,7 +58,7 @@ public sealed partial class ArrayPool<T>
                 ref Bucket bucket = ref buckets[i];
 
                 TimeSpan timeSinceLastAccess = TimeSpan.FromMilliseconds(Environment.TickCount64 - Interlocked.Read(ref bucket._lastAccessTick));
-                if (timeSinceLastAccess > ArrayPool.MaximumLastAccessTime)
+                if (timeSinceLastAccess > ArrayPoolSettings.MaximumLastAccessTime)
                 {
                     ClearBucket(ref bucket, ref memoryToRelease);
                     continue;
@@ -129,7 +124,7 @@ public sealed partial class ArrayPool<T>
         private static bool HasHighMemoryPressure(out long memoryToRelease)
         {
             GCMemoryInfo memoryInfo = GC.GetGCMemoryInfo();
-            double ratio = ArrayPool.IsCommonlyPooledType<T>() ? ArrayPool.CommonlyPooledTypeTrimThreshold : ArrayPool.TrimThreshold;
+            double ratio = ArrayPoolSettings.IsCommonlyPooledType<T>() ? ArrayPoolSettings.CommonlyPooledTypeTrimThreshold : ArrayPoolSettings.TrimThreshold;
             long threshold = (long)(memoryInfo.HighMemoryLoadThresholdBytes * ratio);
             if (memoryInfo.MemoryLoadBytes >= threshold)
             {

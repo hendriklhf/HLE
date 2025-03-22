@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -89,7 +88,7 @@ public sealed unsafe partial class NativeMemory<T> :
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         nuint byteCount = checked((uint)sizeof(T) * (nuint)(uint)length);
-        T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, sizeof(T));
+        T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, (nuint)sizeof(T));
 
         if (zeroed)
         {
@@ -123,7 +122,7 @@ public sealed unsafe partial class NativeMemory<T> :
             return;
         }
 
-        Debug.Assert(MemoryHelpers.IsAligned((void*)memory, sizeof(T)));
+        Debug.Assert(MemoryHelpers.IsAligned((void*)memory, (nuint)sizeof(T)));
         NativeMemory.AlignedFree((void*)memory);
     }
 

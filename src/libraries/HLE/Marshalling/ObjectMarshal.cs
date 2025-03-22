@@ -103,7 +103,10 @@ public static unsafe class ObjectMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static MethodTable* GetMethodTable(object obj)
-        => (MethodTable*)Unsafe.AsPointer(ref Unsafe.As<nuint, Ref<MethodTable>>(ref GetMethodTableReference(obj)));
+    {
+        ref nuint reference = ref GetMethodTableReference(obj);
+        return *(MethodTable**)Unsafe.AsPointer(ref reference);
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

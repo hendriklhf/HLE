@@ -1,32 +1,12 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace HLE.Memory;
 
-internal static class ArrayPool
+internal static class ArrayPoolSettings
 {
-    /// <summary>
-    /// Stores the maximum amount of arrays per length that the ArrayPool can hold.
-    /// </summary>
-    [SuppressMessage("Style", "IDE0055:Fix formatting")]
-    [SuppressMessage("Major Code Smell", "S109:Magic numbers should not be used")]
-    public static ReadOnlySpan<int> BucketCapacities =>
-    [
-        // 16,32,64,128,256,512
-        64, 64, 64, 64, 64, 64,
-        // 1024,2048,4096,8192
-        32, 32, 32, 32,
-        // 16384,32768,65536
-        16, 16, 16,
-        // 131072,262144,524288,1048576
-        16, 16, 8, 8,
-        // 2097152,4194304,8388608
-        8, 8, 8
-    ];
-
     public static int TrailingZeroCountBucketIndexOffset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

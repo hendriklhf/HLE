@@ -270,7 +270,13 @@ public sealed class PooledBufferWriter<T> :
         if (trimmedBufferSize == 0)
         {
             _buffer = [];
-            // TODO: oldbuffer needs to returned?
+
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                SpanHelpers.Clear(oldBuffer, Count);
+            }
+
+            ArrayPool<T>.Shared.Return(oldBuffer);
             return;
         }
 

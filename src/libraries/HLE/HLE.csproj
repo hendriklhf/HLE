@@ -7,7 +7,7 @@
 
   <PropertyGroup>
     <Description>A library containing mostly high performance types and methods.</Description>
-    <PackageTags>.net10 .net9 csharp c# highperformance performance high-performance</PackageTags>
+    <PackageTags>library classlibrary highperformance performance</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

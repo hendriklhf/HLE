@@ -30,10 +30,10 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
     public ArrayPool()
     {
-        int bucketCount = BitOperations.TrailingZeroCount(ArrayPool.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength) + 1;
+        int bucketCount = BitOperations.TrailingZeroCount(ArrayPoolSettings.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPoolSettings.MinimumArrayLength) + 1;
 
         Bucket[] buckets = GC.AllocateArray<Bucket>(bucketCount, true);
-        int arrayLength = ArrayPool.MinimumArrayLength;
+        int arrayLength = ArrayPoolSettings.MinimumArrayLength;
         for (int i = 0; i < buckets.Length; i++)
         {
             buckets[i] = new(arrayLength);
@@ -42,7 +42,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
         _buckets = buckets;
 
-        Debug.Assert(arrayLength >>> 1 == ArrayPool.MaximumArrayLength);
+        Debug.Assert(arrayLength >>> 1 == ArrayPoolSettings.MaximumArrayLength);
 
         CreateTrimmer();
     }
@@ -60,6 +60,10 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [Conditional("RELEASE")]
     private void CreateTrimmer()
     {
+        // A trimmer is only created in release builds, as there are currently
+        // around 8000 tests that each create an ArrayPool, and therefore also a trimmer thread,
+        // which slows down the tests significantly.
+
         _isTrimmerRunning = true;
         WeakReference<ArrayPool<T>> weakPool = new(this);
         Trimmer.StartThread(weakPool);
@@ -70,7 +74,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     {
         ArgumentOutOfRangeException.ThrowIfNegative(minimumLength);
 
-        if (minimumLength > ArrayPool.MaximumArrayLength)
+        if (minimumLength > ArrayPoolSettings.MaximumArrayLength)
         {
             T[] allocatedArray = GC.AllocateUninitializedArray<T>(minimumLength);
             Log.Allocated(allocatedArray);
@@ -79,7 +83,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
         int length;
 #pragma warning disable IDE0045, S3240
-        if (minimumLength >= ArrayPool.MinimumArrayLength)
+        if (minimumLength >= ArrayPoolSettings.MinimumArrayLength)
 #pragma warning restore IDE0045, S3240
         {
             length = BitOperations.PopCount((uint)minimumLength) != 1
@@ -88,14 +92,14 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         }
         else
         {
-            length = ArrayPool.MinimumArrayLength;
+            length = ArrayPoolSettings.MinimumArrayLength;
         }
 
         Debug.Assert(length >= minimumLength);
-        Debug.Assert(length >= ArrayPool.MinimumArrayLength);
+        Debug.Assert(length >= ArrayPoolSettings.MinimumArrayLength);
         Debug.Assert(BitOperations.PopCount((uint)length) == 1);
 
-        int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPool.TrailingZeroCountBucketIndexOffset;
+        int bucketIndex = BitOperations.TrailingZeroCount(length) - ArrayPoolSettings.TrailingZeroCountBucketIndexOffset;
         return TryRentFromThreadLocalBucket(bucketIndex, out T[]? array) ? array : RentFromSharedBuckets(bucketIndex);
     }
 
@@ -217,7 +221,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryGetBucketIndex(int arrayLength, out int bucketIndex)
     {
-        if (arrayLength is < ArrayPool.MinimumArrayLength or > ArrayPool.MaximumArrayLength)
+        if (arrayLength is < ArrayPoolSettings.MinimumArrayLength or > ArrayPoolSettings.MaximumArrayLength)
         {
             bucketIndex = -1;
             return false;
@@ -237,7 +241,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             }
         }
 
-        bucketIndex = BitOperations.TrailingZeroCount(pow2Length) - ArrayPool.TrailingZeroCountBucketIndexOffset;
+        bucketIndex = BitOperations.TrailingZeroCount(pow2Length) - ArrayPoolSettings.TrailingZeroCountBucketIndexOffset;
         return true;
     }
 

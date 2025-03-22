@@ -85,6 +85,11 @@ public readonly unsafe ref struct CopyWorker<T> : IEquatable<CopyWorker<T>>
 
     public void CopyTo(List<T> destination, int offset = 0)
     {
+        if (_length == 0)
+        {
+            return;
+        }
+
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
         if (_length + (uint)offset >= (uint)Array.MaxLength)

@@ -77,6 +77,6 @@ public sealed class TypeFormatterTest
 
         public Type Type { get; } = type;
 
-        public override string ToString() => $"\"{Expected}\", {Type}";
+        public override string ToString() => Type.ToString();
     }
 }

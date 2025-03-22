@@ -15,6 +15,8 @@ public sealed partial class LazyStringTest
 
         [Pure]
         public LazyString CreateLazy() => _lazy();
+
+        public override string ToString() => $"\"{Value}\"";
     }
 #pragma warning restore CA1815
 }

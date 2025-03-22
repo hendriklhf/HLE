@@ -58,6 +58,7 @@ public ref struct MemoryEnumerator<T> : IEnumerator<T>, IEquatable<MemoryEnumera
         return true;
     }
 
+    [DoesNotReturn]
     void IEnumerator.Reset() => throw new NotSupportedException();
 
     readonly void IDisposable.Dispose()

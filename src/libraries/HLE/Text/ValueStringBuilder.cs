@@ -131,7 +131,8 @@ public unsafe ref partial struct ValueStringBuilder :
         chars.Dispose();
     }
 
-    public void Append([InterpolatedStringHandlerArgument("")] InterpolatedStringHandler chars) => this = chars.Builder;
+    public void Append([InterpolatedStringHandlerArgument("")] ref InterpolatedStringHandler chars)
+        => this = chars.Builder;
 
     public void Append(IEnumerable<char> chars)
     {

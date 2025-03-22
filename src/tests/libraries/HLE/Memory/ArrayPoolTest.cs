@@ -13,17 +13,17 @@ public sealed class ArrayPoolTest
 
     public static TheoryData<int> ConsecutiveValues0To4096Parameters { get; } = TheoryDataHelpers.CreateRange(0, 4096);
 
-    public static TheoryData<int> ConsecutiveValues0ToMinimumLengthMinus1 { get; } = TheoryDataHelpers.CreateRange(0, ArrayPool.MinimumArrayLength - 1);
+    public static TheoryData<int> ConsecutiveValues0ToMinimumLengthMinus1 { get; } = TheoryDataHelpers.CreateRange(0, ArrayPoolSettings.MinimumArrayLength - 1);
 
     [Fact]
     public void IndexOffsetIsTrailingZeroCountOfMinimumArrayLength()
-        => Assert.Equal(ArrayPool.TrailingZeroCountBucketIndexOffset, BitOperations.TrailingZeroCount(ArrayPool.MinimumArrayLength));
+        => Assert.Equal(ArrayPoolSettings.TrailingZeroCountBucketIndexOffset, BitOperations.TrailingZeroCount(ArrayPoolSettings.MinimumArrayLength));
 
     [Fact]
     public void MinimumAndMaximumLengthArePow2()
     {
-        Assert.Equal(1, BitOperations.PopCount(ArrayPool.MinimumArrayLength));
-        Assert.Equal(1, BitOperations.PopCount(ArrayPool.MaximumArrayLength));
+        Assert.Equal(1, BitOperations.PopCount(ArrayPoolSettings.MinimumArrayLength));
+        Assert.Equal(1, BitOperations.PopCount(ArrayPoolSettings.MaximumArrayLength));
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class ArrayPoolTest
         using ArrayPool<int> pool = new();
 
         int[] array = pool.Rent(0);
-        Assert.True(array.Length >= ArrayPool.MinimumArrayLength);
+        Assert.True(array.Length >= ArrayPoolSettings.MinimumArrayLength);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public sealed class ArrayPoolTest
     {
         using ArrayPool<int> pool = new();
         int[] array = pool.Rent(length);
-        Assert.True(array.Length >= ArrayPool.MinimumArrayLength);
+        Assert.True(array.Length >= ArrayPoolSettings.MinimumArrayLength);
     }
 
     [Theory]
@@ -134,11 +134,11 @@ public sealed class ArrayPoolTest
 
         for (int i = 0; i < 8; i++)
         {
-            int[] array1 = pool.Rent(ArrayPool.MinimumArrayLength << i);
-            int[] array2 = pool.Rent(ArrayPool.MinimumArrayLength << i);
-            int[] array3 = pool.Rent(ArrayPool.MinimumArrayLength << i);
-            int[] array4 = pool.Rent(ArrayPool.MinimumArrayLength << i);
-            int[] array5 = pool.Rent(ArrayPool.MinimumArrayLength << i);
+            int[] array1 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
+            int[] array2 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
+            int[] array3 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
+            int[] array4 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
+            int[] array5 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
 
             pool.Return(array1);
             pool.Return(array2);
@@ -147,19 +147,43 @@ public sealed class ArrayPoolTest
             pool.Return(array5);
         }
 
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        Assert.False(Array.TrueForAll(pool._buckets, static b => Array.TrueForAll(b._stack, static a => a is null)));
+        bool allNull = true;
+        for (int i = 0; i < pool._buckets.Length; i++)
+        {
+            ref ArrayPool<int>.Bucket bucket = ref pool._buckets[i];
+            for (int j = 0; j < ArrayPool<int>.Bucket.Pool.Length; j++)
+            {
+                if (bucket._pool[j] is not null)
+                {
+                    allNull = false;
+                }
+            }
+        }
+
+        Assert.False(allNull);
 
         pool.Clear();
 
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        Assert.True(Array.TrueForAll(pool._buckets, static b => Array.TrueForAll(b._stack, static a => a is null)));
+        allNull = true;
+        for (int i = 0; i < pool._buckets.Length; i++)
+        {
+            ref ArrayPool<int>.Bucket bucket = ref pool._buckets[i];
+            for (int j = 0; j < ArrayPool<int>.Bucket.Pool.Length; j++)
+            {
+                if (bucket._pool[j] is not null)
+                {
+                    allNull = false;
+                }
+            }
+        }
+
+        Assert.True(allNull);
     }
 
     private static TheoryData<int> CreatePow2LengthMinimumToMaximumLengthParameters()
     {
         TheoryData<int> data = new();
-        for (int i = ArrayPool.MinimumArrayLength; i <= ArrayPool.MaximumArrayLength; i <<= 1)
+        for (int i = ArrayPoolSettings.MinimumArrayLength; i <= ArrayPoolSettings.MaximumArrayLength; i <<= 1)
         {
             data.Add(i);
         }

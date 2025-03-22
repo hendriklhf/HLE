@@ -32,6 +32,7 @@ public ref struct ReadOnlyMemoryEnumerator<T> : IEnumerator<T>, IEquatable<ReadO
 
     public bool MoveNext() => _enumerator.MoveNext();
 
+    [DoesNotReturn]
     void IEnumerator.Reset() => throw new NotSupportedException();
 
     readonly void IDisposable.Dispose()

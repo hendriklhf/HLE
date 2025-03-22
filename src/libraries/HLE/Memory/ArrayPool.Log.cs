@@ -1,9 +1,9 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using HLE.Marshalling;
 using HLE.Text;
 #if DEBUG
 using System.Threading;
-using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace HLE.Memory;
