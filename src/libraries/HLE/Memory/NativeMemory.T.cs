@@ -89,7 +89,7 @@ public sealed unsafe partial class NativeMemory<T> :
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         nuint byteCount = checked((uint)sizeof(T) * (nuint)(uint)length);
-        T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, GetAlignment());
+        T* memory = (T*)NativeMemory.AlignedAlloc(byteCount, sizeof(T));
 
         if (zeroed)
         {
@@ -123,13 +123,9 @@ public sealed unsafe partial class NativeMemory<T> :
             return;
         }
 
-        Debug.Assert(MemoryHelpers.IsAligned((void*)memory, GetAlignment()));
+        Debug.Assert(MemoryHelpers.IsAligned((void*)memory, sizeof(T)));
         NativeMemory.AlignedFree((void*)memory);
     }
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint GetAlignment() => BitOperations.RoundUpToPowerOf2((uint)sizeof(T));
 
     [Pure]
     public Span<T> AsSpan() => new(Pointer, Length);
