@@ -1,8 +1,8 @@
 using System;
 
-namespace HLE.Collections;
+namespace HLE.Text;
 
-public ref partial struct ValueList<T>
+public ref partial struct ValueStringBuilder
 {
     [Flags]
     private enum Flags

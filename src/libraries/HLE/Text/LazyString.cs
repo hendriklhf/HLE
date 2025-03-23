@@ -25,7 +25,8 @@ public sealed partial class LazyString :
     IIndexable<char>,
     ICollectionProvider<char>,
     IReadOnlyCollection<char>,
-    ICollection<char>
+    ICollection<char>,
+    ISpanFormattable
 {
     public ref readonly char this[int index]
     {
@@ -271,6 +272,21 @@ public sealed partial class LazyString :
             return null!;
         }
     }
+
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
+    {
+        if (destination.Length < Length)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref GetReference(), Length);
+        charsWritten = Length;
+        return true;
+    }
+
+    string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
     public void CopyTo(List<char> destination, int offset = 0)
     {

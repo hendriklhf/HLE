@@ -33,7 +33,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public readonly Span<char> this[Range range] => WrittenSpan[range];
 
-    public readonly int Length => _lengthAndIsDisposed.Integer;
+    public int Length { get; private set; }
 
     readonly int IReadOnlyCollection<char>.Count => Length;
 
@@ -41,7 +41,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
     readonly int ICollection<char>.Count => Length;
 
-    public readonly int Capacity => _capacityAndIsStackalloced.Integer;
+    public int Capacity { get; private set; }
 
     public readonly Span<char> WrittenSpan => MemoryMarshal.CreateSpan(ref GetBufferReference(), Length);
 
@@ -52,22 +52,16 @@ public unsafe ref partial struct ValueStringBuilder :
     readonly bool ICollection<char>.IsReadOnly => false;
 
     private ref char _buffer;
-    private IntBoolUnion<int> _lengthAndIsDisposed;
-    private IntBoolUnion<int> _capacityAndIsStackalloced;
+    private Flags _flags;
 
-    public ValueStringBuilder()
-    {
-        _buffer = ref Unsafe.NullRef<char>();
-        _capacityAndIsStackalloced = default;
-        _capacityAndIsStackalloced.Bool = true;
-    }
+    public ValueStringBuilder() => _buffer = ref Unsafe.NullRef<char>();
 
     public ValueStringBuilder(int capacity)
     {
         char[] buffer = ArrayPool<char>.Shared.Rent(capacity);
         _buffer = ref MemoryMarshal.GetArrayDataReference(buffer);
-        _capacityAndIsStackalloced = default;
-        _capacityAndIsStackalloced.SetIntegerBoolOverwrite(buffer.Length);
+        Capacity = buffer.Length;
+        _flags = Flags.IsRentedArray;
     }
 
     public ValueStringBuilder(Span<char> buffer) : this(ref MemoryMarshal.GetReference(buffer), buffer.Length)
@@ -81,26 +75,29 @@ public unsafe ref partial struct ValueStringBuilder :
     public ValueStringBuilder(ref char buffer, int length)
     {
         _buffer = ref buffer;
-        _capacityAndIsStackalloced = default;
-        _capacityAndIsStackalloced.SetValuesUnsafe(length, true);
+        Capacity = length;
     }
 
     public void Dispose()
     {
-        if (_lengthAndIsDisposed.Bool)
+        Flags flags = _flags;
+        if ((flags & Flags.IsDisposed) != 0)
         {
             return;
         }
 
-        if (!_capacityAndIsStackalloced.Bool)
+        _flags = Flags.IsDisposed;
+
+        ref char buffer = ref _buffer;
+        _buffer = ref Unsafe.NullRef<char>();
+
+        if ((flags & Flags.IsRentedArray) == 0)
         {
-            char[] array = SpanMarshal.AsArray(ref _buffer);
-            ArrayPool<char>.Shared.Return(array);
+            return;
         }
 
-        _buffer = ref Unsafe.NullRef<char>();
-        _capacityAndIsStackalloced = default;
-        _lengthAndIsDisposed.SetValuesUnsafe(0, true);
+        char[] array = SpanMarshal.AsArray(ref buffer);
+        ArrayPool<char>.Shared.Return(array);
     }
 
     [Pure]
@@ -123,7 +120,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
     readonly ReadOnlySpan<char> IReadOnlySpanProvider<char>.AsSpan(Range range) => AsSpan(range);
 
-    public void Advance(int length) => _lengthAndIsDisposed.Integer += length;
+    public void Advance(int length) => Length += length;
 
     void IStringBuilder.Append(ref PooledInterpolatedStringHandler chars)
     {
@@ -154,7 +151,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
             switch (chars)
             {
-                case ICollection<char> collection when !_capacityAndIsStackalloced.Bool:
+                case ICollection<char> collection when (_flags & Flags.IsRentedArray) != 0:
                     char[] buffer = SpanMarshal.AsArray(GetBuffer());
                     Debug.Assert(buffer.GetType() == typeof(char[]));
                     Debug.Assert(buffer.Length >= Length + collection.Count);
@@ -204,13 +201,13 @@ public unsafe ref partial struct ValueStringBuilder :
     private void Append(scoped ref char chars, int length)
     {
         SpanHelpers.Memmove(ref GetDestination(length), ref chars, length);
-        _lengthAndIsDisposed.SetIntegerBoolOverwrite(Length + length);
+        Length += length;
     }
 
     public void Append(char c)
     {
         GetDestination(1) = c;
-        _lengthAndIsDisposed.SetIntegerBoolOverwrite(Length + 1);
+        Length++;
     }
 
     public void Append(char c, int count)
@@ -223,7 +220,7 @@ public unsafe ref partial struct ValueStringBuilder :
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
         MemoryMarshal.CreateSpan(ref GetDestination(count), count).Fill(c);
-        _lengthAndIsDisposed.SetIntegerBoolOverwrite(Length + count);
+        Length += count;
     }
 
     public void Append(IEnumerable<string> strings)
@@ -263,7 +260,7 @@ public unsafe ref partial struct ValueStringBuilder :
             destination = ref Unsafe.Add(ref destination, s.Length);
         }
 
-        _lengthAndIsDisposed.SetIntegerBoolOverwrite(Length + sum);
+        Length += sum;
     }
 
     public void Append(byte value, [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = null)
@@ -349,7 +346,7 @@ public unsafe ref partial struct ValueStringBuilder :
             }
         }
 
-        _lengthAndIsDisposed.SetIntegerBoolOverwrite(length + charsWritten);
+        Length += charsWritten;
 
         return;
 
@@ -407,7 +404,7 @@ public unsafe ref partial struct ValueStringBuilder :
         ReadOnlySpan<char> format = default
     );
 
-    public void Clear() => _lengthAndIsDisposed.SetIntegerUnsafe(0);
+    public void Clear() => Length = 0;
 
     public void EnsureCapacity(int capacity) => GetDestination(capacity - Capacity);
 
@@ -470,7 +467,7 @@ public unsafe ref partial struct ValueStringBuilder :
     {
         Debug.Assert(sizeHint >= 0);
 
-        if (_lengthAndIsDisposed.Bool)
+        if ((_flags & Flags.IsDisposed) != 0)
         {
             ThrowHelper.ThrowObjectDisposedException<ValueStringBuilder>();
         }
@@ -500,20 +497,23 @@ public unsafe ref partial struct ValueStringBuilder :
         }
 
         _buffer = ref MemoryMarshal.GetReference(newBuffer);
+        Capacity = newBuffer.Length;
 
-        if (!_capacityAndIsStackalloced.UnsetBool())
+        Flags flags = _flags;
+        _flags |= Flags.IsRentedArray;
+
+        if ((flags & Flags.IsRentedArray) != 0)
         {
             char[] array = SpanMarshal.AsArray(oldBuffer);
             ArrayPool<char>.Shared.Return(array);
         }
 
-        _capacityAndIsStackalloced.SetIntegerBoolOverwrite(newBuffer.Length);
         return ref Unsafe.Add(ref _buffer, length);
     }
 
     private readonly ref char GetBufferReference()
     {
-        if (_lengthAndIsDisposed.Bool)
+        if ((_flags & Flags.IsDisposed) != 0)
         {
             ThrowHelper.ThrowObjectDisposedException<ValueStringBuilder>();
         }
@@ -546,7 +546,9 @@ public unsafe ref partial struct ValueStringBuilder :
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;
 
     [Pure]
-    public readonly bool Equals(scoped ValueStringBuilder other) => Length == other.Length && GetBuffer() == other.GetBuffer();
+    public readonly bool Equals(scoped ValueStringBuilder other)
+        => Length == other.Length && Capacity == other.Capacity &&
+           _flags == other._flags && GetBuffer() == other.GetBuffer();
 
     [Pure]
     public readonly bool Equals(scoped ValueStringBuilder other, StringComparison comparisonType)
@@ -557,7 +559,7 @@ public unsafe ref partial struct ValueStringBuilder :
         => WrittenSpan.Equals(str, comparisonType);
 
     [Pure]
-    public override readonly int GetHashCode() => GetHashCode(StringComparison.Ordinal);
+    public override readonly int GetHashCode() => HashCode.Combine(Length, Capacity, _flags);
 
     [Pure]
     public readonly int GetHashCode(StringComparison comparisonType) => string.GetHashCode(WrittenSpan, comparisonType);

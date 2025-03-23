@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.TestUtilities;
@@ -32,7 +33,7 @@ public sealed partial class LazyStringTest
     public void Indexer_Int_RefReadOnlyChar(Parameter parameter)
     {
         string str = parameter.Value;
-        LazyString lazy = parameter.CreateLazy();
+        using LazyString lazy = parameter.CreateLazy();
 
         for (int i = 0; i < str.Length; i++)
         {
@@ -47,11 +48,12 @@ public sealed partial class LazyStringTest
     public void IndexableChar_Indexer_Int_Char(Parameter parameter)
     {
         string str = parameter.Value;
-        IIndexable<char> lazy = TestHelpers.Cast<LazyString, IIndexable<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        IIndexable<char> indexable = TestHelpers.Cast<LazyString, IIndexable<char>>(lazy);
 
         for (int i = 0; i < str.Length; i++)
         {
-            char c = lazy[i];
+            char c = indexable[i];
             Assert.Equal(str[i], c);
         }
     }
@@ -62,11 +64,12 @@ public sealed partial class LazyStringTest
     public void IndexableChar_Indexer_Index_Char(Parameter parameter)
     {
         string str = parameter.Value;
-        IIndexable<char> lazy = TestHelpers.Cast<LazyString, IIndexable<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        IIndexable<char> indexable = TestHelpers.Cast<LazyString, IIndexable<char>>(lazy);
 
         for (int i = 0; i < str.Length; i++)
         {
-            char c = lazy[new Index(i)];
+            char c = indexable[new Index(i)];
             Assert.Equal(str[i], c);
         }
     }
@@ -141,8 +144,9 @@ public sealed partial class LazyStringTest
     public void ICollection_Count(Parameter parameter)
     {
         string str = parameter.Value;
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
-        Assert.Equal(str.Length, lazy.Count);
+        using LazyString lazy = parameter.CreateLazy();
+        ICollection<char> collection = TestHelpers.Cast<LazyString, ICollection<char>>(lazy);
+        Assert.Equal(str.Length, collection.Count);
     }
 
     [Theory]
@@ -150,8 +154,9 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_IsReadOnly(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
-        Assert.True(lazy.IsReadOnly);
+        using LazyString lazy = parameter.CreateLazy();
+        ICollection<char> collection = TestHelpers.Cast<LazyString, ICollection<char>>(lazy);
+        Assert.True(collection.IsReadOnly);
     }
 
     [Theory]
@@ -160,8 +165,9 @@ public sealed partial class LazyStringTest
     public void IReadOnlyCollection_Count(Parameter parameter)
     {
         string str = parameter.Value;
-        IReadOnlyCollection<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyCollection<char>>(parameter.CreateLazy());
-        Assert.Equal(str.Length, lazy.Count);
+        using LazyString lazy = parameter.CreateLazy();
+        IReadOnlyCollection<char> collection = TestHelpers.Cast<LazyString, IReadOnlyCollection<char>>(lazy);
+        Assert.Equal(str.Length, collection.Count);
     }
 
     [Theory]
@@ -170,8 +176,9 @@ public sealed partial class LazyStringTest
     public void ICountable_Count(Parameter parameter)
     {
         string str = parameter.Value;
-        ICountable lazy = TestHelpers.Cast<LazyString, ICountable>(parameter.CreateLazy());
-        Assert.Equal(str.Length, lazy.Count);
+        using LazyString lazy = parameter.CreateLazy();
+        ICountable countable = TestHelpers.Cast<LazyString, ICountable>(lazy);
+        Assert.Equal(str.Length, countable.Count);
     }
 
     [Fact]
@@ -484,9 +491,10 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Add_ThrowsNoSupportedException(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        ICollection<char> collection = TestHelpers.Cast<LazyString, ICollection<char>>(lazy);
 
-        Assert.Throws<NotSupportedException>(() => lazy.Add('a'));
+        Assert.Throws<NotSupportedException>(() => collection.Add('a'));
     }
 
     [Theory]
@@ -494,9 +502,10 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Clear_ThrowsNoSupportedException(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        ICollection<char> collection = TestHelpers.Cast<LazyString, ICollection<char>>(lazy);
 
-        Assert.Throws<NotSupportedException>(lazy.Clear);
+        Assert.Throws<NotSupportedException>(collection.Clear);
     }
 
     [Theory]
@@ -504,9 +513,10 @@ public sealed partial class LazyStringTest
     [MemberData(nameof(EmptyStringParameters))]
     public void ICollection_Remove_ThrowsNoSupportedException(Parameter parameter)
     {
-        ICollection<char> lazy = TestHelpers.Cast<LazyString, ICollection<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        ICollection<char> collection = TestHelpers.Cast<LazyString, ICollection<char>>(lazy);
 
-        Assert.Throws<NotSupportedException>(() => lazy.Remove('a'));
+        Assert.Throws<NotSupportedException>(() => collection.Remove('a'));
     }
 
     [Theory]
@@ -517,7 +527,7 @@ public sealed partial class LazyStringTest
         string str = parameter.Value;
         using LazyString lazy = parameter.CreateLazy();
 
-        foreach (char c in StringConstants.AlphaNumerics)
+        foreach (char c in TestString)
         {
             Assert.Equal(str.IndexOf(c), lazy.IndexOf(c));
         }
@@ -531,7 +541,7 @@ public sealed partial class LazyStringTest
         string str = parameter.Value;
         using LazyString lazy = parameter.CreateLazy();
 
-        foreach (char c in StringConstants.AlphaNumerics)
+        foreach (char c in TestString)
         {
             Assert.Equal(str.Contains(c), lazy.Contains(c));
         }
@@ -543,9 +553,10 @@ public sealed partial class LazyStringTest
     public void IReadOnlySpanProvider_GetReadOnlySpan(Parameter parameter)
     {
         string str = parameter.Value;
-        IReadOnlySpanProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlySpanProvider<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        IReadOnlySpanProvider<char> provider = TestHelpers.Cast<LazyString, IReadOnlySpanProvider<char>>(lazy);
 
-        Assert.True(lazy.AsSpan().SequenceEqual(str));
+        Assert.True(provider.AsSpan().SequenceEqual(str));
     }
 
     [Theory]
@@ -554,9 +565,10 @@ public sealed partial class LazyStringTest
     public void IReadOnlyMemoryProvider_GetReadOnlyMemory(Parameter parameter)
     {
         string str = parameter.Value;
-        IReadOnlyMemoryProvider<char> lazy = TestHelpers.Cast<LazyString, IReadOnlyMemoryProvider<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        IReadOnlyMemoryProvider<char> provider = TestHelpers.Cast<LazyString, IReadOnlyMemoryProvider<char>>(lazy);
 
-        Assert.True(lazy.AsMemory().Span.SequenceEqual(str));
+        Assert.True(provider.AsMemory().Span.SequenceEqual(str));
     }
 
     [Theory]
@@ -583,10 +595,11 @@ public sealed partial class LazyStringTest
     public void IEnumerableChar_GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
-        IEnumerable<char> lazy = TestHelpers.Cast<LazyString, IEnumerable<char>>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        IEnumerable<char> enumerable = TestHelpers.Cast<LazyString, IEnumerable<char>>(lazy);
 
         using CharEnumerator stringEnumerator = str.GetEnumerator();
-        using IEnumerator<char> lazyEnumerator = lazy.GetEnumerator();
+        using IEnumerator<char> lazyEnumerator = enumerable.GetEnumerator();
 
         while (lazyEnumerator.MoveNext())
         {
@@ -601,11 +614,12 @@ public sealed partial class LazyStringTest
     public void IEnumerable_GetEnumerator(Parameter parameter)
     {
         string str = parameter.Value;
-        System.Collections.IEnumerable lazy = TestHelpers.Cast<LazyString, System.Collections.IEnumerable>(parameter.CreateLazy());
+        using LazyString lazy = parameter.CreateLazy();
+        System.Collections.IEnumerable enumerable = TestHelpers.Cast<LazyString, System.Collections.IEnumerable>(lazy);
 
         using CharEnumerator stringEnumerator = str.GetEnumerator();
         // ReSharper disable once GenericEnumeratorNotDisposed
-        System.Collections.IEnumerator lazyEnumerator = lazy.GetEnumerator();
+        System.Collections.IEnumerator lazyEnumerator = enumerable.GetEnumerator();
 
         while (lazyEnumerator.MoveNext())
         {
@@ -712,7 +726,7 @@ public sealed partial class LazyStringTest
     [Fact]
     public void Equals_object_string_ReturnsTrue()
     {
-        LazyString a = LazyString.FromString(TestString);
+        using LazyString a = LazyString.FromString(TestString);
         object b = TestHelpers.Cast<string, object>(TestString);
         Assert.True(a.Equals(b));
 
@@ -728,5 +742,113 @@ public sealed partial class LazyStringTest
         Assert.False(a.Equals(b));
     }
 
-    // TODO: GetHashCode, operator tests, json tests
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void IFormattable_Format_FormatsCorrectly(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+
+        IFormattable formattable = TestHelpers.Cast<LazyString, IFormattable>(lazy);
+
+        string formattedString = formattable.ToString(null, null);
+
+        Assert.Equal(str, formattedString);
+    }
+
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void TryFormat_FormatsCorrectly(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+
+        char[] buffer = ArrayPool<char>.Shared.Rent(lazy.Length);
+        bool success = lazy.TryFormat(buffer, out int charsWritten);
+        Assert.True(success);
+        Assert.Equal(str.Length, charsWritten);
+        Assert.Equal(lazy.Length, charsWritten);
+
+        Assert.True(buffer.AsSpan(0, charsWritten).SequenceEqual(str));
+        Assert.True(buffer.AsSpan(0, charsWritten).SequenceEqual(lazy.AsSpan()));
+
+        ArrayPool<char>.Shared.Return(buffer);
+    }
+
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void GetHashCode_ReturnsSameHashCode(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+
+        Assert.Equal(str.GetHashCode(), lazy.GetHashCode());
+    }
+
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void GetHashCode_StringComparision_ReturnsSameHashCode(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+
+        ReadOnlySpan<StringComparison> comparisons = EnumValues<StringComparison>.AsSpan();
+        foreach (StringComparison comparision in comparisons)
+        {
+            Assert.Equal(str.GetHashCode(comparision), lazy.GetHashCode(comparision));
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void EqualityOperator_String_ReturnsTrue(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+        Assert.True(lazy == str);
+    }
+
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void EqualityOperator_LazyString_ReturnsTrue(Parameter parameter)
+    {
+        using LazyString lazy1 = parameter.CreateLazy();
+        using LazyString lazy2 = parameter.CreateLazy();
+        Assert.True(lazy1 == lazy2);
+    }
+
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void JsonSerialization(Parameter parameter)
+    {
+        string str = parameter.Value;
+        using LazyString lazy = parameter.CreateLazy();
+
+        object lazyObject = new
+        {
+            Value = lazy
+        };
+
+        object stringObject = new
+        {
+            Value = lazy
+        };
+
+        string lazyJson = JsonSerializer.Serialize(lazyObject);
+        string stringJson = JsonSerializer.Serialize(stringObject);
+
+        string expectedJson = $"{{\"Value\":\"{str}\"}}";
+
+        Assert.Equal(expectedJson, lazyJson);
+        Assert.Equal(expectedJson, stringJson);
+    }
+
+    // TODO: json deserialization
 }

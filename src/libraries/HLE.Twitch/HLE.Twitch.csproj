@@ -5,6 +5,11 @@
     <IsNugetPackage>true</IsNugetPackage>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Description>A library containing a Twitch chat client.</Description>
+    <PackageTags>library classlibrary twitch chat</PackageTags>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Condition="'$(PublishingPackage)'!='true'" Include="..\HLE\HLE.csproj"/>
     <PackageReference Condition="'$(PublishingPackage)'=='true'" Include="HLE"/>

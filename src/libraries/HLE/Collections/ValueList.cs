@@ -81,12 +81,12 @@ public ref partial struct ValueList<T> :
     public void Dispose()
     {
         Flags flags = _flags;
-        if ((flags & Flags.Disposed) != 0)
+        if ((flags & Flags.IsDisposed) != 0)
         {
             return;
         }
 
-        _flags = Flags.Disposed;
+        _flags = Flags.IsDisposed;
 
         ref T buffer = ref _buffer;
         _buffer = ref Unsafe.NullRef<T>();
@@ -410,7 +410,7 @@ public ref partial struct ValueList<T> :
 
     private readonly ref T GetBufferReference()
     {
-        if ((_flags & Flags.Disposed) != 0)
+        if ((_flags & Flags.IsDisposed) != 0)
         {
             ThrowHelper.ThrowObjectDisposedException<ValueList<T>>();
         }

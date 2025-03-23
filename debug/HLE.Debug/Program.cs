@@ -2,7 +2,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 
-#pragma warning disable // RCS1060, S125, IDE0022, CA1515, CA1024, CA1822, IDE0032, CA1052, CA1707
+#pragma warning disable
 
 namespace HLE.Debug;
 

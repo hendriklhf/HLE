@@ -11,7 +11,7 @@ if ($api_key.Length -eq 0)
     exit
 }
 
-$projects = "src/libraries/HLE" #, "src/libraries/HLE.Twitch"
+$projects = "src/libraries/HLE", "src/libraries/HLE.Twitch"
 
 $starting_directory = Get-Location
 foreach ($project in $projects)
