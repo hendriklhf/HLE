@@ -7,42 +7,6 @@ namespace HLE.Memory;
 
 public static unsafe partial class SpanHelpers
 {
-    public static void Copy<T>(T[] source, T[] destination)
-        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetArrayDataReference(source), source.Length);
-
-    public static void Copy<T>(T[] source, Span<T> destination)
-        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetArrayDataReference(source), source.Length);
-
-    public static void Copy<T>(T[] source, T* destination)
-        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetArrayDataReference(source), source.Length);
-
-    public static void Copy<T>(T[] source, ref T destination)
-        => Memmove(ref destination, ref MemoryMarshal.GetArrayDataReference(source), source.Length);
-
-    public static void Copy<T>(Span<T> source, T[] destination)
-        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(Span<T> source, Span<T> destination)
-        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(Span<T> source, ref T destination)
-        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(Span<T> source, T* destination)
-        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(ReadOnlySpan<T> source, T[] destination)
-        => Memmove(ref MemoryMarshal.GetArrayDataReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(ReadOnlySpan<T> source, Span<T> destination)
-        => Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(ReadOnlySpan<T> source, ref T destination)
-        => Memmove(ref destination, ref MemoryMarshal.GetReference(source), source.Length);
-
-    public static void Copy<T>(ReadOnlySpan<T> source, T* destination)
-        => Memmove(ref Unsafe.AsRef<T>(destination), ref MemoryMarshal.GetReference(source), source.Length);
-
     /// <inheritdoc cref="Memmove{T,TElementCount}(ref T,ref T,TElementCount)"/>
     public static void Memmove<T, TElementCount>(T* destination, T* source, TElementCount elementCount)
         where TElementCount : unmanaged, IBinaryInteger<TElementCount>
@@ -64,6 +28,11 @@ public static unsafe partial class SpanHelpers
 
         if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {
+            if (typeof(TElementCount) == typeof(sbyte))
+            {
+                ArgumentOutOfRangeException.ThrowIfNegative(elementCount);
+            }
+
             MemoryMarshal.CreateReadOnlySpan(ref source, Unsafe.BitCast<TElementCount, byte>(elementCount))
                 .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
             return;

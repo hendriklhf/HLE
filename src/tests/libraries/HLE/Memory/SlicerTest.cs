@@ -8,7 +8,7 @@ namespace HLE.UnitTests.Memory;
 public sealed class SlicerTest
 {
     [Fact]
-    public void CreateSpan_Start_Test()
+    public void Slice_Start_Test()
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
@@ -20,7 +20,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateSpan_Start_Length_Test()
+    public void Slice_Start_Length_Test()
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
@@ -32,7 +32,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateSpan_Range_Test()
+    public void Slice_Range_Test()
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
@@ -44,7 +44,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateSpan_Start_OutOfRange_Test()
+    public void Slice_Start_OutOfRange_Test()
     {
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
@@ -60,7 +60,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateSpan_Start_Length_OutOfRange_Test()
+    public void Slice_Start_Length_OutOfRange_Test()
     {
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
@@ -106,7 +106,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateSpan_Range_OutOfRange_Test()
+    public void Slice_Range_OutOfRange_Test()
     {
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
@@ -160,7 +160,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateReadOnlySpan_Start_Test()
+    public void SliceReadOnly_Start_Test()
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
@@ -172,7 +172,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateReadOnlySpan_Start_Length_Test()
+    public void SliceReadOnly_Start_Length_Test()
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
@@ -184,7 +184,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateReadOnlySpan_Range_Test()
+    public void SliceReadOnly_Range_Test()
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
@@ -196,7 +196,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateReadOnlySpan_Start_OutOfRange_Test()
+    public void SliceReadOnly_Start_OutOfRange_Test()
     {
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
@@ -212,7 +212,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateReadOnlySpan_Start_Length_OutOfRange_Test()
+    public void SliceReadOnly_Start_Length_OutOfRange_Test()
     {
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {
@@ -258,7 +258,7 @@ public sealed class SlicerTest
     }
 
     [Fact]
-    public void CreateReadOnlySpan_Range_OutOfRange_Test()
+    public void SliceReadOnly_Range_OutOfRange_Test()
     {
         Assert.Throws<ArgumentOutOfRangeException>(static () =>
         {

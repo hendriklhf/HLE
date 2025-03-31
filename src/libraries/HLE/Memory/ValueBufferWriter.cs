@@ -368,40 +368,18 @@ public ref struct ValueBufferWriter<T> :
     }
 
     public readonly void CopyTo(List<T> destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination, offset);
 
     public readonly void CopyTo(T[] destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination.AsSpan(offset..));
 
-    public readonly void CopyTo(Memory<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(Memory<T> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination.Span);
 
-    public readonly void CopyTo(scoped Span<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(scoped Span<T> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination);
 
-    public readonly void CopyTo(scoped ref T destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(ref destination);
-    }
+    public readonly void CopyTo(scoped ref T destination) => SpanHelpers.Copy(WrittenSpan, ref destination);
 
-    public readonly unsafe void CopyTo(T* destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public readonly unsafe void CopyTo(T* destination) => SpanHelpers.Copy(WrittenSpan, destination);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private readonly ref T GetBufferReference()

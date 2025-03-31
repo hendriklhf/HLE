@@ -289,40 +289,18 @@ public sealed partial class LazyString :
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
     public void CopyTo(List<char> destination, int offset = 0)
-    {
-        CopyWorker<char> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
     public void CopyTo(char[] destination, int offset = 0)
-    {
-        CopyWorker<char> copyWorker = new(ref GetReference(), (uint)Length);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<char> destination)
-    {
-        CopyWorker<char> copyWorker = new(ref GetReference(), (uint)Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<char> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
 
-    public void CopyTo(Span<char> destination)
-    {
-        CopyWorker<char> copyWorker = new(ref GetReference(), (uint)Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<char> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public void CopyTo(ref char destination)
-    {
-        CopyWorker<char> copyWorker = new(ref GetReference(), (uint)Length);
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref char destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public unsafe void CopyTo(char* destination)
-    {
-        CopyWorker<char> copyWorker = new(ref GetReference(), (uint)Length);
-        copyWorker.CopyTo(destination);
-    }
+    public unsafe void CopyTo(char* destination) => SpanHelpers.Copy(AsSpan(), destination);
 
     void ICollection<char>.Add(char item) => throw new NotSupportedException();
 

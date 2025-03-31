@@ -338,40 +338,18 @@ public sealed class PooledBufferWriter<T> :
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination, offset);
 
     public void CopyTo(T[] destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<T> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination.Span);
 
-    public void CopyTo(Span<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<T> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination);
 
-    public void CopyTo(ref T destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref T destination) => SpanHelpers.Copy(WrittenSpan, ref destination);
 
-    public unsafe void CopyTo(T* destination)
-    {
-        CopyWorker<T> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public unsafe void CopyTo(T* destination) => SpanHelpers.Copy(WrittenSpan, destination);
 
     void ICollection<T>.Add(T item) => Write(item);
 

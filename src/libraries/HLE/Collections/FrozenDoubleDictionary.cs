@@ -143,40 +143,18 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
     public List<TValue> ToList(Range range) => Values.AsSpan().ToList(range);
 
     public void CopyTo(List<TValue> destination, int offset = 0)
-    {
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(Values.AsSpan(), destination, offset);
 
     public void CopyTo(TValue[] destination, int offset = 0)
-    {
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(Values.AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<TValue> destination)
-    {
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<TValue> destination) => SpanHelpers.CopyChecked(Values.AsSpan(), destination.Span);
 
-    public void CopyTo(Span<TValue> destination)
-    {
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<TValue> destination) => SpanHelpers.CopyChecked(Values.AsSpan(), destination);
 
-    public void CopyTo(ref TValue destination)
-    {
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref TValue destination) => SpanHelpers.Copy(Values.AsSpan(), ref destination);
 
-    public unsafe void CopyTo(TValue* destination)
-    {
-        CopyWorker<TValue> copyWorker = new(Values.AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public unsafe void CopyTo(TValue* destination) => SpanHelpers.Copy(Values.AsSpan(), destination);
 
     void ICollection<TValue>.Add(TValue item) => throw new NotSupportedException();
 
@@ -184,14 +162,10 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     bool ICollection<TValue>.Remove(TValue item) => throw new NotSupportedException();
 
-    public ArrayEnumerator<TValue> GetEnumerator()
-    {
-        TValue[] array = ImmutableCollectionsMarshal.AsArray(Values)!;
-        return new(array);
-    }
-
-    // ReSharper disable once NotDisposedResourceIsReturned
-    IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();
+    // TODO: improve enumerator
+    public IEnumerator<TValue> GetEnumerator() => Count == 0
+        ? EmptyEnumeratorCache<TValue>.Enumerator
+        : MemoryMarshal.ToEnumerable<TValue>(ImmutableCollectionsMarshal.AsArray(Values).AsMemory()).GetEnumerator();
 
     // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator IEnumerable.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();

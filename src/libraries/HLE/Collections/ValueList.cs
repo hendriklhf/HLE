@@ -373,40 +373,18 @@ public ref partial struct ValueList<T> :
     }
 
     public readonly void CopyTo(List<T> destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
     public readonly void CopyTo(T[] destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public readonly void CopyTo(Memory<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(Memory<T> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
 
-    public readonly void CopyTo(scoped Span<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(scoped Span<T> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public readonly void CopyTo(scoped ref T destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(ref destination);
-    }
+    public readonly void CopyTo(scoped ref T destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public readonly unsafe void CopyTo(T* destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public readonly unsafe void CopyTo(T* destination) => SpanHelpers.Copy(AsSpan(), destination);
 
     private readonly ref T GetBufferReference()
     {

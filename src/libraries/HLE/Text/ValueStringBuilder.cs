@@ -428,40 +428,18 @@ public unsafe ref partial struct ValueStringBuilder :
     readonly bool ICollection<char>.Contains(char item) => WrittenSpan.Contains(item);
 
     public readonly void CopyTo(List<char> destination, int offset = 0)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination, offset);
 
     public readonly void CopyTo(char[] destination, int offset = 0)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination.AsSpan(offset..));
 
-    public readonly void CopyTo(Memory<char> destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(Memory<char> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination.Span);
 
-    public readonly void CopyTo(Span<char> destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(Span<char> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination);
 
-    public readonly void CopyTo(ref char destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(ref destination);
-    }
+    public readonly void CopyTo(ref char destination) => SpanHelpers.Copy(WrittenSpan, ref destination);
 
-    public readonly void CopyTo(char* destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public readonly void CopyTo(char* destination) => SpanHelpers.Copy(WrittenSpan, destination);
 
     private ref char GetDestination(int sizeHint)
     {

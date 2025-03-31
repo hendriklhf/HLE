@@ -124,40 +124,18 @@ public readonly unsafe struct Resource(byte* resource, int length) :
     public List<byte> ToList(Range range) => AsSpan().ToList(range);
 
     public void CopyTo(List<byte> destination, int offset = 0)
-    {
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
     public void CopyTo(byte[] destination, int offset = 0)
-    {
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<byte> destination)
-    {
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<byte> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
 
-    public void CopyTo(Span<byte> destination)
-    {
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<byte> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public void CopyTo(ref byte destination)
-    {
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref byte destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public void CopyTo(byte* destination)
-    {
-        CopyWorker<byte> copyWorker = new(_resource, Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(byte* destination) => SpanHelpers.Memmove(destination, _resource, Length);
 
     void ICollection<byte>.Add(byte item) => throw new NotSupportedException();
 

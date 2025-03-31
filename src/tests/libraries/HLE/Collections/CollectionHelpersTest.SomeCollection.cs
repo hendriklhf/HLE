@@ -31,11 +31,7 @@ public sealed partial class CollectionHelpersTest
 
         public bool Contains(int item) => throw new NotSupportedException();
 
-        public void CopyTo(int[] array, int arrayIndex)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(array, arrayIndex);
-        }
+        public void CopyTo(int[] array, int arrayIndex) => SpanHelpers.CopyChecked(_items, array.AsSpan(arrayIndex..));
 
         public bool Remove(int item) => throw new NotSupportedException();
 

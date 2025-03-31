@@ -24,40 +24,18 @@ public sealed partial class CollectionHelpersTest
         public Span<int> AsSpan() => _items;
 
         public void CopyTo(List<int> destination, int offset = 0)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(destination, offset);
-        }
+            => SpanHelpers.CopyChecked(_items, destination, offset);
 
         public void CopyTo(int[] destination, int offset = 0)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(destination, offset);
-        }
+            => SpanHelpers.CopyChecked(_items, destination.AsSpan(offset..));
 
-        public void CopyTo(Memory<int> destination)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(destination);
-        }
+        public void CopyTo(Memory<int> destination) => SpanHelpers.CopyChecked(_items, destination.Span);
 
-        public void CopyTo(Span<int> destination)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(destination);
-        }
+        public void CopyTo(Span<int> destination) => SpanHelpers.CopyChecked(_items, destination);
 
-        public void CopyTo(ref int destination)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(ref destination);
-        }
+        public void CopyTo(ref int destination) => SpanHelpers.Copy(_items, ref destination);
 
-        public unsafe void CopyTo(int* destination)
-        {
-            CopyWorker<int> copyWorker = new(_items);
-            copyWorker.CopyTo(destination);
-        }
+        public unsafe void CopyTo(int* destination) => SpanHelpers.Copy(_items, destination);
 
         public IEnumerator<int> GetEnumerator() => new ArrayEnumerator<int>(_items);
 

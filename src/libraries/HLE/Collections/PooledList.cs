@@ -426,40 +426,18 @@ public sealed class PooledList<T> :
     }
 
     public void CopyTo(List<T> destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
     public void CopyTo(T[] destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<T> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
 
-    public void CopyTo(Span<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<T> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public void CopyTo(ref T destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref T destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public unsafe void CopyTo(T* destination)
-    {
-        CopyWorker<T> copyWorker = new(AsSpan());
-        copyWorker.CopyTo(destination);
-    }
+    public unsafe void CopyTo(T* destination) => SpanHelpers.Copy(AsSpan(), destination);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal T[] GetBuffer()

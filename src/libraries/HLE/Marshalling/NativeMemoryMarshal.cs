@@ -34,8 +34,7 @@ public static unsafe class NativeMemoryMarshal
         return ObjectMarshal.ReadObject<T>(memory);
     }
 
-    public static void FreeObject<T>(T obj)
-        where T : class
+    public static void FreeObject<T>(T obj) where T : class
     {
         nuint* memory = ObjectMarshal.GetMethodTablePointer<nuint>(obj);
         NativeMemory.AlignedFree(memory - 1);

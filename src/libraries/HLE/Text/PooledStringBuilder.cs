@@ -453,28 +453,14 @@ public sealed partial class PooledStringBuilder :
     }
 
     public void CopyTo(List<char> destination, int offset = 0)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination, offset);
 
     public void CopyTo(char[] destination, int offset = 0)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(WrittenSpan, destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<char> destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<char> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination.Span);
 
-    public void CopyTo(Span<char> destination)
-    {
-        CopyWorker<char> copyWorker = new(WrittenSpan);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<char> destination) => SpanHelpers.CopyChecked(WrittenSpan, destination);
 
     public void CopyTo(ref char destination) => SpanHelpers.Copy(WrittenSpan, ref destination);
 

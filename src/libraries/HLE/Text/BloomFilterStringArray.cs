@@ -20,6 +20,9 @@ namespace HLE.Text;
 /// which makes search operations significantly faster,
 /// but comes at the cost of higher memory usage and initialization time.
 /// </summary>
+/// <remarks>
+/// A <see cref="HashSet{String}"/> is still faster than this class. 🙂
+/// </remarks>
 public sealed class BloomFilterStringArray :
     ICollection<string>,
     IReadOnlyCollection<string>,
@@ -472,40 +475,18 @@ public sealed class BloomFilterStringArray :
     }
 
     public void CopyTo(List<string> destination, int offset = 0)
-    {
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
     public void CopyTo(string[] destination, int offset = 0)
-    {
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<string> destination)
-    {
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<string> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
 
-    public void CopyTo(Span<string> destination)
-    {
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<string> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public void CopyTo(ref string destination)
-    {
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref string destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public unsafe void CopyTo(string* destination)
-    {
-        CopyWorker<string> copyWorker = new(_strings);
-        copyWorker.CopyTo(destination);
-    }
+    public unsafe void CopyTo(string* destination) => SpanHelpers.Copy(AsSpan(), destination);
 
     public ArrayEnumerator<string> GetEnumerator() => new(_strings);
 

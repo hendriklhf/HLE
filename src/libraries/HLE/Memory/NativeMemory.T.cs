@@ -169,40 +169,18 @@ public sealed unsafe partial class NativeMemory<T> :
     ReadOnlyMemory<T> IReadOnlyMemoryProvider<T>.AsMemory(Range range) => AsMemory(range);
 
     public void CopyTo(List<T> destination, int offset = 0)
-    {
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
     public void CopyTo(T[] destination, int offset)
-    {
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(destination, offset);
-    }
+        => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Memory<T> destination) => SpanHelpers.Copy(AsSpan(), destination.Span);
 
-    public void CopyTo(Span<T> destination)
-    {
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(Span<T> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public void CopyTo(ref T destination)
-    {
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(ref destination);
-    }
+    public void CopyTo(ref T destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public void CopyTo(T* destination)
-    {
-        CopyWorker<T> copyWorker = new(Pointer, Length);
-        copyWorker.CopyTo(destination);
-    }
+    public void CopyTo(T* destination) => SpanHelpers.Copy(AsSpan(), destination);
 
     [Pure]
     public T[] ToArray()

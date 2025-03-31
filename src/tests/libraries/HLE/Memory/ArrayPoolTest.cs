@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Numerics;
+using System.Threading.Tasks;
 using HLE.Memory;
 using HLE.TestUtilities;
 using Xunit;
@@ -132,13 +134,13 @@ public sealed class ArrayPoolTest
     {
         using ArrayPool<int> pool = new();
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 4096; i++)
         {
-            int[] array1 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
-            int[] array2 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
-            int[] array3 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
-            int[] array4 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
-            int[] array5 = pool.Rent(ArrayPoolSettings.MinimumArrayLength << i);
+            int[] array1 = RentRandomArray(pool);
+            int[] array2 = RentRandomArray(pool);
+            int[] array3 = RentRandomArray(pool);
+            int[] array4 = RentRandomArray(pool);
+            int[] array5 = RentRandomArray(pool);
 
             pool.Return(array1);
             pool.Return(array2);
@@ -178,6 +180,55 @@ public sealed class ArrayPoolTest
         }
 
         Assert.True(allNull);
+    }
+
+    [Fact]
+    [SuppressMessage("ReSharper", "AccessToDisposedClosure", Justification = "The pool is disposed after the parallel loop")]
+    public void Parallel_RentReturn()
+    {
+        using ArrayPool<int> pool = new();
+
+        ParallelLoopResult parallelResult = Parallel.For(0, Environment.ProcessorCount, _ =>
+        {
+            for (int i = 0; i < 4096; i++)
+            {
+                int[] a = RentRandomArray(pool);
+                int[] b = RentRandomArray(pool);
+                int[] c = RentRandomArray(pool);
+                int[] d = RentRandomArray(pool);
+                int[] e = RentRandomArray(pool);
+
+                pool.Return(a);
+                pool.Return(b);
+                pool.Return(c);
+                pool.Return(d);
+                pool.Return(e);
+            }
+        });
+
+        Assert.True(parallelResult.IsCompleted);
+
+        for (int i = 0; i < pool._buckets.Length; i++)
+        {
+            ref ArrayPool<int>.Bucket bucket = ref pool._buckets[i];
+            Span<int[]?> arrays = bucket._pool;
+            Assert.Equal(ArrayPool<int>.Bucket.Pool.Length, arrays.Length);
+
+            for (int j = 0; j < arrays.Length; j++)
+            {
+                // Check if the array is null or not based on the _positions bitmask
+                // if the bit is set, the array in the pool should not be null
+                bool arrayShouldNotBeNull = (bucket._positions & (1 << j)) != 0;
+                Assert.False(arrayShouldNotBeNull ^ arrays[j] is not null);
+            }
+        }
+    }
+
+    [Pure]
+    private static int[] RentRandomArray(ArrayPool<int> pool)
+    {
+        int arrayLength = Random.Shared.Next(ArrayPoolSettings.MinimumArrayLength, ArrayPoolSettings.MaximumArrayLength + 1);
+        return pool.Rent(arrayLength);
     }
 
     private static TheoryData<int> CreatePow2LengthMinimumToMaximumLengthParameters()
