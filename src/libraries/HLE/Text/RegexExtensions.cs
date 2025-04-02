@@ -53,13 +53,13 @@ public static class RegexExtensions
 
     public static async Task<int> CountAsync(this Regex regex, Stream stream, Encoding encoding)
     {
-        using PooledBufferWriter<char> chars = await GetCharsAsync(stream, encoding);
+        using PooledBufferWriter<char> chars = await GetCharsAsync(stream, encoding).ConfigureAwait(false);
         return regex.Count(chars.WrittenSpan);
     }
 
     public static async Task<bool> IsMatchAsync(this Regex regex, Stream stream, Encoding encoding)
     {
-        using PooledBufferWriter<char> chars = await GetCharsAsync(stream, encoding);
+        using PooledBufferWriter<char> chars = await GetCharsAsync(stream, encoding).ConfigureAwait(false);
         return regex.IsMatch(chars.WrittenSpan);
     }
 
@@ -75,7 +75,7 @@ public static class RegexExtensions
         PooledBufferWriter<char> charsWriter = new(streamLength);
         while (stream.Position != stream.Length)
         {
-            int bytesRead = await stream.ReadAsync(buffer.AsMemory());
+            int bytesRead = await stream.ReadAsync(buffer.AsMemory()).ConfigureAwait(false);
             Span<char> charsBuffer = charsWriter.GetSpan(encoding.GetMaxCharCount(bytesRead));
             int charCount = encoding.GetChars(buffer.AsSpanUnsafe(..bytesRead), charsBuffer);
             charsWriter.Advance(charCount);
