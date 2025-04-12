@@ -11,7 +11,7 @@ public static unsafe class NativeMemoryMarshal
     [Pure]
     public static T* Alloc<T>() where T : struct, allows ref struct
     {
-        T* ptr = (T*)NativeMemory.AlignedAlloc((uint)sizeof(T), (uint)sizeof(nuint));
+        T* ptr = (T*)NativeMemory.AlignedAlloc((uint)sizeof(T), (uint)sizeof(T));
         Unsafe.InitBlock(ptr, 0, (uint)sizeof(T));
         return ptr;
     }

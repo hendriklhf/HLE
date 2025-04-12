@@ -30,7 +30,7 @@ public sealed class IrcHandlerTest
     public void PrivMsgTest()
     {
         IrcHandler handler = new();
-        handler.OnChatMessageReceived += static (_, chatMessage) =>
+        handler.OnChatMessageReceived += static (_, chatMessage, _) =>
         {
             Assert.Equal(0, chatMessage.BadgeInfos.Length);
             Assert.Equal(2, chatMessage.Badges.Length);
@@ -64,7 +64,7 @@ public sealed class IrcHandlerTest
     {
         IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnRoomstateReceived += static (_, roomstateArgs) =>
+        handler.OnRoomstateReceived += static (_, roomstateArgs, _) =>
         {
             Assert.False(roomstateArgs.EmoteOnly);
             Assert.Equal(-1, roomstateArgs.FollowersOnly);
@@ -84,7 +84,7 @@ public sealed class IrcHandlerTest
     {
         IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnRoomstateReceived += static (_, roomstateArgs) =>
+        handler.OnRoomstateReceived += static (_, roomstateArgs, _) =>
         {
             Assert.True(roomstateArgs.EmoteOnly);
             Assert.Equal(15, roomstateArgs.FollowersOnly);
@@ -104,7 +104,7 @@ public sealed class IrcHandlerTest
     {
         IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnJoinReceived += static (_, joinedChannelArgs) =>
+        handler.OnJoinReceived += static (_, joinedChannelArgs, _) =>
         {
             Assert.Equal("strbhlfe", joinedChannelArgs.Username);
             Assert.Equal("lbnshlfe", joinedChannelArgs.Channel);
@@ -119,7 +119,7 @@ public sealed class IrcHandlerTest
     {
         IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnPartReceived += static (_, leftChannelArgs) =>
+        handler.OnPartReceived += static (_, leftChannelArgs, _) =>
         {
             Assert.Equal("strbhlfe", leftChannelArgs.Username);
             Assert.Equal("lbnshlfe", leftChannelArgs.Channel);
@@ -134,7 +134,7 @@ public sealed class IrcHandlerTest
     {
         IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnNoticeReceived += static (_, notice) =>
+        handler.OnNoticeReceived += static (_, notice, _) =>
         {
             Assert.Equal(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
             Assert.Equal("lbnshlfe", notice.Channel);
@@ -150,7 +150,7 @@ public sealed class IrcHandlerTest
     {
         IrcHandler handler = new();
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnNoticeReceived += static (_, notice) =>
+        handler.OnNoticeReceived += static (_, notice, _) =>
         {
             Assert.Equal(NoticeType.Unknown, notice.Type);
             Assert.Equal("*", notice.Channel);

@@ -42,6 +42,10 @@ internal static class ThrowHelper
         => throw new NotSupportedException("The current operating system is not supported.");
 
     [DoesNotReturn]
+    public static void ThrowTypeNotSupported<T>() where T : allows ref struct
+        => throw new NotSupportedException($"The type \"{typeof(T)}\" is not supported.");
+
+    [DoesNotReturn]
     public static void ThrowNotSupportedException(string? message = null) => throw new NotSupportedException(message);
 
     [DoesNotReturn]

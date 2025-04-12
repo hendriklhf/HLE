@@ -223,14 +223,8 @@ public static class NumberHelpers
             typeof(T) != typeof(UInt128) && typeof(T) != typeof(Int128) &&
             typeof(T) != typeof(char))
         {
-            ThrowNumberTypeNotSupported();
+            ThrowHelper.ThrowTypeNotSupported<T>();
         }
-
-        return;
-
-        [DoesNotReturn]
-        static void ThrowNumberTypeNotSupported()
-            => throw new NotSupportedException($"The type {typeof(T)} is not supported.");
     }
 
     [Pure]

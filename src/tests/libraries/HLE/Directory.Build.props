@@ -1,0 +1,9 @@
+<Project>
+
+  <Import Project="..\Directory.Build.props"/>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\libraries\HLE\HLE.csproj"/>
+  </ItemGroup>
+
+</Project>

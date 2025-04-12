@@ -9,47 +9,56 @@ namespace HLE.Threading;
 
 public static partial class EventInvoker
 {
-    public static Task InvokeAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs>? eventHandler, TSender sender, TEventArgs args)
+    public static Task InvokeAsync<TSender, TEventArgs>(
+        AsyncEventHandler<TSender, TEventArgs>? eventHandler,
+        TSender sender,
+        TEventArgs args,
+        CancellationToken cancellationToken = default
+    )
     {
         if (eventHandler is null)
         {
             return Task.CompletedTask;
         }
 
-        return eventHandler.HasSingleTarget ? eventHandler(sender, args) : InvokeMultiTargetAsync(eventHandler, sender, args);
+        return eventHandler.HasSingleTarget ? eventHandler(sender, args, cancellationToken) : InvokeMultiTargetAsync(eventHandler, sender, args, cancellationToken);
     }
 
-    public static Task InvokeAsync<TSender>(AsyncEventHandler<TSender>? eventHandler, TSender sender)
+    public static Task InvokeAsync<TSender>(
+        AsyncEventHandler<TSender>? eventHandler,
+        TSender sender,
+        CancellationToken cancellationToken = default
+    )
     {
         if (eventHandler is null)
         {
             return Task.CompletedTask;
         }
 
-        return eventHandler.HasSingleTarget ? eventHandler(sender) : InvokeMultiTargetAsync(eventHandler, sender);
+        return eventHandler.HasSingleTarget ? eventHandler(sender, cancellationToken) : InvokeMultiTargetAsync(eventHandler, sender, cancellationToken);
     }
 
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
-    private static Task InvokeMultiTargetAsync<TSender>(AsyncEventHandler<TSender> eventHandler, TSender sender)
+    private static Task InvokeMultiTargetAsync<TSender>(AsyncEventHandler<TSender> eventHandler, TSender sender, CancellationToken cancellationToken = default)
     {
         TaskBuffer buffer = default;
         using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
         foreach (AsyncEventHandler<TSender> target in Delegate.EnumerateInvocationList(eventHandler))
         {
-            tasks.Add(target(sender));
+            tasks.Add(target(sender, cancellationToken));
         }
 
         return Task.WhenAll(tasks.AsSpan());
     }
 
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
-    private static Task InvokeMultiTargetAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs> eventHandler, TSender sender, TEventArgs args)
+    private static Task InvokeMultiTargetAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs> eventHandler, TSender sender, TEventArgs args, CancellationToken cancellationToken = default)
     {
         TaskBuffer buffer = default;
         using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
         foreach (AsyncEventHandler<TSender, TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {
-            tasks.Add(target(sender, args));
+            tasks.Add(target(sender, args, cancellationToken));
         }
 
         return Task.WhenAll(tasks.AsSpan());

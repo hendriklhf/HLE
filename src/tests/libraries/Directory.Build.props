@@ -1,22 +1,19 @@
 <Project>
 
-  <Import Project="..\Directory.Build.props"/>
+  <Import Project="..\..\..\Directory.Build.props"/>
 
   <PropertyGroup>
-    <UseMicrosoftTestingPlatformRunner>false</UseMicrosoftTestingPlatformRunner>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
+    <Content Include="$(SolutionDir)\src\tests\xunit.runner.json" CopyToOutputDirectory="Always"/>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\xunit.runner.json" CopyToOutputDirectory="Always"/>
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     <PackageReference Include="xunit"/>
     <PackageReference Include="xunit.runner.visualstudio"/>
   </ItemGroup>

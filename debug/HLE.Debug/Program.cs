@@ -1,8 +1,8 @@
+#pragma warning disable
+
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
-
-#pragma warning disable
 
 namespace HLE.Debug;
 
@@ -14,23 +14,25 @@ internal static class Program
 }
 
 /*
-ManualConfig config = new()
-{
-    SummaryStyle = new(null, true, SizeUnit.GetBestSizeUnit(), TimeUnit.GetBestTimeUnit())
-};
+        ManualConfig config = new()
+        {
+            SummaryStyle = new(null, true, SizeUnit.GetBestSizeUnit(), TimeUnit.GetBestTimeUnit())
+        };
 
-Job net9Job = Job.Default.With(CsProjCoreToolchain.NetCoreApp90);
-config.AddJob(net9Job);
+        Job net9Job = Job.Default.With(CsProjCoreToolchain.NetCoreApp90);
+        config.AddJob(net9Job);
 
-NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.2.25163.2", ".NET 10");
-IToolchain net10ToolChain = CsProjCoreToolchain.From(net10Settings);
-Job net10Job = Job.Default.With(net10ToolChain);
-config.AddJob(net10Job);
+#if NET10_0_OR_GREATER
+        NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.3.25171.5", ".NET 10");
+        IToolchain net10ToolChain = CsProjCoreToolchain.From(net10Settings);
+        Job net10Job = Job.Default.With(net10ToolChain);
+        config.AddJob(net10Job);
+#endif
 
-config.AddLogger(ConsoleLogger.Default);
-config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, BaselineRatioColumn.RatioMean, StatisticColumn.StdDev);
-config.AddColumnProvider(DefaultColumnProviders.Job, DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
-BenchmarkRunner.Run<Bench>(config);
+        config.AddLogger(ConsoleLogger.Default);
+        config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, BaselineRatioColumn.RatioMean, StatisticColumn.StdDev);
+        config.AddColumnProvider(DefaultColumnProviders.Job, DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
+        BenchmarkRunner.Run<Bench>(config);
 */
 
 [MemoryDiagnoser]

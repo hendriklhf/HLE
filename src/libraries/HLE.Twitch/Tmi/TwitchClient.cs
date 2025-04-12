@@ -218,10 +218,10 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     private void SubscribeToEvents()
     {
-        _client.OnConnected += _ => EventInvoker.InvokeAsync(OnConnected, this);
-        _client.OnDisconnected += _ => EventInvoker.InvokeAsync(OnDisconnected, this);
-        _client.OnBytesReceived += (_, data) => WebSocketIrcClient_OnBytesReceivedAsync(data);
-        _client.OnConnectionException += (_, _) => ReconnectAfterConnectionExceptionAsync();
+        _client.OnConnected += (_, ct) => EventInvoker.InvokeAsync(OnConnected, this, ct);
+        _client.OnDisconnected += (_, ct) => EventInvoker.InvokeAsync(OnDisconnected, this, ct);
+        _client.OnBytesReceived += (_, data, ct) => WebSocketIrcClient_OnBytesReceivedAsync(data, ct);
+        _client.OnConnectionException += (_, _, ct) => ReconnectAfterConnectionExceptionAsync(ct);
 
         _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceivedAsync;
         _ircHandler.OnPingReceived += IrcHandler_OnPingReceivedAsync;
@@ -465,7 +465,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         Channels.Clear();
     }
 
-    private Task WebSocketIrcClient_OnBytesReceivedAsync(Bytes data)
+    private Task WebSocketIrcClient_OnBytesReceivedAsync(Bytes data, CancellationToken cancellationToken)
     {
         _ircHandler.Handle(data.AsSpan());
         if (OnBytesReceived is null)
@@ -474,22 +474,25 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             return Task.CompletedTask;
         }
 
-        return EventInvoker.InvokeAsync(OnBytesReceived, this, data);
+        return EventInvoker.InvokeAsync(OnBytesReceived, this, data, cancellationToken);
     }
 
-    private Task IrcHandler_OnChatMessageReceivedAsync(IrcHandler _, ChatMessage message) => EventInvoker.InvokeAsync(_onChatMessageReceived, this, message);
+    private Task IrcHandler_OnChatMessageReceivedAsync(IrcHandler _, ChatMessage message, CancellationToken cancellationToken)
+        => EventInvoker.InvokeAsync(_onChatMessageReceived, this, message, cancellationToken);
 
-    private Task IrcHandler_OnRoomstateReceivedAsync(object? sender, Roomstate roomstate)
+    private Task IrcHandler_OnRoomstateReceivedAsync(object? sender, Roomstate roomstate, CancellationToken cancellationToken)
     {
         Channels.Update(in roomstate);
-        return EventInvoker.InvokeAsync(OnRoomstateReceived, this, roomstate);
+        return EventInvoker.InvokeAsync(OnRoomstateReceived, this, roomstate, cancellationToken);
     }
 
-    private Task IrcHandler_OnNoticeReceivedAsync(IrcHandler _, Notice notice) => EventInvoker.InvokeAsync(_onNoticeReceived, this, notice);
+    private Task IrcHandler_OnNoticeReceivedAsync(IrcHandler _, Notice notice, CancellationToken cancellationToken)
+        => EventInvoker.InvokeAsync(_onNoticeReceived, this, notice, cancellationToken);
 
-    private Task IrcHandler_OnReconnectReceivedAsync(IrcHandler _) => _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
+    private Task IrcHandler_OnReconnectReceivedAsync(IrcHandler _, CancellationToken cancellationToken)
+        => _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
 
-    private async Task IrcHandler_OnPingReceivedAsync(IrcHandler _, Bytes bytes)
+    private async Task IrcHandler_OnPingReceivedAsync(IrcHandler _, Bytes bytes, CancellationToken cancellationToken)
     {
         try
         {
@@ -505,13 +508,15 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         }
     }
 
-    private Task IrcHandler_OnJoinReceivedAsync(IrcHandler _, JoinChannelMessage message) => EventInvoker.InvokeAsync(_onJoinedChannel, this, message);
+    private Task IrcHandler_OnJoinReceivedAsync(IrcHandler _, JoinChannelMessage message, CancellationToken cancellationToken)
+        => EventInvoker.InvokeAsync(_onJoinedChannel, this, message, cancellationToken);
 
-    private Task IrcHandler_OnPartReceivedAsync(IrcHandler _, LeftChannelMessage message) => EventInvoker.InvokeAsync(_onLeftChannel, this, message);
+    private Task IrcHandler_OnPartReceivedAsync(IrcHandler _, LeftChannelMessage message, CancellationToken cancellationToken)
+        => EventInvoker.InvokeAsync(_onLeftChannel, this, message, cancellationToken);
 
-    private async Task ReconnectAfterConnectionExceptionAsync()
+    private async Task ReconnectAfterConnectionExceptionAsync(CancellationToken cancellationToken)
     {
-        await _reconnectionLock.WaitAsync();
+        await _reconnectionLock.WaitAsync(cancellationToken);
         try
         {
             if (_client.State is WebSocketState.Open or WebSocketState.Connecting)
@@ -520,9 +525,9 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             }
 
             _client.CancelTasks();
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
             await _client.ConnectAsync(_ircChannels.GetUtf8Names().AsMemory());
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
         }
         finally
         {

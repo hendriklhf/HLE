@@ -72,7 +72,7 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
         return GetBucket(pattern, options, timeout).GetOrAdd(pattern, options, timeout);
     }
 
-    public void Add(string pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
+    public void Add([StringSyntax(StringSyntaxAttribute.Regex)] string pattern, RegexOptions options = RegexOptions.None, TimeSpan timeout = default)
     {
         if (timeout == default)
         {

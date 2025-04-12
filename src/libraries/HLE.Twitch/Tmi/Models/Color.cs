@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.Marshalling;
 using HLE.Memory;
@@ -69,8 +70,7 @@ public readonly struct Color : IBitwiseEquatable<Color>
     public override unsafe int GetHashCode()
     {
         Debug.Assert(sizeof(Color) == sizeof(int));
-        Color t = this;
-        return *(int*)&t;
+        return Unsafe.BitCast<Color, int>(this);
     }
 
     public override string ToString()

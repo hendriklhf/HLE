@@ -1,8 +1,4 @@
-<Project Sdk="MSTest.Sdk">
-
-  <PropertyGroup>
-    <IsTestProject>true</IsTestProject>
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\HLE.Twitch\HLE.Twitch.csproj"/>

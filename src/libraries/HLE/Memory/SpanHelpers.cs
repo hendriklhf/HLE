@@ -12,7 +12,8 @@ public static partial class SpanHelpers
             typeof(T) != typeof(short) && typeof(T) != typeof(ushort) &&
             typeof(T) != typeof(int) && typeof(T) != typeof(uint) &&
             typeof(T) != typeof(long) && typeof(T) != typeof(ulong) &&
-            typeof(T) != typeof(nint) && typeof(T) != typeof(nuint))
+            typeof(T) != typeof(nint) && typeof(T) != typeof(nuint) &&
+            typeof(T) != typeof(char))
         {
             throw new NotSupportedException($"{typeof(T)} is not a valid integer type.");
         }
