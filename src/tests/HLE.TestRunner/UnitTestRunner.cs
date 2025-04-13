@@ -44,7 +44,7 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
 
     private static ImmutableArray<TestProject> DiscoverTestProjects(TextWriter outputWriter)
     {
-        string[] testProjectFiles = Directory.GetFiles($"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}UnitTests", "*.csproj", SearchOption.AllDirectories);
+        string[] testProjectFiles = Directory.GetFiles($"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}libraries", "*.csproj", SearchOption.AllDirectories);
         TestProject[] testProjects = new TestProject[testProjectFiles.Length];
         for (int i = 0; i < testProjectFiles.Length; i++)
         {

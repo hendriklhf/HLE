@@ -14,7 +14,7 @@ namespace HLE.Numerics;
 /// <param name="value">The value of the prefix.</param>
 // ReSharper disable once UseNameofExpressionForPartOfTheString
 [DebuggerDisplay("{Name}")]
-public readonly struct UnitPrefix(string name, string symbol, double value) :
+public sealed class UnitPrefix(string name, string symbol, double value) :
     IEquatable<UnitPrefix>,
     IComparable<UnitPrefix>,
     IComparable
@@ -33,6 +33,9 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
     /// The value of the prefix.
     /// </summary>
     public double Value { get; } = value;
+
+    internal readonly decimal _dValue = (decimal)value;
+    internal readonly float _fValue = (float)value;
 
     #region Static UnitPrefixes
 
@@ -146,18 +149,20 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double Convert(double value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
-        => value * (fromPrefix / toPrefix);
+        => value * (fromPrefix.Value / toPrefix.Value);
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static decimal Convert(decimal value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
+        => value * (fromPrefix._dValue / toPrefix._dValue);
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float Convert(float value, UnitPrefix fromPrefix, UnitPrefix toPrefix)
-        => (float)Convert((double)value, fromPrefix, toPrefix);
+        => value * (fromPrefix._fValue / toPrefix._fValue);
 
     [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
     public static implicit operator double(UnitPrefix prefix) => prefix.Value;
-
-    [SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
-    public static implicit operator double(UnitPrefix? prefix) => prefix?.Value ?? 0;
 
     [Pure]
     public override string ToString() => Name;
@@ -166,26 +171,13 @@ public readonly struct UnitPrefix(string name, string symbol, double value) :
     public bool Equals(double value) => Math.Abs(Value - value) <= 0.0001;
 
     [Pure]
-    public bool Equals(UnitPrefix other) => Name == other.Name && Symbol == other.Symbol && Math.Abs(Value - other.Value) <= 0.0001;
+    public bool Equals([NotNullWhen(true)] UnitPrefix? other) => ReferenceEquals(this, other);
 
     [Pure]
-    public override bool Equals([NotNullWhen(true)] object? obj) => obj is UnitPrefix other && Equals(other);
+    public override bool Equals([NotNullWhen(true)] object? obj) => ReferenceEquals(this, obj);
 
     [Pure]
-    public int CompareTo(UnitPrefix other)
-    {
-        if (Value > other.Value)
-        {
-            return 1;
-        }
-
-        if (Value < other.Value)
-        {
-            return -1;
-        }
-
-        return 0;
-    }
+    public int CompareTo(UnitPrefix? other) => Value.CompareTo(other?.Value ?? 0);
 
     [Pure]
     public int CompareTo(object? obj)

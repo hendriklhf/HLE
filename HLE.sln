@@ -36,6 +36,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6194B1F3-6BFE-4E36-B497-67F094DA9CD9}"
 	ProjectSection(SolutionItems) = preProject
 		src\tests\xunit.runner.json = src\tests\xunit.runner.json
+		src\tests\tests.runsettings = src\tests\tests.runsettings
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libraries", "libraries", "{923F9475-955F-47B1-A1A1-361164758487}"

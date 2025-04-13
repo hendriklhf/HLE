@@ -11,6 +11,7 @@ public sealed class StringMarshalTest
     public void FastAllocateString_Test()
     {
         string str = StringMarshal.FastAllocateString(5, out Span<char> chars);
+        Assert.Equal(5, chars.Length);
         "hello".CopyTo(chars);
         Assert.Equal("hello", str);
         Assert.Equal("hello".Length, str.Length);

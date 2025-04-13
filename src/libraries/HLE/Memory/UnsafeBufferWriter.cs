@@ -36,9 +36,9 @@ public ref struct UnsafeBufferWriter<T>(ref T buffer) :
 
     public readonly ref T GetReference() => ref Unsafe.Add(ref _buffer, Count);
 
-    public readonly Span<T> GetSpan(int sizeHint = 0) => MemoryMarshal.CreateSpan(ref GetReference(), sizeHint);
+    public readonly Span<T> GetSpan(int sizeHint) => MemoryMarshal.CreateSpan(ref GetReference(), sizeHint);
 
-    public readonly Memory<T> GetMemory(int sizeHint = 0) => throw new NotSupportedException();
+    readonly Memory<T> IBufferWriter<T>.GetMemory(int sizeHint) => throw new NotSupportedException();
 
     public void Write(T item) => Unsafe.Add(ref _buffer, Count++) = item;
 

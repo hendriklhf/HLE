@@ -6,6 +6,7 @@
     <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
+    <RunSettingsFilePath>$(SolutionDir)\src\tests\tests.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>

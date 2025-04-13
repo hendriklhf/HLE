@@ -242,7 +242,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public void Append(Span<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
 
-    public void Append(ReadOnlySpan<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
+    public void Append(params scoped ReadOnlySpan<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
 
     private void Append(ref string strings, int length)
     {

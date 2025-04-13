@@ -147,9 +147,9 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ref T GetField<T>(object obj, nuint fieldByteOffset)
+    public static ref T GetField<T>(object obj, nuint fieldOffset)
     {
-        ref nuint fieldRef = ref Unsafe.AddByteOffset(ref GetMethodTableReference(obj), (uint)sizeof(nuint) + fieldByteOffset);
+        ref nuint fieldRef = ref Unsafe.AddByteOffset(ref GetMethodTableReference(obj), (uint)sizeof(nuint) + fieldOffset);
         return ref Unsafe.As<nuint, T>(ref fieldRef);
     }
 
