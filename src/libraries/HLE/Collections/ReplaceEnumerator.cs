@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.InteropServices;
 
 namespace HLE.Collections;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct ReplaceEnumerator<T>(IEnumerator<T> enumerator, Func<T, bool> predicate, T replacement) :
     IEnumerator<T>,
     IEquatable<ReplaceEnumerator<T>>

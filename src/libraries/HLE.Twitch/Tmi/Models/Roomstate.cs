@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.InteropServices;
 
 namespace HLE.Twitch.Tmi.Models;
 
@@ -9,6 +10,7 @@ namespace HLE.Twitch.Tmi.Models;
 /// For example, if emote-only mode has been turned on.<br/>
 /// </summary>
 /// <param name="changedRoomStates">Flags of states that have changed.</param>
+[StructLayout(LayoutKind.Auto)]
 public readonly struct Roomstate(ChangedRoomStates changedRoomStates) : IEquatable<Roomstate>
 {
     /// <summary>

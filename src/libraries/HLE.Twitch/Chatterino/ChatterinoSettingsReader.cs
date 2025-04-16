@@ -6,6 +6,9 @@ using System.Text.Json;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.Text;
+#if NET10_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 
 namespace HLE.Twitch.Chatterino;
 
@@ -31,7 +34,13 @@ public static class ChatterinoSettingsReader
         ReadWindowLayoutFile(windowLayoutFileContentWriter);
 
         Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
+
+#if NET10_0_OR_GREATER
+        InlineArray15<string> buffer = default; // TODO: change to 16
+        using ValueList<string> channels = new(buffer);
+#else
         using ValueList<string> channels = new(20);
+#endif
 
         while (jsonReader.Read())
         {

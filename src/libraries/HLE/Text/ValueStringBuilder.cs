@@ -12,6 +12,7 @@ using HLE.Memory;
 
 namespace HLE.Text;
 
+[StructLayout(LayoutKind.Auto)]
 [DebuggerDisplay("\"{ToString()}\"")]
 public unsafe ref partial struct ValueStringBuilder :
     IStringBuilder,
@@ -231,7 +232,12 @@ public unsafe ref partial struct ValueStringBuilder :
             return;
         }
 
+#if NET10_0_OR_GREATER
+        InlineArray8<string> buffer = default;
+        using ValueList<string> list = new(buffer);
+#else
         using ValueList<string> list = [];
+#endif
         list.AddRange(strings);
         Append(list.AsSpan());
     }
@@ -240,7 +246,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public void Append(string[] strings) => Append(ref MemoryMarshal.GetArrayDataReference(strings), strings.Length);
 
-    public void Append(Span<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
+    public void Append(scoped Span<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
 
     public void Append(params scoped ReadOnlySpan<string> strings) => Append(ref MemoryMarshal.GetReference(strings), strings.Length);
 

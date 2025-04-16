@@ -2,12 +2,14 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace HLE.Memory;
 
 public sealed partial class ArrayPool<T>
 {
+    [StructLayout(LayoutKind.Auto)]
     internal partial struct Bucket(int arrayLength) : IEquatable<Bucket>
     {
         public int ArrayLength { get; } = arrayLength;

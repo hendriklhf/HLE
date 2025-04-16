@@ -3,7 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
-using HLE.Memory;
+#if NET10_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 
 namespace HLE.Threading;
 
@@ -41,8 +43,12 @@ public static partial class EventInvoker
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
     private static Task InvokeMultiTargetAsync<TSender>(AsyncEventHandler<TSender> eventHandler, TSender sender, CancellationToken cancellationToken = default)
     {
+#if NET10_0_OR_GREATER
+        InlineArray8<Task> buffer = default;
+#else
         TaskBuffer buffer = default;
-        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
+#endif
+        using ValueList<Task> tasks = new(buffer);
         foreach (AsyncEventHandler<TSender> target in Delegate.EnumerateInvocationList(eventHandler))
         {
             tasks.Add(target(sender, cancellationToken));
@@ -54,8 +60,12 @@ public static partial class EventInvoker
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
     private static Task InvokeMultiTargetAsync<TSender, TEventArgs>(AsyncEventHandler<TSender, TEventArgs> eventHandler, TSender sender, TEventArgs args, CancellationToken cancellationToken = default)
     {
+#if NET10_0_OR_GREATER
+        InlineArray8<Task> buffer = default;
+#else
         TaskBuffer buffer = default;
-        using ValueList<Task> tasks = new(InlineArrayHelpers.AsSpan<TaskBuffer, Task>(ref buffer));
+#endif
+        using ValueList<Task> tasks = new(buffer);
         foreach (AsyncEventHandler<TSender, TEventArgs> target in Delegate.EnumerateInvocationList(eventHandler))
         {
             tasks.Add(target(sender, args, cancellationToken));

@@ -10,6 +10,7 @@ using HLE.Text;
 
 namespace HLE.Memory;
 
+[StructLayout(LayoutKind.Auto)]
 public ref struct UnsafeBufferWriter<T>(ref T buffer) :
     IBufferWriter<T>,
     IEquatable<UnsafeBufferWriter<T>>

@@ -1,3 +1,4 @@
+#if !NET10_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -21,3 +22,4 @@ public static partial class EventInvoker
         private const int Length = 8;
     }
 }
+#endif

@@ -235,7 +235,12 @@ public sealed partial class PooledStringBuilder :
             return;
         }
 
+#if NET10_0_OR_GREATER
+        InlineArray8<string> buffer = default;
+        using ValueList<string> list = new(buffer);
+#else
         using ValueList<string> list = [];
+#endif
         list.AddRange(strings);
         Append(list.AsSpan());
     }

@@ -12,6 +12,7 @@ using HLE.Text;
 
 namespace HLE.Resources;
 
+[StructLayout(LayoutKind.Auto)]
 [DebuggerDisplay("{ToString()}")]
 public readonly unsafe struct Resource(byte* resource, int length) :
     IBitwiseEquatable<Resource>,

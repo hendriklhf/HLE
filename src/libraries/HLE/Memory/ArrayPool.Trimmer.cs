@@ -34,22 +34,40 @@ public sealed partial class ArrayPool<T>
             Debug.Assert(obj is WeakReference<ArrayPool<T>>);
             WeakReference<ArrayPool<T>> weakPool = Unsafe.As<WeakReference<ArrayPool<T>>>(obj);
 
-            while (true)
+            do
             {
                 Thread.Sleep(ArrayPoolSettings.TrimmingInterval);
-
-                if (!weakPool.TryGetTarget(out ArrayPool<T>? pool) || !pool._isTrimmerRunning)
-                {
-                    break;
-                }
-
-                Trim(pool);
             }
+            while (Trim(weakPool));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void Trim(ArrayPool<T> pool)
+        private static bool Trim(WeakReference<ArrayPool<T>> weakPool)
         {
+            if (!weakPool.TryGetTarget(out ArrayPool<T>? pool) || !pool._isTrimmerRunning)
+            {
+                return false;
+            }
+
+            TrimPool(pool, out bool allBucketsCleared);
+            if (!allBucketsCleared)
+            {
+                return true;
+            }
+
+            // If all buckets have been cleared, it means that
+            // the pool hasn't been used for a while, so we can
+            // stop the thread for now and let it be restarted,
+            // if needed again
+
+            pool._isTrimmerRunning = false;
+            return false;
+        }
+
+        private static void TrimPool(ArrayPool<T> pool, out bool allBucketsCleared)
+        {
+            allBucketsCleared = true;
+
             bool hasHighMemoryPressure = HasHighMemoryPressure(out long memoryToRelease);
 
             Span<Bucket> buckets = pool._buckets;
@@ -64,6 +82,7 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
+                allBucketsCleared = false;
                 if (hasHighMemoryPressure && memoryToRelease > 0)
                 {
                     TrimBucket(ref bucket, ref memoryToRelease);

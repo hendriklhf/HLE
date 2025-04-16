@@ -7,10 +7,11 @@ namespace HLE.Collections;
 
 public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
 {
-    public int Current { get; private set; }
+    public readonly int Current => _current;
 
     readonly object IEnumerator.Current => Current;
 
+    private int _current;
     private readonly int _end;
 
     public static RangeEnumerator Empty => default;
@@ -22,7 +23,7 @@ public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
             ThrowRangeEndStartsFromEnd();
         }
 
-        Current = range.Start.Value - 1;
+        _current = range.Start.Value - 1;
         _end = range.End.Value;
 
         return;
@@ -32,7 +33,7 @@ public struct RangeEnumerator : IEnumerator<int>, IEquatable<RangeEnumerator>
             => throw new InvalidOperationException($"Can't enumerate a {typeof(Range)} whose end starts from the end.");
     }
 
-    public bool MoveNext() => ++Current <= _end;
+    public bool MoveNext() => ++_current <= _end;
 
     [DoesNotReturn]
     readonly void IEnumerator.Reset() => throw new NotSupportedException();

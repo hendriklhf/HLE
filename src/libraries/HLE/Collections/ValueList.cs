@@ -13,6 +13,7 @@ using HLE.Text;
 namespace HLE.Collections;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
+[StructLayout(LayoutKind.Auto)]
 [DebuggerDisplay("Count = {Count}")]
 [CollectionBuilder(typeof(ValueListBuilder), nameof(ValueListBuilder.Create))]
 public ref partial struct ValueList<T> :

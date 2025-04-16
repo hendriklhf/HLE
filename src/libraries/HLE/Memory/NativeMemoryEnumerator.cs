@@ -9,12 +9,13 @@ namespace HLE.Memory;
 public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatable<NativeMemoryEnumerator<T>>
     where T : unmanaged
 {
-    public T* Current { get; private set; }
+    public readonly T* Current => _current;
 
-    readonly T IEnumerator<T>.Current => *Current;
+    readonly T IEnumerator<T>.Current => *_current;
 
-    readonly object IEnumerator.Current => *Current;
+    readonly object IEnumerator.Current => *_current;
 
+    private T* _current;
     private readonly T* _end;
 
     public static NativeMemoryEnumerator<T> Empty => new(null, 0);
@@ -23,11 +24,11 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        Current = memory - 1;
+        _current = memory - 1;
         _end = memory + length;
     }
 
-    public bool MoveNext() => ++Current != _end;
+    public bool MoveNext() => ++_current != _end;
 
     void IEnumerator.Reset() => throw new NotSupportedException();
 
@@ -37,7 +38,7 @@ public unsafe struct NativeMemoryEnumerator<T> : IEnumerator<T>, IBitwiseEquatab
 
     [Pure]
     public readonly bool Equals(NativeMemoryEnumerator<T> other)
-        => Current == other.Current && _end == other._end;
+        => _current == other._current && _end == other._end;
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj)

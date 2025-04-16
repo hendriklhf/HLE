@@ -6,6 +6,7 @@ using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using HLE.Marshalling;
 
 namespace HLE.Memory;
@@ -21,6 +22,8 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
     internal readonly Bucket[] _buckets;
     private volatile bool _isTrimmerRunning;
+    private bool _disposed;
+    private readonly Lock _disposeLock = new();
 
     [ThreadStatic]
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
@@ -43,8 +46,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         _buckets = buckets;
 
         Debug.Assert(arrayLength >>> 1 == ArrayPoolSettings.MaximumArrayLength);
-
-        CreateTrimmer();
     }
 
     ~ArrayPool() => DisposeCore();
@@ -55,18 +56,50 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         DisposeCore();
     }
 
-    private void DisposeCore() => _isTrimmerRunning = false;
+    private void DisposeCore()
+    {
+        lock (_disposeLock)
+        {
+            _disposed = true;
+        }
 
-    [Conditional("RELEASE")]
-    private void CreateTrimmer()
+        _isTrimmerRunning = false;
+    }
+
+    //[Conditional("RELEASE")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void StartTrimmerIfNotStarted()
     {
         // A trimmer is only created in release builds, as there are currently
-        // around 8000 tests that each create an ArrayPool, and therefore also a trimmer thread,
+        // around 8000 tests that each create an ArrayPool, and therefore would also create a trimmer thread,
         // which slows down the tests significantly.
 
-        _isTrimmerRunning = true;
-        WeakReference<ArrayPool<T>> weakPool = new(this);
-        Trimmer.StartThread(weakPool);
+        if (_isTrimmerRunning)
+        {
+            return;
+        }
+
+        Start();
+
+        return;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        void Start()
+        {
+            lock (_disposeLock)
+            {
+                if (_disposed)
+                {
+                    ThrowHelper.ThrowObjectDisposedException<ArrayPool<T>>();
+                }
+
+                if (!Interlocked.Exchange(ref _isTrimmerRunning, true))
+                {
+                    WeakReference<ArrayPool<T>> weakPool = new(this);
+                    Trimmer.StartThread(weakPool);
+                }
+            }
+        }
     }
 
     [Pure]
@@ -191,6 +224,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         {
             if (bucket.TryReturn(array))
             {
+                StartTrimmerIfNotStarted();
                 return;
             }
 

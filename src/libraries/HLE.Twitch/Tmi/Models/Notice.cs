@@ -9,11 +9,11 @@ namespace HLE.Twitch.Tmi.Models;
 public readonly struct Notice(NoticeType type, string message, string channel)
     : IEquatable<Notice>
 {
-    public NoticeType Type { get; } = type;
-
     public string Message { get; } = message;
 
     public string Channel { get; } = channel;
+
+    public NoticeType Type { get; } = type;
 
     [Pure]
     public bool Equals(Notice other) => Type == other.Type && Channel == other.Channel && Message == other.Message;

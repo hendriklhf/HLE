@@ -17,6 +17,7 @@ namespace HLE.Memory;
 /// </summary>
 /// <typeparam name="T">The type of the stored elements.</typeparam>
 [DebuggerDisplay("{ToString()}")]
+[StructLayout(LayoutKind.Auto)]
 public ref struct ValueBufferWriter<T> :
     IBufferWriter<T>,
     ICollection<T>,

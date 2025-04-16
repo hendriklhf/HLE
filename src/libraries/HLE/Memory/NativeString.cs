@@ -12,6 +12,7 @@ using HLE.Marshalling;
 namespace HLE.Memory;
 
 // ReSharper disable once UseNameofExpressionForPartOfTheString
+[StructLayout(LayoutKind.Auto)]
 [DebuggerDisplay("\"{AsString()}\"")]
 public readonly unsafe partial struct NativeString :
     IReadOnlyList<char>,

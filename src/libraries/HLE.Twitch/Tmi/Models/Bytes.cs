@@ -15,9 +15,10 @@ namespace HLE.Twitch.Tmi.Models;
 [DebuggerDisplay("{ToString()}")]
 public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte>, IReadOnlyMemoryProvider<byte>, ICollectionProvider<byte>
 {
-    public int Length { get; }
+    public readonly int Length => _length;
 
     private byte[]? _buffer;
+    private readonly int _length;
 
     public static Bytes Empty => new();
 
@@ -28,12 +29,12 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     private Bytes(byte[] buffer, int length)
     {
         _buffer = buffer;
-        Length = length;
+        _length = length;
     }
 
     public Bytes(ReadOnlySpan<byte> data)
     {
-        Length = data.Length;
+        _length = data.Length;
         _buffer = ArrayPool<byte>.Shared.Rent(data.Length);
         SpanHelpers.Copy(data, _buffer);
     }
@@ -68,19 +69,19 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     }
 
     [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan() => GetBuffer().AsSpanUnsafe(0, Length);
+    public readonly ReadOnlySpan<byte> AsSpan() => GetBuffer().AsSpanUnsafe(0, _length);
 
     [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan(int start) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, start);
+    public readonly ReadOnlySpan<byte> AsSpan(int start) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), _length, start);
 
     [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan(int start, int length) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, start, length);
+    public readonly ReadOnlySpan<byte> AsSpan(int start, int length) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), _length, start, length);
 
     [Pure]
-    public readonly ReadOnlySpan<byte> AsSpan(Range range) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), Length, range);
+    public readonly ReadOnlySpan<byte> AsSpan(Range range) => Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(GetBuffer()), _length, range);
 
     [Pure]
-    public readonly ReadOnlyMemory<byte> AsMemory() => GetBuffer().AsMemory(0, Length);
+    public readonly ReadOnlyMemory<byte> AsMemory() => GetBuffer().AsMemory(0, _length);
 
     [Pure]
     public readonly ReadOnlyMemory<byte> AsMemory(int start) => AsMemory()[start..];
@@ -94,7 +95,7 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     [Pure]
     public readonly byte[] ToArray()
     {
-        int length = Length;
+        int length = _length;
         if (length == 0)
         {
             return [];
@@ -126,13 +127,13 @@ public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte
     [Pure]
     public readonly List<byte> ToList(Range range) => AsSpan().ToList(range);
 
-    public override readonly string ToString() => Length == 0 ? string.Empty : Encoding.UTF8.GetString(AsSpan());
+    public override readonly string ToString() => _length == 0 ? string.Empty : Encoding.UTF8.GetString(AsSpan());
 
-    public readonly bool Equals(Bytes other) => Length == other.Length && ReferenceEquals(_buffer, other._buffer);
+    public readonly bool Equals(Bytes other) => _length == other._length && ReferenceEquals(_buffer, other._buffer);
 
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => obj is Bytes other && Equals(other);
 
-    public override readonly int GetHashCode() => HashCode.Combine(_buffer, Length);
+    public override readonly int GetHashCode() => HashCode.Combine(_buffer, _length);
 
     public static bool operator ==(Bytes left, Bytes right) => left.Equals(right);
 
