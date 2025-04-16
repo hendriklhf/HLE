@@ -1,0 +1,3 @@
+[submodule "src/generators/gemoji"]
+	path = src/generators/gemoji
+	url = https://github.com/github/gemoji.git

@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
 namespace HLE.SourceGenerators.Emojis;
@@ -30,26 +27,19 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         { "ice_cream", "IceCream" }
     };
 
-    private static readonly TimeSpan s_cacheTime = TimeSpan.FromDays(1);
     private static readonly Regex s_emojiPattern = new("\"emoji\":\\s*\"(.*)\"", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
     private static readonly Regex s_namePattern = new("\"aliases\":\\s*\\[\\s*\"(.*)\"(\\s*,\\s*\".*\")*\\s*\\]", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
 
     [SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "fine for a generator")]
-    private const string HttpRequestUrl = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json";
     private const string Indentation = "    ";
-    private const string CacheDirectory = "HLE/SourceGenerators/EmojiFileGenerator";
 
-    // ReSharper disable once AsyncVoidMethod
-    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods")]
-    public async void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        using Stream emojiJsonStream = await GetEmojiJsonBytesAsync();
-        EmojiModel[] emojis = await ParseEmojisAsync(emojiJsonStream);
-        context.RegisterPostInitializationOutput(context => Execute(context, emojis));
-    }
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+        => context.RegisterPostInitializationOutput(Execute);
 
-    private static void Execute(IncrementalGeneratorPostInitializationContext context, EmojiModel[] emojis)
+    private static void Execute(IncrementalGeneratorPostInitializationContext context)
     {
+        EmojiModel[] emojis = ParseEmojis();
+
         StringBuilder sourceBuilder = new(ushort.MaxValue * 8);
         sourceBuilder.AppendLine("using System.Collections.Frozen;").AppendLine();
         sourceBuilder.AppendLine("namespace HLE.Text;").AppendLine();
@@ -63,17 +53,17 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         Array.Sort(emojis, static (x, y) => string.CompareOrdinal(x.Value, y.Value));
         CreateEmojiSet(sourceBuilder, emojis);
 
-        CreateIsEmojiMethod(sourceBuilder, emojis);
-
         sourceBuilder.AppendLine("}");
         string source = sourceBuilder.ToString();
+
         context.AddSource("HLE.Text.Emoji.g.cs", source);
     }
 
-    private static async Task<EmojiModel[]> ParseEmojisAsync(Stream emojiJsonStream)
+    private static EmojiModel[] ParseEmojis()
     {
-        using StreamReader reader = new(emojiJsonStream);
-        string json = await reader.ReadToEndAsync();
+        using Stream? stream = typeof(EmojiFileGenerator).Assembly.GetManifestResourceStream("HLE.SourceGenerators.emoji.json");
+        using StreamReader reader = new(stream!);
+        string json = reader.ReadToEnd();
 
         MatchCollection matches = s_emojiPattern.Matches(json);
         List<string> emojis = new(matches.Count);
@@ -103,63 +93,6 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         }
 
         return emojiModels;
-    }
-
-    private static ValueTask<Stream> GetEmojiJsonBytesAsync()
-    {
-        return TryGetEmojiJsonBytesFromCache(out Stream? emojiJsonBytes) ? new(emojiJsonBytes!) : GetEmojiJsonBytesCoreAsync();
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static async ValueTask<Stream> GetEmojiJsonBytesCoreAsync()
-        {
-            using HttpClient httpClient = new();
-            Stream emojiJsonBytes = await httpClient.GetStreamAsync(HttpRequestUrl);
-            await WriteBytesToCacheFileAsync(emojiJsonBytes);
-            return emojiJsonBytes;
-        }
-    }
-
-    [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
-    private static bool TryGetEmojiJsonBytesFromCache(out Stream? emojiJsonBytes)
-    {
-        string cacheDirectory = Path.Combine(Path.GetTempPath(), CacheDirectory);
-        if (!Directory.Exists(cacheDirectory))
-        {
-            emojiJsonBytes = null;
-            return false;
-        }
-
-        string[] files = Directory.GetFiles(cacheDirectory);
-        string? emojiFilePath = Array.Find(files, static f =>
-        {
-            string fileName = Path.GetFileName(f);
-            DateTimeOffset creationTime = DateTimeOffset.FromUnixTimeMilliseconds(long.Parse(fileName));
-            DateTimeOffset invalidationTime = creationTime + s_cacheTime;
-            return DateTimeOffset.UtcNow < invalidationTime;
-        });
-
-        if (emojiFilePath is null)
-        {
-            emojiJsonBytes = null;
-            return false;
-        }
-
-        emojiJsonBytes = File.OpenRead(emojiFilePath);
-        return true;
-    }
-
-    [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1035:Do not use APIs banned for analyzers")]
-    private static async Task WriteBytesToCacheFileAsync(Stream emojiJsonBytes)
-    {
-        string cacheDirectory = Path.Combine(Path.GetTempPath(), CacheDirectory);
-        if (!Directory.Exists(cacheDirectory))
-        {
-            Directory.CreateDirectory(cacheDirectory);
-        }
-
-        string emojiJsonPath = Path.Combine(cacheDirectory, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
-        using FileStream jsonFile = File.OpenWrite(emojiJsonPath);
-        await emojiJsonBytes.CopyToAsync(jsonFile);
     }
 
     private static void CreateEmojiConstants(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
@@ -214,12 +147,6 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
         sourceBuilder.AppendLine()
             .Append(Indentation)
             .AppendLine("private static partial global::System.Collections.Frozen.FrozenSet<string> AllEmojis => s_allEmojis;");
-    }
-
-    private static void CreateIsEmojiMethod(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
-    {
-        _ = sourceBuilder;
-        _ = emojis;
     }
 
     private static string NormalizeName(string name)
