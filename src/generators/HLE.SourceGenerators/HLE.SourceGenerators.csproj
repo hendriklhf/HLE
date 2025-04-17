@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\gemoji\db\emoji.json" />
+    <EmbeddedResource Include="..\assets\**\metadata.json" />
   </ItemGroup>
 
   <ItemGroup>

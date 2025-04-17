@@ -15,22 +15,42 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
 {
     private static readonly Dictionary<string, string> s_illegalEmojiNameReplacements = new()
     {
-        { "+1", "ThumbsUp" },
-        { "-1", "ThumbsDown" },
-        { "1st_place_medal", "FirstPlaceMedal" },
-        { "2nd_place_medal", "SecondPlaceMedal" },
-        { "3rd_place_medal", "ThirdPlaceMedal" },
-        { "8ball", "EightBall" },
-        { "1234", "OneTwoThreeFour" },
-        { "100", "OneHundred" },
-        { "icecream", "SoftIceCream" },
-        { "ice_cream", "IceCream" }
+        { "1stPlaceMedal", "FirstPlaceMedal" },
+        { "2ndPlaceMedal", "SecondPlaceMedal" },
+        { "3rdPlaceMedal", "ThirdPlaceMedal" },
+        { "Japanese“acceptable”Button", "JapaneseAcceptableButton" },
+        { "Japanese“application”Button", "JapaneseApplicationButton" },
+        { "Japanese“bargain”Button", "JapaneseBargainButton" },
+        { "Japanese“congratulations”Button", "JapaneseCongratulationsButton" },
+        { "Japanese“discount”Button", "JapaneseDiscountButton" },
+        { "Japanese“freeOfCharge”Button", "JapaneseFreeOfChargeButton" },
+        { "Japanese“here”Button", "JapaneseHereButton" },
+        { "Japanese“monthlyAmount”Button", "JapaneseMonthlyAmountButton" },
+        { "Japanese“noVacancy”Button", "JapaneseNoVacancyButton" },
+        { "Japanese“notFreeOfCharge”Button", "JapaneseNotFreeOfChargeButton" },
+        { "Japanese“openForBusiness”Button", "JapaneseOpenForBusinessButton" },
+        { "Japanese“passingGrade”Button", "JapanesePassingGradeButton" },
+        { "Japanese“prohibited”Button", "JapaneseProhibitedButton" },
+        { "Japanese“reserved”Button", "JapaneseReservedButton" },
+        { "Japanese“secret”Button", "JapaneseSecretButton" },
+        { "Japanese“serviceCharge”Button", "JapaneseServiceChargeButton" },
+        { "Japanese“vacancy”Button", "JapaneseVacancyButton" },
+        { "Keycap0", "KeycapZero" },
+        { "Keycap1", "KeycapOne" },
+        { "Keycap10", "KeycapTen" },
+        { "Keycap2", "KeycapTwo" },
+        { "Keycap3", "KeycapThree" },
+        { "Keycap4", "KeycapFour" },
+        { "Keycap5", "KeycapFive" },
+        { "Keycap6", "KeycapSix" },
+        { "Keycap7", "KeycapSeven" },
+        { "Keycap8", "KeycapEight" },
+        { "Keycap9", "KeycapNine" }
     };
 
-    private static readonly Regex s_emojiPattern = new("\"emoji\":\\s*\"(.*)\"", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
-    private static readonly Regex s_namePattern = new("\"aliases\":\\s*\\[\\s*\"(.*)\"(\\s*,\\s*\".*\")*\\s*\\]", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+    private static readonly Regex s_namePattern = new("\"cldr\":\\s*\"(.+)\"", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+    private static readonly Regex s_emojiPattern = new("\"glyph\":\\s*\"(.+)\"", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
 
-    [SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "fine for a generator")]
     private const string Indentation = "    ";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -61,38 +81,30 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
 
     private static EmojiModel[] ParseEmojis()
     {
-        using Stream? stream = typeof(EmojiFileGenerator).Assembly.GetManifestResourceStream("HLE.SourceGenerators.emoji.json");
-        using StreamReader reader = new(stream!);
-        string json = reader.ReadToEnd();
+        string[] resourceNames = typeof(EmojiFileGenerator).Assembly.GetManifestResourceNames();
+        List<EmojiModel> emojis = new(resourceNames.Length);
 
-        MatchCollection matches = s_emojiPattern.Matches(json);
-        List<string> emojis = new(matches.Count);
-        foreach (Match match in matches)
+        foreach (string resourceName in resourceNames)
         {
-            string value = match.Groups[1].Value;
-            emojis.Add(value);
+            if (!resourceName.EndsWith("metadata.json", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            using Stream stream = typeof(EmojiFileGenerator).Assembly.GetManifestResourceStream(resourceName)!;
+            using StreamReader reader = new(stream);
+            string content = reader.ReadToEnd();
+
+            string emojiName = s_namePattern.Match(content).Groups[1].Value;
+            emojiName = NormalizeName(emojiName);
+
+            string emojiValue = s_emojiPattern.Match(content).Groups[1].Value;
+
+            EmojiModel emoji = new(emojiName, emojiValue);
+            emojis.Add(emoji);
         }
 
-        matches = s_namePattern.Matches(json);
-        List<string> names = new(matches.Count);
-        foreach (Match match in matches)
-        {
-            string value = match.Groups[1].Value;
-            names.Add(value);
-        }
-
-        if (emojis.Count != names.Count)
-        {
-            throw new InvalidOperationException($"Emoji count: {emojis.Count} != Names count: {names.Count}");
-        }
-
-        EmojiModel[] emojiModels = new EmojiModel[emojis.Count];
-        for (int i = 0; i < emojis.Count; i++)
-        {
-            emojiModels[i] = new(NormalizeName(names[i]), emojis[i]);
-        }
-
-        return emojiModels;
+        return emojis.ToArray();
     }
 
     private static void CreateEmojiConstants(StringBuilder sourceBuilder, ReadOnlySpan<EmojiModel> emojis)
@@ -151,11 +163,6 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
 
     private static string NormalizeName(string name)
     {
-        if (s_illegalEmojiNameReplacements.TryGetValue(name, out string replacement))
-        {
-            return replacement;
-        }
-
         bool neededNormalization = false;
         Span<char> buffer = stackalloc char[name.Length];
         name.AsSpan().CopyTo(buffer);
@@ -166,20 +173,41 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
             neededNormalization = true;
         }
 
+        if (buffer.EndsWith("(blood type)"))
+        {
+            buffer = buffer.Slice(0, buffer.Length - 13);
+        }
+
         for (int i = 1; i < buffer.Length; i++)
         {
             char c = buffer[i];
-            if (c is not '_' and not ' ' and not '-')
+
+            if (c is ' ' or '_' or '-' or ':' or '!' or '.' or '’')
             {
+                if (buffer[i + 1] == ' ')
+                {
+                    buffer.Slice(i + 2).CopyTo(buffer.Slice(i));
+                    buffer = buffer.Slice(0, buffer.Length - 2);
+                }
+                else
+                {
+                    buffer.Slice(i + 1).CopyTo(buffer.Slice(i));
+                    buffer = buffer.Slice(0, buffer.Length - 1);
+                }
+
+                buffer[i] = char.ToUpper(buffer[i]);
+                neededNormalization = true;
                 continue;
             }
-
-            buffer.Slice(i + 1).CopyTo(buffer.Slice(i));
-            buffer = buffer.Slice(0, buffer.Length - 1);
-            buffer[i] = char.ToUpper(buffer[i]);
-            neededNormalization = true;
         }
 
-        return neededNormalization ? buffer.ToString() : name;
+        string result = neededNormalization ? buffer.ToString() : name;
+
+        if (s_illegalEmojiNameReplacements.TryGetValue(result, out string? replacement))
+        {
+            result = replacement;
+        }
+
+        return result;
     }
 }
