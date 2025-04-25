@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Threading;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 

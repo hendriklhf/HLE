@@ -12,10 +12,10 @@ using HLE.Marshalling;
 namespace HLE.Memory;
 
 /// <summary>
-/// A pool of arrays from which you can rent arrays and return arrays to in order to reuse them.<br/>
-/// Also accepts random arrays that were create anywhere else in the application in order to reuse them.
+/// A pool of arrays from which you can rent arrays and return arrays to reuse them.<br/>
+/// Also accepts random arrays created anywhere else in the application.
 /// </summary>
-/// <typeparam name="T">The type of items stored in the rented arrays.</typeparam>
+/// <typeparam name="T">The type of items stored in the pooled arrays.</typeparam>
 public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 {
     public static ArrayPool<T> Shared { get; } = new();
@@ -23,7 +23,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     internal readonly Bucket[] _buckets;
     private volatile bool _isTrimmerRunning;
     private bool _disposed;
-    private readonly Lock _disposeLock = new();
 
     [ThreadStatic]
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
@@ -58,15 +57,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
     private void DisposeCore()
     {
-        lock (_disposeLock)
-        {
-            _disposed = true;
-        }
-
+        _disposed = true;
         _isTrimmerRunning = false;
     }
 
-    //[Conditional("RELEASE")]
+    [Conditional("RELEASE")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void StartTrimmerIfNotStarted()
     {
@@ -86,18 +81,15 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         [MethodImpl(MethodImplOptions.NoInlining)]
         void Start()
         {
-            lock (_disposeLock)
+            if (_disposed)
             {
-                if (_disposed)
-                {
-                    ThrowHelper.ThrowObjectDisposedException<ArrayPool<T>>();
-                }
+                ThrowHelper.ThrowObjectDisposedException<ArrayPool<T>>();
+            }
 
-                if (!Interlocked.Exchange(ref _isTrimmerRunning, true))
-                {
-                    WeakReference<ArrayPool<T>> weakPool = new(this);
-                    Trimmer.StartThread(weakPool);
-                }
+            if (!Interlocked.Exchange(ref _isTrimmerRunning, true))
+            {
+                WeakReference<ArrayPool<T>> weakPool = new(this);
+                Trimmer.StartThread(weakPool);
             }
         }
     }

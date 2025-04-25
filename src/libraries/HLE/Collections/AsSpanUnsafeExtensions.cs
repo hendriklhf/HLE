@@ -7,23 +7,26 @@ namespace HLE.Collections;
 
 public static class AsSpanUnsafeExtensions
 {
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, int start) => array.AsSpanUnsafe(start, array.Length - start);
-
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, Range range)
+    extension<T>(T[] array)
     {
-        (int start, int length) = range.GetOffsetAndLength(array.Length);
-        return array.AsSpanUnsafe(start, length);
-    }
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<T> AsSpanUnsafe(int start) => array.AsSpanUnsafe(start, array.Length - start);
 
-    [Pure]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<T> AsSpanUnsafe<T>(this T[] array, int start, int length)
-    {
-        ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
-        return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<T> AsSpanUnsafe(Range range)
+        {
+            (int start, int length) = range.GetOffsetAndLength(array.Length);
+            return array.AsSpanUnsafe(start, length);
+        }
+
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<T> AsSpanUnsafe(int start, int length)
+        {
+            ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
+            return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
+        }
     }
 }

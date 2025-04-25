@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,7 +7,6 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
 using HLE.Collections.Concurrent;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 

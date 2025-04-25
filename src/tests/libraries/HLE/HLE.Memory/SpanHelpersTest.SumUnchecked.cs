@@ -27,7 +27,7 @@ public sealed partial class SpanHelpersTest
     }
 
     private static void SumUncheckedCore<T>(T[] values) where T : IBinaryInteger<T>
-        => Assert.Equal(Sum(values), SpanHelpers.SumUnchecked<T>(values));
+        => Assert.Equal(Sum(values), SpanHelpers.SumUnchecked(values));
 
     private static T Sum<T>(T[] values) where T : INumber<T>
     {

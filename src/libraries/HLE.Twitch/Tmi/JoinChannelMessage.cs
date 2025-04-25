@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 /// <summary>
 /// Arguments used when a user joined a channel.

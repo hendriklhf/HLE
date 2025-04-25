@@ -51,7 +51,7 @@ public readonly unsafe partial struct NativeString :
 
     private readonly NativeMemory<byte> _memory;
 
-    public static NativeString Empty { get; } = new();
+    public static NativeString Empty => new();
 
     public NativeString() => _memory = NativeMemory<byte>.Empty;
 

@@ -1,7 +1,6 @@
 <Project>
 
-  <PropertyGroup Condition="'$(IsNugetPackage)'=='true' and '$(PublishingPackage)'=='true'">
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  <PropertyGroup Condition="'$(IsNugetPackage)'=='true'">
     <Authors>Hendrik</Authors>
     <Product>$(AssemblyName)</Product>
     <PackageId>$(AssemblyName)</PackageId>
@@ -17,7 +16,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(IsNugetPackage)'=='true' and '$(PublishingPackage)'=='true'">
+  <ItemGroup Condition="'$(IsNugetPackage)'=='true'">
     <None Include="..\..\..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 

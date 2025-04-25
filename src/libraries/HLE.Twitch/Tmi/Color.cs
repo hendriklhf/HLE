@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -7,7 +7,7 @@ using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Text;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 [DebuggerDisplay("{ToString()}")]
 [StructLayout(LayoutKind.Sequential)]

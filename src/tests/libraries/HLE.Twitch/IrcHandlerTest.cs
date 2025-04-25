@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using HLE.Twitch.Tmi;
-using HLE.Twitch.Tmi.Models;
 using Xunit;
 
 namespace HLE.Twitch.UnitTests;

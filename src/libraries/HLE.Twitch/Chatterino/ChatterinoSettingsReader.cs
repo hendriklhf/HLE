@@ -30,8 +30,8 @@ public static class ChatterinoSettingsReader
     /// <returns>A string array of all channels.</returns>
     public static string[] GetChannels()
     {
-        using PooledBufferWriter<byte> windowLayoutFileContentWriter = new();
-        ReadWindowLayoutFile(windowLayoutFileContentWriter);
+        ValueBufferWriter<byte> windowLayoutFileContentWriter = new(short.MaxValue);
+        ReadWindowLayoutFile(ref windowLayoutFileContentWriter);
 
         Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
 
@@ -77,10 +77,11 @@ public static class ChatterinoSettingsReader
             }
         }
 
+        windowLayoutFileContentWriter.Dispose();
         return channels.ToArray();
     }
 
-    private static void ReadWindowLayoutFile(PooledBufferWriter<byte> bufferWriter)
+    private static void ReadWindowLayoutFile(ref ValueBufferWriter<byte> bufferWriter)
     {
         using FileStream fileStream = File.OpenRead(s_windowLayoutPath);
         long fileSize = fileStream.Length;

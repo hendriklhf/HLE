@@ -10,7 +10,7 @@ using HLE.Collections;
 using HLE.Memory;
 using HLE.Text;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 public sealed class ChatMessage :
     IDisposable,

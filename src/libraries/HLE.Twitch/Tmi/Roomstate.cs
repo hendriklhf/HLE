@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 /// <summary>
 /// Arguments used when the state of a chat room changed.

@@ -6,7 +6,6 @@ using System.Text;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.Text;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 

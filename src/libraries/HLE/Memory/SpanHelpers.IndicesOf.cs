@@ -16,70 +16,70 @@ namespace HLE.Memory;
 public static partial class SpanHelpers
 {
     [Pure]
-    public static int[] IndicesOf<T>(this List<T> list, T item) where T : IEquatable<T>
-        => IndicesOf(CollectionsMarshal.AsSpan(list), item);
+    public static int[] IndicesOf<T>(this List<T> items, T item) where T : IEquatable<T>
+        => IndicesOf(CollectionsMarshal.AsSpan(items), item);
 
     [Pure]
-    public static int[] IndicesOf<T>(this T[] array, T item) where T : IEquatable<T>
-        => IndicesOf(array.AsSpan(), item);
+    public static int[] IndicesOf<T>(this T[] array, T items) where T : IEquatable<T>
+        => IndicesOf(array.AsSpan(), items);
 
     [Pure]
-    public static int[] IndicesOf<T>(this Span<T> span, T item) where T : IEquatable<T>
-        => IndicesOf((ReadOnlySpan<T>)span, item);
+    public static int[] IndicesOf<T>(this Span<T> items, T item) where T : IEquatable<T>
+        => IndicesOf((ReadOnlySpan<T>)items, item);
 
     [Pure]
     [SkipLocalsInit]
-    public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, T item) where T : IEquatable<T>
+    public static int[] IndicesOf<T>(this ReadOnlySpan<T> items, T item) where T : IEquatable<T>
     {
-        if (span.Length == 0)
+        if (items.Length == 0)
         {
             return [];
         }
 
         int length;
-        if (!MemoryHelpers.UseStackalloc<int>(span.Length))
+        if (!MemoryHelpers.UseStackalloc<int>(items.Length))
         {
-            int[] indicesBuffer = ArrayPool<int>.Shared.Rent(span.Length);
-            length = IndicesOf(span, item, indicesBuffer.AsSpan());
+            int[] indicesBuffer = ArrayPool<int>.Shared.Rent(items.Length);
+            length = IndicesOf(items, item, indicesBuffer.AsSpan());
             int[] result = indicesBuffer[..length];
             ArrayPool<int>.Shared.Return(indicesBuffer);
             return result;
         }
 
-        Span<int> indices = stackalloc int[span.Length];
-        length = IndicesOf(span, item, indices);
+        Span<int> indices = stackalloc int[items.Length];
+        length = IndicesOf(items, item, indices);
         return indices.ToArray(..length);
     }
 
-    public static int IndicesOf<T>(this Span<T> span, T item, Span<int> destination) where T : IEquatable<T>
-        => IndicesOf((ReadOnlySpan<T>)span, item, destination);
+    public static int IndicesOf<T>(this Span<T> items, T item, Span<int> destination) where T : IEquatable<T>
+        => IndicesOf((ReadOnlySpan<T>)items, item, destination);
 
-    public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> span, T item, Span<int> destination) where T : IEquatable<T>
+    public static unsafe int IndicesOf<T>(this ReadOnlySpan<T> items, T item, Span<int> destination) where T : IEquatable<T>
     {
-        if (!StructMarshal.IsBitwiseEquatable<T>())
-        {
-            return IndicesOfNonOptimizedFallback(span, item, destination);
-        }
-
-        if (span.Length == 0)
+        if (items.Length == 0)
         {
             return 0;
         }
 
-        if (destination.Length < span.Length)
+        if (!StructMarshal.IsBitwiseEquatable<T>())
+        {
+            return IndicesOfNonOptimizedFallback(items, item, destination);
+        }
+
+        if (destination.Length < items.Length)
         {
             ThrowDestinationTooShort();
         }
 
-        ref T reference = ref MemoryMarshal.GetReference(span);
+        ref T reference = ref MemoryMarshal.GetReference(items);
         ref int destinationRef = ref MemoryMarshal.GetReference(destination);
         return sizeof(T) switch
         {
-            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), span.Length, Unsafe.BitCast<T, byte>(item), ref destinationRef),
-            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), span.Length, Unsafe.BitCast<T, ushort>(item), ref destinationRef),
-            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), span.Length, Unsafe.BitCast<T, uint>(item), ref destinationRef),
-            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), span.Length, Unsafe.BitCast<T, ulong>(item), ref destinationRef),
-            _ => IndicesOfNonOptimizedFallback(span, item, destination)
+            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), items.Length, Unsafe.BitCast<T, byte>(item), ref destinationRef),
+            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), items.Length, Unsafe.BitCast<T, ushort>(item), ref destinationRef),
+            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), items.Length, Unsafe.BitCast<T, uint>(item), ref destinationRef),
+            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), items.Length, Unsafe.BitCast<T, ulong>(item), ref destinationRef),
+            _ => IndicesOfNonOptimizedFallback(items, item, destination)
         };
 
         [DoesNotReturn]

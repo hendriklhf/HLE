@@ -9,7 +9,6 @@ using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Numerics;
 using HLE.Text;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 

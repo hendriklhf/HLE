@@ -16,73 +16,36 @@ public sealed partial class ArrayPool<T>
         private Pool _pool;
 #pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
 
-        private const int ThreadLocalArraysPerLength = 3;
+        private uint _count;
+
+        private const int ThreadLocalArraysPerLength = 4;
 
         public bool TryRent(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
         {
-#pragma warning disable CA1508
-            // if the constant's value changes, the code will break
-            Debug.Assert(ThreadLocalArraysPerLength == 3);
-#pragma warning restore CA1508
-
-            ref T[]? bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
-
-            ref T[]? current = ref Unsafe.Add(ref bucket, 0);
-            T[]? value = current;
-            if (value is not null)
-            {
-                goto ArrayFound;
-            }
-
-            current = ref Unsafe.Add(ref bucket, 1);
-            value = current;
-            if (value is not null)
-            {
-                goto ArrayFound;
-            }
-
-            current = ref Unsafe.Add(ref bucket, 2);
-            value = current;
-            if (value is null)
+            if (_count == 0)
             {
                 array = null;
                 return false;
             }
 
-        ArrayFound:
-            array = value;
-            current = null; // remove reference from pool
+            ref T[]? bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
+            ref T[]? current = ref Unsafe.Add(ref bucket, --_count);
+            array = current;
+            Debug.Assert(array is not null);
+            current = null;
             return true;
         }
 
         public bool TryReturn(int bucketIndex, T[] array)
         {
-#pragma warning disable CA1508
-            // if the constant's value changes, the code will break
-            Debug.Assert(ThreadLocalArraysPerLength == 3);
-#pragma warning restore CA1508
-
-            ref T[]? bucket = ref Unsafe.Add(ref Unsafe.As<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
-
-            ref T[]? current = ref Unsafe.Add(ref bucket, 0);
-            if (current is null)
-            {
-                goto ReturnArray;
-            }
-
-            current = ref Unsafe.Add(ref bucket, 1);
-            if (current is null)
-            {
-                goto ReturnArray;
-            }
-
-            current = ref Unsafe.Add(ref bucket, 2);
-            if (current is not null)
+            if (_count == ThreadLocalArraysPerLength)
             {
                 return false;
             }
 
-        ReturnArray:
+            ref T[]? bucket = ref Unsafe.Add(ref Unsafe.As<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
+            ref T[]? current = ref Unsafe.Add(ref bucket, _count++);
+            Debug.Assert(current is null);
             current = array;
             return true;
         }

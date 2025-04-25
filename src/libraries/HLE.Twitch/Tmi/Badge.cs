@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 /// <summary>
 /// Represents a badge or badge info of a user.

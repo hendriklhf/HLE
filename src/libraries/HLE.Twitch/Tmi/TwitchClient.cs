@@ -482,7 +482,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     private Task IrcHandler_OnRoomstateReceivedAsync(object? sender, Roomstate roomstate, CancellationToken cancellationToken)
     {
-        Channels.Update(in roomstate);
+        Channels.Update(ref roomstate);
         return EventInvoker.InvokeAsync(OnRoomstateReceived, this, roomstate, cancellationToken);
     }
 

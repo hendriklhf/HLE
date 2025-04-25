@@ -1,5 +1,4 @@
-﻿using System;
-using HLE.Twitch.Tmi.Models;
+using System;
 
 namespace HLE.Twitch.Tmi;
 

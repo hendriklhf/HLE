@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using HLE.Marshalling;
 using HLE.Memory;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 /// <summary>
 /// Options for <see cref="TwitchClient"/>.
@@ -17,7 +17,7 @@ public readonly struct ClientOptions : IBitwiseEquatable<ClientOptions>
     public bool UseSsl { get; init; } = true;
 
     /// <summary>
-    /// Indicates whether the bot is verified or not. If your bot is verified you can set this to true. Verified bots have higher rate limits.
+    /// Indicates whether the bot is verified or not. If your bot is verified, you can set this to true. Verified bots have higher rate limits.
     /// </summary>
     public bool IsVerifiedBot { get; init; }
 

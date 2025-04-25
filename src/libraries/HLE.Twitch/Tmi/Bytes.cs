@@ -10,7 +10,7 @@ using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 [DebuggerDisplay("{ToString()}")]
 public struct Bytes : IDisposable, IEquatable<Bytes>, IReadOnlySpanProvider<byte>, IReadOnlyMemoryProvider<byte>, ICollectionProvider<byte>

@@ -20,7 +20,10 @@ public sealed partial class ArrayPool<T>
         {
             private T[]? _pool;
 
-            private const int Length = 32 * ThreadLocalArraysPerLength; // 32 is too much. has to be ArrayPool.BucketCapacities.Length, but it's not const
+            // 32 is too much. has to be
+            // "BitOperations.TrailingZeroCount(ArrayPoolSettings.MaximumArrayLength) - BitOperations.TrailingZeroCount(ArrayPoolSettings.MinimumArrayLength) + 1",
+            // but it's not const
+            private const int Length = 32 * ThreadLocalArraysPerLength;
         }
     }
 }

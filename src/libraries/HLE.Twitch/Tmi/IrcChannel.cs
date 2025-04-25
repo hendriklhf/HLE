@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Text;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 internal sealed class IrcChannel(string name) : IEquatable<IrcChannel>
 {

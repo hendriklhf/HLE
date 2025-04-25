@@ -11,7 +11,7 @@ public sealed class SlicerTest
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
-        SpanHelpers.FillAscending<int>(array);
+        SpanHelpers.FillAscending(array);
 
         Span<int> span = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5);
         Assert.Equal(ArrayLength - 5, span.Length);
@@ -23,7 +23,7 @@ public sealed class SlicerTest
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
-        SpanHelpers.FillAscending<int>(array);
+        SpanHelpers.FillAscending(array);
 
         Span<int> span = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5, 50);
         Assert.Equal(50, span.Length);
@@ -35,7 +35,7 @@ public sealed class SlicerTest
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
-        SpanHelpers.FillAscending<int>(array);
+        SpanHelpers.FillAscending(array);
 
         Span<int> span = Slicer.Slice(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5..50);
         Assert.Equal(45, span.Length);
@@ -163,7 +163,7 @@ public sealed class SlicerTest
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
-        SpanHelpers.FillAscending<int>(array);
+        SpanHelpers.FillAscending(array);
 
         ReadOnlySpan<int> span = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5);
         Assert.Equal(ArrayLength - 5, span.Length);
@@ -175,7 +175,7 @@ public sealed class SlicerTest
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
-        SpanHelpers.FillAscending<int>(array);
+        SpanHelpers.FillAscending(array);
 
         ReadOnlySpan<int> span = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5, 50);
         Assert.Equal(50, span.Length);
@@ -187,7 +187,7 @@ public sealed class SlicerTest
     {
         const int ArrayLength = 100;
         int[] array = new int[ArrayLength];
-        SpanHelpers.FillAscending<int>(array);
+        SpanHelpers.FillAscending(array);
 
         ReadOnlySpan<int> span = Slicer.SliceReadOnly(ref MemoryMarshal.GetArrayDataReference(array), array.Length, 5..50);
         Assert.Equal(45, span.Length);

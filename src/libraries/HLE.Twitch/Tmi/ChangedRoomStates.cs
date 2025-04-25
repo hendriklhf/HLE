@@ -1,6 +1,6 @@
 using System;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 [Flags]
 public enum ChangedRoomStates

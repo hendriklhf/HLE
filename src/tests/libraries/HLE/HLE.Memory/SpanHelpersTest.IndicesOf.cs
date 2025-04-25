@@ -49,7 +49,7 @@ public sealed partial class SpanHelpersTest
         {
             ulong longOne = 1;
             T one = *(T*)&longOne;
-            GetLoopedIndices<T>(items, ref loopedIndices);
+            GetLoopedIndices(items, ref loopedIndices);
             int[] indicesBuffer = ArrayPool<int>.Shared.Rent(items.Length);
             try
             {

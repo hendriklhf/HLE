@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 /// <summary>
 /// A class that represents a channel with all its states.

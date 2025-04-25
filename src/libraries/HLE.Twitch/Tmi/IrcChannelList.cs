@@ -7,7 +7,6 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 

@@ -19,7 +19,7 @@ public static unsafe class StringMarshal
             return string.Empty;
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegative(length); // otherwise an OutOfMemoryException will be thrown
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
 
         string str = FastAllocateStringCore(null, length);
         chars = MemoryMarshal.CreateSpan(ref GetReference(str), length);

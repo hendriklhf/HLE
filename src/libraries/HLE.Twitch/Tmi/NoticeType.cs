@@ -1,4 +1,4 @@
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 public enum NoticeType
 {

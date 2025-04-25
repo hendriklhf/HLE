@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 [DebuggerDisplay("{Type}: \"{Message}\"")]
 public readonly struct Notice(NoticeType type, string message, string channel)

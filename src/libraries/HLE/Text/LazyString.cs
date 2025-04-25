@@ -241,6 +241,7 @@ public sealed partial class LazyString :
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string AwaitStringCreation(ref string? str)
     {
         return Volatile.Read(ref str) ?? AwaitStringCreationCore(ref str);
