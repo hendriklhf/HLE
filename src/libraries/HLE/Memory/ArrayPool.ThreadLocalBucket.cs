@@ -8,7 +8,7 @@ public sealed partial class ArrayPool<T>
 {
     [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
     [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
-    internal partial struct ThreadLocalBucket
+    internal unsafe partial struct ThreadLocalPool
     {
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed")]
@@ -16,35 +16,37 @@ public sealed partial class ArrayPool<T>
         private Pool _pool;
 #pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
 
-        private uint _count;
-
         private const int ThreadLocalArraysPerLength = 4;
 
-        public bool TryRent(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
+        public bool TryRent(uint bucketIndex, [MaybeNullWhen(false)] out T[] array)
         {
-            if (_count == 0)
+            Debug.Assert(bucketIndex < Pool.Length);
+
+            ref Pool.Bucket bucket = ref Unsafe.Add(ref Unsafe.As<Pool, Pool.Bucket>(ref _pool), bucketIndex);
+            if (bucket.Count == 0)
             {
                 array = null;
                 return false;
             }
 
-            ref T[]? bucket = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
-            ref T[]? current = ref Unsafe.Add(ref bucket, --_count);
+            ref T[]? current = ref Unsafe.Add(ref Unsafe.As<Pool.Bucket.ArrayBuffer, T[]?>(ref bucket.Arrays), --bucket.Count);
             array = current;
             Debug.Assert(array is not null);
             current = null;
             return true;
         }
 
-        public bool TryReturn(int bucketIndex, T[] array)
+        public bool TryReturn(uint bucketIndex, T[] array)
         {
-            if (_count == ThreadLocalArraysPerLength)
+            Debug.Assert(bucketIndex < Pool.Length);
+
+            ref Pool.Bucket bucket = ref Unsafe.Add(ref Unsafe.As<Pool, Pool.Bucket>(ref _pool), bucketIndex);
+            if (bucket.Count == ThreadLocalArraysPerLength)
             {
                 return false;
             }
 
-            ref T[]? bucket = ref Unsafe.Add(ref Unsafe.As<Pool, T[]?>(ref _pool), bucketIndex * ThreadLocalArraysPerLength);
-            ref T[]? current = ref Unsafe.Add(ref bucket, _count++);
+            ref T[]? current = ref Unsafe.Add(ref Unsafe.As<Pool.Bucket.ArrayBuffer, T[]?>(ref bucket.Arrays), bucket.Count++);
             Debug.Assert(current is null);
             current = array;
             return true;

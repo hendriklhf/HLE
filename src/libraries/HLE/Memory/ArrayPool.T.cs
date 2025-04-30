@@ -28,7 +28,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
     [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "ThreadStatic")]
     [SuppressMessage("Major Code Smell", "S2743:Static fields should not be used in generic types")]
-    private static ThreadLocalBucket t_threadLocalBucket;
+    private static ThreadLocalPool t_threadLocalPool;
 
     public ArrayPool()
     {
@@ -158,8 +158,8 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool TryRentFromThreadLocalBucket(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
-        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
-        if (!threadLocalBucket.TryRent(bucketIndex, out array))
+        ref ThreadLocalPool threadLocalBucket = ref t_threadLocalPool;
+        if (!threadLocalBucket.TryRent((uint)bucketIndex, out array))
         {
             return false;
         }
@@ -234,8 +234,8 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     {
         Debug.Assert(array.Length != 0);
 
-        ref ThreadLocalBucket threadLocalBucket = ref t_threadLocalBucket;
-        if (!threadLocalBucket.TryReturn(bucketIndex, array))
+        ref ThreadLocalPool threadLocalBucket = ref t_threadLocalPool;
+        if (!threadLocalBucket.TryReturn((uint)bucketIndex, array))
         {
             return false;
         }
