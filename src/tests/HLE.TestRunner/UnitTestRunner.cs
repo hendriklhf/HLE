@@ -38,7 +38,7 @@ internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEq
             }
         }
 
-        UnitTestRunResult[] result = await Task.WhenAll(tasks);
+        UnitTestRunResult[] result = await Task.WhenAll(tasks.AsSpan());
         return ImmutableCollectionsMarshal.AsImmutableArray(result);
     }
 

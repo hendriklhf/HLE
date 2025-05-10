@@ -19,19 +19,20 @@ internal static class Program
             SummaryStyle = new(null, true, SizeUnit.GetBestSizeUnit(), TimeUnit.GetBestTimeUnit())
         };
 
-        Job net9Job = Job.Default.With(CsProjCoreToolchain.NetCoreApp90);
+        Job net9Job = Job.Default.WithToolchain(CsProjCoreToolchain.NetCoreApp90);
         config.AddJob(net9Job);
 
 #if NET10_0_OR_GREATER
         NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.3.25171.5", ".NET 10");
         IToolchain net10ToolChain = CsProjCoreToolchain.From(net10Settings);
-        Job net10Job = Job.Default.With(net10ToolChain);
+        Job net10Job = Job.Default.WithToolchain(net10ToolChain);
         config.AddJob(net10Job);
 #endif
 
         config.AddLogger(ConsoleLogger.Default);
-        config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, BaselineRatioColumn.RatioMean, StatisticColumn.StdDev);
+        config.AddColumn(TargetMethodColumn.Method, StatisticColumn.Mean, BaselineRatioColumn.RatioMean);
         config.AddColumnProvider(DefaultColumnProviders.Job, DefaultColumnProviders.Metrics, DefaultColumnProviders.Params);
+
         BenchmarkRunner.Run<Bench>(config);
 */
 

@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
     <OutputType>Exe</OutputType>
     <StartWorkingDirectory>..</StartWorkingDirectory>
     <PublishSingleFile>true</PublishSingleFile>

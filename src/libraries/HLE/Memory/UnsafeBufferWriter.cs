@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -37,7 +38,11 @@ public ref struct UnsafeBufferWriter<T>(ref T buffer) :
 
     public readonly ref T GetReference() => ref Unsafe.Add(ref _buffer, Count);
 
-    public readonly Span<T> GetSpan(int sizeHint) => MemoryMarshal.CreateSpan(ref GetReference(), sizeHint);
+    public readonly Span<T> GetSpan(int sizeHint)
+    {
+        Debug.Assert(sizeHint >= 0);
+        return MemoryMarshal.CreateSpan(ref GetReference(), sizeHint);
+    }
 
     readonly Memory<T> IBufferWriter<T>.GetMemory(int sizeHint) => throw new NotSupportedException();
 
@@ -51,12 +56,25 @@ public ref struct UnsafeBufferWriter<T>(ref T buffer) :
 
     public void Write(params scoped ReadOnlySpan<T> items) => Write(ref MemoryMarshal.GetReference(items), items.Length);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(scoped ref T source, int count)
     {
         ref T destination = ref Unsafe.Add(ref _buffer, Count);
         SpanHelpers.Memmove(ref destination, ref source, count);
         Count += count;
     }
+
+    public void Clear()
+    {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            SpanHelpers.Clear(ref _buffer, Count);
+        }
+
+        Count = 0;
+    }
+
+    public readonly MemoryEnumerator<T> GetEnumerator() => new(WrittenSpan);
 
     [Pure]
     public override readonly string ToString()
@@ -76,7 +94,7 @@ public ref struct UnsafeBufferWriter<T>(ref T buffer) :
     }
 
     [Pure]
-    public readonly bool Equals(UnsafeBufferWriter<T> other) => Count == other.Count && Unsafe.AreSame(ref _buffer, ref other._buffer);
+    public readonly bool Equals(scoped UnsafeBufferWriter<T> other) => Count == other.Count && Unsafe.AreSame(ref _buffer, ref other._buffer);
 
     [Pure]
     public override readonly bool Equals([NotNullWhen(true)] object? obj) => false;

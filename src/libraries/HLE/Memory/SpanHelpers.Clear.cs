@@ -7,9 +7,11 @@ namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
-    public static void Clear<T>(T[] array, int elementCount)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Clear<T, TElementCount>(T[] array, TElementCount elementCount)
+        where TElementCount : unmanaged, IBinaryInteger<TElementCount>
     {
-        Debug.Assert(array.Length >= elementCount);
+        Debug.Assert(TElementCount.CreateSaturating(array.Length) >= elementCount);
         Clear(ref MemoryMarshal.GetArrayDataReference(array), elementCount);
     }
 

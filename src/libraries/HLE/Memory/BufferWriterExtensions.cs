@@ -38,6 +38,15 @@ public static class BufferWriterExtensions
             SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref StringMarshal.GetReference(str), str.Length);
             writer.Advance(str.Length);
         }
+
+        public void Write(ref PooledInterpolatedStringHandler chars)
+        {
+            int length = chars.Text.Length;
+            Span<char> destination = writer.GetSpan(length);
+            SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(chars.Text), length);
+            writer.Advance(length);
+            chars.Dispose();
+        }
     }
 
     extension(PooledBufferWriter<char> writer)
@@ -46,6 +55,12 @@ public static class BufferWriterExtensions
         {
             SpanHelpers.Memmove(ref writer.GetReference(str.Length), ref StringMarshal.GetReference(str), str.Length);
             writer.Advance(str.Length);
+        }
+
+        public void Write(ref PooledInterpolatedStringHandler chars)
+        {
+            writer.Write(chars.Text);
+            chars.Dispose();
         }
     }
 
@@ -56,6 +71,12 @@ public static class BufferWriterExtensions
             SpanHelpers.Memmove(ref writer.GetReference(str.Length), ref StringMarshal.GetReference(str), str.Length);
             writer.Advance(str.Length);
         }
+
+        public void Write(ref PooledInterpolatedStringHandler chars)
+        {
+            writer.Write(chars.Text);
+            chars.Dispose();
+        }
     }
 
     extension(UnsafeBufferWriter<char> writer)
@@ -64,6 +85,12 @@ public static class BufferWriterExtensions
         {
             SpanHelpers.Memmove(ref writer.GetReference(), ref StringMarshal.GetReference(str), str.Length);
             writer.Advance(str.Length);
+        }
+
+        public void Write(ref PooledInterpolatedStringHandler chars)
+        {
+            writer.Write(chars.Text);
+            chars.Dispose();
         }
     }
 }

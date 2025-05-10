@@ -14,7 +14,7 @@ public static unsafe class StructMarshal
 {
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Span<byte> GetBytes<T>(ref T item) where T : struct
+    public static Span<byte> AsBytes<T>(ref T item) where T : struct
         => MemoryMarshal.CreateSpan(ref Unsafe.As<T, byte>(ref item), sizeof(T));
 
     /// <inheritdoc cref="EqualsBitwise{TLeft,TRight}(ref TLeft,ref TRight)"/>
@@ -85,7 +85,7 @@ public static unsafe class StructMarshal
             return Unsafe.BitCast<TLeft, Vector128<byte>>(left) == Unsafe.BitCast<TRight, Vector128<byte>>(right);
         }
 
-        return GetBytes(ref left).SequenceEqual(GetBytes(ref right));
+        return AsBytes(ref left).SequenceEqual(AsBytes(ref right));
     }
 
     [Pure]

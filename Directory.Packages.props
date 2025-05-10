@@ -26,13 +26,13 @@
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.CodeFixes" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="$(RoslynatorVersion)"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.8.0.113526"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.9.0.115408"/>
   </ItemGroup>
 
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0"/>
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2"/>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0"/>
     <PackageVersion Include="xunit" Version="2.9.3"/>
   </ItemGroup>
 
