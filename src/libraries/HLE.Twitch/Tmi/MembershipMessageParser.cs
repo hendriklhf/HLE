@@ -13,26 +13,26 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
 {
     [Pure]
     [SkipLocalsInit]
-    public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage)
+    public PartChannelMessage ParsePartChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
         if (!MemoryHelpers.UseStackalloc<int>(ircMessage.Length))
         {
             int[] indicesOfWhitespacesBuffer = ArrayPool<int>.Shared.Rent(ircMessage.Length);
             whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespacesBuffer.AsSpan());
-            LeftChannelMessage result = ParseLeftChannelMessage(ircMessage, indicesOfWhitespacesBuffer.AsSpanUnsafe(..whitespaceCount));
+            PartChannelMessage result = ParsePartChannelMessage(ircMessage, indicesOfWhitespacesBuffer.AsSpanUnsafe(..whitespaceCount));
             ArrayPool<int>.Shared.Return(indicesOfWhitespacesBuffer);
             return result;
         }
 
         Span<int> indicesOfWhitespaces = stackalloc int[ircMessage.Length];
         whitespaceCount = ircMessage.IndicesOf((byte)' ', indicesOfWhitespaces);
-        return ParseLeftChannelMessage(ircMessage, indicesOfWhitespaces[..whitespaceCount]);
+        return ParsePartChannelMessage(ircMessage, indicesOfWhitespaces[..whitespaceCount]);
     }
 
     [Pure]
-    public LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
-        => Parse<LeftChannelMessage>(ircMessage, indicesOfWhitespaces);
+    public PartChannelMessage ParsePartChannelMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
+        => Parse<PartChannelMessage>(ircMessage, indicesOfWhitespaces);
 
     [Pure]
     [SkipLocalsInit]

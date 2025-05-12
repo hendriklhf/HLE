@@ -145,15 +145,9 @@ public sealed class ChatMessage :
     public async Task FormatAsync(TextWriter writer)
     {
         char[] buffer = ArrayPool<char>.Shared.Rent(Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length);
-        try
-        {
-            int length = Format(buffer);
-            await writer.WriteLineAsync(buffer.AsMemory(..length));
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(buffer);
-        }
+        int length = Format(buffer);
+        await writer.WriteLineAsync(buffer.AsMemory(..length)).ConfigureAwait(false);
+        ArrayPool<char>.Shared.Return(buffer);
     }
 
     public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)

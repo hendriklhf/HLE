@@ -16,7 +16,7 @@ public static partial class Emoji
 {
     public static ImmutableArray<string> All => AllEmojis.Items;
 
-#pragma warning disable S3459
+#pragma warning disable S3459 // the properties are not unassigned
     private static partial FrozenDictionary<string, string> EmojisByName { get; }
 
     private static partial FrozenSet<string> AllEmojis { get; }

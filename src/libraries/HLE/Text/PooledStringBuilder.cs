@@ -156,12 +156,14 @@ public sealed partial class PooledStringBuilder :
             switch (chars)
             {
                 case ICollection<char> collection:
+                    Debug.Assert(collection.Count == elementCount);
                     char[] buffer = GetBuffer();
                     Debug.Assert(buffer.Length >= Length + collection.Count);
                     collection.CopyTo(buffer, Length);
                     Length += collection.Count;
                     return;
                 case ICopyable<char> copyable:
+                    Debug.Assert(copyable.Count == elementCount);
                     copyable.CopyTo(ref destination);
                     Length += copyable.Count;
                     return;

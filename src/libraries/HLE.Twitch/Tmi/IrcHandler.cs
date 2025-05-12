@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using HLE.Threading;
 
 namespace HLE.Twitch.Tmi;
@@ -11,52 +13,21 @@ namespace HLE.Twitch.Tmi;
 /// </summary>
 public sealed class IrcHandler : IEquatable<IrcHandler>
 {
-    /// <summary>
-    /// Is invoked if a JOIN command has been received.
-    /// </summary>
-    public event AsyncEventHandler<IrcHandler, JoinChannelMessage>? OnJoinReceived;
-
-    /// <summary>
-    /// Is invoked if a PART command has been received.
-    /// </summary>
-    public event AsyncEventHandler<IrcHandler, LeftChannelMessage>? OnPartReceived;
-
-    /// <summary>
-    /// Is invoked if a ROOMSTATE command has been received.
-    /// </summary>
-    public event AsyncEventHandler<IrcHandler, Roomstate>? OnRoomstateReceived;
-
-    /// <summary>
-    /// Is invoked if a PRIVMSG command has been received.
-    /// </summary>
-    public event AsyncEventHandler<IrcHandler, ChatMessage>? OnChatMessageReceived;
-
-    /// <summary>
-    /// Is invoked if a RECONNECT command has been received.
-    /// </summary>
     public event AsyncEventHandler<IrcHandler>? OnReconnectReceived;
 
-    /// <summary>
-    /// Is invoked if a PING command has been received.
-    /// </summary>
-    public event AsyncEventHandler<IrcHandler, Bytes>? OnPingReceived;
+    private readonly ChannelWriter<ChatMessage>? _messageWriter;
 
-    /// <summary>
-    /// Is invoked if a NOTICE command has been received.
-    /// </summary>
-    public event AsyncEventHandler<IrcHandler, Notice>? OnNoticeReceived;
+    private readonly RoomstateParser? _roomstateParser;
+    private readonly ChannelWriter<Roomstate>? _roomstateWriter;
 
-    internal bool IsOnJoinReceivedSubscribed => OnJoinReceived is not null;
+    private readonly MembershipMessageParser? _membershipMessageParser;
+    private readonly ChannelWriter<JoinChannelMessage>? _joinWriter;
+    private readonly ChannelWriter<PartChannelMessage>? _partWriter;
 
-    internal bool IsOnPartReceivedSubscribed => OnPartReceived is not null;
+    private readonly NoticeParser? _noticeParser;
+    private readonly ChannelWriter<Notice>? _noticeWriter;
 
-    internal bool IsOnNoticeReceivedSubscribed => OnNoticeReceived is not null;
-
-    internal bool IsOnChatMessageReceivedSubscribed => OnChatMessageReceived is not null;
-
-    private readonly RoomstateParser _roomstateParser = new();
-    private readonly MembershipMessageParser _membershipMessageParser = new();
-    private readonly NoticeParser _noticeParser = new();
+    private readonly ChannelWriter<Bytes> _pingWriter;
 
     private static ReadOnlySpan<byte> JoinCommand => "JOIN"u8;
 
@@ -76,11 +47,46 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     private const int MaximumWhitespacesNeededToHandle = 5;
 
+    [SuppressMessage("Style", "IDE0290:Use primary constructor")]
+    public IrcHandler(
+        ChannelWriter<Bytes> pingWriter,
+        ChannelWriter<ChatMessage>? messageWriter,
+        ChannelWriter<Roomstate>? roomstateWriter,
+        ChannelWriter<JoinChannelMessage>? joinWriter,
+        ChannelWriter<PartChannelMessage>? partWriter,
+        ChannelWriter<Notice>? noticeWriter
+    )
+    {
+        _messageWriter = messageWriter;
+
+        if (roomstateWriter is not null)
+        {
+            _roomstateParser = new();
+            _roomstateWriter = roomstateWriter;
+        }
+
+        if (joinWriter is not null || partWriter is not null)
+        {
+            _membershipMessageParser = new();
+        }
+
+        _joinWriter = joinWriter;
+        _partWriter = partWriter;
+
+        if (noticeWriter is not null)
+        {
+            _noticeParser = new();
+            _noticeWriter = noticeWriter;
+        }
+
+        _pingWriter = pingWriter;
+    }
+
     /// <summary>
-    /// Handles a messages and invokes an event, if the message could be handled.
+    /// Handles a messages.
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
-    /// <returns>True, if an event has been invoked, otherwise false.</returns>
+    /// <returns>True, if the message was handled, otherwise false.</returns>
     [SkipLocalsInit]
     public bool Handle(ReadOnlySpan<byte> ircMessage)
     {
@@ -118,13 +124,15 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
             return false;
         }
 
-        if (OnNoticeReceived is null || !thirdWord.SequenceEqual(NoticeCommand))
+        if (_noticeParser is null || _noticeWriter is null ||
+            !thirdWord.SequenceEqual(NoticeCommand))
         {
             return false;
         }
 
         Notice notice = _noticeParser.Parse(ircMessage, indicesOfWhitespaces);
-        EventInvoker.InvokeAsync(OnNoticeReceived, this, notice).Ignore();
+        bool success = _noticeWriter.TryWrite(notice);
+        Debug.Assert(success);
         return true;
     }
 
@@ -153,13 +161,14 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     private bool HandlePingCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<byte> firstWord)
     {
-        if (OnPingReceived is null || !firstWord.SequenceEqual(PingCommand))
+        if (!firstWord.SequenceEqual(PingCommand))
         {
             return false;
         }
 
         Bytes pingMessage = new(ircMessage[6..]);
-        EventInvoker.InvokeAsync(OnPingReceived, this, pingMessage).Ignore();
+        bool success = _pingWriter.TryWrite(pingMessage);
+        Debug.Assert(success);
         return true;
     }
 
@@ -171,25 +180,29 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     private bool HandlePartCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> secondWord)
     {
-        if (OnPartReceived is null || !secondWord.SequenceEqual(PartCommand))
+        if (_membershipMessageParser is null || _partWriter is null ||
+            !secondWord.SequenceEqual(PartCommand))
         {
             return false;
         }
 
-        LeftChannelMessage leftChannelMessage = _membershipMessageParser.ParseLeftChannelMessage(ircMessage, indicesOfWhitespaces);
-        EventInvoker.InvokeAsync(OnPartReceived, this, leftChannelMessage).Ignore();
+        PartChannelMessage partChannelMessage = _membershipMessageParser.ParsePartChannelMessage(ircMessage, indicesOfWhitespaces);
+        bool success = _partWriter.TryWrite(partChannelMessage);
+        Debug.Assert(success);
         return true;
     }
 
     private bool HandleJoinCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> secondWord)
     {
-        if (OnJoinReceived is null || !secondWord.SequenceEqual(JoinCommand))
+        if (_membershipMessageParser is null || _joinWriter is null ||
+            !secondWord.SequenceEqual(JoinCommand))
         {
             return false;
         }
 
         JoinChannelMessage joinChannelMessage = _membershipMessageParser.ParseJoinChannelMessage(ircMessage, indicesOfWhitespaces);
-        EventInvoker.InvokeAsync(OnJoinReceived, this, joinChannelMessage).Ignore();
+        bool success = _joinWriter.TryWrite(joinChannelMessage);
+        Debug.Assert(success);
         return true;
     }
 
@@ -207,31 +220,35 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 
     private bool HandleNoticeCommandWithoutTag(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> secondWord)
     {
-        if (OnNoticeReceived is null || !secondWord.SequenceEqual(NoticeCommand))
+        if (_noticeParser is null || _noticeWriter is null ||
+            !secondWord.SequenceEqual(NoticeCommand))
         {
             return false;
         }
 
         Notice notice = _noticeParser.Parse(ircMessage, indicesOfWhitespaces);
-        EventInvoker.InvokeAsync(OnNoticeReceived, this, notice).Ignore();
+        bool success = _noticeWriter.TryWrite(notice);
+        Debug.Assert(success);
         return true;
     }
 
     private bool HandleRoomstateCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> thirdWord)
     {
-        if (OnRoomstateReceived is null || !thirdWord.SequenceEqual(RoomstateCommand))
+        if (_roomstateParser is null || _roomstateWriter is null ||
+            !thirdWord.SequenceEqual(RoomstateCommand))
         {
             return false;
         }
 
         _roomstateParser.Parse(ircMessage, indicesOfWhitespaces, out Roomstate roomstate);
-        EventInvoker.InvokeAsync(OnRoomstateReceived, this, roomstate).Ignore();
+        bool success = _roomstateWriter.TryWrite(roomstate);
+        Debug.Assert(success);
         return true;
     }
 
     private bool HandlePrivMsgCommand(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces, ReadOnlySpan<byte> thirdWord)
     {
-        if (OnChatMessageReceived is null || !thirdWord.SequenceEqual(PrivmsgCommand))
+        if (_messageWriter is null || !thirdWord.SequenceEqual(PrivmsgCommand))
         {
             return false;
         }
@@ -239,7 +256,8 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
 #pragma warning disable CA2000
         ChatMessage chatMessage = ChatMessageParser.Parse(ircMessage, indicesOfWhitespaces);
 #pragma warning restore CA2000
-        EventInvoker.InvokeAsync(OnChatMessageReceived, this, chatMessage).Ignore();
+        bool success = _messageWriter.TryWrite(chatMessage);
+        Debug.Assert(success);
         return true;
     }
 

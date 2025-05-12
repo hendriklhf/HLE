@@ -1,5 +1,5 @@
 using System;
-using System.Threading.Tasks;
+using System.Threading.Channels;
 using HLE.Twitch.Tmi;
 using Xunit;
 
@@ -28,10 +28,19 @@ public sealed class IrcHandlerTest
     [Fact]
     public void PrivMsgTest()
     {
-        IrcHandler handler = new();
-        handler.OnChatMessageReceived += static (_, chatMessage, _) =>
+        Channel<ChatMessage> channel = System.Threading.Channels.Channel.CreateUnbounded<ChatMessage>();
+
+        IrcHandler handler = new(null!, channel.Writer, null, null, null, null);
+
+        Assert.True(handler.Handle(PrivMsg));
+        Assert.True(handler.Handle(PrivMsgAction));
+
+        for (int i = 0; i < 2; i++)
         {
-            Assert.Equal(0, chatMessage.BadgeInfos.Length);
+            bool success = channel.Reader.TryRead(out ChatMessage? chatMessage);
+            Assert.True(success);
+
+            Assert.Equal(0, chatMessage!.BadgeInfos.Length);
             Assert.Equal(2, chatMessage.Badges.Length);
             Assert.Equal("1", chatMessage.Badges[0].Level);
             Assert.Equal("1", chatMessage.Badges[1].Level);
@@ -50,113 +59,116 @@ public sealed class IrcHandlerTest
             Assert.Equal("strbhlfe", chatMessage.Username.ToString());
             Assert.Equal("lbnshlfe", chatMessage.Channel);
             Assert.Equal("xd xd xd", chatMessage.Message.ToString());
-            chatMessage.Dispose();
-            return Task.CompletedTask;
-        };
 
-        Assert.True(handler.Handle(PrivMsg));
-        Assert.True(handler.Handle(PrivMsgAction));
+            chatMessage.Dispose();
+        }
     }
 
     [Fact]
     public void Roomstate_AllOff_Test()
     {
-        IrcHandler handler = new();
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnRoomstateReceived += static (_, roomstateArgs, _) =>
-        {
-            Assert.False(roomstateArgs.EmoteOnly);
-            Assert.Equal(-1, roomstateArgs.FollowersOnly);
-            Assert.False(roomstateArgs.R9K);
-            Assert.Equal(87_633_910, roomstateArgs.ChannelId);
-            Assert.Equal(0, roomstateArgs.SlowMode);
-            Assert.False(roomstateArgs.SubsOnly);
-            Assert.Equal("strbhlfe", roomstateArgs.Channel);
-            return Task.CompletedTask;
-        };
+        Channel<Roomstate> channel = System.Threading.Channels.Channel.CreateUnbounded<Roomstate>();
+
+        IrcHandler handler = new(null!, null, channel.Writer, null, null, null);
 
         Assert.True(handler.Handle(RoomstateAllOff));
+
+        bool success = channel.Reader.TryRead(out Roomstate roomstate);
+        Assert.True(success);
+
+        Assert.False(roomstate.EmoteOnly);
+        Assert.Equal(-1, roomstate.FollowersOnly);
+        Assert.False(roomstate.R9K);
+        Assert.Equal(87_633_910, roomstate.ChannelId);
+        Assert.Equal(0, roomstate.SlowMode);
+        Assert.False(roomstate.SubsOnly);
+        Assert.Equal("strbhlfe", roomstate.Channel);
     }
 
     [Fact]
     public void Roomstate_AllOn_Test()
     {
-        IrcHandler handler = new();
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnRoomstateReceived += static (_, roomstateArgs, _) =>
-        {
-            Assert.True(roomstateArgs.EmoteOnly);
-            Assert.Equal(15, roomstateArgs.FollowersOnly);
-            Assert.True(roomstateArgs.R9K);
-            Assert.Equal(87_633_910, roomstateArgs.ChannelId);
-            Assert.Equal(10, roomstateArgs.SlowMode);
-            Assert.True(roomstateArgs.SubsOnly);
-            Assert.Equal("strbhlfe", roomstateArgs.Channel);
-            return Task.CompletedTask;
-        };
+        Channel<Roomstate> channel = System.Threading.Channels.Channel.CreateUnbounded<Roomstate>();
+
+        IrcHandler handler = new(null!, null, channel.Writer, null, null, null);
 
         Assert.True(handler.Handle(RoomstateAllOn));
+
+        bool success = channel.Reader.TryRead(out Roomstate roomstate);
+        Assert.True(success);
+
+        Assert.True(roomstate.EmoteOnly);
+        Assert.Equal(15, roomstate.FollowersOnly);
+        Assert.True(roomstate.R9K);
+        Assert.Equal(87_633_910, roomstate.ChannelId);
+        Assert.Equal(10, roomstate.SlowMode);
+        Assert.True(roomstate.SubsOnly);
+        Assert.Equal("strbhlfe", roomstate.Channel);
     }
 
     [Fact]
     public void JoinTest()
     {
-        IrcHandler handler = new();
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnJoinReceived += static (_, joinedChannelArgs, _) =>
-        {
-            Assert.Equal("strbhlfe", joinedChannelArgs.Username);
-            Assert.Equal("lbnshlfe", joinedChannelArgs.Channel);
-            return Task.CompletedTask;
-        };
+        Channel<JoinChannelMessage> channel = System.Threading.Channels.Channel.CreateUnbounded<JoinChannelMessage>();
+
+        IrcHandler handler = new(null!, null, null, channel.Writer, null, null);
 
         Assert.True(handler.Handle(Join));
+
+        bool success = channel.Reader.TryRead(out JoinChannelMessage joinChannelMessage);
+        Assert.True(success);
+
+        Assert.Equal("strbhlfe", joinChannelMessage.Username);
+        Assert.Equal("lbnshlfe", joinChannelMessage.Channel);
     }
 
     [Fact]
     public void PartTest()
     {
-        IrcHandler handler = new();
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnPartReceived += static (_, leftChannelArgs, _) =>
-        {
-            Assert.Equal("strbhlfe", leftChannelArgs.Username);
-            Assert.Equal("lbnshlfe", leftChannelArgs.Channel);
-            return Task.CompletedTask;
-        };
+        Channel<PartChannelMessage> channel = System.Threading.Channels.Channel.CreateUnbounded<PartChannelMessage>();
+
+        IrcHandler handler = new(null!, null, null, null, channel.Writer, null);
 
         Assert.True(handler.Handle(Part));
+
+        bool success = channel.Reader.TryRead(out PartChannelMessage partChannelMessage);
+        Assert.True(success);
+
+        Assert.Equal("strbhlfe", partChannelMessage.Username);
+        Assert.Equal("lbnshlfe", partChannelMessage.Channel);
     }
 
     [Fact]
     public void Notice_WithTag_Test()
     {
-        IrcHandler handler = new();
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnNoticeReceived += static (_, notice, _) =>
-        {
-            Assert.Equal(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
-            Assert.Equal("lbnshlfe", notice.Channel);
-            Assert.Equal("This room is not in emote-only mode.", notice.Message);
-            return Task.CompletedTask;
-        };
+        Channel<Notice> channel = System.Threading.Channels.Channel.CreateUnbounded<Notice>();
+
+        IrcHandler handler = new(null!, null, null, null, null, channel.Writer);
 
         Assert.True(handler.Handle(NoticeWithTag));
+
+        bool success = channel.Reader.TryRead(out Notice notice);
+        Assert.True(success);
+
+        Assert.Equal(NoticeType.AlreadyEmoteOnlyOff, notice.Type);
+        Assert.Equal("lbnshlfe", notice.Channel);
+        Assert.Equal("This room is not in emote-only mode.", notice.Message);
     }
 
     [Fact]
     public void Notice_WithoutTag_Test()
     {
-        IrcHandler handler = new();
-        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-        handler.OnNoticeReceived += static (_, notice, _) =>
-        {
-            Assert.Equal(NoticeType.Unknown, notice.Type);
-            Assert.Equal("*", notice.Channel);
-            Assert.Equal("Login authentication failed", notice.Message);
-            return Task.CompletedTask;
-        };
+        Channel<Notice> channel = System.Threading.Channels.Channel.CreateUnbounded<Notice>();
+
+        IrcHandler handler = new(null!, null, null, null, null, channel.Writer);
 
         Assert.True(handler.Handle(NoticeWithoutTag));
+
+        bool success = channel.Reader.TryRead(out Notice notice);
+        Assert.True(success);
+
+        Assert.Equal(NoticeType.Unknown, notice.Type);
+        Assert.Equal("*", notice.Channel);
+        Assert.Equal("Login authentication failed", notice.Message);
     }
 }

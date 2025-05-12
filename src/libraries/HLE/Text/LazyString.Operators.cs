@@ -1,8 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
-using HLE.Collections;
-using HLE.Marshalling;
-using HLE.Memory;
 
 namespace HLE.Text;
 

@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Marshalling;
@@ -19,8 +21,7 @@ namespace HLE.Twitch.Tmi;
 /// <summary>
 /// Represents a Twitch chat client.
 /// </summary>
-[SuppressMessage("Design", "CA1030:Use events where appropriate")]
-public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
+public sealed partial class TwitchClient : IAsyncDisposable, IEquatable<TwitchClient>
 {
     /// <summary>
     /// The username of the client.
@@ -44,7 +45,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
     /// <summary>
     /// Is invoked if the client connects.
-    /// </summary>W
+    /// </summary>
     public event AsyncEventHandler<TwitchClient>? OnConnected;
 
     /// <summary>
@@ -52,138 +53,20 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public event AsyncEventHandler<TwitchClient>? OnDisconnected;
 
-    /// <summary>
-    /// Is invoked if a user joins a channel.
-    /// </summary>
-    public event AsyncEventHandler<TwitchClient, JoinChannelMessage>? OnJoinedChannel
-    {
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        add
-        {
-            if (!_ircHandler.IsOnJoinReceivedSubscribed)
-            {
-                _ircHandler.OnJoinReceived += IrcHandler_OnJoinReceivedAsync;
-            }
-
-            _onJoinedChannel += value;
-        }
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        remove
-        {
-            if (_ircHandler.IsOnJoinReceivedSubscribed)
-            {
-                _ircHandler.OnJoinReceived -= IrcHandler_OnJoinReceivedAsync;
-            }
-
-            _onJoinedChannel -= value;
-        }
-    }
-
-    /// <summary>
-    /// Is invoked if a user leaves a channel.
-    /// </summary>
-    public event AsyncEventHandler<TwitchClient, LeftChannelMessage>? OnLeftChannel
-    {
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        add
-        {
-            if (!_ircHandler.IsOnPartReceivedSubscribed)
-            {
-                _ircHandler.OnPartReceived += IrcHandler_OnPartReceivedAsync;
-            }
-
-            _onLeftChannel += value;
-        }
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        remove
-        {
-            if (_ircHandler.IsOnPartReceivedSubscribed)
-            {
-                _ircHandler.OnPartReceived -= IrcHandler_OnPartReceivedAsync;
-            }
-
-            _onLeftChannel -= value;
-        }
-    }
-
-    /// <summary>
-    /// Is invoked if a room state has been received.
-    /// </summary>
-    public event AsyncEventHandler<TwitchClient, Roomstate>? OnRoomstateReceived;
-
-    /// <summary>
-    /// Is invoked if a chat message has been received.
-    /// </summary>
-    public event AsyncEventHandler<TwitchClient, ChatMessage>? OnChatMessageReceived
-    {
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        add
-        {
-            if (!_ircHandler.IsOnChatMessageReceivedSubscribed)
-            {
-                _ircHandler.OnChatMessageReceived += IrcHandler_OnChatMessageReceivedAsync;
-            }
-
-            _onChatMessageReceived += value;
-        }
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        remove
-        {
-            if (_ircHandler.IsOnChatMessageReceivedSubscribed)
-            {
-                _ircHandler.OnChatMessageReceived -= IrcHandler_OnChatMessageReceivedAsync;
-            }
-
-            _onChatMessageReceived -= value;
-        }
-    }
-
-    /// <summary>
-    /// Is invoked if a notice has been received.
-    /// </summary>
-    public event AsyncEventHandler<TwitchClient, Notice>? OnNoticeReceived
-    {
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        add
-        {
-            if (!_ircHandler.IsOnNoticeReceivedSubscribed)
-            {
-                _ircHandler.OnNoticeReceived += IrcHandler_OnNoticeReceivedAsync;
-            }
-
-            _onNoticeReceived += value;
-        }
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        remove
-        {
-            if (_ircHandler.IsOnNoticeReceivedSubscribed)
-            {
-                _ircHandler.OnNoticeReceived -= IrcHandler_OnNoticeReceivedAsync;
-            }
-
-            _onNoticeReceived -= value;
-        }
-    }
-
-    /// <summary>
-    /// Is invoked if data is received from the chat server. If this event is subscribed to, the <see cref="Bytes"/> instance has to be manually disposed.
-    /// </summary>
-    public event AsyncEventHandler<TwitchClient, Bytes>? OnBytesReceived;
-
-    private event AsyncEventHandler<TwitchClient, JoinChannelMessage>? _onJoinedChannel;
-
-    private event AsyncEventHandler<TwitchClient, LeftChannelMessage>? _onLeftChannel;
-
-    private event AsyncEventHandler<TwitchClient, ChatMessage>? _onChatMessageReceived;
-
-    private event AsyncEventHandler<TwitchClient, Notice>? _onNoticeReceived;
-
     internal readonly WebSocketIrcClient _client;
     internal readonly IrcHandler _ircHandler;
-    private readonly IrcChannelList _ircChannels = new();
-    private readonly SemaphoreSlim _reconnectionLock = new(1);
+    private readonly IrcChannelList _ircChannels;
 
-    private static ReadOnlySpan<byte> PongPrefix => "PONG :"u8;
+    private readonly ChannelReader<ChatMessage>? _messageReader;
+    private readonly Channel<Roomstate>? _publicRoomstateChannel;
+    private readonly ChannelReader<JoinChannelMessage>? _joinReader;
+    private readonly ChannelReader<PartChannelMessage>? _partReader;
+    private readonly ChannelReader<Notice>? _noticeReader;
+
+    [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "analyzer is wrong, it is assigned")]
+    private readonly ChannelReader<Roomstate> _roomstateReader;
+    [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed", Justification = "analyzer is wrong, it is assigned")]
+    private readonly ChannelReader<Bytes> _pingReader;
 
     private const string AnonymousUsername = "justinfan123";
 
@@ -192,12 +75,28 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// Connects with the username "justinfan123".
     /// </summary>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public TwitchClient(ClientOptions options)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     {
         _client = new(AnonymousUsername, OAuthToken.Empty, options);
-        _ircHandler = new();
         IsAnonymousLogin = true;
-        SubscribeToEvents();
+        _ircChannels = new();
+
+        Readers readers = default;
+        readers.ChatMessageReader = ref _messageReader;
+        readers.RoomstateReader = ref _roomstateReader!;
+        readers.JoinReader = ref _joinReader;
+        readers.PartReader = ref _partReader;
+        readers.NoticeReader = ref _noticeReader;
+        readers.PingReader = ref _pingReader!;
+
+        _ircHandler = CreateIrcHandler(options, ref readers);
+
+        Debug.Assert(_roomstateReader is not null);
+        Debug.Assert(_pingReader is not null);
+
+        SubscribeToEvents(options, ref _publicRoomstateChannel);
     }
 
     /// <summary>
@@ -207,25 +106,143 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <param name="oAuthToken">The OAuth token of the client.</param>
     /// <param name="options">The client options. If null, uses default options that can be found on the documentation of <see cref="ClientOptions"/>.</param>
     /// <exception cref="FormatException">Throws a <see cref="FormatException"/> if <paramref name="username"/> or <paramref name="oAuthToken"/> are in a wrong format.</exception>
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public TwitchClient(string username, OAuthToken oAuthToken, ClientOptions options)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     {
         username = ChannelFormatter.Format(username, false);
         _client = new(username, oAuthToken, options);
-        _ircHandler = new();
-        IsAnonymousLogin = false;
-        SubscribeToEvents();
+        _ircChannels = new();
+
+        Readers readers = default;
+        readers.ChatMessageReader = ref _messageReader;
+        readers.RoomstateReader = ref _roomstateReader!;
+        readers.JoinReader = ref _joinReader;
+        readers.PartReader = ref _partReader;
+        readers.NoticeReader = ref _noticeReader;
+        readers.PingReader = ref _pingReader!;
+
+        _ircHandler = CreateIrcHandler(options, ref readers);
+
+        Debug.Assert(_roomstateReader is not null);
+        Debug.Assert(_pingReader is not null);
+
+        SubscribeToEvents(options, ref _publicRoomstateChannel);
     }
 
-    private void SubscribeToEvents()
+    private void SubscribeToEvents(ClientOptions options, ref Channel<Roomstate>? publicRoomstateChannel)
     {
         _client.OnConnected += (_, ct) => EventInvoker.InvokeAsync(OnConnected, this, ct);
         _client.OnDisconnected += (_, ct) => EventInvoker.InvokeAsync(OnDisconnected, this, ct);
-        _client.OnBytesReceived += (_, data, ct) => WebSocketIrcClient_OnBytesReceivedAsync(data, ct);
-        _client.OnConnectionException += (_, _, ct) => ReconnectAfterConnectionExceptionAsync(ct);
 
-        _ircHandler.OnRoomstateReceived += IrcHandler_OnRoomstateReceivedAsync;
-        _ircHandler.OnPingReceived += IrcHandler_OnPingReceivedAsync;
         _ircHandler.OnReconnectReceived += IrcHandler_OnReconnectReceivedAsync;
+
+        _client.RegisterAfterAutomaticReconnectionEvent(AfterAutomaticReconnectionEventAsync, this);
+
+        for (int i = 0; i < options.WebSocketProcessingThreadCount; i++)
+        {
+            // TODO: pass token
+            BackgroundTasks.ReadWebsocketBytesAsync(this, CancellationToken.None).Ignore();
+        }
+
+        // TODO: pass token
+        BackgroundTasks.ReadPingsAsync(_client, _pingReader, CancellationToken.None).Ignore();
+
+        if (options.ReceiveRoomstateMessages)
+        {
+            publicRoomstateChannel = System.Threading.Channels.Channel.CreateUnbounded<Roomstate>();
+        }
+
+        // TODO: pass token
+        BackgroundTasks.ReadRoomstatesAsync(Channels, _roomstateReader, publicRoomstateChannel?.Writer, CancellationToken.None).Ignore();
+    }
+
+    private static IrcHandler CreateIrcHandler(ClientOptions options, ref Readers readers)
+    {
+        Channel<Bytes> pingChannel = System.Threading.Channels.Channel.CreateUnbounded<Bytes>();
+        readers.PingReader = pingChannel.Reader;
+
+        Channel<ChatMessage>? messageChannel = options.ReceiveChatMessages
+            ? System.Threading.Channels.Channel.CreateUnbounded<ChatMessage>()
+            : null;
+
+        readers.ChatMessageReader = messageChannel?.Reader;
+
+        Channel<Roomstate> roomstateChannel = System.Threading.Channels.Channel.CreateUnbounded<Roomstate>(new()
+        {
+            SingleReader = true
+        });
+
+        readers.RoomstateReader = roomstateChannel.Reader;
+
+        Channel<JoinChannelMessage>? joinChannel = options.ReceiveMembershipMessages
+            ? System.Threading.Channels.Channel.CreateUnbounded<JoinChannelMessage>()
+            : null;
+
+        readers.JoinReader = joinChannel?.Reader;
+
+        Channel<PartChannelMessage>? partChannel = options.ReceiveMembershipMessages
+            ? System.Threading.Channels.Channel.CreateUnbounded<PartChannelMessage>()
+            : null;
+
+        readers.PartReader = partChannel?.Reader;
+
+        Channel<Notice>? noticeChannel = options.ReceiveNoticeMessages
+            ? System.Threading.Channels.Channel.CreateUnbounded<Notice>()
+            : null;
+
+        readers.NoticeReader = noticeChannel?.Reader;
+
+        return new(
+            pingChannel.Writer,
+            messageChannel?.Writer,
+            roomstateChannel.Writer,
+            joinChannel?.Writer,
+            partChannel?.Writer,
+            noticeChannel?.Writer
+        );
+    }
+
+    private static Task AfterAutomaticReconnectionEventAsync(object state)
+    {
+        TwitchClient client = (TwitchClient)state;
+        ReadOnlyMemory<ReadOnlyMemory<byte>> channels = client._ircChannels.GetUtf8Names().AsMemory();
+        return client._client.AuthenticateAndJoinChannelsAsync(channels);
+    }
+
+    public ValueTask<ChatMessage> ReceiveChatMessageAsync(CancellationToken stoppingToken = default)
+    {
+        ChannelReader<ChatMessage>? reader = _messageReader;
+        ArgumentNullException.ThrowIfNull(reader);
+        return reader.ReadAsync(stoppingToken);
+    }
+
+    public ValueTask<Roomstate> ReceiveRoomstateAsync(CancellationToken stoppingToken = default)
+    {
+        ChannelReader<Roomstate>? reader = _publicRoomstateChannel?.Reader;
+        ArgumentNullException.ThrowIfNull(reader);
+        return reader.ReadAsync(stoppingToken);
+    }
+
+    public ValueTask<JoinChannelMessage> ReceiveJoinChannelMessageAsync(CancellationToken stoppingToken = default)
+    {
+        ChannelReader<JoinChannelMessage>? reader = _joinReader;
+        ArgumentNullException.ThrowIfNull(reader);
+        return reader.ReadAsync(stoppingToken);
+    }
+
+    public ValueTask<PartChannelMessage> ReceivePartChannelMessageAsync(CancellationToken stoppingToken = default)
+    {
+        ChannelReader<PartChannelMessage>? reader = _partReader;
+        ArgumentNullException.ThrowIfNull(reader);
+        return reader.ReadAsync(stoppingToken);
+    }
+
+    public ValueTask<Notice> ReceiveNoticeAsync(CancellationToken stoppingToken = default)
+    {
+        ChannelReader<Notice>? reader = _noticeReader;
+        ArgumentNullException.ThrowIfNull(reader);
+        return reader.ReadAsync(stoppingToken);
     }
 
     /// <inheritdoc cref="SendAsync(ReadOnlyMemory{char},ReadOnlyMemory{char})"/>
@@ -244,11 +261,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <param name="message">The message that will be sent.</param>
     public async ValueTask SendAsync(ReadOnlyMemory<char> channel, ReadOnlyMemory<char> message)
     {
-        if (!IsConnected)
-        {
-            ThrowClientNotConnectedException();
-        }
-
         if (IsAnonymousLogin)
         {
             ThrowAnonymousClientException();
@@ -261,7 +273,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
         ImmutableArray<byte> prefixedChannel = channelObject.PrefixedNameUtf8;
         using Bytes messageUtf8 = Utf16ToUtf8(message.Span);
-        await _client.SendMessageAsync(prefixedChannel.AsMemory(), messageUtf8.AsMemory());
+        await _client.SendMessageAsync(prefixedChannel.AsMemory(), messageUtf8.AsMemory()).ConfigureAwait(false);
     }
 
     /// <inheritdoc cref="SendAsync(long,ReadOnlyMemory{char})"/>
@@ -274,11 +286,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <param name="message">The message that will be sent</param>
     public async ValueTask SendAsync(long channelId, ReadOnlyMemory<char> message)
     {
-        if (!IsConnected)
-        {
-            ThrowClientNotConnectedException();
-        }
-
         if (IsAnonymousLogin)
         {
             ThrowAnonymousClientException();
@@ -291,7 +298,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
 
         ImmutableArray<byte> prefixedChannel = channelObject.PrefixedNameUtf8;
         using Bytes messageUtf8 = Utf16ToUtf8(message.Span);
-        await _client.SendMessageAsync(prefixedChannel.AsMemory(), messageUtf8.AsMemory());
+        await _client.SendMessageAsync(prefixedChannel.AsMemory(), messageUtf8.AsMemory()).ConfigureAwait(false);
     }
 
     [DoesNotReturn]
@@ -305,9 +312,6 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     [DoesNotReturn]
     private static void ThrowAnonymousClientException() => throw new AnonymousClientException();
 
-    [DoesNotReturn]
-    private static void ThrowClientNotConnectedException() => throw new ClientNotConnectedException();
-
     /// <inheritdoc cref="SendRawAsync(ReadOnlyMemory{char})"/>
     public ValueTask SendRawAsync(string rawMessage) => SendRawAsync(rawMessage.AsMemory());
 
@@ -317,13 +321,8 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// <param name="rawMessage">The raw message</param>
     public async ValueTask SendRawAsync(ReadOnlyMemory<char> rawMessage)
     {
-        if (!IsConnected)
-        {
-            ThrowClientNotConnectedException();
-        }
-
         using Bytes rawMessageUtf8 = Utf16ToUtf8(rawMessage.Span);
-        await _client.SendRawAsync(rawMessageUtf8.AsMemory());
+        await _client.SendRawAsync(rawMessageUtf8).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -338,13 +337,13 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<string> channelsMemory))
         {
-            await JoinChannelsAsync(channelsMemory);
+            await JoinChannelsAsync(channelsMemory).ConfigureAwait(false);
             return;
         }
 
         foreach (string channel in channels)
         {
-            await JoinChannelAsync(channel);
+            await JoinChannelAsync(channel).ConfigureAwait(false);
         }
     }
 
@@ -363,7 +362,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         for (int i = 0; i < channels.Length; i++)
         {
-            await JoinChannelAsync(channels.Span[i]);
+            await JoinChannelAsync(channels.Span[i]).ConfigureAwait(false);
         }
     }
 
@@ -405,13 +404,13 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         if (channels.TryGetReadOnlyMemory(out ReadOnlyMemory<string> channelsMemory))
         {
-            await LeaveChannelsAsync(channelsMemory);
+            await LeaveChannelsAsync(channelsMemory).ConfigureAwait(false);
             return;
         }
 
         foreach (string channel in channels)
         {
-            await LeaveChannelAsync(channel);
+            await LeaveChannelAsync(channel).ConfigureAwait(false);
         }
     }
 
@@ -429,7 +428,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     {
         for (int i = 0; i < channels.Length; i++)
         {
-            await LeaveChannelAsync(channels.Span[i]);
+            await LeaveChannelAsync(channels.Span[i]).ConfigureAwait(false);
         }
     }
 
@@ -443,7 +442,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
             ReadOnlyMemory<ReadOnlyMemory<byte>> utf8Channels = _ircChannels.GetUtf8Names().AsMemory();
             for (int i = 0; i < utf8Channels.Length; i++)
             {
-                await _client.LeaveChannelAsync(utf8Channels.Span[i]);
+                await _client.LeaveChannelAsync(utf8Channels.Span[i]).ConfigureAwait(false);
             }
         }
 
@@ -456,84 +455,12 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
     /// </summary>
     public async Task DisconnectAsync()
     {
-        if (!IsConnected)
-        {
-            return;
-        }
-
-        await _client.DisconnectAsync();
+        await _client.DisconnectAsync().ConfigureAwait(false);
         Channels.Clear();
     }
 
-    private Task WebSocketIrcClient_OnBytesReceivedAsync(Bytes data, CancellationToken cancellationToken)
-    {
-        _ircHandler.Handle(data.AsSpan());
-        if (OnBytesReceived is null)
-        {
-            data.Dispose();
-            return Task.CompletedTask;
-        }
-
-        return EventInvoker.InvokeAsync(OnBytesReceived, this, data, cancellationToken);
-    }
-
-    private Task IrcHandler_OnChatMessageReceivedAsync(IrcHandler _, ChatMessage message, CancellationToken cancellationToken)
-        => EventInvoker.InvokeAsync(_onChatMessageReceived, this, message, cancellationToken);
-
-    private Task IrcHandler_OnRoomstateReceivedAsync(object? sender, Roomstate roomstate, CancellationToken cancellationToken)
-    {
-        Channels.Update(ref roomstate);
-        return EventInvoker.InvokeAsync(OnRoomstateReceived, this, roomstate, cancellationToken);
-    }
-
-    private Task IrcHandler_OnNoticeReceivedAsync(IrcHandler _, Notice notice, CancellationToken cancellationToken)
-        => EventInvoker.InvokeAsync(_onNoticeReceived, this, notice, cancellationToken);
-
     private Task IrcHandler_OnReconnectReceivedAsync(IrcHandler _, CancellationToken cancellationToken)
         => _client.ReconnectAsync(_ircChannels.GetUtf8Names().AsMemory());
-
-    private async Task IrcHandler_OnPingReceivedAsync(IrcHandler _, Bytes bytes, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using PooledBufferWriter<byte> builder = new(PongPrefix.Length + bytes.Length);
-            builder.Write(PongPrefix);
-            builder.Write(bytes.AsSpan());
-
-            await _client.SendRawAsync(builder.WrittenMemory);
-        }
-        finally
-        {
-            bytes.Dispose();
-        }
-    }
-
-    private Task IrcHandler_OnJoinReceivedAsync(IrcHandler _, JoinChannelMessage message, CancellationToken cancellationToken)
-        => EventInvoker.InvokeAsync(_onJoinedChannel, this, message, cancellationToken);
-
-    private Task IrcHandler_OnPartReceivedAsync(IrcHandler _, LeftChannelMessage message, CancellationToken cancellationToken)
-        => EventInvoker.InvokeAsync(_onLeftChannel, this, message, cancellationToken);
-
-    private async Task ReconnectAfterConnectionExceptionAsync(CancellationToken cancellationToken)
-    {
-        await _reconnectionLock.WaitAsync(cancellationToken);
-        try
-        {
-            if (_client.State is WebSocketState.Open or WebSocketState.Connecting)
-            {
-                return;
-            }
-
-            _client.CancelTasks();
-            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
-            await _client.ConnectAsync(_ircChannels.GetUtf8Names().AsMemory());
-            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-        }
-        finally
-        {
-            _reconnectionLock.Release();
-        }
-    }
 
     [Pure]
     private static Bytes Utf16ToUtf8(ReadOnlySpan<char> chars)
@@ -545,12 +472,7 @@ public sealed class TwitchClient : IDisposable, IEquatable<TwitchClient>
         return Bytes.AsBytes(buffer, byteCount);
     }
 
-    /// <inheritdoc cref="IDisposable.Dispose"/>
-    public void Dispose()
-    {
-        _client.Dispose();
-        _reconnectionLock.Dispose();
-    }
+    public ValueTask DisposeAsync() => _client.DisposeAsync();
 
     [Pure]
     public bool Equals([NotNullWhen(true)] TwitchClient? other) => ReferenceEquals(this, other);

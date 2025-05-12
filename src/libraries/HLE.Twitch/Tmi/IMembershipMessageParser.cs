@@ -4,9 +4,9 @@ namespace HLE.Twitch.Tmi;
 
 public interface IMembershipMessageParser
 {
-    LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage);
+    PartChannelMessage ParsePartChannelMessage(ReadOnlySpan<byte> ircMessage);
 
-    LeftChannelMessage ParseLeftChannelMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
+    PartChannelMessage ParsePartChannelMessage(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces);
 
     JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<byte> ircMessage);
 
