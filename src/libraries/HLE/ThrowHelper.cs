@@ -10,7 +10,12 @@ namespace HLE;
 internal static class ThrowHelper
 {
     [DoesNotReturn]
-    public static void ThrowObjectDisposedException<T>() where T : IDisposable, allows ref struct
+    public static void ThrowObjectDisposedException<T>()
+#if NET9_0_OR_GREATER
+        where T : IDisposable, allows ref struct
+#else
+        where T : IDisposable
+#endif
         => throw new ObjectDisposedException(typeof(T).FullName);
 
     [DoesNotReturn]
@@ -42,7 +47,10 @@ internal static class ThrowHelper
         => throw new NotSupportedException("The current operating system is not supported.");
 
     [DoesNotReturn]
-    public static void ThrowTypeNotSupported<T>() where T : allows ref struct
+    public static void ThrowTypeNotSupported<T>()
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
         => throw new NotSupportedException($"The type \"{typeof(T)}\" is not supported.");
 
     [DoesNotReturn]

@@ -333,7 +333,11 @@ public static class RandomExtensions
     [Pure]
     [SkipLocalsInit]
     public static T NextStruct<T>(this Random random)
+#if NET9_0_OR_GREATER
         where T : unmanaged, allows ref struct
+#else
+        where T : unmanaged
+#endif
     {
         Unsafe.SkipInit(out T result);
         random.Write(ref result, 1);
@@ -343,7 +347,11 @@ public static class RandomExtensions
     [Pure]
     [SkipLocalsInit]
     public static void NextStruct<T>(this Random random, out T result)
+#if NET9_0_OR_GREATER
         where T : unmanaged, allows ref struct
+#else
+        where T : unmanaged
+#endif
     {
         Unsafe.SkipInit(out result);
         random.Write(ref result, 1);
@@ -354,11 +362,19 @@ public static class RandomExtensions
         => Unsafe.Add(ref EnumValues<TEnum>.Reference, random.Next(0, EnumValues<TEnum>.Count));
 
     public static unsafe void Write<T>(this Random random, T* destination, nuint elementCount)
+#if NET9_0_OR_GREATER
         where T : unmanaged, allows ref struct
+#else
+        where T : unmanaged
+#endif
         => random.Write(ref Unsafe.AsRef<T>(destination), elementCount);
 
     public static unsafe void Write<T>(this Random random, ref T destination, nuint elementCount)
+#if NET9_0_OR_GREATER
         where T : unmanaged, allows ref struct
+#else
+        where T : unmanaged
+#endif
     {
         ref byte byteDestination = ref Unsafe.As<T, byte>(ref destination);
         nuint byteCount = checked((uint)sizeof(T) * elementCount);
@@ -417,7 +433,9 @@ public static class RandomExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ref T GetItem<T>(this Random random, ref T items, int length)
+#if NET9_0_OR_GREATER
         where T : allows ref struct
+#endif
     {
         if (length == 0)
         {

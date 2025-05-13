@@ -26,7 +26,10 @@ internal static class ArrayPoolSettings
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsCommonlyPooledType<T>() where T : allows ref struct
+    public static bool IsCommonlyPooledType<T>()
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
         => typeof(T) == typeof(byte) ||
            typeof(T) == typeof(sbyte) ||
            typeof(T) == typeof(short) ||

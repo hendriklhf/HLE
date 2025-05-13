@@ -19,11 +19,13 @@ namespace HLE.Memory;
 [DebuggerDisplay("{ToString()}")]
 [StructLayout(LayoutKind.Auto)]
 public ref struct ValueBufferWriter<T> :
+#if NET9_0_OR_GREATER
+    IEquatable<ValueBufferWriter<T>>,
+#endif
     IBufferWriter<T>,
     ICollection<T>,
     IDisposable,
     ICopyable<T>,
-    IEquatable<ValueBufferWriter<T>>,
     IIndexable<T>,
     IReadOnlyCollection<T>,
     ISpanProvider<T>,
@@ -387,7 +389,11 @@ public ref struct ValueBufferWriter<T> :
     {
         if (IsDisposed)
         {
+#if NET9_0_OR_GREATER
             ThrowHelper.ThrowObjectDisposedException<ValueBufferWriter<T>>();
+#else
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueBufferWriter<T>));
+#endif
         }
 
         return ref _buffer;
@@ -401,7 +407,11 @@ public ref struct ValueBufferWriter<T> :
     {
         if (typeof(char) != typeof(T))
         {
+#if NET9_0_OR_GREATER
             return ToStringHelpers.FormatCollection<ValueBufferWriter<T>>(Count);
+#else
+            return ToStringHelpers.FormatCollection(typeof(ValueBufferWriter<T>), Count);
+#endif
         }
 
         ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());

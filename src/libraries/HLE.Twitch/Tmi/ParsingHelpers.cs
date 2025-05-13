@@ -10,7 +10,7 @@ namespace HLE.Twitch.Tmi;
 internal static class ParsingHelpers
 {
     public static unsafe int IndicesOf<T>(ReadOnlySpan<T> span, T item, Span<int> destination, int maximumAmountOfIndicesNeeded)
-        where T : IEquatable<T>
+        where T : unmanaged, IEquatable<T>
     {
         if (span.Length == 0)
         {

@@ -8,7 +8,7 @@ using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Text;
 
-namespace HLE.Twitch.Tmi.Models;
+namespace HLE.Twitch.Tmi;
 
 [DebuggerDisplay("{ToString()}")]
 public readonly partial struct OAuthToken : IEquatable<OAuthToken>
@@ -18,7 +18,11 @@ public readonly partial struct OAuthToken : IEquatable<OAuthToken>
     public static OAuthToken Empty => new();
 
     [GeneratedRegex("^(oauth:)?[a-z0-9]{30}$", RegexOptions.Compiled | RegexOptions.IgnoreCase, 250)]
+#if NET9_0_OR_GREATER
     private static partial Regex TokenPattern { get; }
+#else
+    private static partial Regex GetTokenPattern();
+#endif
 
     private const string TokenPrefix = "oauth:";
     private const int TokenLength = 30;
@@ -35,7 +39,11 @@ public readonly partial struct OAuthToken : IEquatable<OAuthToken>
 
     private static string CtorCore(ReadOnlySpan<char> token, [ConstantExpected] bool wasString)
     {
+#if NET9_0_OR_GREATER
         if (!TokenPattern.IsMatch(token))
+#else
+        if (!GetTokenPattern().IsMatch(token))
+#endif
         {
             ThrowInvalidOAuthTokenFormat();
         }
@@ -54,7 +62,14 @@ public readonly partial struct OAuthToken : IEquatable<OAuthToken>
 
     [DoesNotReturn]
     private static void ThrowInvalidOAuthTokenFormat()
-        => throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {TokenPattern}");
+    {
+#if NET9_0_OR_GREATER
+        Regex regex = TokenPattern;
+#else
+        Regex regex = GetTokenPattern();
+#endif
+        throw new FormatException($"The OAuthToken is in an invalid format. It needs to match this pattern: {regex}");
+    }
 
     [Pure]
     public ReadOnlySpan<char> AsSpan() => _token;

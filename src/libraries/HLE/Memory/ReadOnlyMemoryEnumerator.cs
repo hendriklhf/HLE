@@ -6,7 +6,11 @@ using System.Diagnostics.Contracts;
 
 namespace HLE.Memory;
 
-public ref struct ReadOnlyMemoryEnumerator<T> : IEnumerator<T>, IEquatable<ReadOnlyMemoryEnumerator<T>>
+public ref struct ReadOnlyMemoryEnumerator<T> :
+#if NET9_0_OR_GREATER
+    IEquatable<ReadOnlyMemoryEnumerator<T>>,
+#endif
+    IEnumerator<T>
 {
     public readonly ref readonly T Current => ref _enumerator.Current;
 

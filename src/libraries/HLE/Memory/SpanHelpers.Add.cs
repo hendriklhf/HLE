@@ -9,7 +9,7 @@ namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
-    public static unsafe void Add<T>(Span<T> numbers, T addition) where T : INumber<T>
+    public static unsafe void Add<T>(Span<T> numbers, T addition) where T : unmanaged, INumber<T>
     {
         ref T reference = ref MemoryMarshal.GetReference(numbers);
 

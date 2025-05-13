@@ -8,7 +8,7 @@ namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
-    public static unsafe void And<T>(Span<T> values, T mask) where T : IBitwiseOperators<T, T, T>
+    public static unsafe void And<T>(Span<T> values, T mask) where T : unmanaged, IBitwiseOperators<T, T, T>
     {
         EnsureValidIntegerType<T>();
 
@@ -37,7 +37,7 @@ public static partial class SpanHelpers
         }
     }
 
-    public static void And<T>(ref T values, int length, T mask) where T : IBitwiseOperators<T, T, T>
+    public static void And<T>(ref T values, int length, T mask) where T : unmanaged, IBitwiseOperators<T, T, T>
     {
         EnsureValidIntegerType<T>();
 

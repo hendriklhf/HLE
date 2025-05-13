@@ -10,15 +10,28 @@ namespace HLE.Text;
 internal static class ToStringHelpers
 {
     [Pure]
-    public static string FormatCollection<TCountable>(TCountable countable) where TCountable : ICountable, allows ref struct
+    public static string FormatCollection<TCountable>(TCountable countable)
+#if NET9_0_OR_GREATER
+        where TCountable : ICountable, allows ref struct
+#else
+        where TCountable : ICountable
+#endif
         => FormatCollection(typeof(TCountable), countable.Count);
 
     [Pure]
-    public static string FormatCollection<TCollection, TElement>(TCollection collection) where TCollection : ICollection<TElement>, allows ref struct
+    public static string FormatCollection<TCollection, TElement>(TCollection collection)
+#if NET9_0_OR_GREATER
+        where TCollection : ICollection<TElement>, allows ref struct
+#else
+        where TCollection : ICollection<TElement>
+#endif
         => FormatCollection(typeof(TCollection), collection.Count);
 
     [Pure]
-    public static string FormatCollection<TCollection>(int elementCount) where TCollection : allows ref struct
+    public static string FormatCollection<TCollection>(int elementCount)
+#if NET9_0_OR_GREATER
+        where TCollection : allows ref struct
+#endif
         => FormatCollection(typeof(TCollection), elementCount);
 
     [Pure]

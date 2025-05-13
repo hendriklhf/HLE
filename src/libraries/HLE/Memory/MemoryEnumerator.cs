@@ -8,7 +8,11 @@ using System.Runtime.InteropServices;
 
 namespace HLE.Memory;
 
-public ref struct MemoryEnumerator<T> : IEnumerator<T>, IEquatable<MemoryEnumerator<T>>
+public ref struct MemoryEnumerator<T> :
+#if NET9_0_OR_GREATER
+    IEquatable<MemoryEnumerator<T>>,
+#endif
+    IEnumerator<T>
 {
     public readonly ref T Current => ref _current;
 

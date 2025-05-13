@@ -111,8 +111,13 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
     /// <returns>True, if the resource exists, false otherwise.</returns>
     public bool TryRead(ReadOnlySpan<char> resourcePath, out Resource resource)
     {
+#if NET9_0_OR_GREATER
         ConcurrentDictionary<string, Resource?>.AlternateLookup<ReadOnlySpan<char>> alternateLookup = _resourceMap.GetAlternateLookup<ReadOnlySpan<char>>();
         if (!alternateLookup.TryGetValue(resourcePath, out Resource? nullableResource))
+#else
+        using NativeString str = new(resourcePath);
+        if (!_resourceMap.TryGetValue(str.AsString(), out Resource? nullableResource))
+#endif
         {
             return TryReadCore(StringPool.Shared.GetOrAdd(resourcePath), out resource);
         }

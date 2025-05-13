@@ -8,13 +8,13 @@ namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
-    public static void FillAscending<T>(Span<T> destination) where T : INumber<T>
+    public static void FillAscending<T>(Span<T> destination) where T : unmanaged, INumber<T>
     {
         EnsureValidIntegerType<T>();
         FillAscending(destination, T.Zero);
     }
 
-    public static unsafe void FillAscending<T>(Span<T> destination, T start) where T : INumber<T>
+    public static unsafe void FillAscending<T>(Span<T> destination, T start) where T : unmanaged, INumber<T>
     {
         EnsureValidIntegerType<T>();
 
@@ -42,7 +42,7 @@ public static partial class SpanHelpers
         }
     }
 
-    public static void FillAscending<T>(ref T destination, int length, T start) where T : INumber<T>
+    public static void FillAscending<T>(ref T destination, int length, T start) where T : unmanaged, INumber<T>
     {
         EnsureValidIntegerType<T>();
 

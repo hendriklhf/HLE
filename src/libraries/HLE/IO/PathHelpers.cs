@@ -16,7 +16,10 @@ public static class PathHelpers
     });
 
     [Pure]
-    public static string TypeNameToPath<T>() where T : allows ref struct
+    public static string TypeNameToPath<T>()
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
         => TypeNameToPath(typeof(T));
 
     [Pure]

@@ -44,7 +44,13 @@ public sealed partial class ArrayPool<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static bool Trim(WeakReference<ArrayPool<T>> weakPool)
         {
-            if (!weakPool.TryGetTarget(out ArrayPool<T>? pool) || !pool._isTrimmerRunning)
+            if (!weakPool.TryGetTarget(out ArrayPool<T>? pool) ||
+#if NET9_0_OR_GREATER
+                !pool._isTrimmerRunning
+#else
+                pool._isTrimmerRunning == 0
+#endif
+            )
             {
                 return false;
             }
@@ -60,7 +66,11 @@ public sealed partial class ArrayPool<T>
             // stop the thread for now and let it be restarted,
             // if needed again
 
+#if NET9_0_OR_GREATER
             pool._isTrimmerRunning = false;
+#else
+            pool._isTrimmerRunning = 0;
+#endif
             return false;
         }
 

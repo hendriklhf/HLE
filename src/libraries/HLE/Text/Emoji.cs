@@ -3,6 +3,9 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+#if !NET9_0_OR_GREATER
+using HLE.Memory;
+#endif
 
 namespace HLE.Text;
 
@@ -39,7 +42,12 @@ public static partial class Emoji
     [Pure]
     public static bool IsEmoji(ReadOnlySpan<char> text)
     {
+#if NET9_0_OR_GREATER
         FrozenSet<string>.AlternateLookup<ReadOnlySpan<char>> lookup = AllEmojis.GetAlternateLookup<ReadOnlySpan<char>>();
         return lookup.Contains(text);
+#else
+        using NativeString str = new(text);
+        return AllEmojis.Contains(str.AsString());
+#endif
     }
 }

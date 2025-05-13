@@ -21,7 +21,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     public static ArrayPool<T> Shared { get; } = new();
 
     internal readonly Bucket[] _buckets;
+#if NET9_0_OR_GREATER
     private volatile bool _isTrimmerRunning;
+#else
+    private volatile uint _isTrimmerRunning;
+#endif
     private bool _disposed;
 
     [ThreadStatic]
@@ -58,7 +62,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     private void DisposeCore()
     {
         _disposed = true;
+#if NET9_0_OR_GREATER
         _isTrimmerRunning = false;
+#else
+        _isTrimmerRunning = 0;
+#endif
     }
 
     [Conditional("RELEASE")]
@@ -69,7 +77,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         // around 8000 tests that each create an ArrayPool, and therefore would also create a trimmer thread,
         // which slows down the tests significantly.
 
+#if NET9_0_OR_GREATER
         if (_isTrimmerRunning)
+#else
+        if (_isTrimmerRunning != 0)
+#endif
         {
             return;
         }
@@ -86,7 +98,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
                 ThrowHelper.ThrowObjectDisposedException<ArrayPool<T>>();
             }
 
+#if NET9_0_OR_GREATER
             if (!Interlocked.Exchange(ref _isTrimmerRunning, true))
+#else
+            if (Interlocked.Exchange(ref _isTrimmerRunning, 1) == 0)
+#endif
             {
                 WeakReference<ArrayPool<T>> weakPool = new(this);
                 Trimmer.StartThread(weakPool);

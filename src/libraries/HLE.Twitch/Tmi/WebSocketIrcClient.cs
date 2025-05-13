@@ -14,7 +14,6 @@ using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Threading;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 
@@ -220,7 +219,11 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IAsyncD
         }
 
         int maximumJoinsInPeriod = _isVerifiedBot ? 200 : 20;
+#if NET9_0_OR_GREATER
         long period = double.ConvertToIntegerNative<long>(TimeSpan.FromSeconds(10).TotalMilliseconds);
+#else
+        long period = (long)TimeSpan.FromSeconds(10).TotalMilliseconds;
+#endif
 
         using PooledBufferWriter<byte> messageBuilder = new(JoinPrefix.Length + MaximumChannelNameLength);
 

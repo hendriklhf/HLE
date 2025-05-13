@@ -12,8 +12,10 @@ namespace HLE.Text;
 [SuppressMessage("ReSharper", "NotDisposedResource")]
 [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable")]
 public ref struct PooledInterpolatedStringHandler :
-    IInterpolatedStringHandler,
+#if NET9_0_OR_GREATER
     IEquatable<PooledInterpolatedStringHandler>,
+#endif
+    IInterpolatedStringHandler,
     IDisposable
 {
     public readonly ReadOnlySpan<char> Text => _builder.WrittenSpan;

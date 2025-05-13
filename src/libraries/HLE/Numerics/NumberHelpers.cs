@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -101,7 +101,7 @@ public static class NumberHelpers
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="min"/> is greater than <paramref name="max"/>.</exception>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ClampMod<T>(T number, T min, T max) where T : IBinaryInteger<T>, IMinMaxValue<T>
+    public static T ClampMod<T>(T number, T min, T max) where T : unmanaged, IBinaryInteger<T>, IMinMaxValue<T>
     {
         ThrowIfNumberTypeNotSupported<T>();
 
@@ -181,7 +181,7 @@ public static class NumberHelpers
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe int PopCount<T>(T value)
+    private static unsafe int PopCount<T>(T value) where T : unmanaged
     {
         if (typeof(T) == typeof(byte) || typeof(T) == typeof(sbyte))
         {

@@ -2,9 +2,11 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
+#if NET9_0_OR_GREATER
+using System.Threading;
+#endif
 
 namespace HLE.Text;
 
@@ -13,7 +15,11 @@ public sealed partial class RegexPool
     private partial struct Bucket : IEquatable<Bucket>
     {
         private Regexes _regexes;
+#if NET9_0_OR_GREATER
         private readonly Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
 
         public Bucket()
         {

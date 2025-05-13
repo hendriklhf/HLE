@@ -15,10 +15,12 @@ namespace HLE.Text;
 [StructLayout(LayoutKind.Auto)]
 [DebuggerDisplay("\"{ToString()}\"")]
 public unsafe ref partial struct ValueStringBuilder :
+#if NET9_0_OR_GREATER
+    IEquatable<ValueStringBuilder>,
+#endif
     IStringBuilder,
     IDisposable,
     ICollection<char>,
-    IEquatable<ValueStringBuilder>,
     ICopyable<char>,
     IIndexable<char>,
     IReadOnlyCollection<char>,
@@ -453,7 +455,11 @@ public unsafe ref partial struct ValueStringBuilder :
 
         if ((_flags & Flags.IsDisposed) != 0)
         {
+#if NET9_0_OR_GREATER
             ThrowHelper.ThrowObjectDisposedException<ValueStringBuilder>();
+#else
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueStringBuilder));
+#endif
         }
 
         int length = Length;
@@ -499,7 +505,11 @@ public unsafe ref partial struct ValueStringBuilder :
     {
         if ((_flags & Flags.IsDisposed) != 0)
         {
+#if NET9_0_OR_GREATER
             ThrowHelper.ThrowObjectDisposedException<ValueStringBuilder>();
+#else
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueStringBuilder));
+#endif
         }
 
         return ref _buffer;

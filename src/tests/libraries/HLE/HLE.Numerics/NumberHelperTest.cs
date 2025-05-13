@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
@@ -116,7 +116,7 @@ public sealed class NumberHelperTest
         bringIntoRangeCore.Invoke(null, parameters);
     }
 
-    private static void ClampModTestCore<T>(T min, T max) where T : IBinaryInteger<T>, IMinMaxValue<T>
+    private static void ClampModTestCore<T>(T min, T max) where T : unmanaged, IBinaryInteger<T>, IMinMaxValue<T>
     {
         T start = T.Max(T.CreateSaturating(-100_000), T.MinValue);
         T end = T.Min(T.CreateSaturating(100_000), T.MaxValue);

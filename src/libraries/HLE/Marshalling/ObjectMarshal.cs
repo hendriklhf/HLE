@@ -110,7 +110,10 @@ public static unsafe class ObjectMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static MethodTable* GetMethodTable<T>() where T : allows ref struct
+    public static MethodTable* GetMethodTable<T>()
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
         => GetMethodTableFromType(typeof(T));
 
     [Pure]

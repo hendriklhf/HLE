@@ -13,19 +13,19 @@ namespace HLE.Memory;
 public static partial class SpanHelpers
 {
     [Pure]
-    public static bool ContainsAtLeast<T>(this List<T> items, T item, int count)
+    public static bool ContainsAtLeast<T>(this List<T> items, T item, int count) where T : unmanaged
         => ContainsAtLeast(CollectionsMarshal.AsSpan(items), item, count);
 
     [Pure]
-    public static bool ContainsAtLeast<T>(this T[] items, T item, int count)
+    public static bool ContainsAtLeast<T>(this T[] items, T item, int count) where T : unmanaged
         => ContainsAtLeast(items.AsSpan(), item, count);
 
     [Pure]
-    public static bool ContainsAtLeast<T>(this Span<T> items, T item, int count)
+    public static bool ContainsAtLeast<T>(this Span<T> items, T item, int count) where T : unmanaged
         => ContainsAtLeast((ReadOnlySpan<T>)items, item, count);
 
     [Pure]
-    public static unsafe bool ContainsAtLeast<T>(this ReadOnlySpan<T> items, T item, int count)
+    public static unsafe bool ContainsAtLeast<T>(this ReadOnlySpan<T> items, T item, int count) where T : unmanaged
     {
         if (items.Length == 0)
         {

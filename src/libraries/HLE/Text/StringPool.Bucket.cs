@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using HLE.Collections;
 using HLE.Memory;
+#if NET9_0_OR_GREATER
+using System.Threading;
+#endif
 
 namespace HLE.Text;
 
@@ -12,7 +14,11 @@ public sealed partial class StringPool
     private partial struct Bucket : IEquatable<Bucket>
     {
         private Strings _strings;
+#if NET9_0_OR_GREATER
         private readonly Lock _lock = new();
+#else
+        private readonly object _lock = new();
+#endif
 
         private const int MoveItemThreshold = 4;
 

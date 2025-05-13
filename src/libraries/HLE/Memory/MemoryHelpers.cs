@@ -24,7 +24,10 @@ public static unsafe class MemoryHelpers
     /// <returns>True, if a <see langword="stackalloc"/> can be used, otherwise false.</returns>
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool UseStackalloc<T>(int elementCount) where T : allows ref struct
+    public static bool UseStackalloc<T>(int elementCount)
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
     {
         int totalByteSize = sizeof(T) * elementCount;
         bool result = totalByteSize <= s_maximumStackallocSize;
@@ -38,7 +41,10 @@ public static unsafe class MemoryHelpers
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsAligned<T>(ref T reference, nuint alignment) where T : allows ref struct
+    public static bool IsAligned<T>(ref T reference, nuint alignment)
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
     {
         if (BitOperations.PopCount(alignment) != 1)
         {
@@ -50,13 +56,18 @@ public static unsafe class MemoryHelpers
     }
 
     [Pure]
-    public static T* Align<T>(T* pointer, nuint alignment, AlignmentMethod method) where T : allows ref struct
+    public static T* Align<T>(T* pointer, nuint alignment, AlignmentMethod method)
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
         => (T*)Unsafe.AsPointer(ref Align(ref Unsafe.AsRef<T>(pointer), alignment, method));
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref T Align<T>(ref T reference, nuint alignment, AlignmentMethod method)
+#if NET9_0_OR_GREATER
         where T : allows ref struct
+#endif
     {
         if (BitOperations.PopCount(alignment) != 1)
         {

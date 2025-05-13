@@ -13,8 +13,10 @@ namespace HLE.Memory;
 
 [StructLayout(LayoutKind.Auto)]
 public ref struct UnsafeBufferWriter<T>(ref T buffer) :
-    IBufferWriter<T>,
-    IEquatable<UnsafeBufferWriter<T>>
+#if NET9_0_OR_GREATER
+    IEquatable<UnsafeBufferWriter<T>>,
+#endif
+    IBufferWriter<T>
 {
     public readonly Span<T> WrittenSpan => MemoryMarshal.CreateSpan(ref _buffer, Count);
 
@@ -81,7 +83,11 @@ public ref struct UnsafeBufferWriter<T>(ref T buffer) :
     {
         if (typeof(T) != typeof(char))
         {
+#if NET9_0_OR_GREATER
             return ToStringHelpers.FormatCollection<UnsafeBufferWriter<T>>(Count);
+#else
+            return ToStringHelpers.FormatCollection(typeof(UnsafeBufferWriter<T>), Count);
+#endif
         }
 
         if (Count == 0)
@@ -89,7 +95,11 @@ public ref struct UnsafeBufferWriter<T>(ref T buffer) :
             return string.Empty;
         }
 
-        Span<char> chars = Unsafe.BitCast<Span<T>, Span<char>>(WrittenSpan);
+#if NET9_0_OR_GREATER
+        ReadOnlySpan<char> chars = Unsafe.BitCast<Span<T>, ReadOnlySpan<char>>(WrittenSpan);
+#else
+        ReadOnlySpan<char> chars = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, char>(ref _buffer), Count);
+#endif
         return new(chars);
     }
 

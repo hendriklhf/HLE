@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>$(SourceGeneratorTargetFramework)</TargetFramework>
+    <TargetFramework>$(AnalyzerTargetFramework)</TargetFramework>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>

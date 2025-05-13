@@ -39,10 +39,10 @@ public sealed partial class StringHelpersTest
     [Theory]
     [MemberData(nameof(TrimAllParameters))]
     public void TrimAll_Test(string str)
-        => Assert.Equal(TrimAllRegex.Replace(str, " ").Trim(), StringHelpers.TrimAll(str));
+        => Assert.Equal(GetTrimAllRegex().Replace(str, " ").Trim(), StringHelpers.TrimAll(str));
 
     [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled, 1_000)]
-    private static partial Regex TrimAllRegex { get; }
+    private static partial Regex GetTrimAllRegex();
 
     [Theory]
     [MemberData(nameof(IndicesOfParameters))]

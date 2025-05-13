@@ -9,7 +9,7 @@ namespace HLE.Memory;
 
 public static partial class SpanHelpers
 {
-    public static unsafe void Xor<T>(Span<T> values, T mask) where T : IBitwiseOperators<T, T, T>
+    public static unsafe void Xor<T>(Span<T> values, T mask) where T : unmanaged, IBitwiseOperators<T, T, T>
     {
         EnsureValidIntegerType<T>();
 
@@ -38,7 +38,7 @@ public static partial class SpanHelpers
         }
     }
 
-    public static void Xor<T>(ref T values, int length, T mask) where T : IBitwiseOperators<T, T, T>
+    public static void Xor<T>(ref T values, int length, T mask) where T : unmanaged, IBitwiseOperators<T, T, T>
     {
         EnsureValidIntegerType<T>();
 
@@ -90,7 +90,7 @@ public static partial class SpanHelpers
         }
     }
 
-    public static unsafe void Xor<T>(Span<T> values, ReadOnlySpan<T> mask) where T : IBitwiseOperators<T, T, T>
+    public static unsafe void Xor<T>(Span<T> values, ReadOnlySpan<T> mask) where T : unmanaged, IBitwiseOperators<T, T, T>
     {
         EnsureValidIntegerType<T>();
 
@@ -131,7 +131,7 @@ public static partial class SpanHelpers
             => throw new InvalidOperationException("The length of the values and the mask have to be the same.");
     }
 
-    public static void Xor<T>(ref T values, ref T mask, int length) where T : IBitwiseOperators<T, T, T>
+    public static void Xor<T>(ref T values, ref T mask, int length) where T : unmanaged, IBitwiseOperators<T, T, T>
     {
         EnsureValidIntegerType<T>();
 

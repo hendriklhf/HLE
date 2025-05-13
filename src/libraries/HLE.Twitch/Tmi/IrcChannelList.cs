@@ -14,7 +14,11 @@ internal sealed class IrcChannelList : IEquatable<IrcChannelList>
 {
     private readonly List<IrcChannel> _channels = new(8);
     private ReadOnlyMemory<byte>[]? _utf8NamesCache;
+#if NET9_0_OR_GREATER
     private readonly Lock _utf8NamesLock = new();
+#else
+    private readonly object _utf8NamesLock = new();
+#endif
 
     [Pure]
     public ImmutableArray<ReadOnlyMemory<byte>> GetUtf8Names()

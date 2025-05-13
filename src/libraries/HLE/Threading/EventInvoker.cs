@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
-#if NET10_0_OR_GREATER
+#if NET10_0
 using System.Runtime.CompilerServices;
 #endif
 
@@ -23,7 +23,11 @@ public static partial class EventInvoker
             return Task.CompletedTask;
         }
 
+#if NET9_0_OR_GREATER
         return eventHandler.HasSingleTarget ? eventHandler(sender, args, cancellationToken) : InvokeMultiTargetAsync(eventHandler, sender, args, cancellationToken);
+#else
+        return InvokeMultiTargetAsync(eventHandler, sender, args, cancellationToken);
+#endif
     }
 
     public static Task InvokeAsync<TSender>(
@@ -37,7 +41,11 @@ public static partial class EventInvoker
             return Task.CompletedTask;
         }
 
+#if NET9_0_OR_GREATER
         return eventHandler.HasSingleTarget ? eventHandler(sender, cancellationToken) : InvokeMultiTargetAsync(eventHandler, sender, cancellationToken);
+#else
+        return InvokeMultiTargetAsync(eventHandler, sender, cancellationToken);
+#endif
     }
 
     [SuppressMessage("Roslynator", "RCS1229:Use async/await when necessary", Justification = "'tasks' can be disposed before the returned task is awaited")]
@@ -81,12 +89,14 @@ public static partial class EventInvoker
             return;
         }
 
+#if NET9_0_OR_GREATER
         if (eventHandler.HasSingleTarget)
         {
             EventHandlerState<TEventArgs> state = new(eventHandler, sender, eventArgs);
             ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, state.EventArgs), state, true);
             return;
         }
+#endif
 
         InvokeMultiTarget(eventHandler, sender, eventArgs);
     }
@@ -98,12 +108,14 @@ public static partial class EventInvoker
             return;
         }
 
+#if NET9_0_OR_GREATER
         if (eventHandler.HasSingleTarget)
         {
             EventHandlerState state = new(eventHandler, sender);
             ThreadPool.QueueUserWorkItem(static state => state.EventHandler(state.Sender, EventArgs.Empty), state, true);
             return;
         }
+#endif
 
         InvokeMultiTarget(eventHandler, sender);
     }

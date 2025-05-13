@@ -17,9 +17,11 @@ namespace HLE.Collections;
 [DebuggerDisplay("Count = {Count}")]
 [CollectionBuilder(typeof(ValueListBuilder), nameof(ValueListBuilder.Create))]
 public ref partial struct ValueList<T> :
+#if NET9_0_OR_GREATER
+    IEquatable<ValueList<T>>,
+#endif
     IList<T>,
     ICopyable<T>,
-    IEquatable<ValueList<T>>,
     IDisposable,
     IIndexable<T>,
     IReadOnlyList<T>,
@@ -391,7 +393,11 @@ public ref partial struct ValueList<T> :
     {
         if ((_flags & Flags.IsDisposed) != 0)
         {
+#if NET9_0_OR_GREATER
             ThrowHelper.ThrowObjectDisposedException<ValueList<T>>();
+#else
+            ThrowHelper.ThrowObjectDisposedException(typeof(ValueList<T>));
+#endif
         }
 
         return ref _buffer;
@@ -404,7 +410,11 @@ public ref partial struct ValueList<T> :
         int count = Count;
         if (typeof(T) != typeof(char))
         {
+#if NET9_0_OR_GREATER
             return ToStringHelpers.FormatCollection<ValueList<T>>(count);
+#else
+            return ToStringHelpers.FormatCollection(typeof(ValueList<T>), count);
+#endif
         }
 
         ref char reference = ref Unsafe.As<T, char>(ref GetBufferReference());

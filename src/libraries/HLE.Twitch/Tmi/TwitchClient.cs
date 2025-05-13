@@ -14,7 +14,6 @@ using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Threading;
-using HLE.Twitch.Tmi.Models;
 
 namespace HLE.Twitch.Tmi;
 

@@ -8,7 +8,11 @@ namespace HLE.Text;
 public ref partial struct ValueStringBuilder
 {
     [InterpolatedStringHandler]
-    public ref struct InterpolatedStringHandler : IInterpolatedStringHandler, IEquatable<InterpolatedStringHandler>
+    public ref struct InterpolatedStringHandler :
+#if NET9_0_OR_GREATER
+        IEquatable<InterpolatedStringHandler>,
+#endif
+        IInterpolatedStringHandler
     {
         public readonly ValueStringBuilder Builder => _builder;
 

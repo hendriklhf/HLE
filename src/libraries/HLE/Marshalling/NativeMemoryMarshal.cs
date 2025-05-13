@@ -9,14 +9,24 @@ namespace HLE.Marshalling;
 public static unsafe class NativeMemoryMarshal
 {
     [Pure]
-    public static T* Alloc<T>() where T : struct, allows ref struct
+    public static T* Alloc<T>()
+#if NET9_0_OR_GREATER
+        where T : struct, allows ref struct
+#else
+        where T : struct
+#endif
     {
         T* ptr = (T*)NativeMemory.AlignedAlloc((uint)sizeof(T), (uint)sizeof(T));
         Unsafe.InitBlock(ptr, 0, (uint)sizeof(T));
         return ptr;
     }
 
-    public static void Free<T>(T* ptr) where T : struct, allows ref struct
+    public static void Free<T>(T* ptr)
+#if NET9_0_OR_GREATER
+        where T : struct, allows ref struct
+#else
+        where T : struct
+#endif
         => NativeMemory.AlignedFree(ptr);
 
     [Pure]
@@ -40,7 +50,10 @@ public static unsafe class NativeMemoryMarshal
         NativeMemory.AlignedFree(memory - 1);
     }
 
-    private static void EnsureAllocatableType<T>() where T : allows ref struct
+    private static void EnsureAllocatableType<T>()
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
     {
         if (typeof(T).IsArray || typeof(T) == typeof(string) || typeof(T).IsInterface || typeof(T).IsAbstract)
         {

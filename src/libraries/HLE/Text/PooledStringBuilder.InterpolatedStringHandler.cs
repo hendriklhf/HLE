@@ -8,7 +8,11 @@ namespace HLE.Text;
 public sealed partial class PooledStringBuilder
 {
     [InterpolatedStringHandler]
-    public readonly ref struct InterpolatedStringHandler : IInterpolatedStringHandler, IEquatable<InterpolatedStringHandler>
+    public readonly ref struct InterpolatedStringHandler :
+#if NET9_0_OR_GREATER
+        IEquatable<InterpolatedStringHandler>,
+#endif
+        IInterpolatedStringHandler
     {
         private readonly PooledStringBuilder _builder;
 

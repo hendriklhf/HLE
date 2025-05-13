@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <DefaultTargetFramework>net10.0</DefaultTargetFramework>
-    <PackageTargetFrameworks>$(DefaultTargetFramework);net9.0</PackageTargetFrameworks>
+    <PackageTargetFrameworks>$(DefaultTargetFramework);net9.0;net8.0</PackageTargetFrameworks>
     <TestTargetFrameworks>$(PackageTargetFrameworks)</TestTargetFrameworks>
-    <SourceGeneratorTargetFramework>netstandard2.0</SourceGeneratorTargetFramework>
+    <AnalyzerTargetFramework>netstandard2.0</AnalyzerTargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
     <EnablePreviewFeatures>false</EnablePreviewFeatures>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>

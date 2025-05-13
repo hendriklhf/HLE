@@ -12,8 +12,12 @@ public static class InlineArrayHelpers
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ref TElement GetReference<TArray, TElement>(ref TArray array)
+#if NET9_0_OR_GREATER
         where TArray : struct, allows ref struct
         where TElement : allows ref struct
+#else
+        where TArray : struct
+#endif
     {
         ValidateGenericArguments<TArray, TElement>();
         return ref Unsafe.As<TArray, TElement>(ref array);
@@ -32,8 +36,10 @@ public static class InlineArrayHelpers
 #pragma warning disable
     [Conditional("DEBUG")]
     private static void ValidateGenericArguments<TArray, TElement>()
+#if NET9_0_OR_GREATER
         where TArray : allows ref struct
         where TElement : allows ref struct
+#endif
     {
         ReadOnlySpan<FieldInfo> fields = typeof(TArray).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         _ = fields;

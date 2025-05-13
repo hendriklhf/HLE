@@ -12,7 +12,12 @@ namespace HLE.Memory;
 [SuppressMessage("Performance", "CA1822:Mark members as static")] // TODO: remove soon?
 public static class BufferWriterExtensions
 {
-    extension<TBufferWriter>(TBufferWriter writer) where TBufferWriter : IBufferWriter<byte>, allows ref struct
+    extension<TBufferWriter>(TBufferWriter writer)
+#if NET9_0_OR_GREATER
+        where TBufferWriter : IBufferWriter<byte>, allows ref struct
+#else
+        where TBufferWriter : IBufferWriter<byte>
+#endif
     {
         public void WriteUtf8(ref PooledInterpolatedStringHandler chars)
         {
@@ -30,7 +35,12 @@ public static class BufferWriterExtensions
         }
     }
 
-    extension<TBufferWriter>(TBufferWriter writer) where TBufferWriter : IBufferWriter<char>, allows ref struct
+    extension<TBufferWriter>(TBufferWriter writer)
+#if NET9_0_OR_GREATER
+        where TBufferWriter : IBufferWriter<char>, allows ref struct
+#else
+        where TBufferWriter : IBufferWriter<char>
+#endif
     {
         public void Write(string str)
         {

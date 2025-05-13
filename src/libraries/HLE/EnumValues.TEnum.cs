@@ -31,7 +31,11 @@ public static class EnumValues<TEnum> where TEnum : struct, Enum
         }
 
         ReadOnlySpan<TEnum> values = AsSpan();
+#if NET9_0_OR_GREATER
         return Unsafe.As<ReadOnlySpan<TEnum>, ReadOnlySpan<TUnderlyingType>>(ref values);
+#else
+        return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<TEnum, TUnderlyingType>(ref MemoryMarshal.GetReference(values)), Count);
+#endif
 
         [DoesNotReturn]
         static void ThrowDifferentInstanceSize(Type enumType, Type underlyingType)

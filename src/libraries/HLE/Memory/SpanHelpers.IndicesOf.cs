@@ -75,10 +75,17 @@ public static partial class SpanHelpers
         ref int destinationRef = ref MemoryMarshal.GetReference(destination);
         return sizeof(T) switch
         {
+#if NET9_0_OR_GREATER
             sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), items.Length, Unsafe.BitCast<T, byte>(item), ref destinationRef),
             sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), items.Length, Unsafe.BitCast<T, ushort>(item), ref destinationRef),
             sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), items.Length, Unsafe.BitCast<T, uint>(item), ref destinationRef),
             sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), items.Length, Unsafe.BitCast<T, ulong>(item), ref destinationRef),
+#else
+            sizeof(byte) => IndicesOf(ref Unsafe.As<T, byte>(ref reference), items.Length, Unsafe.As<T, byte>(ref item), ref destinationRef),
+            sizeof(ushort) => IndicesOf(ref Unsafe.As<T, ushort>(ref reference), items.Length, Unsafe.As<T, ushort>(ref item), ref destinationRef),
+            sizeof(uint) => IndicesOf(ref Unsafe.As<T, uint>(ref reference), items.Length, Unsafe.As<T, uint>(ref item), ref destinationRef),
+            sizeof(ulong) => IndicesOf(ref Unsafe.As<T, ulong>(ref reference), items.Length, Unsafe.As<T, ulong>(ref item), ref destinationRef),
+#endif
             _ => IndicesOfNonOptimizedFallback(items, item, destination)
         };
 
