@@ -13,9 +13,9 @@ if ($api_key.Length -eq 0)
 
 $projects = "src/libraries/HLE", "src/libraries/HLE.Twitch"
 
-$starting_directory = Get-Location
 foreach ($project in $projects)
 {
+    Push-Location
     try
     {
         Set-Location "$project"
@@ -38,6 +38,6 @@ foreach ($project in $projects)
     }
     finally
     {
-        Set-Location $starting_directory
+        Pop-Location
     }
 }

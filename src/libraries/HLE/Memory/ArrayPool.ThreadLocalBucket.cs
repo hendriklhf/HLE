@@ -8,7 +8,7 @@ public sealed partial class ArrayPool<T>
 {
     [SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
     [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
-    internal unsafe partial struct ThreadLocalPool
+    internal partial struct ThreadLocalPool
     {
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
         [SuppressMessage("Minor Code Smell", "S3459:Unassigned members should be removed")]

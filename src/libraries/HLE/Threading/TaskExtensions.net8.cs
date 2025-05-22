@@ -15,7 +15,7 @@ public static class TaskExtensions
         [SuppressMessage("Minor Code Smell", "S4261:Methods should be named according to their synchronicities")]
         [SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods")]
         [SuppressMessage("Roslynator", "RCS1231:Make parameter ref read-only")]
-        public static Task WhenAll(ReadOnlySpan<Task> tasks)
+        public static Task WhenAll(params ReadOnlySpan<Task> tasks)
         {
             Task[] buffer = ArrayPool<Task>.Shared.Rent(tasks.Length);
             SpanHelpers.Copy(tasks, buffer);

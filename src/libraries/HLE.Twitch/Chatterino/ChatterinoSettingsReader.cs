@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.Versioning;
 using System.Text;
@@ -36,10 +36,10 @@ public static class ChatterinoSettingsReader
         Utf8JsonReader jsonReader = new(windowLayoutFileContentWriter.WrittenSpan);
 
 #if NET10_0_OR_GREATER
-        InlineArray15<string> buffer = default; // TODO: change to 16
+        InlineArray16<string> buffer = default;
         using ValueList<string> channels = new(buffer);
 #else
-        using ValueList<string> channels = new(20);
+        using ValueList<string> channels = new(16);
 #endif
 
         while (jsonReader.Read())

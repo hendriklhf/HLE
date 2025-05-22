@@ -1,3 +1,4 @@
+#if NET9_0_OR_GREATER
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -14,3 +15,4 @@ public static partial class ListMarshal
         public static extern ref int GetSize(List<T> list);
     }
 }
+#endif

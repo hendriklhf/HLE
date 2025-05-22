@@ -128,6 +128,7 @@ public static unsafe class StructMarshal
            typeof(T) == typeof(RawArrayData<>) ||
            typeof(T) == typeof(RawStringData) ||
            typeof(T) == typeof(RangeEnumerator) ||
+           typeof(T) == typeof(NativeMemoryEnumerator<>) ||
            typeof(T).IsEnum ||
            typeof(T).IsAssignableTo(typeof(IBitwiseEquatable<T>));
 }

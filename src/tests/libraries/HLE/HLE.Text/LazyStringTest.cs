@@ -790,15 +790,15 @@ public sealed partial class LazyStringTest
     [Theory]
     [MemberData(nameof(NonEmptyStringParameters))]
     [MemberData(nameof(EmptyStringParameters))]
-    public void GetHashCode_StringComparision_ReturnsSameHashCode(Parameter parameter)
+    public void GetHashCode_StringComparison_ReturnsSameHashCode(Parameter parameter)
     {
         string str = parameter.Value;
         using LazyString lazy = parameter.CreateLazy();
 
         ReadOnlySpan<StringComparison> comparisons = EnumValues<StringComparison>.AsSpan();
-        foreach (StringComparison comparision in comparisons)
+        foreach (StringComparison comparison in comparisons)
         {
-            Assert.Equal(str.GetHashCode(comparision), lazy.GetHashCode(comparision));
+            Assert.Equal(str.GetHashCode(comparison), lazy.GetHashCode(comparison));
         }
     }
 
@@ -849,5 +849,25 @@ public sealed partial class LazyStringTest
         Assert.Equal(expectedJson, stringJson);
     }
 
-    // TODO: json deserialization
+    [Theory]
+    [MemberData(nameof(NonEmptyStringParameters))]
+    [MemberData(nameof(EmptyStringParameters))]
+    public void JsonDeserialization(Parameter parameter)
+    {
+        string str = parameter.Value;
+        string json = $"{{\"Value\":\"{str}\"}}";
+
+        Wrapper<LazyString>? lazyObject = JsonSerializer.Deserialize<Wrapper<LazyString>>(json);
+        Wrapper<string>? stringObject = JsonSerializer.Deserialize<Wrapper<string>>(json);
+
+        Assert.NotNull(lazyObject);
+        Assert.NotNull(stringObject);
+
+        Assert.Equal(str, lazyObject.Value.ToString());
+        Assert.Equal(str, stringObject.Value);
+    }
+
+#pragma warning disable CA1812
+    private sealed record Wrapper<T>(T Value);
+#pragma warning restore CA1812
 }

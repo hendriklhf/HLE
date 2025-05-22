@@ -17,7 +17,12 @@ public sealed partial class StringPool : IEquatable<StringPool>
     /// <summary>
     /// The amount of buckets in the pool.
     /// </summary>
-    private const int DefaultPoolCapacity = 4096;
+    private const int DefaultPoolCapacity =
+#if NET9_0_OR_GREATER
+        4096;
+#else
+        3971;
+#endif
 
     /// <summary>
     /// The amount of strings per bucket.
