@@ -1,0 +1,52 @@
+<Solution>
+  <Folder Name="/debug/">
+    <Project Path="debug/HLE.Debug/HLE.Debug.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path=".gitmodules" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="publish.ps1" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.targets" />
+  </Folder>
+  <Folder Name="/src/generators/">
+    <Project Path="src/generators/HLE.SourceGenerators/HLE.SourceGenerators.csproj" />
+  </Folder>
+  <Folder Name="/src/libraries/">
+    <File Path="src/libraries/Directory.Build.props" />
+    <Project Path="src/libraries/HLE.Twitch/HLE.Twitch.csproj" />
+    <Project Path="src/libraries/HLE/HLE.csproj" />
+  </Folder>
+  <Folder Name="/src/tests/">
+    <File Path="src/tests/tests.runsettings" />
+    <File Path="src/tests/xunit.runner.json" />
+    <Project Path="src/tests/HLE.TestRunner/HLE.TestRunner.csproj" />
+    <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj" />
+  </Folder>
+  <Folder Name="/src/tests/libraries/">
+    <File Path="src/tests/libraries/Directory.Build.props" />
+  </Folder>
+  <Folder Name="/src/tests/libraries/HLE.Twitch/">
+    <Project Path="src/tests/libraries/HLE.Twitch/HLE.Twitch.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/tests/libraries/HLE/">
+    <File Path="src/tests/libraries/HLE/Directory.Build.props" />
+    <Project Path="src/tests/libraries/HLE/HLE.Collections/HLE.Collections.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.IO/HLE.IO.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.Marshalling/HLE.Marshalling.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.Memory/HLE.Memory.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.Numerics/HLE.Numerics.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.Resources/HLE.Resources.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.Text/HLE.Text.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE.Threading/HLE.Threading.UnitTests.csproj" />
+    <Project Path="src/tests/libraries/HLE/HLE/HLE.UnitTests.csproj" />
+  </Folder>
+</Solution>
