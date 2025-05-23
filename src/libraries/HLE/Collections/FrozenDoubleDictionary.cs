@@ -162,13 +162,14 @@ public sealed class FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue> :
 
     bool ICollection<TValue>.Remove(TValue item) => throw new NotSupportedException();
 
-    // TODO: improve enumerator
-    public IEnumerator<TValue> GetEnumerator() => Count == 0
+    public ReadOnlyArrayEnumerator<TValue> GetEnumerator() => new(ImmutableCollectionsMarshal.AsArray(Values)!);
+
+    IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => Count == 0
         ? EmptyEnumeratorCache<TValue>.Enumerator
-        : MemoryMarshal.ToEnumerable<TValue>(ImmutableCollectionsMarshal.AsArray(Values).AsMemory()).GetEnumerator();
+        : GetEnumerator();
 
     // ReSharper disable once NotDisposedResourceIsReturned
-    IEnumerator IEnumerable.GetEnumerator() => Count == 0 ? EmptyEnumeratorCache<TValue>.Enumerator : GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [Pure]
     public bool Equals([NotNullWhen(true)] FrozenDoubleDictionary<TPrimaryKey, TSecondaryKey, TValue>? other) => ReferenceEquals(this, other);

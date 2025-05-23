@@ -17,6 +17,11 @@ public static class TaskExtensions
         [SuppressMessage("Roslynator", "RCS1231:Make parameter ref read-only")]
         public static Task WhenAll(params ReadOnlySpan<Task> tasks)
         {
+            if (tasks.Length == 0)
+            {
+                return Task.CompletedTask;
+            }
+
             Task[] buffer = ArrayPool<Task>.Shared.Rent(tasks.Length);
             SpanHelpers.Copy(tasks, buffer);
             Task t = Task.WhenAll(buffer.Take(tasks.Length));

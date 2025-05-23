@@ -370,8 +370,14 @@ public unsafe ref partial struct ValueStringBuilder :
             return TryFormatEnum(null, value, destination, out charsWritten, format);
         }
 
-        string? str;
 #pragma warning disable IDE0038, RCS1220
+        if (value is IInterpolatedStringHandler)
+        {
+            // constrained call to avoid boxing for value types
+            return TryCopyTo(((IInterpolatedStringHandler)value).Text, destination, out charsWritten);
+        }
+
+        string? str;
         if (value is IFormattable)
         {
             if (value is ISpanFormattable)
@@ -390,7 +396,7 @@ public unsafe ref partial struct ValueStringBuilder :
         return TryCopyTo(str, destination, out charsWritten);
     }
 
-    private static bool TryCopyTo(string str, Span<char> destination, out int charsWritten)
+    private static bool TryCopyTo(ReadOnlySpan<char> str, Span<char> destination, out int charsWritten)
     {
         if (str.TryCopyTo(destination))
         {
@@ -427,6 +433,7 @@ public unsafe ref partial struct ValueStringBuilder :
             return false;
         }
 
+        // TODO: only has to memmove if "index" is not the last position
         ref char src = ref Unsafe.Add(ref MemoryMarshal.GetReference(writtenSpan), index + 1);
         ref char dst = ref Unsafe.Add(ref src, -1);
         SpanHelpers.Memmove(ref dst, ref src, writtenSpan.Length - index - 1);

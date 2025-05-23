@@ -14,6 +14,8 @@ public sealed partial class PooledStringBuilder
 #endif
         IInterpolatedStringHandler
     {
+        public ReadOnlySpan<char> Text => _builder.WrittenSpan;
+
         private readonly PooledStringBuilder _builder;
 
         private const int AssumedAverageFormattingLength = 16;
@@ -71,6 +73,12 @@ public sealed partial class PooledStringBuilder
         public void AppendFormatted<T>(T value) => _builder.Append(value);
 
         public void AppendFormatted<T>(T value, string? format) => _builder.Append(value, format);
+
+        public void AppendFormatted(scoped ref DefaultInterpolatedStringHandler handler)
+        {
+            _builder.Append(handler.Text);
+            handler.Clear();
+        }
 
         [Pure]
         public bool Equals(scoped InterpolatedStringHandler other) => _builder.Equals(other._builder);

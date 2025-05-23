@@ -80,6 +80,12 @@ public ref struct PooledInterpolatedStringHandler :
 
     public void AppendFormatted<T>(T value, string? format) => _builder.Append(value, format);
 
+    public void AppendFormatted(scoped ref DefaultInterpolatedStringHandler handler)
+    {
+        _builder.Append(handler.Text);
+        handler.Clear();
+    }
+
     [Pure]
     public override readonly string ToString() => new(Text);
 

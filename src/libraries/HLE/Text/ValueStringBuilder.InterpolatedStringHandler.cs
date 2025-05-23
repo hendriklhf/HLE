@@ -14,6 +14,8 @@ public ref partial struct ValueStringBuilder
 #endif
         IInterpolatedStringHandler
     {
+        public readonly ReadOnlySpan<char> Text => _builder.WrittenSpan;
+
         public readonly ValueStringBuilder Builder => _builder;
 
         private ValueStringBuilder _builder;
@@ -73,6 +75,12 @@ public ref partial struct ValueStringBuilder
         public void AppendFormatted<T>(T value) => _builder.Append(value);
 
         public void AppendFormatted<T>(T value, string? format) => _builder.Append(value, format);
+
+        public void AppendFormatted(scoped ref DefaultInterpolatedStringHandler handler)
+        {
+            _builder.Append(handler.Text);
+            handler.Clear();
+        }
 
         [Pure]
         public readonly bool Equals(scoped InterpolatedStringHandler other) => _builder.Equals(other._builder);

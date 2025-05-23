@@ -370,12 +370,18 @@ public sealed partial class PooledStringBuilder :
         }
 
 #pragma warning disable IDE0038, RCS1220
+        if (value is IInterpolatedStringHandler)
+        {
+            // constrained call to avoid boxing for value types
+            return TryCopyTo(((IInterpolatedStringHandler)value).Text, destination, out charsWritten);
+        }
+
         string? str;
         if (value is IFormattable)
         {
             if (value is ISpanFormattable)
-            {
 #pragma warning restore IDE0038, RCS1220
+            {
                 // constrained call to avoid boxing for value types
                 return ((ISpanFormattable)value).TryFormat(destination, out charsWritten, format, null);
             }
@@ -389,7 +395,7 @@ public sealed partial class PooledStringBuilder :
         return TryCopyTo(str, destination, out charsWritten);
     }
 
-    private static bool TryCopyTo(string str, Span<char> destination, out int charsWritten)
+    private static bool TryCopyTo(ReadOnlySpan<char> str, Span<char> destination, out int charsWritten)
     {
         if (str.TryCopyTo(destination))
         {

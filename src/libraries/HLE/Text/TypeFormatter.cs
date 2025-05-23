@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using HLE.Memory;
 
 namespace HLE.Text;
 
@@ -20,27 +21,25 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     });
 
     [Pure]
-    public string Format<T>() => Format(typeof(T));
+    public string Format<T>()
+#if NET9_0_OR_GREATER
+        where T : allows ref struct
+#endif
+        => Format(typeof(T));
 
     [Pure]
     public string Format(Type type) => _cache.TryGetValue(type, out string? str) ? str : FormatCore(type);
 
     [SkipLocalsInit]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private string FormatCore(Type type)
     {
-        // ReSharper disable once NotDisposedResource
         ValueStringBuilder builder = new(stackalloc char[512]);
-        try
-        {
-            AppendTypeAndGenericParameters(type, ref builder, true, true);
-            string str = builder.ToString();
-            _cache.TryAdd(type, str);
-            return str;
-        }
-        finally
-        {
-            builder.Dispose();
-        }
+        AppendTypeAndGenericParameters(type, ref builder, true, true);
+        string str = builder.ToString();
+        builder.Dispose();
+        _cache.TryAdd(type, str);
+        return str;
     }
 
     private void AppendTypeAndGenericParameters(Type type, ref ValueStringBuilder builder, [ConstantExpected] bool appendNamespace, [ConstantExpected] bool replaceNamespaceSeparators)

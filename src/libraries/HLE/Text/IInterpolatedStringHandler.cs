@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace HLE.Text;
 
 public interface IInterpolatedStringHandler
 {
+    ReadOnlySpan<char> Text { get; }
+
     void AppendLiteral(string str);
 
     void AppendFormatted(string? str);
@@ -24,4 +27,6 @@ public interface IInterpolatedStringHandler
     void AppendFormatted<T>(T value);
 
     void AppendFormatted<T>(T value, string? format);
+
+    void AppendFormatted(ref DefaultInterpolatedStringHandler handler);
 }
