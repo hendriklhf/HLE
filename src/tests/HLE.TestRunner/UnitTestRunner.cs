@@ -10,45 +10,35 @@ using HLE.Collections;
 
 namespace HLE.TestRunner;
 
-internal sealed class UnitTestRunner(TextWriter outputWriter) : IDisposable, IEquatable<UnitTestRunner>
+internal sealed class UnitTestRunner : IDisposable, IEquatable<UnitTestRunner>
 {
-    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "UnitTestRunner doesn't own the writer")]
-    private readonly TextWriter _outputWriter = outputWriter;
-    private readonly ImmutableArray<TestProject> _testProjects = DiscoverTestProjects(outputWriter);
+    private readonly ImmutableArray<TestProject> _testProjects = DiscoverTestProjects();
 
-    public void Dispose()
-    {
-        foreach (TestProject project in _testProjects)
-        {
-            project.Dispose();
-        }
-    }
+    public void Dispose() => DisposeHelpers.DisposeAll(_testProjects.AsSpan());
 
     public async Task<ImmutableArray<UnitTestRunResult>> RunAsync()
     {
-        using PooledList<Task<UnitTestRunResult>> tasks = new();
-
         ReadOnlyMemory<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combine();
+        using PooledList<UnitTestRunResult> results = new(_testProjects.Length * environmentConfigurations.Length);
+
         foreach (TestProject testProject in _testProjects)
         {
-            foreach (EnvironmentConfiguration environment in environmentConfigurations.Span)
+            for (int i = 0; i < environmentConfigurations.Length; i++)
             {
-                UnitTestRun run = new(_outputWriter, testProject, environment);
-                tasks.Add(run.StartAsync());
+                await testProject.BuildAsync(environmentConfigurations.Span[i]);
             }
         }
 
-        UnitTestRunResult[] result = await Task.WhenAll(tasks.AsSpan());
-        return ImmutableCollectionsMarshal.AsImmutableArray(result);
+        return ImmutableCollectionsMarshal.AsImmutableArray(results.ToArray());
     }
 
-    private static ImmutableArray<TestProject> DiscoverTestProjects(TextWriter outputWriter)
+    private static ImmutableArray<TestProject> DiscoverTestProjects()
     {
-        string[] testProjectFiles = Directory.GetFiles($"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}libraries", "*.csproj", SearchOption.AllDirectories);
+        string[] testProjectFiles = Directory.GetFiles($"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}libraries", "HLE.*.UnitTests.csproj", SearchOption.AllDirectories);
         TestProject[] testProjects = new TestProject[testProjectFiles.Length];
         for (int i = 0; i < testProjectFiles.Length; i++)
         {
-            testProjects[i] = new(outputWriter, testProjectFiles[i]);
+            testProjects[i] = new(testProjectFiles[i]);
         }
 
         return ImmutableCollectionsMarshal.AsImmutableArray(testProjects);

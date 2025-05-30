@@ -5,22 +5,19 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using HLE.IO;
 
 namespace HLE.TestRunner;
 
-internal sealed class TestProject(TextWriter outputWriter, string filePath) : IDisposable, IEquatable<TestProject>
+internal sealed class TestProject(string projectFilePath) : IDisposable, IEquatable<TestProject>
 {
-    public string FilePath { get; } = filePath;
+    public string ProjectFilePath { get; } = projectFilePath;
 
-    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = "TestProject doesn't own the writer.")]
-    private readonly TextWriter _outputWriter = outputWriter;
     private readonly List<string> _temporaryDirectories = new();
 
-    private static readonly SemaphoreSlim s_projectBuildLock = new(1);
     private static readonly string s_baseBuildOutputPath = Path.Combine(Path.GetTempPath(), PathHelpers.TypeNameToPath<UnitTestRunner>());
+    private static readonly string s_executableExtension = OperatingSystem.IsWindows() ? ".exe" : string.Empty;
 
     public void Dispose()
     {
@@ -41,30 +38,21 @@ internal sealed class TestProject(TextWriter outputWriter, string filePath) : ID
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
-            Arguments = $"build \"{FilePath}\" -c {environment.Configuration} -r {environment.RuntimeIdentifier} -o \"{buildOutputPath}\"",
-            RedirectStandardOutput = true
+            Arguments = $"build \"{ProjectFilePath}\" -f {environment.TargetFramework} -c {environment.Configuration} -r {environment.RuntimeIdentifier} -o \"{buildOutputPath}\""
         };
 
         using Process? buildProcess = Process.Start(startInfo);
         ArgumentNullException.ThrowIfNull(buildProcess);
 
-        await s_projectBuildLock.WaitAsync();
-        try
-        {
-            ProcessOutputReader outputReader = new(buildProcess, _outputWriter);
+        await buildProcess.WaitForExitAsync();
 
-            buildProcess.Start();
-            Task readerTask = outputReader.StartReadingAsync();
-
-            await buildProcess.WaitForExitAsync();
-            await readerTask;
-        }
-        finally
+        if (buildProcess.ExitCode != 0)
         {
-            s_projectBuildLock.Release();
+            throw new InvalidOperationException($"Building {ProjectFilePath} failed.");
         }
 
-        return buildProcess.ExitCode == 0 ? buildOutputPath : null;
+        string projectName = Path.GetFileNameWithoutExtension(ProjectFilePath);
+        return Path.Combine(buildOutputPath, projectName + s_executableExtension);
     }
 
     private string CreateTemporaryDirectory()

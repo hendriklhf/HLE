@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,7 +8,7 @@ internal static class Program
 {
     private static async Task<int> Main()
     {
-        using UnitTestRunner runner = new(Console.Out);
+        using UnitTestRunner runner = new();
         ImmutableArray<UnitTestRunResult> results = await runner.RunAsync();
         return results.Count(static r => !r.IsSuccess);
     }

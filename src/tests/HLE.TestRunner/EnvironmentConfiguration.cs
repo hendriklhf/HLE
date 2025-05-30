@@ -6,8 +6,10 @@ using System.Runtime.CompilerServices;
 
 namespace HLE.TestRunner;
 
-internal sealed class EnvironmentConfiguration(string configuration, string runtimeIdentifier) : IEquatable<EnvironmentConfiguration>
+internal sealed class EnvironmentConfiguration(string targetFramework, string configuration, string runtimeIdentifier) : IEquatable<EnvironmentConfiguration>
 {
+    public string TargetFramework { get; } = targetFramework;
+
     public string Configuration { get; } = configuration;
 
     public string RuntimeIdentifier { get; } = runtimeIdentifier;

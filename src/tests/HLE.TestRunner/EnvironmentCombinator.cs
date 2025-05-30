@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using HLE.Marshalling;
 
 namespace HLE.TestRunner;
 
 internal static class EnvironmentCombinator
 {
+    private static readonly string[] s_targetFrameworks = ["net8.0", "net9.0", "net10.0"];
     private static readonly string[] s_configurations = ["Debug", "Release"];
     private static readonly string[] s_runtimeIdentifiers = DetermineRuntimeIdentifiers();
 
@@ -17,12 +19,15 @@ internal static class EnvironmentCombinator
     {
         List<EnvironmentConfiguration> environmentConfigurations = new();
 
-        foreach (string configuration in s_configurations)
+        foreach (string targetFramework in s_targetFrameworks)
         {
-            foreach (string runtimeIdentifier in s_runtimeIdentifiers)
+            foreach (string configuration in s_configurations)
             {
-                EnvironmentConfiguration environmentConfiguration = new(configuration, runtimeIdentifier);
-                environmentConfigurations.Add(environmentConfiguration);
+                foreach (string runtimeIdentifier in s_runtimeIdentifiers)
+                {
+                    EnvironmentConfiguration environmentConfiguration = new(targetFramework, configuration, runtimeIdentifier);
+                    environmentConfigurations.Add(environmentConfiguration);
+                }
             }
         }
 
@@ -49,6 +54,7 @@ internal static class EnvironmentCombinator
         throw new PlatformNotSupportedException();
     }
 
+    [SupportedOSPlatform("windows")]
     private static string[] DetermineWindowsRuntimes()
     {
         Debug.Assert(OperatingSystem.IsWindows());
@@ -62,6 +68,7 @@ internal static class EnvironmentCombinator
         };
     }
 
+    [SupportedOSPlatform("linux")]
     private static string[] DetermineLinuxRuntimes()
     {
         Debug.Assert(OperatingSystem.IsLinux());
@@ -75,6 +82,7 @@ internal static class EnvironmentCombinator
         };
     }
 
+    [SupportedOSPlatform("macos")]
     private static string[] DetermineMacOsRuntimes()
     {
         Debug.Assert(OperatingSystem.IsMacOS());

@@ -3,12 +3,11 @@
   <PropertyGroup>
     <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
     <OutputType>Exe</OutputType>
-    <StartWorkingDirectory>..</StartWorkingDirectory>
-    <PublishSingleFile>true</PublishSingleFile>
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\HLE\HLE.csproj" />
+    <ProjectReference Include="..\..\libraries\HLE\HLE.csproj"/>
   </ItemGroup>
 
 </Project>
