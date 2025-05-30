@@ -38,9 +38,9 @@
 
   <!-- Benchmarks -->
   <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0"/>
-    <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.14.0"/>
-    <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.14.0"/>
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.0"/>
+    <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.0"/>
+    <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.0"/>
   </ItemGroup>
 
 </Project>

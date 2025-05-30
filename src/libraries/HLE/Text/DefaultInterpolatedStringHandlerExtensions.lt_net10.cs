@@ -9,16 +9,16 @@ namespace HLE.Text;
 [SuppressMessage("Minor Code Smell", "S3398:\"private\" methods called only by inner classes should be moved to those classes", Justification = "analyzer is stupid")]
 public static class DefaultInterpolatedStringHandlerExtensions
 {
-    extension(DefaultInterpolatedStringHandler handler)
+    extension(ref DefaultInterpolatedStringHandler handler)
     {
-        public ReadOnlySpan<char> Text => GetText(handler);
+        public ReadOnlySpan<char> Text => GetText(ref handler);
 
-        public void Clear() => ClearCore(handler);
+        public void Clear() => ClearCore(ref handler);
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_Text")]
-    private static extern ReadOnlySpan<char> GetText(DefaultInterpolatedStringHandler h);
+    private static extern ReadOnlySpan<char> GetText(ref DefaultInterpolatedStringHandler h);
 
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "Clear")]
-    private static extern void ClearCore(DefaultInterpolatedStringHandler h);
+    private static extern void ClearCore(ref DefaultInterpolatedStringHandler h);
 }

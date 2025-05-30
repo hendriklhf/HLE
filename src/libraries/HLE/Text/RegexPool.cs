@@ -13,7 +13,12 @@ public sealed partial class RegexPool : IEquatable<RegexPool>
 
     private Buckets _buckets;
 
-    private const int DefaultPoolCapacity = 4096;
+    private const int DefaultPoolCapacity =
+#if NET9_0_OR_GREATER
+        4096;
+#else
+        3971;
+#endif
     private const int DefaultBucketCapacity = 32;
 
     public RegexPool()
