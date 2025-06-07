@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using HLE.Collections;
 
@@ -16,7 +17,7 @@ internal sealed class UnitTestRunner : IDisposable, IEquatable<UnitTestRunner>
 
     public void Dispose() => DisposeHelpers.DisposeAll(_testProjects.AsSpan());
 
-    public async Task<ImmutableArray<UnitTestRunResult>> RunAsync()
+    public async Task<ImmutableArray<UnitTestRunResult>> RunAsync(CancellationToken stoppingToken)
     {
         ReadOnlyMemory<EnvironmentConfiguration> environmentConfigurations = EnvironmentCombinator.Combine();
         using PooledList<UnitTestRunResult> results = new(_testProjects.Length * environmentConfigurations.Length);
@@ -25,7 +26,17 @@ internal sealed class UnitTestRunner : IDisposable, IEquatable<UnitTestRunner>
         {
             for (int i = 0; i < environmentConfigurations.Length; i++)
             {
-                await testProject.BuildAsync(environmentConfigurations.Span[i]);
+                stoppingToken.ThrowIfCancellationRequested();
+                await testProject.BuildAsync(environmentConfigurations.Span[i], stoppingToken).ConfigureAwait(false);
+            }
+        }
+
+        foreach (TestProject testProject in _testProjects)
+        {
+            for (int i = 0; i < environmentConfigurations.Length; i++)
+            {
+                stoppingToken.ThrowIfCancellationRequested();
+                await testProject.RunAsync(results, stoppingToken).ConfigureAwait(false);
             }
         }
 

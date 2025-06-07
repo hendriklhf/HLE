@@ -9,7 +9,7 @@ internal static class Program
     private static async Task<int> Main()
     {
         using UnitTestRunner runner = new();
-        ImmutableArray<UnitTestRunResult> results = await runner.RunAsync();
+        ImmutableArray<UnitTestRunResult> results = await runner.RunAsync(ConsoleCancellation.Token);
         return results.Count(static r => !r.IsSuccess);
     }
 }
