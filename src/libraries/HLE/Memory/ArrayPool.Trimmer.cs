@@ -16,14 +16,14 @@ public sealed partial class ArrayPool<T>
         // from the weak reference, or the pool's finalizer has set
         // "_isTrimmerRunning" to false, which will end the task.
 
-        public static void StartTask(WeakReference<ArrayPool<T>> weakPool)
-            => _ = TrimmerWorkAsync(weakPool);
+        public static void StartTask(WeakReference<ArrayPool<T>> weakPool, CancellationToken stoppingToken)
+            => _ = TrimmerWorkAsync(weakPool, stoppingToken);
 
-        private static async Task TrimmerWorkAsync(WeakReference<ArrayPool<T>> weakPool)
+        private static async Task TrimmerWorkAsync(WeakReference<ArrayPool<T>> weakPool, CancellationToken stoppingToken)
         {
             do
             {
-                await Task.Delay(ArrayPoolSettings.TrimmingInterval);
+                await Task.Delay(ArrayPoolSettings.TrimmingInterval, stoppingToken).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             }
             while (Trim(weakPool));
         }
@@ -31,13 +31,19 @@ public sealed partial class ArrayPool<T>
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static bool Trim(WeakReference<ArrayPool<T>> weakPool)
         {
-            if (!weakPool.TryGetTarget(out ArrayPool<T>? pool) ||
+            if (!weakPool.TryGetTarget(out ArrayPool<T>? pool))
+            {
+                return false;
+            }
+
+            bool isTrimmerRunning =
 #if NET9_0_OR_GREATER
-                !pool._isTrimmerRunning
+                pool._isTrimmerRunning;
 #else
-                pool._isTrimmerRunning == 0
+                pool._isTrimmerRunning != 0;
 #endif
-            )
+
+            if (pool._disposed || pool._cts.IsCancellationRequested || !isTrimmerRunning)
             {
                 return false;
             }

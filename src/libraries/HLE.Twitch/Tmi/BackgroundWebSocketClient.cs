@@ -136,6 +136,8 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
             }
         }
 
+        return;
+
         static bool DoPendingMessagesExist(ChannelReader<Bytes> reader)
         {
             try
@@ -219,6 +221,8 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
             _maintenanceSignal.Set();
             _exceptionHandlingLock.Release();
         }
+
+        return;
 
         static void IncreaseSleep(ref TimeSpan sleep)
         {

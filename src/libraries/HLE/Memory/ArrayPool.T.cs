@@ -27,6 +27,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     private volatile uint _isTrimmerRunning;
 #endif
     private bool _disposed;
+    private readonly CancellationTokenSource _cts;
 
     [ThreadStatic]
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
@@ -49,6 +50,8 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         _buckets = buckets;
 
         Debug.Assert(arrayLength >>> 1 == ArrayPoolSettings.MaximumArrayLength);
+
+        _cts = new();
     }
 
     ~ArrayPool() => DisposeCore();
@@ -62,6 +65,11 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     private void DisposeCore()
     {
         _disposed = true;
+        _cts.Cancel();
+#pragma warning disable S2952
+        _cts.Dispose();
+#pragma warning restore S2952
+
 #if NET9_0_OR_GREATER
         _isTrimmerRunning = false;
 #else
@@ -100,7 +108,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 #endif
             {
                 WeakReference<ArrayPool<T>> weakPool = new(this);
-                Trimmer.StartTask(weakPool);
+                Trimmer.StartTask(weakPool, _cts.Token);
             }
         }
     }

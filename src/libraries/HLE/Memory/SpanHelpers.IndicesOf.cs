@@ -118,7 +118,7 @@ public static partial class SpanHelpers
                     }
                     else
                     {
-                        equals ^= (1UL << index);
+                        equals ^= (1U << index);
                     }
                 }
 
