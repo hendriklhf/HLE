@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Channels;
 using HLE.Twitch.Tmi;
-using Xunit;
 
 namespace HLE.Twitch.UnitTests;
 

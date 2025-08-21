@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Reflection;
-using Xunit;
 
 namespace HLE.Numerics.UnitTests;
 

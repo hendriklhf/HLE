@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using Xunit;
 
 namespace HLE.Memory.UnitTests;
 

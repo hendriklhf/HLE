@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 

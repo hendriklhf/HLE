@@ -5,7 +5,6 @@ using System.Reflection;
 using HLE.Collections;
 using HLE.Marshalling;
 using HLE.Memory;
-using Xunit;
 
 namespace HLE.Numerics.UnitTests;
 

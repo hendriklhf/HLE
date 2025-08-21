@@ -3,8 +3,9 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <DotNetSystemPackagesVersion>9.0.5</DotNetSystemPackagesVersion>
-    <RoslynatorVersion>4.13.1</RoslynatorVersion>
+    <DotNetSystemPackagesVersion>9.0.8</DotNetSystemPackagesVersion>
+    <RoslynatorVersion>4.14.0</RoslynatorVersion>
+    <BenchmarkDotNetVersion>0.15.2</BenchmarkDotNetVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,10 +16,6 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.14.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0"/>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(DotNetSystemPackagesVersion)"/>
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(DotNetSystemPackagesVersion)"/>
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(DotNetSystemPackagesVersion)"/>
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(DotNetSystemPackagesVersion)"/>
     <PackageVersion Include="System.IO.Hashing" Version="$(DotNetSystemPackagesVersion)"/>
   </ItemGroup>
 
@@ -29,21 +26,22 @@
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.CodeFixes" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="$(RoslynatorVersion)"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.11.0.117924"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.15.0.120848"/>
   </ItemGroup>
 
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0"/>
-    <PackageVersion Include="xunit" Version="2.9.3"/>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4"/>
+    <PackageVersion Include="xunit.v3" Version="3.0.1"/>
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="3.0.1"/>
   </ItemGroup>
 
   <!-- Benchmarks -->
   <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.15.0"/>
-    <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.0"/>
-    <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.0"/>
+    <PackageVersion Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)"/>
+    <PackageVersion Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="$(BenchmarkDotNetVersion)"/>
+    <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="$(BenchmarkDotNetVersion)"/>
   </ItemGroup>
 
 </Project>

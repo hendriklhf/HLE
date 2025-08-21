@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using HLE.Collections;
-using Xunit;
 
 namespace HLE.Memory.UnitTests;
 
@@ -12,7 +11,7 @@ public sealed partial class SpanHelpersTest
     [SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
     public static TheoryData<object> FillAscendingParameters { get; } =
         new(
-            (byte)0,
+            (object)(byte)0,
             (byte)128,
             (byte)255,
             (sbyte)-127,

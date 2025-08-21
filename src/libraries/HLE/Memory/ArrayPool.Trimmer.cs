@@ -1,9 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using HLE.Marshalling;
-using HLE.Text;
 
 namespace HLE.Memory;
 
@@ -12,31 +11,19 @@ public sealed partial class ArrayPool<T>
     private static class Trimmer
     {
         // The trimmer uses a weak reference to allow the pool to be collected
-        // while it's not in use, i.e. while the thread is sleeping.
+        // while it's not in use, i.e., while the task is sleeping.
         // When the pool is collected, it won't be retrievable
         // from the weak reference, or the pool's finalizer has set
-        // "_isTrimmerRunning" to false, which will end the thread.
+        // "_isTrimmerRunning" to false, which will end the task.
 
-        public static void StartThread(WeakReference<ArrayPool<T>> weakPool)
+        public static void StartTask(WeakReference<ArrayPool<T>> weakPool)
+            => _ = TrimmerWorkAsync(weakPool);
+
+        private static async Task TrimmerWorkAsync(WeakReference<ArrayPool<T>> weakPool)
         {
-            Thread thread = new(TrimmerThreadStart)
-            {
-                Name = TypeFormatter.Default.Format(typeof(Trimmer)),
-                Priority = ThreadPriority.BelowNormal,
-                IsBackground = true
-            };
-
-            thread.Start(weakPool);
-        }
-
-        private static void TrimmerThreadStart(object? obj)
-        {
-            Debug.Assert(obj is WeakReference<ArrayPool<T>>);
-            WeakReference<ArrayPool<T>> weakPool = Unsafe.As<WeakReference<ArrayPool<T>>>(obj);
-
             do
             {
-                Thread.Sleep(ArrayPoolSettings.TrimmingInterval);
+                await Task.Delay(ArrayPoolSettings.TrimmingInterval);
             }
             while (Trim(weakPool));
         }
@@ -63,7 +50,7 @@ public sealed partial class ArrayPool<T>
 
             // If all buckets have been cleared, it means that
             // the pool hasn't been used for a while, so we can
-            // stop the thread for now and let it be restarted,
+            // stop the task for now and let it be restarted,
             // if needed again
 
 #if NET9_0_OR_GREATER

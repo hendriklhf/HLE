@@ -81,7 +81,7 @@ public readonly struct Color : IBitwiseEquatable<Color>
         }
 
         using ValueStringBuilder builder = new(stackalloc char[7]);
-        builder.Append($"#{Red:X2}{Green:X2}{Blue:X2}");
+        builder.Append($"{Red:X2}{Green:X2}{Blue:X2}");
         return StringPool.Shared.GetOrAdd(builder.WrittenSpan);
     }
 

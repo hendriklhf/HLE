@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Threading.UnitTests;
 

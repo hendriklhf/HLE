@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -13,6 +14,7 @@ public static class SliceUnsafeExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<T> SliceUnsafe(int start, int length)
         {
+            Debug.Assert(length >= 0);
             ref T reference = ref MemoryMarshal.GetReference(span);
             return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
         }
@@ -36,6 +38,7 @@ public static class SliceUnsafeExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<T> SliceUnsafe(int start, int length)
         {
+            Debug.Assert(length >= 0);
             ref T reference = ref MemoryMarshal.GetReference(span);
             return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.Add(ref reference, start), length);
         }

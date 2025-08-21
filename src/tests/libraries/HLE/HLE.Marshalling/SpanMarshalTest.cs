@@ -1,7 +1,6 @@
 ﻿using System;
 using HLE.Memory;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Marshalling.UnitTests;
 

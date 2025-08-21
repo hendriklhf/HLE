@@ -26,6 +26,8 @@ public static partial class SpanHelpers
     {
         ValidateElementCountType<TElementCount>();
 
+        Debug.Assert(elementCount >= TElementCount.Zero);
+
         if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {
             MemoryMarshal.CreateSpan(ref items, Unsafe.BitCast<TElementCount, byte>(elementCount)).Clear();

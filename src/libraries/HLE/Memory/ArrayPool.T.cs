@@ -69,14 +69,9 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 #endif
     }
 
-    [Conditional("RELEASE")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void StartTrimmerIfNotStarted()
     {
-        // A trimmer is only created in release builds, as there are currently
-        // around 8000 tests that each create an ArrayPool, and therefore would also create a trimmer thread,
-        // which slows down the tests significantly.
-
 #if NET9_0_OR_GREATER
         if (_isTrimmerRunning)
 #else
@@ -105,7 +100,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 #endif
             {
                 WeakReference<ArrayPool<T>> weakPool = new(this);
-                Trimmer.StartThread(weakPool);
+                Trimmer.StartTask(weakPool);
             }
         }
     }

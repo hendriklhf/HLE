@@ -5,7 +5,6 @@ using System.Text.Json;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 
@@ -15,15 +14,15 @@ public sealed partial class LazyStringTest
 
     public static TheoryData<Parameter> NonEmptyStringParameters { get; } =
     [
-        new(TestString, static () => new(TestString)),
-        new(TestString, static () => LazyString.FromString(TestString))
+        new Parameter(TestString, static () => new(TestString)),
+        new Parameter(TestString, static () => LazyString.FromString(TestString))
     ];
 
     public static TheoryData<Parameter> EmptyStringParameters { get; } =
     [
-        new(string.Empty, static () => LazyString.Empty),
-        new(string.Empty, static () => new(string.Empty)),
-        new(string.Empty, static () => LazyString.FromString(string.Empty))
+        new Parameter(string.Empty, static () => LazyString.Empty),
+        new Parameter(string.Empty, static () => new(string.Empty)),
+        new Parameter(string.Empty, static () => LazyString.FromString(string.Empty))
     ];
 
     [Theory]

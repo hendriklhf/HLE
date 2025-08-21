@@ -36,12 +36,12 @@ public static class StringHelpers
     private static readonly SearchValues<char> s_regexMetaCharsSearchValues = SearchValues.Create(RegexMetaChars);
 
     [Pure]
-    public static string TrimAll(string str) => TrimAll(str.AsSpan());
+    public static string TrimAll(string str) => TrimAll(str.AsSpan(), true);
 
     [Pure]
     public static string TrimAll(ref PooledInterpolatedStringHandler str)
     {
-        string result = TrimAll(str.Text);
+        string result = TrimAll(str.Text, false);
         str.Dispose();
         return result;
     }
@@ -49,6 +49,9 @@ public static class StringHelpers
     [Pure]
     [SkipLocalsInit]
     public static string TrimAll(ReadOnlySpan<char> str)
+        => TrimAll(str, false);
+
+    private static string TrimAll(ReadOnlySpan<char> str, [ConstantExpected] bool wasString)
     {
         if (str.Length == 0)
         {
@@ -60,14 +63,14 @@ public static class StringHelpers
         {
             char[] rentedBuffer = Memory.ArrayPool<char>.Shared.Rent(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
-            string result = new(rentedBuffer.AsSpanUnsafe(..resultLength));
+            string result = resultLength == 0 && wasString ? StringMarshal.AsString(str) : new(rentedBuffer.AsSpanUnsafe(..resultLength));
             Memory.ArrayPool<char>.Shared.Return(rentedBuffer);
             return result;
         }
 
         Span<char> buffer = stackalloc char[str.Length];
         resultLength = TrimAll(str, buffer);
-        return new(buffer[..resultLength]);
+        return resultLength == 0 && wasString ? StringMarshal.AsString(str) : new(buffer[..resultLength]);
     }
 
     public static int TrimAll(string str, Span<char> result) => TrimAll(str.AsSpan(), result);
@@ -79,22 +82,29 @@ public static class StringHelpers
         return charCount;
     }
 
-    public static int TrimAll(ReadOnlySpan<char> span, Span<char> result)
+    public static int TrimAll(ReadOnlySpan<char> input, Span<char> result)
     {
-        if (span.Length == 0)
+        if (input.Length == 0)
         {
             return 0;
         }
 
-        int indexOfAnyNonWhitespace = span.IndexOfAnyExcept(' ');
+        // TODO: this could be optimized
+        if (input[0] != ' ' && input[^1] != ' ' && input.IndexOf("  ") < 0)
+        {
+            // No whitespace at the start or end, and no double spaces in between.
+            return 0;
+        }
+
+        int indexOfAnyNonWhitespace = input.IndexOfAnyExcept(' ');
         if (indexOfAnyNonWhitespace < 0)
         {
             return 0;
         }
 
-        span = span.SliceUnsafe(indexOfAnyNonWhitespace);
-        span.CopyTo(result);
-        result = result.SliceUnsafe(0, span.Length);
+        input = input.SliceUnsafe(indexOfAnyNonWhitespace);
+        input.CopyTo(result);
+        result = result.SliceUnsafe(0, input.Length);
 
         int resultLength = result.Length;
         int indexOfWhitespace = result.IndexOf(' ');

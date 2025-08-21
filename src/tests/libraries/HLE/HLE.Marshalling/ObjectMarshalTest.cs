@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Marshalling.UnitTests;
 

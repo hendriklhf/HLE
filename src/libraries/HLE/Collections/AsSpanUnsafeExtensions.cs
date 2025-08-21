@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -25,6 +26,7 @@ public static class AsSpanUnsafeExtensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<T> AsSpanUnsafe(int start, int length)
         {
+            Debug.Assert(length >= 0);
             ref T reference = ref MemoryMarshal.GetArrayDataReference(array);
             return MemoryMarshal.CreateSpan(ref Unsafe.Add(ref reference, start), length);
         }

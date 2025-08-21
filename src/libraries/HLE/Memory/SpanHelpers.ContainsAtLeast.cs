@@ -32,7 +32,7 @@ public static partial class SpanHelpers
             return false;
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
 
         if (!StructMarshal.IsBitwiseEquatable<T>())
         {
@@ -53,6 +53,7 @@ public static partial class SpanHelpers
     public static bool ContainsAtLeast<T>(ref T items, int length, T item, int count) where T : unmanaged
     {
         Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
+        Debug.Assert(count > 0);
 
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {
@@ -117,6 +118,7 @@ public static partial class SpanHelpers
     private static bool ContainsAtLeastNonOptimizedFallback<T>(ReadOnlySpan<T> items, T item, int count)
     {
         Debug.Assert(items.Length != 0);
+        Debug.Assert(count > 0);
 
         for (int i = 0; i < items.Length; i++)
         {

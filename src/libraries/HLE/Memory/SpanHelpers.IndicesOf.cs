@@ -97,6 +97,7 @@ public static partial class SpanHelpers
     public static int IndicesOf<T>(ref T items, int length, T item, ref int destination) where T : unmanaged, IEquatable<T>
     {
         Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
+        Debug.Assert(length >= 0);
 
         int indicesLength = 0;
         int startIndex = 0;

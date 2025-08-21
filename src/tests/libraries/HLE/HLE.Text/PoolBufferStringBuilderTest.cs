@@ -2,7 +2,6 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 

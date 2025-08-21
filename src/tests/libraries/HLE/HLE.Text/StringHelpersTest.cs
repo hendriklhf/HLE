@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using HLE.Collections;
 using HLE.Memory;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 

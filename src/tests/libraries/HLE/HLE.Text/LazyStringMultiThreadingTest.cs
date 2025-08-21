@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using HLE.Collections;
-using Xunit;
 
 namespace HLE.Memory.UnitTests;
 

@@ -4,7 +4,6 @@ using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Threading.Tasks;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Memory.UnitTests;
 

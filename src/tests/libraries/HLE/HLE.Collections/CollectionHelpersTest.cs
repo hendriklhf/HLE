@@ -11,7 +11,6 @@ using HLE.Marshalling;
 using HLE.Memory;
 using HLE.Resources;
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Collections.UnitTests;
 

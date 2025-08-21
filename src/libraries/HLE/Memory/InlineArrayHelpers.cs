@@ -26,7 +26,10 @@ public static class InlineArrayHelpers
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Span<TElement> AsSpan<TArray, TElement>(ref TArray array, int length) where TArray : struct
-        => MemoryMarshal.CreateSpan(ref GetReference<TArray, TElement>(ref array), length);
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        return MemoryMarshal.CreateSpan(ref GetReference<TArray, TElement>(ref array), length);
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

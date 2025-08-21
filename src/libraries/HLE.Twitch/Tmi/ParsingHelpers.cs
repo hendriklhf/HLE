@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -40,6 +41,8 @@ internal static class ParsingHelpers
     private static int IndicesOf<T>(ref T items, int length, T item, Span<int> destination, int maximumAmountOfIndicesNeeded)
         where T : unmanaged, IEquatable<T>
     {
+        Debug.Assert(length > 0);
+
         int indicesLength = 0;
         if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
         {

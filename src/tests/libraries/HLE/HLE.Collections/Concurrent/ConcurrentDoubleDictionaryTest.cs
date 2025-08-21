@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using HLE.Collections.Concurrent;
-using Xunit;
 
 namespace HLE.Collections.UnitTests.Concurrent;
 

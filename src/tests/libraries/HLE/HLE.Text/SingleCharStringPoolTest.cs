@@ -1,5 +1,4 @@
 using HLE.TestUtilities;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 

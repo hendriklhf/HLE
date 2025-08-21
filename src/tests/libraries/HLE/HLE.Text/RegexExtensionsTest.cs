@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HLE.IO;
-using Xunit;
 
 namespace HLE.Text.UnitTests;
 
