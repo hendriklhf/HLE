@@ -198,6 +198,7 @@ public static partial class SpanHelpers
         return indicesLength;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static int IndicesOfNonOptimizedFallback<T>(ReadOnlySpan<T> span, T item, Span<int> destination) where T : IEquatable<T>
     {
         if (span.Length == 0)
@@ -217,4 +218,125 @@ public static partial class SpanHelpers
 
         return indicesLength;
     }
+
+#if NET10_0_OR_GREATER
+    public static int IndicesOfCompressImpl<T>(ref T items, int length, T item, ref int destination)
+        where T : unmanaged, IEquatable<T>, INumber<T>, IMinMaxValue<T>
+    {
+        Debug.Assert(Vector<T>.IsSupported, "Support of the generic type has to be ensured before calling this method.");
+        Debug.Assert(length >= 0);
+
+        int indicesLength = 0;
+        int startIndex = 0;
+        if (Vector512.IsHardwareAccelerated && length >= Vector512<T>.Count)
+        {
+            Vector512<T> searchVector = Vector512.Create(item);
+            while (length - startIndex >= Vector512<T>.Count)
+            {
+                Vector512<T> itemsVector = Vector512.LoadUnsafe(ref Unsafe.Add(ref items, (uint)startIndex));
+                Vector512<T> equalsValues = Vector512.Equals(itemsVector, searchVector);
+                ulong equalsBits = equalsValues.ExtractMostSignificantBits();
+                int count = BitOperations.PopCount(equalsBits);
+
+                if (count != 0)
+                {
+                    Vector512<T> indices = Vector512<T>.Indices + Vector512.Create(T.CreateTruncating(startIndex));
+                    indicesLength += count;
+                    Vector512<T> compressed = Compress512(Vector512<T>.Zero, equalsValues, indices);
+                    Store512(compressed, ref Unsafe.As<int, uint>(ref destination));
+                    destination = ref Unsafe.Add(ref destination, (uint)count);
+                }
+
+                startIndex += Vector512<T>.Count;
+            }
+
+            goto RemainderLoop;
+        }
+
+        if (Vector256.IsHardwareAccelerated && length >= Vector256<T>.Count)
+        {
+            ThrowHelper.ThrowNotImplementedException();
+        }
+
+        if (Vector128.IsHardwareAccelerated && length >= Vector128<T>.Count)
+        {
+            ThrowHelper.ThrowNotImplementedException();
+        }
+
+        return IndicesOfNonOptimizedFallback(MemoryMarshal.CreateReadOnlySpan(ref items, length), item, MemoryMarshal.CreateSpan(ref destination, length));
+
+    RemainderLoop:
+        ref T remainingItemsReference = ref Unsafe.Add(ref items, startIndex);
+        int remainingLength = length - startIndex;
+        for (int i = 0; i < remainingLength; i++)
+        {
+            if (item.Equals(Unsafe.Add(ref remainingItemsReference, i)))
+            {
+                Unsafe.Add(ref destination, indicesLength++) = startIndex + i;
+            }
+        }
+
+        return indicesLength;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool CanUseIndicesOfCompressImpl<T>(int inputLength) where T : IEquatable<T>, INumber<T>, IMinMaxValue<T>
+        => Avx512F.IsSupported && Avx512Vbmi2.IsSupported &&
+           // as it is saturating, it can't be checked for greater or equal, even though it would be a valid index
+           T.MaxValue > T.CreateSaturating(inputLength - 1);
+
+    [SuppressMessage("Major Code Smell", "S1172:Unused method parameters should be removed")]
+    [SuppressMessage("ReSharper", "UnusedParameter.Local")]
+    [SuppressMessage("ReSharper", "RedundantUnsafeContext")]
+    private static unsafe Vector512<T> Compress512<T>(Vector512<T> source, Vector512<T> mask, Vector512<T> value) where T : unmanaged =>
+        sizeof(T) switch
+        {
+            sizeof(byte) => Avx512Vbmi2.Compress(source.AsByte(), mask.AsByte(), value.AsByte()).As<byte, T>(),
+            sizeof(ushort) => Avx512Vbmi2.Compress(source.AsUInt16(), mask.AsUInt16(), value.AsUInt16()).As<ushort, T>(),
+            sizeof(uint) => Avx512F.Compress(source.AsUInt32(), mask.AsUInt32(), value.AsUInt32()).As<uint, T>(),
+            sizeof(ulong) => Avx512F.Compress(source.AsUInt64(), mask.AsUInt64(), value.AsUInt64()).As<ulong, T>(),
+            _ => throw new UnreachableException()
+        };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe void Store512<T>(Vector512<T> source, ref uint destination)
+        where T : unmanaged
+    {
+        switch (sizeof(T))
+        {
+            case sizeof(byte):
+            {
+                Vector512<byte> vector = source.AsByte();
+                (Vector512<ushort> lower, Vector512<ushort> upper) = Vector512.Widen(vector);
+                Store512(lower, ref destination);
+                Store512(upper, ref Unsafe.Add(ref destination, Vector512<ushort>.Count));
+                break;
+            }
+            case sizeof(ushort):
+            {
+                Vector512<ushort> vector = source.AsUInt16();
+                (Vector512<uint> lower, Vector512<uint> upper) = Vector512.Widen(vector);
+                Store512(lower, ref destination);
+                Store512(upper, ref Unsafe.Add(ref destination, Vector512<uint>.Count));
+                break;
+            }
+            case sizeof(uint):
+            {
+                Vector512<uint> vector = source.AsUInt32();
+                vector.StoreUnsafe(ref destination);
+                break;
+            }
+            case sizeof(ulong):
+            {
+                Vector512<ulong> vector = source.AsUInt64();
+                Vector512<uint> narrow = Vector512.Narrow(vector, Vector512<ulong>.Zero);
+                narrow.StoreUnsafe(ref destination);
+                break;
+            }
+            default:
+                ThrowHelper.ThrowUnreachableException();
+                break;
+        }
+    }
+#endif
 }

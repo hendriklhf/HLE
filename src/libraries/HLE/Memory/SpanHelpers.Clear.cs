@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -26,7 +27,12 @@ public static partial class SpanHelpers
     {
         ValidateElementCountType<TElementCount>();
 
-        Debug.Assert(elementCount >= TElementCount.Zero);
+        if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(short) ||
+            typeof(TElementCount) == typeof(int) || typeof(TElementCount) == typeof(long) ||
+            typeof(TElementCount) == typeof(nint))
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(elementCount);
+        }
 
         if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {

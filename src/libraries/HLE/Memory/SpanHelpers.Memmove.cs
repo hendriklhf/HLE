@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -27,15 +26,15 @@ public static unsafe partial class SpanHelpers
     {
         ValidateElementCountType<TElementCount>();
 
-        Debug.Assert(elementCount >= TElementCount.Zero);
+        if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(short) ||
+            typeof(TElementCount) == typeof(int) || typeof(TElementCount) == typeof(long) ||
+            typeof(TElementCount) == typeof(nint))
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(elementCount);
+        }
 
         if (typeof(TElementCount) == typeof(sbyte) || typeof(TElementCount) == typeof(byte))
         {
-            if (typeof(TElementCount) == typeof(sbyte))
-            {
-                ArgumentOutOfRangeException.ThrowIfNegative(elementCount);
-            }
-
             MemoryMarshal.CreateReadOnlySpan(ref source, Unsafe.BitCast<TElementCount, byte>(elementCount))
                 .CopyTo(MemoryMarshal.CreateSpan(ref destination, int.MaxValue));
             return;

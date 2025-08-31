@@ -29,6 +29,11 @@ internal static class ThrowHelper
     public static void ThrowUnreachableException() => throw new UnreachableException();
 
     [DoesNotReturn]
+    [SuppressMessage("Minor Code Smell", "S3717:Track use of \"NotImplementedException\"", Justification = "it is implemented")]
+    [SuppressMessage("Roslynator", "RCS1079:Throwing of new NotImplementedException", Justification = "it is implemented")]
+    public static void ThrowNotImplementedException() => throw new NotImplementedException();
+
+    [DoesNotReturn]
     public static void ThrowInvalidEnumValue<TEnum>(TEnum value, [CallerArgumentExpression(nameof(value))] string? paramName = null) where TEnum : struct, Enum
     {
         Debug.Assert(typeof(TEnum).GetEnumUnderlyingType() == typeof(int));
