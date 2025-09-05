@@ -18,10 +18,10 @@ public sealed partial class ArrayPool<T>
         internal volatile uint _positions;
         internal long _lastAccessTick;
 
+        private const int MaxTryCount = 6;
+
         public bool TryRent([MaybeNullWhen(false)] out T[] array)
         {
-            const int MaxTryCount = 5;
-
             for (int i = 0; i < MaxTryCount; i++)
             {
                 uint positions = _positions;
@@ -32,8 +32,13 @@ public sealed partial class ArrayPool<T>
                 }
 
                 int index = BitOperations.TrailingZeroCount(positions);
+                uint bitValue = 1U << index;
+                if ((Interlocked.And(ref _positions, ~bitValue) & bitValue) == 0)
+                {
+                    continue;
+                }
+
                 ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), index);
-                Interlocked.And(ref _positions, ~(1U << index));
                 T[]? value = Interlocked.Exchange(ref reference, null);
                 if (value is null)
                 {
@@ -52,18 +57,21 @@ public sealed partial class ArrayPool<T>
 
         public bool TryReturn(T[] array)
         {
-            const int MaxTryCount = 5;
-
             for (int i = 0; i < MaxTryCount; i++)
             {
                 uint positions = ~_positions;
                 if (positions == 0)
                 {
-                    return false;
+                    continue;
                 }
 
                 int index = BitOperations.TrailingZeroCount(positions);
-                Interlocked.Or(ref _positions, 1U << index);
+                uint bitValue = 1U << index;
+                if ((Interlocked.Or(ref _positions, bitValue) & bitValue) != 0)
+                {
+                    continue;
+                }
+
                 ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), index);
                 T[]? previous = Interlocked.CompareExchange(ref reference, array, null);
                 if (previous is not null)
