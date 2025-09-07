@@ -27,7 +27,10 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     private volatile uint _isTrimmerRunning;
 #endif
     private bool _disposed;
-    private readonly CancellationTokenSource _cts;
+
+#pragma warning disable CA2213 // Disposable fields should be disposed (it is disposed, stop annoying me)
+    private CancellationTokenSource? _cts;
+#pragma warning restore CA2213 // Disposable fields should be disposed
 
     [ThreadStatic]
     [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "ThreadStatic")]
@@ -54,21 +57,16 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         _cts = new();
     }
 
-    ~ArrayPool() => DisposeCore();
-
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
-        DisposeCore();
-    }
-
-    private void DisposeCore()
-    {
         _disposed = true;
-        _cts.Cancel();
-#pragma warning disable S2952
-        _cts.Dispose();
-#pragma warning restore S2952
+
+        CancellationTokenSource? cts = Interlocked.Exchange(ref _cts, null);
+        if (cts is not null)
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
 
 #if NET9_0_OR_GREATER
         _isTrimmerRunning = false;
@@ -108,7 +106,14 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 #endif
             {
                 WeakReference<ArrayPool<T>> weakPool = new(this);
-                Trimmer.StartTask(weakPool, _cts.Token);
+
+                CancellationTokenSource? cts = _cts;
+                if (cts is null)
+                {
+                    ThrowHelper.ThrowObjectDisposedException<ArrayPool<T>>();
+                }
+
+                Trimmer.StartTask(weakPool, cts.Token);
             }
         }
     }

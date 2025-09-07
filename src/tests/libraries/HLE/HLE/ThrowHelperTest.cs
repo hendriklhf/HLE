@@ -24,6 +24,10 @@ public sealed class ThrowHelperTest
         => Assert.Throws<UnreachableException>(ThrowHelper.ThrowUnreachableException);
 
     [Fact]
+    public void ThrowNotImplementedExceptionTest()
+        => Assert.Throws<NotImplementedException>(ThrowHelper.ThrowNotImplementedException);
+
+    [Fact]
     public void ThrowInvalidEnumValueTest()
     {
         const StringComparison InvalidEnumValue = (StringComparison)(-1);

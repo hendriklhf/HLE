@@ -38,7 +38,7 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
-                ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), index);
+                ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), (uint)index);
                 T[]? value = Interlocked.Exchange(ref reference, null);
                 if (value is null)
                 {
@@ -72,7 +72,7 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
-                ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), index);
+                ref T[]? reference = ref Unsafe.Add(ref InlineArrayHelpers.GetReference<Pool, T[]?>(ref _pool), (uint)index);
                 T[]? previous = Interlocked.CompareExchange(ref reference, array, null);
                 if (previous is not null)
                 {

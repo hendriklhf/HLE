@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
 
-namespace HLE.Threading;
+namespace HLE;
 
 internal static class DelegateExtensions
 {
@@ -25,6 +25,7 @@ internal static class DelegateExtensions
 
     [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
     public struct InvocationListEnumerator<TDelegate>(TDelegate[] targets) :
+        IEnumerable<TDelegate>,
         IEnumerator<TDelegate>
         where TDelegate : Delegate?
     {
@@ -37,6 +38,10 @@ internal static class DelegateExtensions
         public static InvocationListEnumerator<TDelegate> Empty => new([]);
 
         public readonly InvocationListEnumerator<TDelegate> GetEnumerator() => this;
+
+        readonly IEnumerator<TDelegate> IEnumerable<TDelegate>.GetEnumerator() => GetEnumerator();
+
+        readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public bool MoveNext() => _enumerator.MoveNext();
 

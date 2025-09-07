@@ -23,7 +23,8 @@ public sealed partial class ArrayPool<T>
         {
             do
             {
-                await Task.Delay(ArrayPoolSettings.TrimmingInterval, stoppingToken).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                await Task.Delay(ArrayPoolSettings.TrimmingInterval, stoppingToken)
+                    .ConfigureAwait(false);
             }
             while (Trim(weakPool));
         }
@@ -43,7 +44,18 @@ public sealed partial class ArrayPool<T>
                 pool._isTrimmerRunning != 0;
 #endif
 
-            if (pool._disposed || pool._cts.IsCancellationRequested || !isTrimmerRunning)
+            if (pool._disposed)
+            {
+                return false;
+            }
+
+            CancellationTokenSource? cts = pool._cts;
+            if (cts is null)
+            {
+                return false;
+            }
+
+            if (cts.IsCancellationRequested || !isTrimmerRunning)
             {
                 return false;
             }

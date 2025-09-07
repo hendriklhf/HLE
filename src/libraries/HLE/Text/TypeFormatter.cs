@@ -42,7 +42,12 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
         return str;
     }
 
-    private void AppendTypeAndGenericParameters(Type type, ref ValueStringBuilder builder, [ConstantExpected] bool appendNamespace, [ConstantExpected] bool replaceNamespaceSeparators)
+    private void AppendTypeAndGenericParameters(
+        Type type,
+        ref ValueStringBuilder builder,
+        [ConstantExpected] bool appendNamespace,
+        [ConstantExpected] bool replaceNamespaceSeparators
+    )
     {
         if (type.IsArray)
         {
