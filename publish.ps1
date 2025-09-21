@@ -11,20 +11,20 @@ if ($api_key.Length -eq 0)
     exit
 }
 
-$libraries_directory = "src/libraries"
+$packages_directory = "src/packages"
 if ($args.Length -eq 0 -or $args[0].Length -eq 0)
 {
-    Write-Error "No library specified. Please provide the library name as an argument."
+    Write-Error "No package specified. Please provide the package name as an argument."
     exit
 }
 
-$library = $args[0]
-$library_directory = [System.IO.Path]::Combine($libraries_directory, $library)
+$package = $args[0]
+$package_directory = [System.IO.Path]::Combine($packages_directory, $package, "src")
 
 Push-Location
 try
 {
-    Set-Location $library_directory
+    Set-Location $package_directory
     Remove-Item "bin/Release/*.nupkg"
 
     dotnet pack -c Release -p:PublishingPackage=true
