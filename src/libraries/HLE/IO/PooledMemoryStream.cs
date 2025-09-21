@@ -23,12 +23,18 @@ internal sealed class PooledMemoryStream(int capacity) :
 
     public override long Length => (uint)_length;
 
+    public int Capacity => GetBuffer().Length;
+
     public override long Position
     {
         get => (uint)_position;
         set
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThan((ulong)value, (uint)_length);
+            if (value > _length)
+            {
+                SetLength(value + 1);
+            }
+
             _position = (int)value;
         }
     }
@@ -276,7 +282,7 @@ internal sealed class PooledMemoryStream(int capacity) :
     {
         byte[] currentBuffer = GetBuffer();
         uint currentLength = (uint)currentBuffer.Length;
-        int newLength = BufferHelpers.GrowArray(currentLength, (uint)_position + sizeHint - currentLength);
+        int newLength = BufferHelpers.GrowArray(currentLength, sizeHint);
         byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newLength);
         SpanHelpers.Copy(currentBuffer, newBuffer);
 

@@ -199,13 +199,13 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             return;
         }
 
+        AssertArrayWithReferencesIsCleared(array);
+
         if (!TryGetBucketIndex(array.Length, out int bucketIndex))
         {
             Log.Dropped(array);
             return;
         }
-
-        AssertArrayWithReferencesIsCleared(array);
 
         if (TryReturnToThreadLocalBucket(array, bucketIndex))
         {

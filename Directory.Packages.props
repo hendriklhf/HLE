@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <DotNetSystemPackagesVersion>9.0.8</DotNetSystemPackagesVersion>
+    <DotNetSystemPackagesVersion>10.0.0-rc.1.25451.107</DotNetSystemPackagesVersion>
     <RoslynatorVersion>4.14.0</RoslynatorVersion>
     <BenchmarkDotNetVersion>0.15.2</BenchmarkDotNetVersion>
   </PropertyGroup>
