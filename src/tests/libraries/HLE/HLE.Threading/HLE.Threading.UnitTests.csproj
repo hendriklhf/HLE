@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
-  </ItemGroup>
-
-</Project>

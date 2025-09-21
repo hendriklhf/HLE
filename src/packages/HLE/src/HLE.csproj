@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>A library containing mostly high performance types and methods.</Description>
+    <PackageTags>library classlibrary highperformance performance</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\gen\HLE.SourceGenerators\HLE.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+  </ItemGroup>
+
+  <Import Project="$(SolutionDir)\eng\Packages.props"/>
+
+</Project>

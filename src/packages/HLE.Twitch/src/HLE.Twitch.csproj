@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>A library containing a Twitch chat client.</Description>
+    <PackageTags>library classlibrary twitch chat</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Condition="'$(PublishingPackage)'!='true'" Include="..\..\HLE\src\HLE.csproj"/>
+    <PackageReference Condition="'$(PublishingPackage)'=='true'" Include="HLE"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Hashing"/>
+  </ItemGroup>
+
+  <Import Project="$(SolutionDir)\eng\Packages.props"/>
+
+</Project>

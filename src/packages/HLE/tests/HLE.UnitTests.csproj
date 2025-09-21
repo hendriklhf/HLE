@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\HLE.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="HLE.Resources\Resource1"/>
+    <EmbeddedResource Include="HLE.Resources\Resource2"/>
+    <EmbeddedResource Include="HLE.Resources\Resource3"/>
+    <EmbeddedResource Include="HLE.Resources\Resource4" LogicalName="R4"/>
+  </ItemGroup>
+
+  <Import Project="$(SolutionDir)\eng\Tests.props"/>
+
+</Project>

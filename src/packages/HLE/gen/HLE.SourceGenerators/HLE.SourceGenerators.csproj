@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\assets\**\metadata.json" />
+  </ItemGroup>
+
+  <Import Project="$(SolutionDir)\eng\Generators.props"/>
+
+</Project>

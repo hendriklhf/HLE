@@ -1,50 +1,6 @@
 <Project>
 
-  <PropertyGroup Condition="'$(IsNugetPackage)'=='true'">
-    <Authors>Hendrik</Authors>
-    <Product>$(AssemblyName)</Product>
-    <PackageId>$(AssemblyName)</PackageId>
-    <Title>$(AssemblyName)</Title>
-    <Version>$(NugetPackageVersion)</Version>
-    <PackageVersion>$(NugetPackageVersion)</PackageVersion>
-    <AssemblyVersion>$(NugetPackageVersion)</AssemblyVersion>
-    <FileVersion>$(NugetPackageVersion)</FileVersion>
-    <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(IsNugetPackage)'=='true'">
-    <None Include="..\..\..\README.md" Pack="true" PackagePath="\"/>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(UseDefaultAnalyzerPackages)'=='true'">
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Roslynator.Analyzers">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Roslynator.CodeAnalysis.Analyzers">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Roslynator.CodeFixes">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Roslynator.Formatting.Analyzers">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="SonarAnalyzer.CSharp">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+  <Import Project="eng\Analyzer.targets"/>
+  <Import Project="eng\ConditionalTargetFrameworkCompiles.targets"/>
 
 </Project>

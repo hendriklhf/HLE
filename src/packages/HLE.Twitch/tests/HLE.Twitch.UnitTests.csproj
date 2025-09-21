@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\HLE.Twitch.csproj"/>
+  </ItemGroup>
+
+  <Import Project="$(SolutionDir)\eng\Tests.props"/>
+
+</Project>

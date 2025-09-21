@@ -1,3 +1,3 @@
-[submodule "src/generators/assets/fluentui-emoji"]
-	path = src/generators/assets/fluentui-emoji
+[submodule "fluentui-emoji"]
+	path = src/packages/HLE/gen/assets/fluentui-emoji
 	url = https://github.com/microsoft/fluentui-emoji.git

@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\libraries\HLE.Twitch\HLE.Twitch.csproj"/>
-  </ItemGroup>
-
-</Project>

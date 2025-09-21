@@ -1,0 +1,24 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TestTargetFrameworks)</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CS0436</NoWarn>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit"/>
+
+    <Content Include="$(SolutionDir)\src\tests\xunit.runner.json" CopyToOutputDirectory="Always"/>
+    <ProjectReference Include="$(SolutionDir)\src\tests\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="xunit.v3"/>
+    <PackageReference Include="xunit.runner.visualstudio"/>
+  </ItemGroup>
+
+</Project>
