@@ -14,22 +14,14 @@
     <File Path="publish.ps1" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/src/packages/HLE/gen/HLE.SourceGenerators/">
+  <Folder Name="/src/">
+    <Project Path="src/packages/HLE.Twitch/src/HLE.Twitch.csproj" />
     <Project Path="src/packages/HLE/gen/HLE.SourceGenerators/HLE.SourceGenerators.csproj" />
-  </Folder>
-  <Folder Name="/src/packages/HLE/src/">
     <Project Path="src/packages/HLE/src/HLE.csproj" />
   </Folder>
-  <Folder Name="/src/packages/HLE/tests/">
-    <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj" />
-  </Folder>
-  <Folder Name="/src/packages/HLE.Twitch/src/">
-    <Project Path="src/packages/HLE.Twitch/src/HLE.Twitch.csproj" />
-  </Folder>
-  <Folder Name="/src/packages/HLE.Twitch/tests/">
+  <Folder Name="/tests/">
     <Project Path="src/packages/HLE.Twitch/tests/HLE.Twitch.UnitTests.csproj" />
-  </Folder>
-  <Folder Name="/src/tests/">
+    <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj" />
     <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj" />
     <File Path="src/tests/xunit.runner.json" />
   </Folder>
