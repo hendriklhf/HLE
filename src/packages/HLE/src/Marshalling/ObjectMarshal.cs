@@ -214,7 +214,7 @@ public static unsafe class ObjectMarshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint GetRawArraySize<T>(int arrayLength) =>
         BaseObjectSize +
-        (nuint)sizeof(nuint) /* array length */ +
+        (uint)sizeof(nuint) /* array length */ +
         (uint)arrayLength * (uint)sizeof(T); /* items */
 
     /// <summary>
