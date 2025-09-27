@@ -1,6 +1,6 @@
 <Project>
 
-  <Import Project="$(SolutionDir)\eng\Analyzer.targets"/>
-  <Import Project="$(SolutionDir)\eng\ConditionalTargetFrameworkCompiles.targets"/>
+  <Import Project="$(RepoRoot)eng\Analyzer.targets"/>
+  <Import Project="$(RepoRoot)eng\ConditionalTargetFrameworkCompiles.targets"/>
 
 </Project>

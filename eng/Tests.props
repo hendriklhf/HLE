@@ -13,8 +13,8 @@
   <ItemGroup>
     <Using Include="Xunit"/>
 
-    <Content Include="$(SolutionDir)\src\tests\xunit.runner.json" CopyToOutputDirectory="Always"/>
-    <ProjectReference Include="$(SolutionDir)\src\tests\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
+    <Content Include="$(RepoRoot)src\tests\xunit.runner.json" CopyToOutputDirectory="Always"/>
+    <ProjectReference Include="$(RepoRoot)src\tests\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
 
     <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     <PackageReference Include="xunit.v3"/>

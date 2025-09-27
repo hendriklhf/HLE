@@ -1,10 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using HLE;
 using HLE.Threading;
 
-namespace HLE.UnitTests.HLE.Threading;
+namespace HLE.UnitTests.Threading;
 
 public sealed class TaskExtensionsTests
 {

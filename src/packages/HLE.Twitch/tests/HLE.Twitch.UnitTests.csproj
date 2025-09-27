@@ -4,6 +4,6 @@
     <ProjectReference Include="..\src\HLE.Twitch.csproj"/>
   </ItemGroup>
 
-  <Import Project="$(SolutionDir)\eng\Tests.props"/>
+  <Import Project="$(RepoRoot)eng\Tests.props"/>
 
 </Project>

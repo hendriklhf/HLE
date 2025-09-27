@@ -1,9 +1,8 @@
 using System;
 using System.Runtime.CompilerServices;
-using HLE;
 using HLE.Text;
 
-namespace HLE.UnitTests.HLE.Text;
+namespace HLE.UnitTests.Text;
 
 public sealed class DefaultInterpolatedStringHandlerExtensionsTests
 {

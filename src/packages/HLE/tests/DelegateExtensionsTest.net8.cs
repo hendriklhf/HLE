@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using HLE.TestUtilities;
 
-namespace HLE.UnitTests.HLE;
+namespace HLE.UnitTests;
 
 public sealed class DelegateExtensionsTest
 {

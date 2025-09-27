@@ -4,6 +4,6 @@
     <EmbeddedResource Include="..\assets\**\metadata.json" />
   </ItemGroup>
 
-  <Import Project="$(SolutionDir)\eng\Generators.props"/>
+  <Import Project="$(RepoRoot)eng\Generators.props"/>
 
 </Project>
