@@ -4,12 +4,7 @@
     <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))</RepoRoot>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefaultTargetFramework>net10.0</DefaultTargetFramework>
-    <PackageTargetFrameworks>$(DefaultTargetFramework);net9.0;net8.0</PackageTargetFrameworks>
-    <TestTargetFrameworks>$(PackageTargetFrameworks)</TestTargetFrameworks>
-    <AnalyzerTargetFramework>netstandard2.0</AnalyzerTargetFramework>
-  </PropertyGroup>
+  <Import Project="$(RepoRoot)eng\Versions.props" />
 
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
@@ -27,10 +22,6 @@
     <NoWarn>$(NoWarn);CS8500;IDE0079</NoWarn>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <DebugType>embedded</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <NugetPackageVersion>2.2.3</NugetPackageVersion>
   </PropertyGroup>
 
   <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->

@@ -3,38 +3,36 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <DotNetSystemPackagesVersion>10.0.0-rc.1.25451.107</DotNetSystemPackagesVersion>
-    <RoslynatorVersion>4.14.0</RoslynatorVersion>
-    <BenchmarkDotNetVersion>0.15.2</BenchmarkDotNetVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageVersion Include="HLE" Version="$(NugetPackageVersion)"/>
+    <PackageVersion Include="NaturalSort.Extension" Version="4.4.0"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.14.0"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="$(MicrosoftCodeAnalysisVersion)"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisVersion)"/>
     <PackageVersion Include="System.IO.Hashing" Version="$(DotNetSystemPackagesVersion)"/>
   </ItemGroup>
 
   <!-- Default Analyzers -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15"/>
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(MicrosoftVisualStudioThreadingAnalyzersVersion)"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.CodeFixes" Version="$(RoslynatorVersion)"/>
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="$(RoslynatorVersion)"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.15.0.120848"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="$(SonarAnalyzerCSharpVersion)"/>
   </ItemGroup>
 
   <!-- Tests -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4"/>
-    <PackageVersion Include="xunit.v3" Version="3.0.1"/>
-    <PackageVersion Include="xunit.v3.extensibility.core" Version="3.0.1"/>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)"/>
+    <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)"/>
+    <PackageVersion Include="xunit.v3" Version="$(XunitVersion)"/>
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitVersion)"/>
   </ItemGroup>
 
   <!-- Benchmarks -->
