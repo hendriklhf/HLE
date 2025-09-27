@@ -27,7 +27,11 @@ public static unsafe class StringMarshal
     }
 
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod, Name = "FastAllocateString")]
+#if NET10_0_OR_GREATER
+    private static extern string FastAllocateStringCore(string? s, nint length);
+#else
     private static extern string FastAllocateStringCore(string? s, int length);
+#endif
 
     /// <summary>
     /// Creates a mutable <see cref="Span{Char}"/> over a <see cref="string"/>.
