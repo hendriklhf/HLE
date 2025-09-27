@@ -4,34 +4,7 @@
     <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))</RepoRoot>
   </PropertyGroup>
 
-  <Import Project="$(RepoRoot)eng\Versions.props" />
-
-  <PropertyGroup>
-    <LangVersion>preview</LangVersion>
-    <EnablePreviewFeatures>false</EnablePreviewFeatures>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <NeutralLanguage>en-US</NeutralLanguage>
-    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
-    <WarningsAsErrors>Nullable</WarningsAsErrors>
-    <NoWarn>$(NoWarn);CS8500;IDE0079</NoWarn>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <DebugType>embedded</DebugType>
-  </PropertyGroup>
-
-  <!-- Reason for the following two property groups: https://github.com/dotnet/roslyn/issues/41640. -->
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <NoWarn>$(NoWarn);IDE0005</NoWarn>
-  </PropertyGroup>
+  <Import Project="$(RepoRoot)eng\Versions.props"/>
+  <Import Project="$(RepoRoot)eng\CSharp.props"/>
 
 </Project>

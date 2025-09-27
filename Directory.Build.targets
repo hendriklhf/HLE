@@ -1,6 +1,8 @@
 <Project>
 
-  <Import Project="$(RepoRoot)eng\Analyzer.targets"/>
+  <Import Project="$(RepoRoot)eng\DefaultAnalyzers.targets"/>
   <Import Project="$(RepoRoot)eng\ConditionalTargetFrameworkCompiles.targets"/>
+  <Import Project="$(RepoRoot)eng\Packages.targets"/>
+  <Import Project="$(RepoRoot)eng\CSharp.targets"/>
 
 </Project>

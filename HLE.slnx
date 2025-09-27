@@ -3,11 +3,15 @@
     <Project Path="debug/HLE.Debug/HLE.Debug.csproj" />
   </Folder>
   <Folder Name="/eng/">
-    <File Path="eng/Analyzer.targets" />
+    <File Path="eng/DefaultAnalyzers.targets" />
     <File Path="eng/ConditionalTargetFrameworkCompiles.targets" />
     <File Path="eng/Generators.props" />
     <File Path="eng/Packages.props" />
     <File Path="eng/Tests.props" />
+    <File Path="eng\Versions.props" />
+    <File Path="eng\Packages.targets" />
+    <File Path="eng\CSharp.props" />
+    <File Path="eng\CSharp.targets" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitattributes" />
@@ -27,9 +31,9 @@
     <Project Path="src/packages/HLE/src/HLE.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <File Path="src/tests/xunit.runner.json" />
     <Project Path="src/packages/HLE.Twitch/tests/HLE.Twitch.UnitTests.csproj" />
     <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj" />
     <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj" />
+    <File Path="src/tests/xunit.runner.json" />
   </Folder>
 </Solution>

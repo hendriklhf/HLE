@@ -1,0 +1,27 @@
+<Project>
+
+  <PropertyGroup Condition="'$(IsNugetPackage)' == 'true'">
+    <Authors>Hendrik</Authors>
+    <Product>$(AssemblyName)</Product>
+    <PackageId>$(AssemblyName)</PackageId>
+    <Title>$(AssemblyName)</Title>
+    <Version>$(NugetPackageVersion)</Version>
+    <PackageVersion>$(NugetPackageVersion)</PackageVersion>
+    <AssemblyVersion>$(NugetPackageVersion)</AssemblyVersion>
+    <FileVersion>$(NugetPackageVersion)</FileVersion>
+    <RepositoryUrl>https://github.com/hendriklhf/HLE</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableAotAnalyzers>true</EnableAotAnalyzers>
+    <UseDefaultAnalyzerPackages>true</UseDefaultAnalyzerPackages>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsNugetPackage)' == 'true'">
+    <None Include="$(RepoRoot)README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+</Project>
