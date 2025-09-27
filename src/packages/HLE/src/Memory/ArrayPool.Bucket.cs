@@ -46,7 +46,6 @@ public sealed partial class ArrayPool<T>
                 }
 
                 array = value;
-                Log.RentedShared(array);
                 Interlocked.Exchange(ref _lastAccessTick, Environment.TickCount64);
                 return true;
             }
@@ -79,7 +78,6 @@ public sealed partial class ArrayPool<T>
                     continue;
                 }
 
-                Log.ReturnedShared(array);
                 Interlocked.Exchange(ref _lastAccessTick, Environment.TickCount64);
                 return true;
             }

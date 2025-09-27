@@ -126,7 +126,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         if (minimumLength > ArrayPoolSettings.MaximumArrayLength)
         {
             T[] allocatedArray = GC.AllocateUninitializedArray<T>(minimumLength);
-            Log.Allocated(allocatedArray);
             return allocatedArray;
         }
 
@@ -175,7 +174,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         while (tryCount < MaximumTryCount && bucketIndex < bucketsLength);
 
         T[] result = GC.AllocateUninitializedArray<T>(startingBucket.ArrayLength);
-        Log.Allocated(result);
         return result;
     }
 
@@ -183,13 +181,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     private static bool TryRentFromThreadLocalBucket(int bucketIndex, [MaybeNullWhen(false)] out T[] array)
     {
         ref ThreadLocalPool threadLocalBucket = ref t_threadLocalPool;
-        if (!threadLocalBucket.TryRent((uint)bucketIndex, out array))
-        {
-            return false;
-        }
-
-        Log.RentedThreadLocal(array);
-        return true;
+        return threadLocalBucket.TryRent((uint)bucketIndex, out array);
     }
 
     public void Return(T[]? array)
@@ -203,7 +195,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
 
         if (!TryGetBucketIndex(array.Length, out int bucketIndex))
         {
-            Log.Dropped(array);
             return;
         }
 
@@ -249,8 +240,6 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             tryCount++;
         }
         while (tryCount < MaximumTryCount && bucketIndex >= 0);
-
-        Log.Dropped(array);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -259,13 +248,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
         Debug.Assert(array.Length != 0);
 
         ref ThreadLocalPool threadLocalBucket = ref t_threadLocalPool;
-        if (!threadLocalBucket.TryReturn((uint)bucketIndex, array))
-        {
-            return false;
-        }
-
-        Log.ReturnedThreadLocal(array);
-        return true;
+        return threadLocalBucket.TryReturn((uint)bucketIndex, array);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
