@@ -8,10 +8,11 @@
     <File Path="eng/Generators.props" />
     <File Path="eng/Packages.props" />
     <File Path="eng/Tests.props" />
-    <File Path="eng\Versions.props" />
-    <File Path="eng\Packages.targets" />
-    <File Path="eng\CSharp.props" />
-    <File Path="eng\CSharp.targets" />
+    <File Path="eng/Versions.props" />
+    <File Path="eng/Packages.targets" />
+    <File Path="eng/CSharp.props" />
+    <File Path="eng/CSharp.targets" />
+    <File Path="eng/Artifacts.props" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitattributes" />
@@ -34,6 +35,7 @@
     <Project Path="src/packages/HLE.Twitch/tests/HLE.Twitch.UnitTests.csproj" />
     <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj" />
     <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj" />
+    <Project Path="src/tests/HLE.RemoteExecutorStub/HLE.RemoteExecutorStub.csproj" />
     <File Path="src/tests/xunit.runner.json" />
   </Folder>
 </Solution>

@@ -6,5 +6,6 @@
 
   <Import Project="$(RepoRoot)eng\Versions.props"/>
   <Import Project="$(RepoRoot)eng\CSharp.props"/>
+  <Import Project="$(RepoRoot)eng\Artifacts.props"/>
 
 </Project>

@@ -1,0 +1,8 @@
+<Project>
+
+  <PropertyGroup>
+    <ArtifactsPath>$(RepoRoot)artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+  </PropertyGroup>
+
+</Project>

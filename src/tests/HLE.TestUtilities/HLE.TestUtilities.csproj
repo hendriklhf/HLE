@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyMetadata Include="ArtifactsPath" Value="$(ArtifactsPath)"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.IO.Hashing"/>
     <PackageReference Include="xunit.v3.extensibility.core"/>
   </ItemGroup>
