@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\packages\HLE.Twitch\src\HLE.Twitch.csproj"/>
     <ProjectReference Include="..\..\src\packages\HLE\src\HLE.csproj"/>
+    <ProjectReference Include="..\..\src\tests\HLE.TestUtilities\HLE.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>
