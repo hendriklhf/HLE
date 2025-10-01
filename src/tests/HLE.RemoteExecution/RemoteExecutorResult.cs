@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
-namespace HLE.TestUtilities;
+namespace HLE.RemoteExecution;
 
 public sealed class RemoteExecutorResult : IEquatable<RemoteExecutorResult>
 {

@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 
-namespace HLE.RemoteExecutorStub;
+namespace HLE.RemoteExecution.Stub;
 
 internal static class AssemblyResolver
 {

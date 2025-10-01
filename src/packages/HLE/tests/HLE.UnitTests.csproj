@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\tests\HLE.RemoteExecution\HLE.RemoteExecution.csproj" />
     <ProjectReference Include="..\src\HLE.csproj"/>
   </ItemGroup>
 

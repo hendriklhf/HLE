@@ -6,22 +6,30 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace HLE.TestUtilities;
+namespace HLE.RemoteExecution;
 
 public static class RemoteExecutor
 {
-    private static readonly string s_stubPath = Path.Combine(GetArtifactsPath(), "bin", "HLE.RemoteExecutorStub", $"{GetConfiguration()}_{GetFrameworkVersion()}", "HLE.RemoteExecutorStub.exe");
+    private static readonly string s_stubPath = Path.Combine(GetArtifactsPath(), "bin", "HLE.RemoteExecutorStub", $"{Configuration}_{GetFrameworkVersion()}", "HLE.RemoteExecutorStub.exe");
 
-    public static async Task<RemoteExecutorResult> InvokeAsync(MethodInfo method)
+    private const string ArtifactsPathMetadataKey = "ArtifactsPath";
+    private const string Configuration =
+#if RELEASE
+        "release";
+#else
+        "debug";
+#endif
+
+    public static Task<RemoteExecutorResult> InvokeAsync(Delegate method, RemoteExecutorOptions? options, params ReadOnlySpan<object?> args)
     {
-        if (!method.IsStatic)
-        {
-            throw new InvalidOperationException();
-        }
+        _ = args;
 
-        string location = method.DeclaringType!.Assembly.Location;
-        string declaringTypeName = method.DeclaringType!.FullName!;
-        string methodName = method.Name;
+        // TODO: validate return type of method (void or Task)
+
+        MethodInfo methodInfo = method.Method;
+        string location = methodInfo.DeclaringType!.Assembly.Location;
+        string declaringTypeName = methodInfo.DeclaringType!.FullName!;
+        string methodName = methodInfo.Name;
 
         ProcessStartInfo startInfo = new()
         {
@@ -36,6 +44,19 @@ public static class RemoteExecutor
             }
         };
 
+        if (options?.EnvironmentVariables is { Count: not 0 } environmentVariables)
+        {
+            foreach ((string key, string value) in environmentVariables)
+            {
+                startInfo.Environment.Add(key, value);
+            }
+        }
+
+        return StartProcessAsync(startInfo);
+    }
+
+    private static async Task<RemoteExecutorResult> StartProcessAsync(ProcessStartInfo startInfo)
+    {
         using Process? process = Process.Start(startInfo);
         ArgumentNullException.ThrowIfNull(process);
 
@@ -49,13 +70,6 @@ public static class RemoteExecutor
             Output = output
         };
     }
-
-    private static string GetConfiguration()
-#if RELEASE
-        => "release";
-#else
-        => "debug";
-#endif
 
     private static string GetFrameworkVersion()
     {
@@ -81,9 +95,9 @@ public static class RemoteExecutor
     {
         string? artifactsPath = typeof(RemoteExecutor).Assembly
             .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(static attribute => attribute.Key == "ArtifactsPath")
+            .FirstOrDefault(static attribute => attribute.Key == ArtifactsPathMetadataKey)
             ?.Value;
 
-        return artifactsPath ?? throw new InvalidOperationException("The assembly does not have the 'ArtifactsPath' metadata.");
+        return artifactsPath ?? throw new InvalidOperationException($"The assembly does not have the \"{ArtifactsPathMetadataKey}\" metadata.");
     }
 }
