@@ -13,12 +13,11 @@
   <ItemGroup>
     <Using Include="Xunit"/>
 
-    <Content Include="$(RepoRoot)src\tests\xunit.runner.json" CopyToOutputDirectory="Always"/>
+    <Content Include="$(RepoRoot)src\tests\xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="$(RepoRoot)src\tests\testconfig.json" CopyToOutputDirectory="PreserveNewest"/>
     <ProjectReference Include="$(RepoRoot)src\tests\HLE.TestUtilities\HLE.TestUtilities.csproj"/>
 
-    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     <PackageReference Include="xunit.v3"/>
-    <PackageReference Include="xunit.runner.visualstudio"/>
   </ItemGroup>
 
 </Project>

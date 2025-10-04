@@ -1,0 +1,7 @@
+{
+  "xUnit": {
+    "culture": "en-US",
+    "parallelizeTestCollections": true,
+    "maxParallelThreads": -1
+  }
+}
