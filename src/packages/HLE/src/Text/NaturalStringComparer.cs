@@ -93,7 +93,7 @@ public sealed class NaturalStringComparer : IComparer<string?>, IComparer, IEqua
         byte[] buffer = Memory.ArrayPool<byte>.Shared.Rent(int.CreateChecked(size));
 
         ref RawStringData rawX = ref StringAllocator.Alloc(buffer, x);
-        nuint alignedXSize = MemoryHelpers.Align(xSize, (uint)sizeof(nuint), AlignmentMethod.Add);
+        nuint alignedXSize = NumberHelpers.Align(xSize, (uint)sizeof(nuint), AlignmentMethod.Add);
         ref RawStringData rawY = ref StringAllocator.Alloc(buffer.AsSpan(int.CreateChecked(alignedXSize)), y);
 
         int result = _comparer.Compare(ObjectMarshal.GetString(ref rawX), ObjectMarshal.GetString(ref rawY));
