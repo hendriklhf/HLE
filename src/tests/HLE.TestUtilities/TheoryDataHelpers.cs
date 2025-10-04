@@ -6,6 +6,8 @@ using System.IO.Hashing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
+using HLE.RemoteExecution;
 using Xunit;
 
 namespace HLE.TestUtilities;
@@ -13,6 +15,10 @@ namespace HLE.TestUtilities;
 [SuppressMessage("Maintainability", "CA1515:Consider making public types internal")] // remove
 public static class TheoryDataHelpers
 {
+    public static TheoryData<RemoteExecutorOptions> VectorExecutionOptions { get; } = CreateVectorExecutionOptions();
+
+    public static TheoryData<RemoteExecutorOptions> ProcessorCountOptions { get; } = CreateProcessorCountOptions();
+
     private static readonly ConcurrentDictionary<Type, ConcurrentDictionary<ulong, object>> s_theoryDataCache = new();
 
     public static TheoryData<T> CreateRange<T>(T min, T max) where T : unmanaged, INumber<T>
@@ -63,6 +69,101 @@ public static class TheoryDataHelpers
         {
             ArrayPool<char>.Shared.Return(buffer);
         }
+
+        return data;
+    }
+
+    public static TheoryData<(TFirst, TSecond)> CreateMatrix<TFirst, TSecond>(TheoryData<TFirst> first, TheoryData<TSecond> second)
+    {
+        TheoryData<(TFirst, TSecond)> data = new();
+        foreach (TFirst item1 in first)
+        {
+            foreach (TSecond item2 in second)
+            {
+                data.Add((item1, item2));
+            }
+        }
+
+        return data;
+    }
+
+    private static TheoryData<RemoteExecutorOptions> CreateVectorExecutionOptions()
+    {
+        // TODO: make arm compatible
+
+        TheoryData<RemoteExecutorOptions> data =
+        [
+            new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_EnableHWIntrinsic", "0" }
+                }
+            },
+            new RemoteExecutorOptions()
+        ];
+
+        if (Avx512F.IsSupported)
+        {
+            data.Add(new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_EnableAVX512", "0" },
+                    { "DOTNET_EnableAVX2", "1" },
+                    { "DOTNET_EnableAVX", "1" }
+                }
+            });
+        }
+
+        if (Avx2.IsSupported)
+        {
+            data.Add(new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_EnableAVX512", "0" },
+                    { "DOTNET_EnableAVX2", "0" },
+                    { "DOTNET_EnableAVX", "1" }
+                }
+            });
+        }
+
+        if (Avx.IsSupported)
+        {
+            data.Add(new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_EnableAVX512", "0" },
+                    { "DOTNET_EnableAVX2", "0" },
+                    { "DOTNET_EnableAVX", "0" }
+                }
+            });
+        }
+
+        return data;
+    }
+
+    private static TheoryData<RemoteExecutorOptions> CreateProcessorCountOptions()
+    {
+        TheoryData<RemoteExecutorOptions> data =
+        [
+            new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_PROCESSOR_COUNT", "1" }
+                }
+            },
+            new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_PROCESSOR_COUNT", Environment.ProcessorCount.ToString() }
+                }
+            }
+        ];
 
         return data;
     }
