@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace HLE.RemoteExecution.Stub;
@@ -9,18 +12,21 @@ internal static class Program
 {
     private const BindingFlags AllVisibilities = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
-    static Program() => AssemblyResolver.Register();
+    static Program()
+    {
+        AssemblyResolver.Register();
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+    }
 
     private static Task<int> Main()
     {
         try
         {
-            string? assemblyLocation = Environment.GetEnvironmentVariable("HLE_REMOTE_EXECUTOR_ASSEMBLY");
-            ArgumentNullException.ThrowIfNull(assemblyLocation);
-            string? declaringTypeName = Environment.GetEnvironmentVariable("HLE_REMOTE_EXECUTOR_TYPE");
-            ArgumentNullException.ThrowIfNull(declaringTypeName);
-            string? methodName = Environment.GetEnvironmentVariable("HLE_REMOTE_EXECUTOR_METHOD");
-            ArgumentNullException.ThrowIfNull(methodName);
+            PrintEnvironmentVariables();
+
+            string assemblyLocation = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_ASSEMBLY");
+            string declaringTypeName = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_TYPE");
+            string methodName = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_METHOD");
 
             Assembly assembly = Assembly.LoadFile(assemblyLocation);
 
@@ -36,7 +42,15 @@ internal static class Program
                 instance = CreateInstance(assemblyType);
             }
 
-            object? result = method.Invoke(instance, BindingFlags.DoNotWrapExceptions, null, null, null);
+            ReadOnlySpan<ParameterInfo> parameterInfos = method.GetParameters();
+            object?[]? parameters = parameterInfos.Length switch
+            {
+                0 => null,
+                1 => [ParseParameter(parameterInfos[0].ParameterType)],
+                _ => throw new InvalidOperationException("The method to invoke must have zero or one parameter.")
+            };
+
+            object? result = method.Invoke(instance, BindingFlags.DoNotWrapExceptions, null, parameters, null);
             return result is Task t ? AwaitTask(t) : Task.FromResult(0);
         }
         catch (Exception ex)
@@ -89,5 +103,81 @@ internal static class Program
     {
         Console.WriteLine(ex);
         return ex.HResult;
+    }
+
+    [SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", Justification = "analyzer is wrong")]
+    private static unsafe object ParseParameter(Type parameterType)
+    {
+        string value = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_ARGUMENT");
+        if (parameterType == typeof(string))
+        {
+            return value;
+        }
+
+        int size = int.Parse(GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_ARGUMENT_SIZE"));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size);
+
+        delegate*<string, int, object> decodeAndBox = CreateDecodeAndBoxMethod(parameterType);
+        return decodeAndBox(value, size);
+    }
+
+    private static unsafe delegate*<string, int, object> CreateDecodeAndBoxMethod(Type parameterType)
+        => (delegate*<string, int, object>)
+            typeof(Program).GetMethod(nameof(DecodeAndBox), BindingFlags.NonPublic | BindingFlags.Static)!
+                .MakeGenericMethod(parameterType)
+                .MethodHandle
+                .GetFunctionPointer();
+
+    [SkipLocalsInit]
+    private static object DecodeAndBox<T>(string base64, int size) where T : unmanaged
+    {
+        Span<byte> bytes = stackalloc byte[size];
+        bool success = Convert.TryFromBase64Chars(base64, bytes, out int bytesWritten);
+        if (!success || bytesWritten != size)
+        {
+            ThrowInvalidSize();
+        }
+
+        return Unsafe.As<byte, T>(ref MemoryMarshal.GetReference(bytes));
+
+        static void ThrowInvalidSize()
+            => throw new InvalidOperationException("The size of the decoded argument does not match the expected size.");
+    }
+
+    private static void PrintEnvironmentVariables()
+    {
+        Console.WriteLine($"Started remote process with ID {Environment.ProcessId}.");
+
+        IDictionary variables = Environment.GetEnvironmentVariables();
+        if (variables.Count != 0)
+        {
+            Console.WriteLine("Environment variables:");
+
+            foreach (DictionaryEntry variable in variables)
+            {
+                Console.WriteLine($"{variable.Key}=\"{variable.Value}\"");
+            }
+        }
+
+        Console.WriteLine();
+    }
+
+    private static void OnProcessExit(object? sender, EventArgs e)
+        => Console.WriteLine($"{Environment.NewLine}Remote process with ID {Environment.ProcessId} is exiting.");
+
+    private static string GetRequiredEnvironmentVariable(string name)
+    {
+        string? value = Environment.GetEnvironmentVariable(name);
+
+        if (value is null)
+        {
+            ThrowVariableNotFound(name);
+        }
+
+        return value;
+
+        [DoesNotReturn]
+        static void ThrowVariableNotFound(string name)
+            => throw new InvalidOperationException($"The environment variable \"{name}\" was not found.");
     }
 }

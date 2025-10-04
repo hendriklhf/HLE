@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -10,7 +13,7 @@ namespace HLE.RemoteExecution;
 
 public static class RemoteExecutor
 {
-    private static readonly string s_stubPath = Path.Combine(GetArtifactsPath(), "bin", "HLE.RemoteExecutorStub", $"{Configuration}_{GetFrameworkVersion()}", "HLE.RemoteExecutorStub.exe");
+    private static readonly string s_stubPath = Path.Combine(GetArtifactsPath(), "bin", "HLE.RemoteExecution.Stub", $"{Configuration}_{GetFrameworkVersion()}", "HLE.RemoteExecution.Stub.exe");
 
     private const string ArtifactsPathMetadataKey = "ArtifactsPath";
     private const string Configuration =
@@ -20,13 +23,25 @@ public static class RemoteExecutor
         "debug";
 #endif
 
-    public static Task<RemoteExecutorResult> InvokeAsync(Delegate method, RemoteExecutorOptions? options, params ReadOnlySpan<object?> args)
+    public static Task<RemoteExecutorResult> InvokeAsync(Delegate method, RemoteExecutorOptions? options = null)
     {
-        _ = args;
+        ProcessStartInfo startInfo = BuildStartInfo(method, options);
+        return StartProcessAsync(startInfo);
+    }
 
-        // TODO: validate return type of method (void or Task)
+    public static Task<RemoteExecutorResult> InvokeAsync<TArgument>(Delegate method, RemoteExecutorOptions? options, TArgument argument)
+    {
+        ValidateArgumentType<TArgument>();
+        ProcessStartInfo startInfo = BuildStartInfo(method, options);
+        AddArgument(startInfo.Environment, argument);
+        return StartProcessAsync(startInfo);
+    }
 
+    private static ProcessStartInfo BuildStartInfo(Delegate method, RemoteExecutorOptions? options)
+    {
         MethodInfo methodInfo = method.Method;
+        ValidateMethodReturnType(methodInfo);
+
         string location = methodInfo.DeclaringType!.Assembly.Location;
         string declaringTypeName = methodInfo.DeclaringType!.FullName!;
         string methodName = methodInfo.Name;
@@ -35,24 +50,44 @@ public static class RemoteExecutor
         {
             FileName = s_stubPath,
             WorkingDirectory = Environment.CurrentDirectory,
-            RedirectStandardOutput = true,
-            Environment =
-            {
-                ["HLE_REMOTE_EXECUTOR_ASSEMBLY"] = location,
-                ["HLE_REMOTE_EXECUTOR_TYPE"] = declaringTypeName,
-                ["HLE_REMOTE_EXECUTOR_METHOD"] = methodName
-            }
+            RedirectStandardOutput = true
         };
+
+        BuildEnvironment(startInfo.Environment, options, location, declaringTypeName, methodName);
+        return startInfo;
+    }
+
+    private static unsafe void AddArgument<TArgument>(IDictionary<string, string?> environment, TArgument argument)
+    {
+        if (typeof(TArgument) == typeof(string))
+        {
+            environment.Add("HLE_REMOTE_EXECUTOR_ARGUMENT", Unsafe.As<string>(argument));
+            return;
+        }
+
+        Debug.Assert(!RuntimeHelpers.IsReferenceOrContainsReferences<TArgument>());
+
+        ReadOnlySpan<byte> bytes = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<TArgument, byte>(ref argument), sizeof(TArgument));
+        string base64 = Convert.ToBase64String(bytes);
+        environment.Add("HLE_REMOTE_EXECUTOR_ARGUMENT", base64);
+        environment.Add("HLE_REMOTE_EXECUTOR_ARGUMENT_SIZE", bytes.Length.ToString());
+    }
+
+    private static void BuildEnvironment(IDictionary<string, string?> environment, RemoteExecutorOptions? options, string location, string declaringTypeName, string methodName)
+    {
+        environment.Clear();
+
+        environment.Add("HLE_REMOTE_EXECUTOR_ASSEMBLY", location);
+        environment.Add("HLE_REMOTE_EXECUTOR_TYPE", declaringTypeName);
+        environment.Add("HLE_REMOTE_EXECUTOR_METHOD", methodName);
 
         if (options?.EnvironmentVariables is { Count: not 0 } environmentVariables)
         {
             foreach ((string key, string value) in environmentVariables)
             {
-                startInfo.Environment.Add(key, value);
+                environment.Add(key, value);
             }
         }
-
-        return StartProcessAsync(startInfo);
     }
 
     private static async Task<RemoteExecutorResult> StartProcessAsync(ProcessStartInfo startInfo)
@@ -99,5 +134,38 @@ public static class RemoteExecutor
             ?.Value;
 
         return artifactsPath ?? throw new InvalidOperationException($"The assembly does not have the \"{ArtifactsPathMetadataKey}\" metadata.");
+    }
+
+    private static void ValidateMethodReturnType(MethodInfo method)
+    {
+        if (method.ReturnType != typeof(void) && !method.ReturnType.IsAssignableTo(typeof(Task)))
+        {
+            Throw();
+        }
+
+        return;
+
+        [DoesNotReturn]
+        static void Throw()
+            => throw new ArgumentException($"The method must return nothing or a {typeof(Task)}.", nameof(method));
+    }
+
+    private static void ValidateArgumentType<T>()
+    {
+        if (typeof(T) == typeof(string))
+        {
+            return;
+        }
+
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            ThrowInvalidType();
+        }
+
+        return;
+
+        [DoesNotReturn]
+        static void ThrowInvalidType()
+            => throw new ArgumentException("The argument type must be a string or struct that contains no managed types.");
     }
 }
