@@ -790,7 +790,7 @@ public sealed partial class CollectionHelpersTest
         int[] array = [0, 1, 2, 3, 4, 5, 6, 7];
         Span<int> destination = stackalloc int[7];
 
-        IEnumerable<int> enumerable = TestHelpers.Cast<int[], IEnumerable<int>>(array);
+        IEnumerable<int> enumerable = TestHelpers.NoInline.Cast<int[], IEnumerable<int>>(array);
         bool success = enumerable.TryEnumerateInto(destination, out int writtenElements);
 
         Assert.False(success);

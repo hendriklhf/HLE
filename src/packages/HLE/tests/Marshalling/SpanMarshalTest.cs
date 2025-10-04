@@ -81,7 +81,7 @@ public sealed class SpanMarshalTest
     public void AsArray_Span_Test()
     {
         int[] array = [0, 1, 2, 3, 4];
-        Span<int> span = TestHelpers.AsSpan(array);
+        Span<int> span = TestHelpers.NoInline.AsSpan(array);
         int[] a = SpanMarshal.AsArray(span);
         Assert.Same(array, a);
         Assert.True(span.SequenceEqual(array));
@@ -93,7 +93,7 @@ public sealed class SpanMarshalTest
     public void AsArray_ReadOnlySpan_Test()
     {
         int[] array = [0, 1, 2, 3, 4];
-        ReadOnlySpan<int> span = TestHelpers.AsReadOnlySpan(array);
+        ReadOnlySpan<int> span = TestHelpers.NoInline.AsReadOnlySpan(array);
         int[] a = SpanMarshal.AsArray(span);
         Assert.Same(array, a);
         Assert.True(span.SequenceEqual(array));

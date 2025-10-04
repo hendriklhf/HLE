@@ -178,7 +178,7 @@ public sealed class ListMarshalTest
         {
             int[] items = [1, 2, 3];
             List<int> list = ListMarshal.ConstructList(items, 4);
-            TestHelpers.Consume(list);
+            TestHelpers.NoInline.Consume(list);
         }
     }
 }

@@ -18,7 +18,7 @@ public sealed unsafe class StringAllocatorTests
             Span<byte> buffer = stackalloc byte[64];
             buffer = buffer[misalignment..];
             ref RawStringData str = ref StringAllocator.Alloc(buffer, "test");
-            TestHelpers.Consume(str);
+            TestHelpers.NoInline.Consume(str);
         });
 
         Assert.Contains("aligned", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -33,7 +33,7 @@ public sealed unsafe class StringAllocatorTests
             int requiredSize = int.CreateChecked(ObjectMarshal.GetRawStringSize(chars.Length));
             Span<byte> buffer = stackalloc byte[requiredSize - 1];
             ref RawStringData str = ref StringAllocator.Alloc(buffer, chars);
-            TestHelpers.Consume(str);
+            TestHelpers.NoInline.Consume(str);
         });
 
         Assert.NotEmpty(ex.Message);
