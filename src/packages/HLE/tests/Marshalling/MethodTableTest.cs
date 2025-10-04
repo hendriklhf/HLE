@@ -34,12 +34,14 @@ public sealed unsafe partial class MethodTableTest
         new MethodTableTypeParameter(typeof(ObjectMarshal), 0, false),
         new MethodTableTypeParameter(typeof(StringComparison), 0, false),
         new MethodTableTypeParameter(typeof(RegexOptions), 0, false),
-        new MethodTableTypeParameter(typeof(GenericStruct<int>), 0, false),
-        new MethodTableTypeParameter(typeof(GenericStruct<string>), 0, true),
+#if NET9_0_OR_GREATER
         new MethodTableTypeParameter(typeof(GenericRefStruct<int>), 0, false),
         new MethodTableTypeParameter(typeof(GenericRefStruct<string>), 0, true),
         new MethodTableTypeParameter(typeof(GenericRefStructWithRefField<int>), 0, false),
-        new MethodTableTypeParameter(typeof(GenericRefStructWithRefField<string>), 0, false)
+        new MethodTableTypeParameter(typeof(GenericRefStructWithRefField<string>), 0, false),
+#endif
+        new MethodTableTypeParameter(typeof(GenericStruct<int>), 0, false),
+        new MethodTableTypeParameter(typeof(GenericStruct<string>), 0, true)
     ];
 
     [Theory]
