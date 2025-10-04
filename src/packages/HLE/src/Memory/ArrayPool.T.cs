@@ -207,17 +207,30 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     }
 
     [Conditional("DEBUG")]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void AssertArrayWithReferencesIsCleared(T[] array)
     {
-        if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>() || TestRunnerHelpers.IsTestRun)
         {
             return;
         }
 
-        for (int i = 0; i < array.Length; i++)
+        Impl(array);
+
+        return;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void Impl(T[] array)
+#if NET10_0_OR_GREATER
+            => Debug.Assert(array.AsSpan().IndexOfAnyExcept(default(T)) < 0);
+#else
         {
-            Debug.Assert(EqualityComparer<T>.Default.Equals(array[i], default));
+            for (int i = 0; i < array.Length; i++)
+            {
+                Debug.Assert(EqualityComparer<T>.Default.Equals(array[i], default));
+            }
         }
+#endif
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
