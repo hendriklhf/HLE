@@ -32,6 +32,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)"/>
     <PackageVersion Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)"/>
     <PackageVersion Include="xunit.v3" Version="$(XunitVersion)"/>
+    <PackageVersion Include="xunit.v3.assert" Version="$(XunitVersion)"/>
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitVersion)"/>
   </ItemGroup>
 
