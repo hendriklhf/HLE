@@ -10,25 +10,19 @@ namespace HLE.Memory;
 public static partial class SpanHelpers
 {
     public static unsafe int IndexOfDifference<T>(ReadOnlySpan<T> first, ReadOnlySpan<T> second)
-        where T : unmanaged, IEquatable<T>
+        where T : IEquatable<T>
     {
         ref T firstRef = ref MemoryMarshal.GetReference(first);
         ref T secondRef = ref MemoryMarshal.GetReference(second);
 
-        switch (sizeof(T))
+        return sizeof(T) switch
         {
-            case sizeof(byte):
-                return IndexOfDifference(ref Unsafe.As<T, byte>(ref firstRef), first.Length, ref Unsafe.As<T, byte>(ref secondRef), second.Length);
-            case sizeof(ushort):
-                return IndexOfDifference(ref Unsafe.As<T, ushort>(ref firstRef), first.Length, ref Unsafe.As<T, ushort>(ref secondRef), second.Length);
-            case sizeof(uint):
-                return IndexOfDifference(ref Unsafe.As<T, uint>(ref firstRef), first.Length, ref Unsafe.As<T, uint>(ref secondRef), second.Length);
-            case sizeof(ulong):
-                return IndexOfDifference(ref Unsafe.As<T, ulong>(ref firstRef), first.Length, ref Unsafe.As<T, ulong>(ref secondRef), second.Length);
-            default:
-                ThrowHelper.ThrowUnreachableException();
-                return -1;
-        }
+            sizeof(byte) => IndexOfDifference(ref Unsafe.As<T, byte>(ref firstRef), first.Length, ref Unsafe.As<T, byte>(ref secondRef), second.Length),
+            sizeof(ushort) => IndexOfDifference(ref Unsafe.As<T, ushort>(ref firstRef), first.Length, ref Unsafe.As<T, ushort>(ref secondRef), second.Length),
+            sizeof(uint) => IndexOfDifference(ref Unsafe.As<T, uint>(ref firstRef), first.Length, ref Unsafe.As<T, uint>(ref secondRef), second.Length),
+            sizeof(ulong) => IndexOfDifference(ref Unsafe.As<T, ulong>(ref firstRef), first.Length, ref Unsafe.As<T, ulong>(ref secondRef), second.Length),
+            _ => IndexOfDifferenceFallback(first, second)
+        };
     }
 
     public static int IndexOfDifference<T>(ref T first, int firstLength, ref T second, int secondLength)
@@ -114,6 +108,27 @@ public static partial class SpanHelpers
 
             first = ref Unsafe.Add(ref first, 1);
             second = ref Unsafe.Add(ref second, 1);
+        }
+
+        return -1;
+    }
+
+    private static int IndexOfDifferenceFallback<T>(ReadOnlySpan<T> first, ReadOnlySpan<T> second)
+        where T : IEquatable<T>
+    {
+        ref T firstRef = ref MemoryMarshal.GetReference(first);
+        ref T secondRef = ref MemoryMarshal.GetReference(second);
+        int length = Math.Min(first.Length, second.Length);
+
+        for (int i = 0; i < length; i++)
+        {
+            if (!firstRef.Equals(secondRef))
+            {
+                return i;
+            }
+
+            firstRef = ref Unsafe.Add(ref firstRef, 1);
+            secondRef = ref Unsafe.Add(ref secondRef, 1);
         }
 
         return -1;
