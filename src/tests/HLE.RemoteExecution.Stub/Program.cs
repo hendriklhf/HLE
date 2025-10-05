@@ -24,9 +24,9 @@ internal static class Program
         {
             PrintEnvironmentVariables();
 
-            string assemblyLocation = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_ASSEMBLY");
-            string declaringTypeName = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_TYPE");
-            string methodName = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_METHOD");
+            string assemblyLocation = GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.MethodAssembly);
+            string declaringTypeName = GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.MethodType);
+            string methodName = GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.Method);
 
             Assembly assembly = Assembly.LoadFile(assemblyLocation);
 
@@ -39,7 +39,7 @@ internal static class Program
             object? instance = null;
             if (!method.IsStatic)
             {
-                instance = CreateInstance(assemblyType);
+                instance = CreateInstance();
             }
 
             ReadOnlySpan<ParameterInfo> parameterInfos = method.GetParameters();
@@ -59,8 +59,15 @@ internal static class Program
         }
     }
 
-    private static object CreateInstance(Type type)
+    private static object CreateInstance()
     {
+        string assemblyLocation = GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.InstanceAssembly);
+        string typeName = GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.InstanceType);
+
+        Assembly assembly = Assembly.LoadFile(assemblyLocation);
+        Type? type = assembly.GetType(typeName);
+        ArgumentNullException.ThrowIfNull(type);
+
         ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
 
         foreach (ConstructorInfo constructor in constructors)
@@ -108,13 +115,13 @@ internal static class Program
     [SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", Justification = "analyzer is wrong")]
     private static unsafe object ParseParameter(Type parameterType)
     {
-        string value = GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_ARGUMENT");
+        string value = GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.Argument);
         if (parameterType == typeof(string))
         {
             return value;
         }
 
-        int size = int.Parse(GetRequiredEnvironmentVariable("HLE_REMOTE_EXECUTOR_ARGUMENT_SIZE"));
+        int size = int.Parse(GetRequiredEnvironmentVariable(RemoteExecutionEnvironment.ArgumentSize));
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size);
 
         delegate*<string, int, object> decodeAndBox = CreateDecodeAndBoxMethod(parameterType);

@@ -42,10 +42,6 @@ public static class RemoteExecutor
         MethodInfo methodInfo = method.Method;
         ValidateMethodReturnType(methodInfo);
 
-        string location = methodInfo.DeclaringType!.Assembly.Location;
-        string declaringTypeName = methodInfo.DeclaringType!.FullName!;
-        string methodName = methodInfo.Name;
-
         ProcessStartInfo startInfo = new()
         {
             FileName = s_stubPath,
@@ -53,7 +49,7 @@ public static class RemoteExecutor
             RedirectStandardOutput = true
         };
 
-        BuildEnvironment(startInfo.Environment, options, location, declaringTypeName, methodName);
+        BuildEnvironment(startInfo.Environment, options, methodInfo, method.Target?.GetType());
         return startInfo;
     }
 
@@ -61,7 +57,7 @@ public static class RemoteExecutor
     {
         if (typeof(TArgument) == typeof(string))
         {
-            environment.Add("HLE_REMOTE_EXECUTOR_ARGUMENT", Unsafe.As<string>(argument));
+            environment.Add(RemoteExecutionEnvironment.Argument, Unsafe.As<string>(argument));
             return;
         }
 
@@ -69,17 +65,28 @@ public static class RemoteExecutor
 
         ReadOnlySpan<byte> bytes = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<TArgument, byte>(ref argument), sizeof(TArgument));
         string base64 = Convert.ToBase64String(bytes);
-        environment.Add("HLE_REMOTE_EXECUTOR_ARGUMENT", base64);
-        environment.Add("HLE_REMOTE_EXECUTOR_ARGUMENT_SIZE", bytes.Length.ToString());
+        environment.Add(RemoteExecutionEnvironment.Argument, base64);
+        environment.Add(RemoteExecutionEnvironment.ArgumentSize, bytes.Length.ToString());
     }
 
-    private static void BuildEnvironment(IDictionary<string, string?> environment, RemoteExecutorOptions? options, string location, string declaringTypeName, string methodName)
+    private static void BuildEnvironment(IDictionary<string, string?> environment, RemoteExecutorOptions? options, MethodInfo method, Type? callerType = null)
     {
         environment.Clear();
 
-        environment.Add("HLE_REMOTE_EXECUTOR_ASSEMBLY", location);
-        environment.Add("HLE_REMOTE_EXECUTOR_TYPE", declaringTypeName);
-        environment.Add("HLE_REMOTE_EXECUTOR_METHOD", methodName);
+        Type? methodType = method.DeclaringType;
+        ArgumentNullException.ThrowIfNull(methodType);
+        Assembly methodAssembly = methodType.Assembly;
+
+        environment.Add(RemoteExecutionEnvironment.MethodAssembly, methodAssembly.Location);
+        environment.Add(RemoteExecutionEnvironment.MethodType, methodType.FullName);
+        environment.Add(RemoteExecutionEnvironment.Method, method.Name);
+
+        if (!method.IsStatic)
+        {
+            ArgumentNullException.ThrowIfNull(callerType);
+            environment.Add(RemoteExecutionEnvironment.InstanceAssembly, callerType.Assembly.Location);
+            environment.Add(RemoteExecutionEnvironment.InstanceType, callerType.FullName);
+        }
 
         if (options?.EnvironmentVariables is { Count: not 0 } environmentVariables)
         {

@@ -5,4 +5,8 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="$(RepoRoot)src\tests\HLE.RemoteExecution.Shared\RemoteExecutionEnvironmentVariables.cs"/>
+  </ItemGroup>
+
 </Project>
