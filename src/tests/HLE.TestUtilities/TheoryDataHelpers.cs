@@ -89,29 +89,40 @@ public static class TheoryDataHelpers
 
     private static TheoryData<RemoteExecutorOptions> CreateVectorExecutionOptions()
     {
-        // TODO: make arm compatible
-
         TheoryData<RemoteExecutorOptions> data =
         [
+            new RemoteExecutorOptions(),
             new RemoteExecutorOptions
             {
                 EnvironmentVariables =
                 {
                     { "DOTNET_EnableHWIntrinsic", "0" }
                 }
-            },
-            new RemoteExecutorOptions()
+            }
         ];
 
+        if (RuntimeInformation.ProcessArchitecture is Architecture.X64 or Architecture.X86)
+        {
+            AddXArchOptions(data);
+        }
+
+        if (RuntimeInformation.ProcessArchitecture is Architecture.Arm64 or Architecture.Arm)
+        {
+            AddArmOptions(data);
+        }
+
+        return data;
+    }
+
+    private static void AddXArchOptions(TheoryData<RemoteExecutorOptions> data)
+    {
         if (Avx512F.IsSupported)
         {
             data.Add(new RemoteExecutorOptions
             {
                 EnvironmentVariables =
                 {
-                    { "DOTNET_EnableAVX512", "0" },
-                    { "DOTNET_EnableAVX2", "1" },
-                    { "DOTNET_EnableAVX", "1" }
+                    { "DOTNET_EnableAVX512", "0" }
                 }
             });
         }
@@ -123,8 +134,7 @@ public static class TheoryDataHelpers
                 EnvironmentVariables =
                 {
                     { "DOTNET_EnableAVX512", "0" },
-                    { "DOTNET_EnableAVX2", "0" },
-                    { "DOTNET_EnableAVX", "1" }
+                    { "DOTNET_EnableAVX2", "0" }
                 }
             });
         }
@@ -141,8 +151,13 @@ public static class TheoryDataHelpers
                 }
             });
         }
+    }
 
-        return data;
+    private static void AddArmOptions(TheoryData<RemoteExecutorOptions> data)
+    {
+        // TODO: implement
+        _ = data;
+        _ = 1;
     }
 
     private static TheoryData<RemoteExecutorOptions> CreateProcessorCountOptions()
@@ -155,15 +170,27 @@ public static class TheoryDataHelpers
                 {
                     { "DOTNET_PROCESSOR_COUNT", "1" }
                 }
-            },
-            new RemoteExecutorOptions
+            }
+        ];
+
+        if (Environment.ProcessorCount != 1)
+        {
+            data.Add(new RemoteExecutorOptions
+            {
+                EnvironmentVariables =
+                {
+                    { "DOTNET_PROCESSOR_COUNT", (Environment.ProcessorCount / 2).ToString() }
+                }
+            });
+
+            data.Add(new RemoteExecutorOptions
             {
                 EnvironmentVariables =
                 {
                     { "DOTNET_PROCESSOR_COUNT", Environment.ProcessorCount.ToString() }
                 }
-            }
-        ];
+            });
+        }
 
         return data;
     }

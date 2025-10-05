@@ -1,6 +1,9 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
+using HLE.RemoteExecution;
+using HLE.TestUtilities;
 using HLE.Text;
 
 namespace HLE.UnitTests.Text;
@@ -11,12 +14,19 @@ public sealed class LazyStringMultiThreadingTest
     private volatile bool _running = true;
 
     private static readonly int s_lazyStringCount = Environment.ProcessorCount * 16;
-    private static readonly int s_threadCount = Environment.ProcessorCount / 2;
-    private static readonly TimeSpan s_testRunDuration = TimeSpan.FromSeconds(10);
+    private static readonly int s_threadCount = int.Max(1, Environment.ProcessorCount / 2);
+    private static readonly TimeSpan s_testRunDuration = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan s_joinTimeout = TimeSpan.FromSeconds(1);
 
-    [Fact]
-    public void IsThreadSafe()
+    [Theory(Timeout = 10_000)]
+    [MemberData(nameof(TheoryDataHelpers.ProcessorCountOptions), MemberType = typeof(TheoryDataHelpers))]
+    public async Task IsThreadSafe(RemoteExecutorOptions options)
+    {
+        RemoteExecutorResult result = await RemoteExecutor.InvokeAsync(Remote_IsThreadSafe, options);
+        Assert.RemoteExecutionSuccess(result);
+    }
+
+    private async Task Remote_IsThreadSafe()
     {
         Thread init = new(static state =>
         {
@@ -51,14 +61,14 @@ public sealed class LazyStringMultiThreadingTest
         }
 
         init.Start(this);
-        Thread.Sleep(100);
+        await Task.Delay(100);
 
         foreach (Thread thread in threads)
         {
             thread.Start(this);
         }
 
-        Thread.Sleep(s_testRunDuration);
+        await Task.Delay(s_testRunDuration);
         _running = false;
 
         init.Join(s_joinTimeout);

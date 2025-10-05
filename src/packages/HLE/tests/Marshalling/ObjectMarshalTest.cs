@@ -218,7 +218,7 @@ public sealed unsafe partial class ObjectMarshalTest
     public void Unbox_IntToUInt()
     {
         const int Value = 16;
-        object o = TestHelpers.NoInline.Cast<int, object>(Value);
+        object o = TestHelpers.NoInline.Box(Value);
         uint u = ObjectMarshal.Unbox<uint>(o);
         Assert.Equal((uint)Value, u);
     }
@@ -229,7 +229,7 @@ public sealed unsafe partial class ObjectMarshalTest
         Memory<int> mem = new int[16];
         Random.Shared.Fill(mem.Span);
 
-        object o = TestHelpers.NoInline.Cast<Memory<int>, object>(mem);
+        object o = TestHelpers.NoInline.Box(mem);
         ReadOnlyMemory<int> rom = ObjectMarshal.Unbox<ReadOnlyMemory<int>>(o);
         Assert.True(mem.Span.SequenceEqual(rom.Span));
     }
