@@ -54,7 +54,6 @@ internal class RandomWriter : IEquatable<RandomWriter>
         _ => s_fallbackWriter
     };
 
-    [SkipLocalsInit]
     public virtual void Write<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
     {
         if (!MemoryHelpers.UseStackalloc<uint>(destinationLength))

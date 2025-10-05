@@ -91,7 +91,6 @@ public static partial class CollectionHelpers
         => IndicesOf((ReadOnlySpan<T>)span, predicate, destination);
 
     [Pure]
-    [SkipLocalsInit]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> span, Func<T, bool> predicate)
     {
         int length;
@@ -209,7 +208,6 @@ public static partial class CollectionHelpers
         => IndicesOf((ReadOnlySpan<T>)span, predicate, destination);
 
     [Pure]
-    [SkipLocalsInit]
     public static unsafe int[] IndicesOf<T>(this ReadOnlySpan<T> span, delegate*<T, bool> predicate)
     {
         int length;

@@ -13,7 +13,6 @@ namespace HLE.Twitch.Tmi;
 public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
 {
     [Pure]
-    [SkipLocalsInit]
     public Notice Parse(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
@@ -32,7 +31,6 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
     }
 
     [Pure]
-    [SkipLocalsInit]
     public Notice Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         NoticeType type = NoticeType.Unknown;
@@ -77,7 +75,6 @@ public sealed class NoticeParser : INoticeParser, IEquatable<NoticeParser>
         }
     }
 
-    [SkipLocalsInit]
     private static NoticeType ParseNoticeType(ReadOnlySpan<byte> bytes)
     {
         Span<char> chars = stackalloc char[bytes.Length];

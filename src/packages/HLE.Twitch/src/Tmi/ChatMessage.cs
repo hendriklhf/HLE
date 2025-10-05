@@ -124,7 +124,6 @@ public sealed class ChatMessage :
     /// </summary>
     /// <returns>The message in a readable format.</returns>
     [Pure]
-    [SkipLocalsInit]
     public override string ToString()
     {
         Span<char> buffer = stackalloc char[Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length];
@@ -134,7 +133,6 @@ public sealed class ChatMessage :
 
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
-    [SkipLocalsInit]
     public void Format(TextWriter writer)
     {
         Span<char> buffer = stackalloc char[Channel.Length + Username.Length + Message.Length + "<#".Length + "> ".Length + ": ".Length];

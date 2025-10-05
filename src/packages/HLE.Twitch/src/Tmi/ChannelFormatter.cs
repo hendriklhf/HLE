@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using HLE.Text;
 
@@ -19,7 +18,6 @@ internal static partial class ChannelFormatter
     public const int MaximumPrefixedChannelNameLength = 26;
 
     [Pure]
-    [SkipLocalsInit]
     public static string Format(ReadOnlySpan<char> channel, bool prefixWithHashtag)
     {
         Span<char> result = stackalloc char[MaximumPrefixedChannelNameLength];

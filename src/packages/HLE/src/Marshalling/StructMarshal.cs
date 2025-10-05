@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -42,7 +43,6 @@ public static unsafe class StructMarshal
     /// <typeparam name="TRight">The type of the right struct.</typeparam>
     /// <returns>True, if the structs have the same size and bitwise memory values, otherwise false.</returns>
     [Pure]
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool EqualsBitwise<TLeft, TRight>(ref TLeft left, ref TRight right)
         where TLeft : struct
@@ -90,7 +90,12 @@ public static unsafe class StructMarshal
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte AsByte(this bool b) => Unsafe.BitCast<bool, byte>(b);
+    public static byte AsByte(this bool b)
+    {
+        byte result = Unsafe.BitCast<bool, byte>(b);
+        Debug.Assert(result is 0 or 1);
+        return result;
+    }
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

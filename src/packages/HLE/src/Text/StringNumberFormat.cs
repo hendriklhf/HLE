@@ -30,7 +30,6 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
 
     private StringNumberFormat(string chars) => _chars = chars;
 
-    [SkipLocalsInit]
     public static StringNumberFormat Create(char minimumCharValue, char maximumCharValue)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(minimumCharValue, maximumCharValue);

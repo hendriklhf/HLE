@@ -245,7 +245,6 @@ internal sealed class PooledMemoryStream(int capacity) :
         }
     }
 
-    [SkipLocalsInit]
     public override void CopyTo(Stream destination, int bufferSize)
     {
         ArgumentNullException.ThrowIfNull(destination);

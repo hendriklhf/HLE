@@ -11,7 +11,6 @@ namespace HLE;
 
 internal sealed class RandomWriterChoicesLengthIs16Bits : RandomWriter, IEquatable<RandomWriterChoicesLengthIs16Bits>
 {
-    [SkipLocalsInit]
     public override void Write<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
     {
         Debug.Assert(choicesLength <= ushort.MaxValue);

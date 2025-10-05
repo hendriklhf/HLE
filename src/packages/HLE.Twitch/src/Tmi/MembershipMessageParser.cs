@@ -12,7 +12,6 @@ namespace HLE.Twitch.Tmi;
 public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatable<MembershipMessageParser>
 {
     [Pure]
-    [SkipLocalsInit]
     public PartChannelMessage ParsePartChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;
@@ -35,7 +34,6 @@ public sealed class MembershipMessageParser : IMembershipMessageParser, IEquatab
         => Parse<PartChannelMessage>(ircMessage, indicesOfWhitespaces);
 
     [Pure]
-    [SkipLocalsInit]
     public JoinChannelMessage ParseJoinChannelMessage(ReadOnlySpan<byte> ircMessage)
     {
         int whitespaceCount;

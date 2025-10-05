@@ -96,7 +96,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static Int128 GetInt128(this RandomNumberGenerator random)
     {
 #pragma warning disable IDE0059
@@ -107,7 +106,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static Int128 GetInt128(this RandomNumberGenerator random, Int128 min, Int128 max)
     {
 #pragma warning disable IDE0059
@@ -118,7 +116,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static UInt128 GetUInt128(this RandomNumberGenerator random)
     {
 #pragma warning disable IDE0059
@@ -136,7 +133,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static Guid GetGuid(this RandomNumberGenerator random)
     {
 #pragma warning disable IDE0059
@@ -147,7 +143,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static decimal GetDecimal(this RandomNumberGenerator random)
     {
 #pragma warning disable IDE0059
@@ -293,7 +288,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static T GetStruct<T>(this RandomNumberGenerator random) where T : unmanaged
     {
         Unsafe.SkipInit(out T result);
@@ -302,7 +296,6 @@ public static class RandomNumberGeneratorExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static void GetStruct<T>(this RandomNumberGenerator random, out T result) where T : unmanaged
     {
         Unsafe.SkipInit(out result);

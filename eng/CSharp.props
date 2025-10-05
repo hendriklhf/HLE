@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SkipLocalsInit>true</SkipLocalsInit>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <NeutralLanguage>en-US</NeutralLanguage>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>

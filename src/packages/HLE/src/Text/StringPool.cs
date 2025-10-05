@@ -90,7 +90,6 @@ public sealed partial class StringPool : IEquatable<StringPool>
     }
 
     [Pure]
-    [SkipLocalsInit]
     public string GetOrAdd(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
         if (bytes.Length == 0)
@@ -154,7 +153,6 @@ public sealed partial class StringPool : IEquatable<StringPool>
         }
     }
 
-    [SkipLocalsInit]
     public bool TryGet(ReadOnlySpan<byte> bytes, Encoding encoding, [MaybeNullWhen(false)] out string value)
     {
         if (bytes.Length == 0)
@@ -206,7 +204,6 @@ public sealed partial class StringPool : IEquatable<StringPool>
     }
 
     [Pure]
-    [SkipLocalsInit]
     public bool Contains(ReadOnlySpan<byte> bytes, Encoding encoding)
     {
         if (bytes.Length == 0)

@@ -340,7 +340,7 @@ public unsafe ref partial struct ValueStringBuilder :
 
         int countOfFailedTries = 0;
         int charsWritten;
-        ref char destination = ref GetDestination(1);
+        ref char destination = ref GetDestination(16);
         int length = Length;
         int capacity = Capacity;
         while (!TryFormat(value, MemoryMarshal.CreateSpan(ref destination, capacity - length), out charsWritten, format))

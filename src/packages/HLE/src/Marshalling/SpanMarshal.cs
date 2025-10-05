@@ -35,7 +35,6 @@ public static unsafe class SpanMarshal
     /// <param name="span">The span that will be converted.</param>
     /// <returns>A memory view over the span.</returns>
     [Pure]
-    [SkipLocalsInit]
     public static ReadOnlyMemory<T> AsMemory<T>(ReadOnlySpan<T> span)
     {
         if (span.Length == 0)

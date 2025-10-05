@@ -28,7 +28,6 @@ public static partial class SpanHelpers
         => IndicesOf((ReadOnlySpan<T>)items, item);
 
     [Pure]
-    [SkipLocalsInit]
     public static int[] IndicesOf<T>(this ReadOnlySpan<T> items, T item) where T : IEquatable<T>
     {
         if (items.Length == 0)

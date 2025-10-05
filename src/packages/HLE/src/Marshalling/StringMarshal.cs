@@ -61,7 +61,6 @@ public static unsafe class StringMarshal
 
     public static void ToLower(ReadOnlySpan<char> span) => ToLower(SpanMarshal.AsMutableSpan(span));
 
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToLower(Span<char> span)
     {
@@ -88,7 +87,6 @@ public static unsafe class StringMarshal
 
     public static void ToUpper(ReadOnlySpan<char> span) => ToUpper(SpanMarshal.AsMutableSpan(span));
 
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ToUpper(Span<char> span)
     {

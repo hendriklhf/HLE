@@ -111,7 +111,6 @@ public static unsafe class PackedHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong CreateUInt64(uint lower, uint upper) => PackTwo<uint, ulong>(lower, upper);
 
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static TResult PackTwo<TElement, TResult>(TElement lower, TElement upper)
         where TElement : unmanaged
@@ -136,7 +135,6 @@ public static unsafe class PackedHelpers
         return result;
     }
 
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static TResult PackFour<TElement, TResult>(TElement lower0, TElement lower1, TElement upper0, TElement upper1)
         where TElement : unmanaged
@@ -165,7 +163,6 @@ public static unsafe class PackedHelpers
         return result;
     }
 
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static TResult PackEight<TElement, TResult>(
         TElement lower0, TElement lower1, TElement lower2, TElement lower3,

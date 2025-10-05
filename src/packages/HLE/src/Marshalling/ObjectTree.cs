@@ -72,7 +72,6 @@ internal static unsafe class ObjectTree
         return size + GetFieldsSize(ref obj);
     }
 
-    [SkipLocalsInit]
     [RequiresDynamicCode(NativeAotMessages.RequiresDynamicCode)]
     [RequiresUnreferencedCode(NativeAotMessages.RequiresUnreferencedCode)]
     private static nuint GetFieldsSize<T>(ref T obj)

@@ -46,7 +46,6 @@ public static class ChatMessageParser
     private const int MaximumWhitespacesNeededToHandle = 5;
 
     [Pure]
-    [SkipLocalsInit]
     public static ChatMessage Parse(ReadOnlySpan<byte> ircMessage)
     {
         Span<int> indicesOfWhitespacesBuffer = stackalloc int[MaximumWhitespacesNeededToHandle];
@@ -55,7 +54,6 @@ public static class ChatMessageParser
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static ChatMessage Parse(ReadOnlySpan<byte> ircMessage, ReadOnlySpan<int> indicesOfWhitespaces)
     {
         Badge[] badgeInfos = [];
@@ -232,7 +230,6 @@ public static class ChatMessageParser
         return (ChatMessageFlags)isFirstMessage.AsByte();
     }
 
-    [SkipLocalsInit]
     private static void GetId(ReadOnlySpan<byte> value, out Guid id)
     {
         Span<char> chars = stackalloc char[value.Length];

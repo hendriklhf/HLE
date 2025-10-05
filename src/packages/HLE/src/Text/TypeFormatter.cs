@@ -30,7 +30,6 @@ public sealed class TypeFormatter(TypeFormattingOptions options) : IEquatable<Ty
     [Pure]
     public string Format(Type type) => _cache.TryGetValue(type, out string? str) ? str : FormatCore(type);
 
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.NoInlining)]
     private string FormatCore(Type type)
     {

@@ -47,7 +47,6 @@ public static class StringHelpers
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static string TrimAll(ReadOnlySpan<char> str)
         => TrimAll(str, false);
 
@@ -148,7 +147,6 @@ public static class StringHelpers
     public static int IndicesOf(this string? str, ReadOnlySpan<char> s, Span<int> destination) => IndicesOf((ReadOnlySpan<char>)str, s, destination);
 
     [Pure]
-    [SkipLocalsInit]
     public static int[] IndicesOf(this ReadOnlySpan<char> span, ReadOnlySpan<char> s)
     {
         if (span.Length == 0 || s.Length == 0)
@@ -207,7 +205,6 @@ public static class StringHelpers
     public static string RegexEscape(ReadOnlySpan<char> input) => RegexEscape(input, false);
 
     [Pure]
-    [SkipLocalsInit]
     private static string RegexEscape(ReadOnlySpan<char> input, [ConstantExpected] bool inputIsString)
     {
         if (input.Length == 0)

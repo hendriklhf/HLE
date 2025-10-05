@@ -95,7 +95,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static Int128 NextInt128(this Random random)
     {
 #pragma warning disable IDE0059
@@ -106,7 +105,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static Int128 NextInt128(this Random random, Int128 min, Int128 max)
     {
 #pragma warning disable IDE0059
@@ -117,7 +115,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static UInt128 NextUInt128(this Random random)
     {
 #pragma warning disable IDE0059
@@ -135,7 +132,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static Guid NextGuid(this Random random)
     {
 #pragma warning disable IDE0059
@@ -146,7 +142,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static decimal NextDecimal(this Random random)
     {
 #pragma warning disable IDE0059
@@ -331,7 +326,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static T NextStruct<T>(this Random random)
 #if NET9_0_OR_GREATER
         where T : unmanaged, allows ref struct
@@ -345,7 +339,6 @@ public static class RandomExtensions
     }
 
     [Pure]
-    [SkipLocalsInit]
     public static void NextStruct<T>(this Random random, out T result)
 #if NET9_0_OR_GREATER
         where T : unmanaged, allows ref struct

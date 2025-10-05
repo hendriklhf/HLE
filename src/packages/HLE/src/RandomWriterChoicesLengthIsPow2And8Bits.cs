@@ -11,7 +11,6 @@ namespace HLE;
 
 internal sealed class RandomWriterChoicesLengthIsPow2And8Bits : RandomWriter, IEquatable<RandomWriterChoicesLengthIsPow2And8Bits>
 {
-    [SkipLocalsInit]
     public override void Write<T>(Random random, ref T destination, int destinationLength, ref T choices, int choicesLength)
     {
         Debug.Assert(BitOperations.IsPow2(choicesLength));

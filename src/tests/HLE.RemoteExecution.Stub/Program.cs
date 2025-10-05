@@ -135,7 +135,6 @@ internal static class Program
                 .MethodHandle
                 .GetFunctionPointer();
 
-    [SkipLocalsInit]
     private static object DecodeAndBox<T>(string base64, int size) where T : unmanaged
     {
         Span<byte> bytes = stackalloc byte[size];

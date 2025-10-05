@@ -87,7 +87,6 @@ public sealed class IrcHandler : IEquatable<IrcHandler>
     /// </summary>
     /// <param name="ircMessage">The IRC message.</param>
     /// <returns>True, if the message was handled, otherwise false.</returns>
-    [SkipLocalsInit]
     public bool Handle(ReadOnlySpan<byte> ircMessage)
     {
         Span<int> indicesOfWhitespaces = stackalloc int[MaximumWhitespacesNeededToHandle];

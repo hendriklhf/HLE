@@ -10,7 +10,6 @@ public readonly struct StringNumberFormatter(StringNumberFormat format) : IEquat
 {
     public StringNumberFormat NumberFormat { get; } = format;
 
-    [SkipLocalsInit]
     public string Format(int number)
     {
         Span<char> result = stackalloc char[64];

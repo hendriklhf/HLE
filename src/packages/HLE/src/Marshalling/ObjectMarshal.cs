@@ -229,7 +229,6 @@ public static unsafe class ObjectMarshal
     /// The parameter is only needed to reserve the stack space for the box.
     /// </remarks>
     [Pure]
-    [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static object BoxOnStack<T>(ref T value, out Box<T> box)
     {

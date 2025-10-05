@@ -25,7 +25,6 @@ public sealed class RoomstateParser : IRoomstateParser, IEquatable<RoomstatePars
     private static ReadOnlySpan<byte> SubsOnlyTag => "subs-only"u8;
 
     [Pure]
-    [SkipLocalsInit]
     public void Parse(ReadOnlySpan<byte> ircMessage, out Roomstate roomstate)
     {
         int whitespaceCount;

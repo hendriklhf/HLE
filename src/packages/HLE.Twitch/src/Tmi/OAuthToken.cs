@@ -33,7 +33,6 @@ public readonly partial struct OAuthToken : IEquatable<OAuthToken>
     public OAuthToken(string token)
         => _token = CtorCore(token, true);
 
-    [SkipLocalsInit]
     public OAuthToken(ReadOnlySpan<char> token)
         => _token = CtorCore(token, false);
 

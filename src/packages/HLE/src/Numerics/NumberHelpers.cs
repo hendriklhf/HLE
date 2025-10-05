@@ -16,10 +16,9 @@ public static class NumberHelpers
         => number == T.Zero ? 1 : (int)Math.Floor(Math.Log10(Math.Abs(double.CreateTruncating(number))) + 1);
 
     [Pure]
-    [SkipLocalsInit]
     public static byte[] GetDigits<T>(T number) where T : INumber<T>
     {
-        Span<byte> digits = stackalloc byte[50];
+        Span<byte> digits = stackalloc byte[64];
         int length = GetDigits(number, digits);
         return digits.ToArray(..length);
     }
