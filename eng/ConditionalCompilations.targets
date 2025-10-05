@@ -23,4 +23,9 @@
     <None Include="**\*.lt_net10.cs"/>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <Compile Remove="**\*.Debug.cs"/>
+    <None Include="**\*.Debug.cs"/>
+  </ItemGroup>
+
 </Project>

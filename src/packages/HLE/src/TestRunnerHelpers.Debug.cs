@@ -1,4 +1,3 @@
-#if DEBUG
 using System;
 using System.Reflection;
 
@@ -21,5 +20,3 @@ internal static class TestRunnerHelpers
                entryAssemblyName.Contains("runner", StringComparison.OrdinalIgnoreCase);
     }
 }
-
-#endif

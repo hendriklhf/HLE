@@ -4,7 +4,7 @@
   </Folder>
   <Folder Name="/eng/">
     <File Path="eng/DefaultAnalyzers.targets" />
-    <File Path="eng/ConditionalTargetFrameworkCompiles.targets" />
+    <File Path="eng/ConditionalCompilations.targets" />
     <File Path="eng/Generators.props" />
     <File Path="eng/Packages.props" />
     <File Path="eng/Tests.props" />
@@ -38,6 +38,6 @@
     <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj" />
     <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj" />
     <File Path="src/tests/xunit.runner.json" />
-    <File Path="src\tests\testconfig.json" />
+    <File Path="src/tests/testconfig.json" />
   </Folder>
 </Solution>
