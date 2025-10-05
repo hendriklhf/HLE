@@ -15,15 +15,13 @@
 
   <!-- NuGet -->
   <PropertyGroup>
-    <BenchmarkDotNetVersion>0.15.2</BenchmarkDotNetVersion>
+    <BenchmarkDotNetVersion>0.15.4</BenchmarkDotNetVersion>
     <DotNetSystemPackagesVersion>10.0.0-rc.1.25451.107</DotNetSystemPackagesVersion>
     <MicrosoftCodeAnalysisVersion>4.14.0</MicrosoftCodeAnalysisVersion>
-    <MicrosoftNETTestSdkVersion>17.14.1</MicrosoftNETTestSdkVersion>
     <MicrosoftVisualStudioThreadingAnalyzersVersion>17.14.15</MicrosoftVisualStudioThreadingAnalyzersVersion>
     <RoslynatorVersion>4.14.0</RoslynatorVersion>
     <SonarAnalyzerCSharpVersion>10.15.0.120848</SonarAnalyzerCSharpVersion>
-    <XunitRunnerVisualStudioVersion>3.1.4</XunitRunnerVisualStudioVersion>
-    <XunitVersion>3.0.1</XunitVersion>
+    <XunitVersion>3.1.0</XunitVersion>
   </PropertyGroup>
 
 </Project>
