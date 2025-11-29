@@ -1,43 +1,46 @@
 <Solution>
   <Folder Name="/debug/">
-    <Project Path="debug/HLE.Debug/HLE.Debug.csproj" />
+    <Project Path="debug/HLE.Debug/HLE.Debug.csproj"/>
   </Folder>
   <Folder Name="/eng/">
-    <File Path="eng/DefaultAnalyzers.targets" />
-    <File Path="eng/ConditionalCompilations.targets" />
-    <File Path="eng/Generators.props" />
-    <File Path="eng/Packages.props" />
-    <File Path="eng/Tests.props" />
-    <File Path="eng/Versions.props" />
-    <File Path="eng/Packages.targets" />
-    <File Path="eng/CSharp.props" />
-    <File Path="eng/CSharp.targets" />
-    <File Path="eng/Artifacts.props" />
+    <File Path="eng/DefaultAnalyzers.targets"/>
+    <File Path="eng/ConditionalCompilations.targets"/>
+    <File Path="eng/Generators.props"/>
+    <File Path="eng/Packages.props"/>
+    <File Path="eng/Tests.props"/>
+    <File Path="eng/Versions.props"/>
+    <File Path="eng/Packages.targets"/>
+    <File Path="eng/CSharp.props"/>
+    <File Path="eng/CSharp.targets"/>
+    <File Path="eng/Artifacts.props"/>
   </Folder>
   <Folder Name="/Solution Items/">
-    <File Path=".gitattributes" />
-    <File Path=".gitignore" />
-    <File Path=".gitmodules" />
-    <File Path="Directory.Build.props" />
-    <File Path="Directory.Build.targets" />
-    <File Path="Directory.Packages.props" />
-    <File Path="global.json" />
-    <File Path="LICENSE" />
-    <File Path="publish.ps1" />
-    <File Path="README.md" />
+    <File Path=".gitattributes"/>
+    <File Path=".gitignore"/>
+    <File Path=".gitmodules"/>
+    <File Path="Directory.Build.props"/>
+    <File Path="Directory.Build.targets"/>
+    <File Path="Directory.Packages.props"/>
+    <File Path="global.json"/>
+    <File Path="LICENSE"/>
+    <File Path="publish.ps1"/>
+    <File Path="README.md"/>
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/packages/HLE.Twitch/src/HLE.Twitch.csproj" />
-    <Project Path="src/packages/HLE/gen/HLE.SourceGenerators/HLE.SourceGenerators.csproj" />
-    <Project Path="src/packages/HLE/src/HLE.csproj" />
-    <Project Path="src/tests/HLE.RemoteExecution.Stub/HLE.RemoteExecution.Stub.csproj" />
-    <Project Path="src/tests/HLE.RemoteExecution/HLE.RemoteExecution.csproj" />
+    <Project Path="src/packages/HLE.Twitch/src/HLE.Twitch.csproj"/>
+    <Project Path="src/packages/HLE/gen/HLE.SourceGenerators/HLE.SourceGenerators.csproj"/>
+    <Project Path="src/packages/HLE/src/HLE.csproj"/>
+    <Project Path="src/tests/HLE.RemoteExecution.Stub/HLE.RemoteExecution.Stub.csproj"/>
+    <Project Path="src/tests/HLE.RemoteExecution/HLE.RemoteExecution.csproj"/>
+  </Folder>
+  <Folder Name="/src/HLE.RemoteExecution.Shared/">
+    <File Path="src\tests\HLE.RemoteExecution.Shared\RemoteExecutionEnvironmentVariables.cs"/>
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="src/packages/HLE.Twitch/tests/HLE.Twitch.UnitTests.csproj" />
-    <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj" />
-    <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj" />
-    <File Path="src/tests/xunit.runner.json" />
-    <File Path="src/tests/testconfig.json" />
+    <Project Path="src/packages/HLE.Twitch/tests/HLE.Twitch.UnitTests.csproj"/>
+    <Project Path="src/packages/HLE/tests/HLE.UnitTests.csproj"/>
+    <Project Path="src/tests/HLE.TestUtilities/HLE.TestUtilities.csproj"/>
+    <File Path="src/tests/xunit.runner.json"/>
+    <File Path="src/tests/testconfig.json"/>
   </Folder>
 </Solution>

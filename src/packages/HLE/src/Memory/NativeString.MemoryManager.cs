@@ -11,13 +11,17 @@ public readonly partial struct NativeString
     {
         private readonly NativeString _str = str;
 
-        protected override void Dispose(bool disposing) => _str.Dispose();
+        protected override void Dispose(bool disposing)
+        {
+        }
 
         public override Span<char> GetSpan() => _str.AsSpan();
 
-        public override MemoryHandle Pin(int elementIndex = 0) => throw new NotSupportedException();
+        public override unsafe MemoryHandle Pin(int elementIndex = 0) => new(&_str.AsRawStringData()->FirstChar + elementIndex);
 
-        public override void Unpin() => throw new NotSupportedException();
+        public override void Unpin()
+        {
+        }
 
         public bool Equals([NotNullWhen(true)] MemoryManager? other) => ReferenceEquals(this, other);
 

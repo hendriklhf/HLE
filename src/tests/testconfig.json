@@ -2,6 +2,7 @@
   "xUnit": {
     "culture": "en-US",
     "parallelizeTestCollections": true,
-    "maxParallelThreads": -1
+    "maxParallelThreads": -1,
+    "parallelAlgorithm": "aggressive"
   }
 }

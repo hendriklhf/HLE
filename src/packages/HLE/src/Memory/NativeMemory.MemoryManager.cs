@@ -9,17 +9,20 @@ public sealed partial class NativeMemory<T>
 {
     private sealed class MemoryManager(NativeMemory<T> memory) : MemoryManager<T>, IEquatable<MemoryManager>
     {
+        [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
         private readonly NativeMemory<T> _memory = memory;
 
-        protected override void Dispose(bool disposing) => _memory.Dispose();
+        protected override void Dispose(bool disposing)
+        {
+        }
 
         public override Span<T> GetSpan() => _memory.AsSpan();
 
-        [DoesNotReturn]
-        public override MemoryHandle Pin(int elementIndex = 0) => throw new NotSupportedException();
+        public override unsafe MemoryHandle Pin(int elementIndex = 0) => new(_memory.Pointer + elementIndex);
 
-        [DoesNotReturn]
-        public override void Unpin() => throw new NotSupportedException();
+        public override void Unpin()
+        {
+        }
 
         [Pure]
         public bool Equals([NotNullWhen(true)] MemoryManager? other) => ReferenceEquals(this, other);

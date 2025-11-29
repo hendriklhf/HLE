@@ -424,10 +424,13 @@ public sealed class BloomFilterStringArray :
 
         GrowCharBufferIfNeeded(str.Length);
 
-        UpdateMinMaxStringLength(str.Length);
-
         _strings[index] = str;
         _lengths[index] = str.Length;
+
+        _minStringLength = _strings.Where(static s => s is not null)
+            .Min(static s => s.Length);
+        _maxStringLength = _strings.Where(static s => s is not null)
+            .Max(static s => s.Length);
 
         int length = Length;
         ref char chars = ref ArrayMarshal.GetUnsafeElementAt(_chars, index);
@@ -437,22 +440,9 @@ public sealed class BloomFilterStringArray :
         }
     }
 
-    private void UpdateMinMaxStringLength(int stringLength)
-    {
-        if (stringLength > _maxStringLength)
-        {
-            _maxStringLength = stringLength;
-        }
-
-        if (stringLength < _minStringLength)
-        {
-            _minStringLength = stringLength;
-        }
-    }
-
     private void GrowCharBufferIfNeeded(int stringLength)
     {
-        if (stringLength <= _maxStringLength)
+        if (stringLength <= _chars.Length / Length)
         {
             return;
         }
@@ -469,9 +459,9 @@ public sealed class BloomFilterStringArray :
     {
         _minStringLength = int.MaxValue;
         _maxStringLength = 0;
-        Array.Clear(_strings);
-        Array.Clear(_lengths);
-        Array.Clear(_chars);
+        _strings.AsSpan().Clear();
+        _lengths.AsSpan().Clear();
+        _chars.AsSpan().Clear();
     }
 
     public void CopyTo(List<string> destination, int offset = 0)

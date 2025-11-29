@@ -13,7 +13,7 @@ using HLE.Numerics;
 
 namespace HLE.Text;
 
-public sealed class NaturalStringComparer : IComparer<string?>, IComparer, IEquatable<NaturalStringComparer>
+internal sealed class NaturalStringComparer : IComparer<string?>, IComparer, IEquatable<NaturalStringComparer>
 {
     private readonly StringComparer _comparer = StringComparer.Ordinal;
 

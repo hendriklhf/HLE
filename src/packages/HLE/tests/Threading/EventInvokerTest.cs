@@ -1,40 +1,20 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using HLE.RemoteExecution;
 using HLE.TestUtilities;
 using HLE.Threading;
 
 namespace HLE.UnitTests.Threading;
 
-public sealed class EventInvokerTest(ITestOutputHelper output)
+public sealed class EventInvokerTest
 {
-    private readonly ITestOutputHelper _output = output;
-
-    private static readonly TheoryData<int> s_targetCountParameters = TheoryDataHelpers.CreateRange(0, Environment.ProcessorCount * 2);
-
-    public static TheoryData<(RemoteExecutorOptions, int)> ProcessorCountAndTargetCountMatrix { get; } =
-        TheoryDataHelpers.CreateMatrix(TheoryDataHelpers.ProcessorCountOptions, s_targetCountParameters);
+    public static TheoryData<int> TargetCountParameters { get; } = TheoryDataHelpers.CreateRange(0, Environment.ProcessorCount * 2);
 
     private int _counter;
 
     [Theory(Timeout = 10_000)]
-    [MemberData(nameof(ProcessorCountAndTargetCountMatrix))]
-    public async Task InvokeAsync((RemoteExecutorOptions Options, int TargetCount) parameters)
-    {
-        RemoteExecutorResult result = await RemoteExecutor.InvokeAsync(Remote_InvokeAsync, parameters.Options, parameters.TargetCount);
-        Assert.RemoteExecutionSuccess(result, _output);
-    }
-
-    [Theory(Timeout = 10_000)]
-    [MemberData(nameof(ProcessorCountAndTargetCountMatrix))]
-    public async Task QueueOnThreadPool((RemoteExecutorOptions Options, int TargetCount) parameters)
-    {
-        RemoteExecutorResult result = await RemoteExecutor.InvokeAsync(Remote_QueueOnThreadPool, parameters.Options, parameters.TargetCount);
-        Assert.RemoteExecutionSuccess(result, _output);
-    }
-
-    private async Task Remote_InvokeAsync(int targetCount)
+    [MemberData(nameof(TargetCountParameters))]
+    public async Task InvokeAsync(int targetCount)
     {
         AsyncEventHandler<EventInvokerTest, string>? eventHandler = null;
         for (int i = 0; i < targetCount; i++)
@@ -49,7 +29,9 @@ public sealed class EventInvokerTest(ITestOutputHelper output)
         Assert.Equal(invocationListLength, _counter);
     }
 
-    private void Remote_QueueOnThreadPool(int targetCount)
+    [Theory(Timeout = 10_000)]
+    [MemberData(nameof(TargetCountParameters))]
+    public void QueueOnThreadPool(int targetCount)
     {
         EventHandler<string>? eventHandler = null;
         for (int i = 0; i < targetCount; i++)

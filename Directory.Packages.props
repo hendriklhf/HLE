@@ -7,13 +7,11 @@
 
   <ItemGroup>
     <PackageVersion Include="HLE" Version="$(NugetPackageVersion)"/>
-    <PackageVersion Include="NaturalSort.Extension" Version="4.4.0"/>
   </ItemGroup>
 
   <ItemGroup>
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="$(MicrosoftCodeAnalysisVersion)"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisVersion)"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisVersion)"/>
     <PackageVersion Include="System.IO.Hashing" Version="$(DotNetSystemPackagesVersion)"/>
   </ItemGroup>
 

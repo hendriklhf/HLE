@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
@@ -8,6 +7,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using HLE.Marshalling;
+#if DEBUG && !NET10_0_OR_GREATER
+using System.Collections.Generic;
+#endif
 
 namespace HLE.Memory;
 
@@ -210,6 +212,8 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void AssertArrayWithReferencesIsCleared(T[] array)
     {
+        _ = array;
+#if DEBUG
         if (!RuntimeHelpers.IsReferenceOrContainsReferences<T>() || TestRunnerHelpers.IsTestRun)
         {
             return;
@@ -230,6 +234,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
                 Debug.Assert(EqualityComparer<T>.Default.Equals(array[i], default));
             }
         }
+#endif
 #endif
     }
 
@@ -283,7 +288,7 @@ public sealed partial class ArrayPool<T> : IDisposable, IEquatable<ArrayPool<T>>
             pow2Length = (int)BitOperations.RoundUpToPowerOf2((uint)arrayLength);
             if (pow2Length != arrayLength)
             {
-                pow2Length >>= 1;
+                pow2Length >>>= 1;
             }
         }
 
