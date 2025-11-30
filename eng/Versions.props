@@ -10,7 +10,7 @@
 
   <!-- Package -->
   <PropertyGroup>
-    <NugetPackageVersion>2.2.3</NugetPackageVersion>
+    <NugetPackageVersion>2.2.5</NugetPackageVersion>
   </PropertyGroup>
 
   <!-- NuGet -->

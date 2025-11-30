@@ -62,14 +62,14 @@ public static class StringHelpers
         {
             char[] rentedBuffer = Memory.ArrayPool<char>.Shared.Rent(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
-            string result = resultLength == 0 && wasString ? StringMarshal.AsString(str) : new(rentedBuffer.AsSpanUnsafe(..resultLength));
+            string result = resultLength == -1 && wasString ? StringMarshal.AsString(str) : new(rentedBuffer.AsSpanUnsafe(..resultLength));
             Memory.ArrayPool<char>.Shared.Return(rentedBuffer);
             return result;
         }
 
         Span<char> buffer = stackalloc char[str.Length];
         resultLength = TrimAll(str, buffer);
-        return resultLength == 0 && wasString ? StringMarshal.AsString(str) : new(buffer[..resultLength]);
+        return resultLength == -1 && wasString ? StringMarshal.AsString(str) : new(buffer[..resultLength]);
     }
 
     public static int TrimAll(string str, Span<char> result) => TrimAll(str.AsSpan(), result);
@@ -88,11 +88,11 @@ public static class StringHelpers
             return 0;
         }
 
-        // TODO: this could be optimized
+        // TODO: this could be optimized (reuse the index of the first double space)
         if (input[0] != ' ' && input[^1] != ' ' && input.IndexOf("  ") < 0)
         {
             // No whitespace at the start or end, and no double spaces in between.
-            return 0;
+            return -1;
         }
 
         int indexOfAnyNonWhitespace = input.IndexOfAnyExcept(' ');

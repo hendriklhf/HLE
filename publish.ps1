@@ -27,7 +27,7 @@ try
     Set-Location $package_directory
     Remove-Item "bin/Release/*.nupkg"
 
-    dotnet pack -c Release -p:PublishingPackage=true
+    dotnet pack -c Release -p:PublishingPackage=true -o "bin/Release"
     if ($LastExitCode -ne 0)
     {
         exit

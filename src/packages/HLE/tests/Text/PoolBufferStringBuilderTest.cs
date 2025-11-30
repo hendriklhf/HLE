@@ -364,14 +364,14 @@ public sealed class PoolBufferStringBuilderTest
         const float Value = float.Pi;
         builder.Append(Value);
 
-        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture), builder.ToString());
+        Assert.Equal(Value.ToString(CultureInfo.CurrentCulture), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
             builder.Append(Value);
         }
 
-        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture).Length * 6, builder.Length);
+        Assert.Equal(Value.ToString(CultureInfo.CurrentCulture).Length * 6, builder.Length);
         Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
@@ -384,14 +384,14 @@ public sealed class PoolBufferStringBuilderTest
         const double Value = double.Pi;
         builder.Append(Value);
 
-        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture), builder.ToString());
+        Assert.Equal(Value.ToString(CultureInfo.CurrentCulture), builder.ToString());
 
         for (int i = 0; i < 5; i++)
         {
             builder.Append(Value);
         }
 
-        Assert.Equal(Value.ToString(CultureInfo.InvariantCulture).Length * 6, builder.Length);
+        Assert.Equal(Value.ToString(CultureInfo.CurrentCulture).Length * 6, builder.Length);
         Assert.Equal($"{Value}{Value}{Value}{Value}{Value}{Value}", builder.ToString());
     }
 
