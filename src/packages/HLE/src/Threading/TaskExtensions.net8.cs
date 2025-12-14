@@ -1,8 +1,8 @@
 using System;
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
-using HLE.Collections;
 using HLE.Memory;
 
 namespace HLE.Threading;

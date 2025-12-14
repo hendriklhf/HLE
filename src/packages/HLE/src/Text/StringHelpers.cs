@@ -60,10 +60,10 @@ public static class StringHelpers
         int resultLength;
         if (!MemoryHelpers.UseStackalloc<char>(str.Length))
         {
-            char[] rentedBuffer = Memory.ArrayPool<char>.Shared.Rent(str.Length);
+            char[] rentedBuffer = ArrayPool<char>.Shared.Rent(str.Length);
             resultLength = TrimAll(str, rentedBuffer.AsSpan());
             string result = resultLength == -1 && wasString ? StringMarshal.AsString(str) : new(rentedBuffer.AsSpanUnsafe(..resultLength));
-            Memory.ArrayPool<char>.Shared.Return(rentedBuffer);
+            ArrayPool<char>.Shared.Return(rentedBuffer);
             return result;
         }
 
@@ -157,10 +157,10 @@ public static class StringHelpers
         int length;
         if (!MemoryHelpers.UseStackalloc<int>(span.Length))
         {
-            int[] indicesBuffer = Memory.ArrayPool<int>.Shared.Rent(span.Length);
+            int[] indicesBuffer = ArrayPool<int>.Shared.Rent(span.Length);
             length = IndicesOf(span, s, indicesBuffer.AsSpan());
             int[] result = indicesBuffer[..length];
-            Memory.ArrayPool<int>.Shared.Return(indicesBuffer);
+            ArrayPool<int>.Shared.Return(indicesBuffer);
             return result;
         }
 
@@ -222,10 +222,10 @@ public static class StringHelpers
         int maximumResultLength = input.Length << 1;
         if (!MemoryHelpers.UseStackalloc<char>(maximumResultLength))
         {
-            char[] rentedBuffer = Memory.ArrayPool<char>.Shared.Rent(maximumResultLength);
+            char[] rentedBuffer = ArrayPool<char>.Shared.Rent(maximumResultLength);
             resultLength = RegexEscape(input, rentedBuffer.AsSpan(), indexOfMetaChar);
             string result = inputIsString && input.Length == resultLength ? StringMarshal.AsString(input) : new(rentedBuffer.AsSpanUnsafe(..resultLength));
-            Memory.ArrayPool<char>.Shared.Return(rentedBuffer);
+            ArrayPool<char>.Shared.Return(rentedBuffer);
             return result;
         }
 

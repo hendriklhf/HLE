@@ -1,8 +1,8 @@
-#pragma warning disable
-
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
+
+#pragma warning disable
 
 namespace HLE.Debug;
 
@@ -30,9 +30,7 @@ internal static class Program
 #endif
 
 #if NET10_0_OR_GREATER
-        NetCoreAppSettings net10Settings = new("net10.0", "10.0.0-preview.7.25380.108", ".NET 10");
-        IToolchain net10ToolChain = CsProjCoreToolchain.From(net10Settings);
-        Job net10Job = Job.Default.WithToolchain(net10ToolChain);
+        Job net10Job = Job.Default.WithToolchain(CsProjCoreToolchain.NetCoreApp10_0);
         config.AddJob(net10Job);
 #endif
 

@@ -90,14 +90,14 @@ internal sealed class NaturalStringComparer : IComparer<string?>, IComparer, IEq
     {
         nuint xSize = ObjectMarshal.GetRawStringSize(x.Length);
         nuint size = xSize + ObjectMarshal.GetRawStringSize(y.Length) + 16;
-        byte[] buffer = Memory.ArrayPool<byte>.Shared.Rent(int.CreateChecked(size));
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(int.CreateChecked(size));
 
         ref RawStringData rawX = ref StringAllocator.Alloc(buffer, x);
         nuint alignedXSize = NumberHelpers.Align(xSize, (uint)sizeof(nuint), AlignmentMethod.Add);
         ref RawStringData rawY = ref StringAllocator.Alloc(buffer.AsSpan(int.CreateChecked(alignedXSize)), y);
 
         int result = _comparer.Compare(ObjectMarshal.GetString(ref rawX), ObjectMarshal.GetString(ref rawY));
-        Memory.ArrayPool<byte>.Shared.Return(buffer);
+        ArrayPool<byte>.Shared.Return(buffer);
         return result;
     }
 

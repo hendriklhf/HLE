@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -12,7 +13,6 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using HLE.Collections;
 using HLE.Marshalling;
-using HLE.Memory;
 using HLE.Threading;
 
 namespace HLE.Twitch.Tmi;

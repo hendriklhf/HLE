@@ -15,12 +15,12 @@
 
   <!-- NuGet -->
   <PropertyGroup>
-    <BenchmarkDotNetVersion>0.15.6</BenchmarkDotNetVersion>
-    <DotNetSystemPackagesVersion>10.0.0</DotNetSystemPackagesVersion>
+    <BenchmarkDotNetVersion>0.15.8</BenchmarkDotNetVersion>
+    <DotNetSystemPackagesVersion>10.0.1</DotNetSystemPackagesVersion>
     <MicrosoftCodeAnalysisVersion>5.0.0</MicrosoftCodeAnalysisVersion>
     <MicrosoftVisualStudioThreadingAnalyzersVersion>17.14.15</MicrosoftVisualStudioThreadingAnalyzersVersion>
     <RoslynatorVersion>4.14.1</RoslynatorVersion>
-    <SonarAnalyzerCSharpVersion>10.16.0.128591</SonarAnalyzerCSharpVersion>
+    <SonarAnalyzerCSharpVersion>10.16.1.129956</SonarAnalyzerCSharpVersion>
     <XunitVersion>3.2.1</XunitVersion>
   </PropertyGroup>
 

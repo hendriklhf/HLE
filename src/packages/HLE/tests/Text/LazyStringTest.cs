@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -206,7 +207,9 @@ public sealed partial class LazyStringTest
     [Fact]
     public void Ctor_ArrayLength()
     {
-        using LazyString lazy = new(TestString.ToCharArray(), TestString.Length);
+        char[] array = ArrayPool<char>.Shared.Rent(TestString.Length);
+        SpanHelpers.Copy(TestString, array);
+        using LazyString lazy = new(array, TestString.Length);
         Assert.Equal(TestString, lazy.ToString());
     }
 
