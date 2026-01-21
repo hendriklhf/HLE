@@ -452,7 +452,6 @@ public sealed class BloomFilterStringArray :
         char[] newBuffer = GC.AllocateUninitializedArray<char>(requiredBufferLength);
         char[] oldBuffer = _chars;
         SpanHelpers.Copy(oldBuffer, newBuffer);
-        ArrayPool<char>.Shared.Return(oldBuffer);
         _chars = newBuffer;
     }
 

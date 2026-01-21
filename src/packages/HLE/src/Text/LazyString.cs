@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
@@ -94,6 +95,10 @@ public sealed partial class LazyString :
 
     internal LazyString(char[] chars, int length)
     {
+        Debug.Assert(chars.Length >= 16);
+        Debug.Assert(chars.Length >= length);
+        Debug.Assert(BitOperations.IsPow2((uint)chars.Length));
+
         if (length == 0)
         {
             _string = string.Empty;

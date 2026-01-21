@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using HLE.Collections;
@@ -19,6 +20,7 @@ internal static class DelegateExtensions
             }
 
             Delegate[] targets = d.GetInvocationList();
+            Debug.Assert(targets is TDelegate[]);
             return new(Unsafe.As<TDelegate[]>(targets));
         }
     }

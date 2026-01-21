@@ -102,12 +102,7 @@ public ref partial struct ValueList<T> :
 
         T[] array = SpanMarshal.AsArray(ref buffer);
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(array, Count);
-        }
-
-        ArrayPool<T>.Shared.Return(array);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(array, Count);
     }
 
     [Pure]
@@ -205,13 +200,7 @@ public ref partial struct ValueList<T> :
         }
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
-
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(array, count);
-        }
-
-        ArrayPool<T>.Shared.Return(array);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(array, count);
 
         return ref Unsafe.Add(ref buffer, count);
     }
@@ -243,8 +232,6 @@ public ref partial struct ValueList<T> :
             if ((_flags & Flags.IsRentedArray) != 0 && items is ICollection<T> collection)
             {
                 T[] buffer = SpanMarshal.AsArray(GetBuffer());
-                Debug.Assert(buffer.GetType() == typeof(T[]));
-                Debug.Assert(buffer.Length >= Count + collection.Count);
                 collection.CopyTo(buffer, Count);
                 Count = count + collection.Count;
                 return;
@@ -330,12 +317,7 @@ public ref partial struct ValueList<T> :
 
             T[] array = SpanMarshal.AsArray(oldBuffer);
 
-            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            {
-                SpanHelpers.Clear(array, count);
-            }
-
-            ArrayPool<T>.Shared.Return(array);
+            ArrayPool<T>.Shared.ReturnAndClearIfManaged(array, count);
         }
 
         _buffer = ref MemoryMarshal.GetArrayDataReference(newBuffer);

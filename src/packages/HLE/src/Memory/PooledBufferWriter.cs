@@ -79,12 +79,7 @@ public sealed class PooledBufferWriter<T> :
             return;
         }
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(buffer, Count);
-        }
-
-        ArrayPool<T>.Shared.Return(buffer);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(buffer, Count);
     }
 
     /// <inheritdoc/>
@@ -270,13 +265,7 @@ public sealed class PooledBufferWriter<T> :
         if (trimmedBufferSize == 0)
         {
             _buffer = [];
-
-            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            {
-                SpanHelpers.Clear(oldBuffer, Count);
-            }
-
-            ArrayPool<T>.Shared.Return(oldBuffer);
+            ArrayPool<T>.Shared.ReturnAndClearIfManaged(oldBuffer, Count);
             return;
         }
 
@@ -284,12 +273,7 @@ public sealed class PooledBufferWriter<T> :
         SpanHelpers.Copy(oldBuffer, newBuffer);
         _buffer = newBuffer;
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(oldBuffer, Count);
-        }
-
-        ArrayPool<T>.Shared.Return(oldBuffer);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(oldBuffer, Count);
     }
 
     /// <summary>

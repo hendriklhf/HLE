@@ -25,8 +25,7 @@ public static class TaskExtensions
             Task[] buffer = ArrayPool<Task>.Shared.Rent(tasks.Length);
             SpanHelpers.Copy(tasks, buffer);
             Task t = Task.WhenAll(buffer.Take(tasks.Length));
-            SpanHelpers.Clear(buffer, tasks.Length);
-            ArrayPool<Task>.Shared.Return(buffer);
+            ArrayPool<Task>.Shared.ReturnAndClearIfManaged(buffer, tasks.Length);
             return t;
         }
     }

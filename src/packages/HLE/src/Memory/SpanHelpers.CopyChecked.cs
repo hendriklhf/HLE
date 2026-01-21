@@ -54,8 +54,10 @@ public static partial class SpanHelpers
 
         [DoesNotReturn]
         static void ThrowCopiedItemsWouldExceedMaxArrayLength()
-            => throw new InvalidOperationException($"The amount of items to be copied into the {typeof(List<T>)} would exceed " +
-                                                   "the maximum array length, thus can't be copied to the destination.");
+            => throw new InvalidOperationException(
+                $"The amount of items to be copied into the {typeof(List<T>)} would exceed " +
+                "the maximum array length, thus can't be copied to the destination."
+            );
     }
 
     public static void CopyChecked<T>(ReadOnlySpan<T> source, T[] destination)

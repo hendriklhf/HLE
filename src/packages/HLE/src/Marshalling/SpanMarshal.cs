@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -126,5 +127,9 @@ public static unsafe class SpanMarshal
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T[] AsArray<T>(ref T firstElement)
-        => ObjectMarshal.ReadObject<T, T[]>(ref Unsafe.SubtractByteOffset(ref firstElement, (uint)sizeof(nuint) + (uint)sizeof(nuint)));
+    {
+        T[] array = ObjectMarshal.ReadObject<T, T[]>(ref Unsafe.SubtractByteOffset(ref firstElement, (uint)sizeof(nuint) + (uint)sizeof(nuint)));
+        Debug.Assert(array.GetType() == typeof(T[]));
+        return array;
+    }
 }

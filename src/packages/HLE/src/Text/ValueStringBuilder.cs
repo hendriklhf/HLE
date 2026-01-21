@@ -157,7 +157,6 @@ public unsafe ref partial struct ValueStringBuilder :
             {
                 case ICollection<char> collection when (_flags & Flags.IsRentedArray) != 0:
                     char[] buffer = SpanMarshal.AsArray(GetBuffer());
-                    Debug.Assert(buffer.GetType() == typeof(char[]));
                     Debug.Assert(buffer.Length >= Length + collection.Count);
                     collection.CopyTo(buffer, Length);
                     Advance(collection.Count);

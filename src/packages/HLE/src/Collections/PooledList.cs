@@ -104,12 +104,7 @@ public sealed class PooledList<T> :
             return;
         }
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(buffer, Count);
-        }
-
-        ArrayPool<T>.Shared.Return(buffer);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(buffer, Count);
     }
 
     [Pure]
@@ -345,12 +340,7 @@ public sealed class PooledList<T> :
         SpanHelpers.Memmove(ref destination, ref source, count);
         _buffer = newBuffer;
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(oldBuffer, count);
-        }
-
-        ArrayPool<T>.Shared.Return(oldBuffer);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(oldBuffer, count);
     }
 
     public void Clear()

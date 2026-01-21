@@ -121,12 +121,7 @@ public ref struct ValueBufferWriter<T> :
 
         T[] array = SpanMarshal.AsArray(ref _buffer);
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(array, Count);
-        }
-
-        ArrayPool<T>.Shared.Return(array);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(array, Count);
 
         _buffer = ref Unsafe.NullRef<T>();
         BufferLength = 0;
@@ -308,12 +303,7 @@ public ref struct ValueBufferWriter<T> :
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(array, Count);
-        }
-
-        ArrayPool<T>.Shared.Return(array);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(array, Count);
     }
 
     /// <summary>
@@ -362,12 +352,7 @@ public ref struct ValueBufferWriter<T> :
 
         T[] array = SpanMarshal.AsArray(oldBuffer);
 
-        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-        {
-            SpanHelpers.Clear(array, count);
-        }
-
-        ArrayPool<T>.Shared.Return(array);
+        ArrayPool<T>.Shared.ReturnAndClearIfManaged(array, count);
     }
 
     public readonly void CopyTo(List<T> destination, int offset = 0)
