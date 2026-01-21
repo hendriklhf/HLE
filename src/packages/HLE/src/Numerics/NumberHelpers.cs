@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using HLE.Marshalling;
 using HLE.Memory;
 
 namespace HLE.Numerics;
@@ -239,7 +240,7 @@ public static class NumberHelpers
 
         return method switch
         {
-            AlignmentMethod.Add => value + alignment - (value % alignment),
+            AlignmentMethod.Add => value + (alignment * T.CreateTruncating(((value % alignment) != T.Zero).AsByte())) - (value % alignment),
             AlignmentMethod.Subtract when T.IsPow2(alignment) => value & ~(alignment - T.One),
             AlignmentMethod.Subtract => value - (value % alignment),
             _ => ThrowInvalidEnumArgumentException<T>(method)

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using HLE.Marshalling;
 using HLE.Numerics;
 
 namespace HLE.Memory;
@@ -78,7 +79,8 @@ public static unsafe class MemoryHelpers
         switch (method)
         {
             case AlignmentMethod.Add:
-                return ref Unsafe.AsRef<T>((void*)(address + alignment - (address % alignment)));
+                nuint mod = address % alignment;
+                return ref Unsafe.AsRef<T>((void*)(address + (alignment * (mod != 0).AsByte()) - mod));
             case AlignmentMethod.Subtract:
                 return ref Unsafe.AsRef<T>((void*)(address & ~(alignment - 1)));
             default:
