@@ -91,7 +91,7 @@ public sealed class EmojiFileGenerator : IIncrementalGenerator
                 continue;
             }
 
-            using Stream stream = typeof(EmojiFileGenerator).Assembly.GetManifestResourceStream(resourceName)!;
+            using Stream stream = typeof(EmojiFileGenerator).Assembly.GetManifestResourceStream(resourceName);
             using StreamReader reader = new(stream);
             string content = reader.ReadToEnd();
 

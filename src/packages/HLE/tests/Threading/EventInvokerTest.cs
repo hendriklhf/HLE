@@ -22,7 +22,7 @@ public sealed class EventInvokerTest
             eventHandler += OnSomethingAsync;
         }
 
-        await EventInvoker.InvokeAsync(eventHandler, this, "hello");
+        await EventInvoker.InvokeAsync(eventHandler, this, "hello", TestContext.Current.CancellationToken);
 
         int invocationListLength = eventHandler?.GetInvocationList().Length ?? 0;
         Assert.Equal(targetCount, invocationListLength);

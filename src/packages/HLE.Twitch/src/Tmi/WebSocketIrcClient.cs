@@ -251,8 +251,8 @@ public sealed class WebSocketIrcClient : IEquatable<WebSocketIrcClient>, IAsyncD
         }
     }
 
-    internal void RegisterAfterAutomaticReconnectionEvent<T>(Func<object, Task> action, T state) where T : class
-        => _websocket.RegisterAfterAutomaticReconnectionEvent(action, state);
+    internal void RegisterAfterAutomaticReconnectionEvent<T>(Func<object?, Task> action, T state) where T : class
+        => _websocket.SetAfterAutomaticReconnectionEvent(action, state);
 
     public ValueTask DisposeAsync() => _websocket.DisposeAsync();
 

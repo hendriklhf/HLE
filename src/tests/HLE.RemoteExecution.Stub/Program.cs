@@ -86,7 +86,7 @@ internal static class Program
         }
 
         ThrowNoConstructor(type);
-        return null!;
+        return null;
 
         [DoesNotReturn]
         static void ThrowNoConstructor(Type type)
@@ -152,7 +152,7 @@ internal static class Program
 
     private static void PrintEnvironmentVariables()
     {
-        Console.WriteLine($"Started remote process with ID {Environment.ProcessId}.");
+        Console.WriteLine($"Started remote process with ID {Environment.ProcessId}.{Environment.NewLine}");
 
         IDictionary variables = Environment.GetEnvironmentVariables();
         if (variables.Count != 0)
@@ -163,9 +163,9 @@ internal static class Program
             {
                 Console.WriteLine($"{variable.Key}=\"{variable.Value}\"");
             }
-        }
 
-        Console.WriteLine();
+            Console.WriteLine();
+        }
     }
 
     private static void OnProcessExit(object? sender, EventArgs e)

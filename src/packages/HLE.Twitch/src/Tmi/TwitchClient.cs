@@ -202,9 +202,10 @@ public sealed partial class TwitchClient : IAsyncDisposable, IEquatable<TwitchCl
         );
     }
 
-    private static Task AfterAutomaticReconnectionEventAsync(object state)
+    private static Task AfterAutomaticReconnectionEventAsync(object? state)
     {
-        TwitchClient client = (TwitchClient)state;
+        Debug.Assert(state is TwitchClient);
+        TwitchClient client = Unsafe.As<TwitchClient>(state);
         ReadOnlyMemory<ReadOnlyMemory<byte>> channels = client._ircChannels.GetUtf8Names().AsMemory();
         return client._client.AuthenticateAndJoinChannelsAsync(channels);
     }

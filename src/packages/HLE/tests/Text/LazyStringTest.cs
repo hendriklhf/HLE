@@ -16,14 +16,14 @@ public sealed partial class LazyStringTest
 
     public static TheoryData<Parameter> NonEmptyStringParameters { get; } =
     [
-        new Parameter(TestString, static () => new(TestString)),
+        new Parameter(TestString, static () => LazyString.Create(TestString)),
         new Parameter(TestString, static () => LazyString.FromString(TestString))
     ];
 
     public static TheoryData<Parameter> EmptyStringParameters { get; } =
     [
         new Parameter(string.Empty, static () => LazyString.Empty),
-        new Parameter(string.Empty, static () => new(string.Empty)),
+        new Parameter(string.Empty, static () => LazyString.Create(string.Empty)),
         new Parameter(string.Empty, static () => LazyString.FromString(string.Empty))
     ];
 
@@ -192,7 +192,7 @@ public sealed partial class LazyStringTest
     public void Ctor_PooledInterpolatedStringHandler()
     {
         // ReSharper disable once CollectionNeverUpdated.Local
-        using LazyString lazy = new($"{TestString}{123}");
+        using LazyString lazy = LazyString.Create($"{TestString}{123}");
         Assert.Equal($"{TestString}{123}", lazy.ToString());
     }
 
@@ -200,7 +200,7 @@ public sealed partial class LazyStringTest
     public void Ctor_ReadOnlySpan()
     {
         // ReSharper disable once CollectionNeverUpdated.Local
-        using LazyString lazy = new(TestString.AsSpan());
+        using LazyString lazy = LazyString.Create(TestString.AsSpan());
         Assert.Equal(TestString, lazy.ToString());
     }
 
@@ -360,7 +360,7 @@ public sealed partial class LazyStringTest
     [Fact]
     public void TryGetString_ReturnsFalse()
     {
-        using LazyString lazy = new(TestString.AsSpan());
+        using LazyString lazy = LazyString.Create(TestString.AsSpan());
         Assert.False(lazy.TryGetString(out string? str));
         Assert.Null(str);
     }

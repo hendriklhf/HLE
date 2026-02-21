@@ -119,10 +119,10 @@ public sealed partial class PooledStringBuilder :
 
     public void Advance(int length) => Length += length;
 
-    void IStringBuilder.Append(ref PooledInterpolatedStringHandler chars)
+    void IStringBuilder.Append(ref DefaultInterpolatedStringHandler chars)
     {
         Append(chars.Text);
-        chars.Dispose();
+        chars.Clear();
     }
 
     [SuppressMessage("Performance", "CA1822:Mark members as static")]

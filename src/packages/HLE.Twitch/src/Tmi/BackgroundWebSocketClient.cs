@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using HLE.Collections;
 using HLE.Threading;
 
 namespace HLE.Twitch.Tmi;
@@ -24,7 +25,7 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
     private Task _listenerTask;
     private CancellationTokenSource _cts;
 
-    private Func<object, Task>? _afterReconnectionAction;
+    private Func<object?, Task>? _afterReconnectionAction;
     private object? _afterReconnectionState;
 
     private static ReadOnlySpan<byte> NewLine => "\r\n"u8;
@@ -161,7 +162,7 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
         }
     }
 
-    public void RegisterAfterAutomaticReconnectionEvent<T>(Func<object, Task> action, T state) where T : class
+    public void SetAfterAutomaticReconnectionEvent<T>(Func<object?, Task> action, T state) where T : class
     {
         _afterReconnectionAction = action;
         _afterReconnectionState = state;
@@ -186,8 +187,9 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
 
             _maintenanceSignal.Reset();
 
-            // TODO: maybe don't clear the messages, rather stash them and send them after reconnecting
             await CancelTasksAsync().ConfigureAwait(false);
+
+            // TODO: maybe don't clear the messages, rather stash them and send them after reconnecting
             while (_outgoingReader.TryRead(out Bytes bytes))
             {
                 bytes.Dispose();
@@ -210,7 +212,7 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
                 }
             }
 
-            Task? action = _afterReconnectionAction?.Invoke(_afterReconnectionState!);
+            Task? action = _afterReconnectionAction?.Invoke(_afterReconnectionState);
             if (action is not null)
             {
                 await action.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
@@ -301,9 +303,11 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
         int indexOfLineEnding = receivedBytes.Span.IndexOf(NewLine);
         while (indexOfLineEnding >= 0)
         {
-            ReadOnlyMemory<byte> line = receivedBytes[..indexOfLineEnding];
-            Bytes bytes = new(line.Span);
+            ReadOnlySpan<byte> line = receivedBytes.Span.SliceUnsafe(..indexOfLineEnding);
+            Bytes bytes = new(line);
+
             await writer.WriteAsync(bytes).ConfigureAwait(false);
+
             receivedBytes = receivedBytes[(indexOfLineEnding + NewLine.Length)..];
             indexOfLineEnding = receivedBytes.Span.IndexOf(NewLine);
         }
@@ -316,10 +320,13 @@ internal sealed class BackgroundWebSocketClient : IAsyncDisposable
         // TODO: improve slicing
         do
         {
-            int indexOfLineEnding = receivedBytes.Span.IndexOf(NewLine);
-            ReadOnlySpan<byte> line = receivedBytes.Span[..indexOfLineEnding];
-            Bytes data = new(line);
-            await writer.WriteAsync(data).ConfigureAwait(false);
+            ReadOnlySpan<byte> receivedBytesSpan = receivedBytes.Span;
+            int indexOfLineEnding = receivedBytesSpan.IndexOf(NewLine);
+            ReadOnlySpan<byte> line = receivedBytesSpan.SliceUnsafe(..indexOfLineEnding);
+            Bytes bytes = new(line);
+
+            await writer.WriteAsync(bytes).ConfigureAwait(false);
+
             receivedBytes = receivedBytes[(indexOfLineEnding + NewLine.Length)..];
         }
         while (receivedBytes.Length != 0);

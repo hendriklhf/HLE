@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Collections;
 using HLE.Marshalling;
-using HLE.Memory;
 using HLE.Numerics;
 using HLE.Text;
 

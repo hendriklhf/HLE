@@ -74,7 +74,7 @@ public readonly unsafe partial struct NativeString :
         RawStringData* rawStringData = (RawStringData*)(buffer + sizeof(nuint));
         rawStringData->MethodTable = ObjectMarshal.GetMethodTable<string>();
         rawStringData->Length = length;
-        Unsafe.InitBlock(&rawStringData->FirstChar, 0, (uint)length * sizeof(char));
+        SpanHelpers.Clear(&rawStringData->FirstChar, length);
 
         Length = length;
         _memory = memory;

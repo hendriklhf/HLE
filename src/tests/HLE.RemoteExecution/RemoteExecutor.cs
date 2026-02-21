@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -7,13 +8,14 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace HLE.RemoteExecution;
 
 public static class RemoteExecutor
 {
-    private static readonly string s_stubPath = Path.Combine(GetArtifactsPath(), "bin", "HLE.RemoteExecution.Stub", $"{Configuration}_{GetFrameworkVersion()}", "HLE.RemoteExecution.Stub.exe");
+    private static readonly string s_stubPath = Path.Combine(GetArtifactsPath(), "bin", "HLE.RemoteExecution.Stub", $"{Configuration}_{GetFrameworkVersion()}", "HLE.RemoteExecution.Stub" + GetExecutableExtension());
 
     private const string ArtifactsPathMetadataKey = "ArtifactsPath";
     private const string Configuration =
@@ -102,15 +104,39 @@ public static class RemoteExecutor
         using Process? process = Process.Start(startInfo);
         ArgumentNullException.ThrowIfNull(process);
 
+#pragma warning disable CA2025
+        ValueTask<string> readTask = ReadStandardOutputAsync(process);
+#pragma warning restore CA2025
+
         await process.WaitForExitAsync();
 
-        string output = await process.StandardOutput.ReadToEndAsync();
+        string output = await readTask;
 
         return new()
         {
             ExitCode = process.ExitCode,
             Output = output
         };
+    }
+
+    private static async ValueTask<string> ReadStandardOutputAsync(Process process)
+    {
+        StreamReader reader = process.StandardOutput;
+        int readCount;
+
+        char[] buffer = ArrayPool<char>.Shared.Rent(4096);
+        StringBuilder builder = new(512);
+
+        do
+        {
+            readCount = await reader.ReadAsync(buffer);
+            builder.Append(buffer.AsSpan(0, readCount));
+        }
+        while (readCount != 0);
+
+        ArrayPool<char>.Shared.Return(buffer);
+
+        return builder.ToString();
     }
 
     private static string GetFrameworkVersion()
@@ -142,6 +168,8 @@ public static class RemoteExecutor
 
         return artifactsPath ?? throw new InvalidOperationException($"The assembly does not have the \"{ArtifactsPathMetadataKey}\" metadata.");
     }
+
+    private static string GetExecutableExtension() => OperatingSystem.IsWindows() ? ".exe" : string.Empty;
 
     private static void ValidateMethodReturnType(MethodInfo method)
     {

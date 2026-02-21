@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,26 +26,26 @@ namespace HLE.Text;
 public sealed class BloomFilterStringArray :
     ICollection<string>,
     IReadOnlyCollection<string>,
-    ICopyable<string>,
-    IIndexable<string>,
-    IEquatable<BloomFilterStringArray>,
-    IReadOnlySpanProvider<string>,
-    IReadOnlyMemoryProvider<string>,
-    ICollectionProvider<string>
+    ICopyable<string?>,
+    IIndexable<string?>,
+    IReadOnlySpanProvider<string?>,
+    IReadOnlyMemoryProvider<string?>,
+    ICollectionProvider<string?>,
+    IEquatable<BloomFilterStringArray>
 {
-    public string this[int index]
+    public string? this[int index]
     {
         get => _strings[index];
         set => SetString(index, value);
     }
 
-    public string this[Index index]
+    public string? this[Index index]
     {
         get => this[index.GetOffset(Length)];
         set => this[index.GetOffset(Length)] = value;
     }
 
-    public ReadOnlySpan<string> this[Range range] => _strings.AsSpan(range);
+    public ReadOnlySpan<string?> this[Range range] => _strings.AsSpan(range);
 
     public int Length => _strings.Length;
 
@@ -58,7 +57,7 @@ public sealed class BloomFilterStringArray :
 
     bool ICollection<string>.IsReadOnly => false;
 
-    private readonly string[] _strings;
+    private readonly string?[] _strings;
     private readonly int[] _lengths;
     private char[] _chars = [];
     private int _minStringLength = int.MaxValue;
@@ -66,51 +65,71 @@ public sealed class BloomFilterStringArray :
 
     private const int BitsPerMap = sizeof(uint) * 8;
 
-    public static BloomFilterStringArray Empty { get; } = new(0);
+    public static BloomFilterStringArray Empty { get; } = new([]);
 
-    public BloomFilterStringArray(int length) => CtorCore(length, out _strings, out _lengths);
-
-    public BloomFilterStringArray(List<string> strings) : this(strings.Count)
-        => FillArray(CollectionsMarshal.AsSpan(strings));
-
-    public BloomFilterStringArray(string[] strings) : this(strings.Length)
-        => FillArray(strings);
-
-    public BloomFilterStringArray(Span<string> strings) : this(strings.Length)
-        => FillArray(strings);
-
-    public BloomFilterStringArray(params ReadOnlySpan<string> strings) : this(strings.Length)
-        => FillArray(strings);
-
-    public BloomFilterStringArray(IEnumerable<string> strings)
+    private BloomFilterStringArray(string?[] strings)
     {
-        if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string> span))
+        if (strings.Length == 0)
         {
-            CtorCore(span.Length, out _strings, out _lengths);
-            FillArray(span);
+            _strings = [];
+            _lengths = [];
             return;
         }
 
-        _strings = strings.ToArray();
-        _lengths = new int[_strings.Length];
-
-        FillArray(_strings);
+        _strings = strings;
+        _lengths = new int[strings.Length];
+        FillArray(strings);
     }
 
-    private static void CtorCore(int length, out string[] strings, out int[] lengths)
+    public static BloomFilterStringArray Create(int length)
     {
         if (length == 0)
         {
-            strings = [];
-            lengths = [];
-            return;
+            return Empty;
         }
 
-        strings = new string[length];
-        lengths = new int[length];
+        string?[] array = new string?[length];
+        return new(array);
     }
 
-    private void FillArray(ReadOnlySpan<string> strings)
+    [Pure]
+    public static BloomFilterStringArray Create(IEnumerable<string?> strings)
+    {
+        if (strings.TryGetReadOnlySpan(out ReadOnlySpan<string?> span))
+        {
+            return Create(span);
+        }
+
+        string?[] array = strings.ToArray();
+        return array.Length == 0 ? Empty : new(array);
+    }
+
+    [Pure]
+    public static BloomFilterStringArray Create(List<string?> strings)
+        => Create(CollectionsMarshal.AsSpan(strings));
+
+    [Pure]
+    public static BloomFilterStringArray Create(string?[] strings)
+        => Create((ReadOnlySpan<string?>)strings);
+
+    [Pure]
+    public static BloomFilterStringArray Create(Span<string?> strings)
+        => Create((ReadOnlySpan<string?>)strings);
+
+    [Pure]
+    public static BloomFilterStringArray Create(params ReadOnlySpan<string?> strings)
+    {
+        if (strings.Length == 0)
+        {
+            return Empty;
+        }
+
+        string?[] array = new string?[strings.Length];
+        SpanHelpers.Copy(strings, array);
+        return new(array);
+    }
+
+    private void FillArray(ReadOnlySpan<string?> strings)
     {
         Debug.Assert(strings.Length == _strings.Length);
 
@@ -125,31 +144,31 @@ public sealed class BloomFilterStringArray :
     public int GetStringLength(int index) => _lengths[index];
 
     [Pure]
-    public ReadOnlySpan<string> AsSpan() => _strings;
+    public ReadOnlySpan<string?> AsSpan() => _strings;
 
     [Pure]
-    public ReadOnlySpan<string> AsSpan(int start) => _strings.AsSpan(start);
+    public ReadOnlySpan<string?> AsSpan(int start) => _strings.AsSpan(start);
 
     [Pure]
-    public ReadOnlySpan<string> AsSpan(int start, int length) => _strings.AsSpan(start, length);
+    public ReadOnlySpan<string?> AsSpan(int start, int length) => _strings.AsSpan(start, length);
 
     [Pure]
-    public ReadOnlySpan<string> AsSpan(Range range) => _strings.AsSpan(range);
+    public ReadOnlySpan<string?> AsSpan(Range range) => _strings.AsSpan(range);
 
     [Pure]
-    public ReadOnlyMemory<string> AsMemory() => _strings;
+    public ReadOnlyMemory<string?> AsMemory() => _strings;
 
     [Pure]
-    public ReadOnlyMemory<string> AsMemory(int start) => _strings.AsMemory(start);
+    public ReadOnlyMemory<string?> AsMemory(int start) => _strings.AsMemory(start);
 
     [Pure]
-    public ReadOnlyMemory<string> AsMemory(int start, int length) => _strings.AsMemory(start, length);
+    public ReadOnlyMemory<string?> AsMemory(int start, int length) => _strings.AsMemory(start, length);
 
     [Pure]
-    public ReadOnlyMemory<string> AsMemory(Range range) => _strings.AsMemory(range);
+    public ReadOnlyMemory<string?> AsMemory(Range range) => _strings.AsMemory(range);
 
     [Pure]
-    public string[] ToArray()
+    public string?[] ToArray()
     {
         int length = Length;
         if (length == 0)
@@ -157,34 +176,34 @@ public sealed class BloomFilterStringArray :
             return [];
         }
 
-        string[] result = new string[length];
+        string?[] result = new string[length];
         SpanHelpers.Copy(_strings, result);
         return result;
     }
 
     [Pure]
-    public string[] ToArray(int start) => AsSpan().ToArray(start);
+    public string?[] ToArray(int start) => AsSpan().ToArray(start);
 
     [Pure]
-    public string[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
+    public string?[] ToArray(int start, int length) => AsSpan().ToArray(start, length);
 
     [Pure]
-    public string[] ToArray(Range range) => AsSpan().ToArray(range);
+    public string?[] ToArray(Range range) => AsSpan().ToArray(range);
 
     [Pure]
-    public List<string> ToList() => AsSpan().ToList();
+    public List<string?> ToList() => AsSpan().ToList();
 
     [Pure]
-    public List<string> ToList(int start) => AsSpan().ToList(start);
+    public List<string?> ToList(int start) => AsSpan().ToList(start);
 
     [Pure]
-    public List<string> ToList(int start, int length) => AsSpan().ToList(start, length);
+    public List<string?> ToList(int start, int length) => AsSpan().ToList(start, length);
 
     [Pure]
-    public List<string> ToList(Range range) => AsSpan().ToList(range);
+    public List<string?> ToList(Range range) => AsSpan().ToList(range);
 
     [Pure]
-    public int IndexOf(string str, int startIndex = 0) => IndexOf(str.AsSpan(), startIndex);
+    public int IndexOf(string? str, int startIndex = 0) => IndexOf(str.AsSpan(), startIndex);
 
     [Pure]
     public int IndexOf(ReadOnlySpan<char> str, int startIndex = 0)
@@ -200,7 +219,7 @@ public sealed class BloomFilterStringArray :
     private int IndexOfCore(ReadOnlySpan<char> str, int startIndex = 0)
     {
         int iteration = 0;
-        ref string strings = ref MemoryMarshal.GetArrayDataReference(_strings);
+        ref string? strings = ref MemoryMarshal.GetArrayDataReference(_strings);
         int length = Length - startIndex;
         ref int stringLengths = ref ArrayMarshal.GetUnsafeElementAt(_lengths, startIndex);
         ref char chars = ref ArrayMarshal.GetUnsafeElementAt(_chars, startIndex);
@@ -256,7 +275,7 @@ public sealed class BloomFilterStringArray :
 
         if (length != 0)
         {
-            ReadOnlySpan<string> remainder = _strings.AsSpanUnsafe(^length..);
+            ReadOnlySpan<string?> remainder = _strings.AsSpanUnsafe(^length..);
             for (int i = 0; i < remainder.Length; i++)
             {
                 if (str.SequenceEqual(remainder[i]))
@@ -405,20 +424,19 @@ public sealed class BloomFilterStringArray :
     public bool Contains(ReadOnlySpan<char> str) => IndexOf(str) >= 0;
 
     [Pure]
-    public bool Contains(string str) => Contains(str.AsSpan());
+    public bool Contains(string? str) => Contains(str.AsSpan());
 
     void ICollection<string>.Add(string item) => throw new NotSupportedException();
 
     bool ICollection<string>.Remove(string item) => throw new NotSupportedException();
 
-    private void SetString(int index, string str)
+    private void SetString(int index, string? str)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)index, (uint)Length);
 
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (str is null)
         {
-            _strings[index] = null!;
+            _strings[index] = null;
             _lengths[index] = 0;
             return;
         }
@@ -428,10 +446,8 @@ public sealed class BloomFilterStringArray :
         _strings[index] = str;
         _lengths[index] = str.Length;
 
-        _minStringLength = _strings.Where(static s => s is not null)
-            .Min(static s => s.Length);
-        _maxStringLength = _strings.Where(static s => s is not null)
-            .Max(static s => s.Length);
+        _minStringLength = _lengths.Min();
+        _maxStringLength = _lengths.Max();
 
         int length = Length;
         ref char chars = ref ArrayMarshal.GetUnsafeElementAt(_chars, index);
@@ -464,21 +480,21 @@ public sealed class BloomFilterStringArray :
         _chars.AsSpan().Clear();
     }
 
-    public void CopyTo(List<string> destination, int offset = 0)
+    public void CopyTo(List<string?> destination, int offset = 0)
         => SpanHelpers.CopyChecked(AsSpan(), destination, offset);
 
-    public void CopyTo(string[] destination, int offset = 0)
+    public void CopyTo(string?[] destination, int offset = 0)
         => SpanHelpers.CopyChecked(AsSpan(), destination.AsSpan(offset..));
 
-    public void CopyTo(Memory<string> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
+    public void CopyTo(Memory<string?> destination) => SpanHelpers.CopyChecked(AsSpan(), destination.Span);
 
-    public void CopyTo(Span<string> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
+    public void CopyTo(Span<string?> destination) => SpanHelpers.CopyChecked(AsSpan(), destination);
 
-    public void CopyTo(ref string destination) => SpanHelpers.Copy(AsSpan(), ref destination);
+    public void CopyTo(ref string? destination) => SpanHelpers.Copy(AsSpan(), ref destination);
 
-    public unsafe void CopyTo(string* destination) => SpanHelpers.Copy(AsSpan(), destination);
+    public unsafe void CopyTo(string?* destination) => SpanHelpers.Copy(AsSpan(), destination);
 
-    public ArrayEnumerator<string> GetEnumerator() => new(_strings);
+    public ArrayEnumerator<string?> GetEnumerator() => new(_strings);
 
     // ReSharper disable once NotDisposedResourceIsReturned
     IEnumerator<string> IEnumerable<string>.GetEnumerator() => Length == 0 ? EmptyEnumeratorCache<string>.Enumerator : GetEnumerator();

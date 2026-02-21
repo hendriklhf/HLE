@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using HLE.Marshalling;
@@ -19,10 +20,10 @@ public static class BufferWriterExtensions
         where TBufferWriter : IBufferWriter<byte>
 #endif
     {
-        public void WriteUtf8(ref PooledInterpolatedStringHandler chars)
+        public void WriteUtf8(ref DefaultInterpolatedStringHandler chars)
         {
             writer.WriteUtf8(chars.Text);
-            chars.Dispose();
+            chars.Clear();
         }
 
         public void WriteUtf8(ReadOnlySpan<char> chars)
@@ -49,13 +50,13 @@ public static class BufferWriterExtensions
             writer.Advance(str.Length);
         }
 
-        public void Write(ref PooledInterpolatedStringHandler chars)
+        public void Write(ref DefaultInterpolatedStringHandler chars)
         {
             int length = chars.Text.Length;
             Span<char> destination = writer.GetSpan(length);
             SpanHelpers.Memmove(ref MemoryMarshal.GetReference(destination), ref MemoryMarshal.GetReference(chars.Text), length);
             writer.Advance(length);
-            chars.Dispose();
+            chars.Clear();
         }
     }
 
@@ -67,10 +68,10 @@ public static class BufferWriterExtensions
             writer.Advance(str.Length);
         }
 
-        public void Write(ref PooledInterpolatedStringHandler chars)
+        public void Write(ref DefaultInterpolatedStringHandler chars)
         {
             writer.Write(chars.Text);
-            chars.Dispose();
+            chars.Clear();
         }
     }
 
@@ -82,10 +83,10 @@ public static class BufferWriterExtensions
             writer.Advance(str.Length);
         }
 
-        public void Write(ref PooledInterpolatedStringHandler chars)
+        public void Write(ref DefaultInterpolatedStringHandler chars)
         {
             writer.Write(chars.Text);
-            chars.Dispose();
+            chars.Clear();
         }
     }
 
@@ -97,10 +98,10 @@ public static class BufferWriterExtensions
             writer.Advance(str.Length);
         }
 
-        public void Write(ref PooledInterpolatedStringHandler chars)
+        public void Write(ref DefaultInterpolatedStringHandler chars)
         {
             writer.Write(chars.Text);
-            chars.Dispose();
+            chars.Clear();
         }
     }
 }

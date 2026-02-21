@@ -15,6 +15,8 @@ namespace HLE.Text;
 
 internal sealed class NaturalStringComparer : IComparer<string?>, IComparer, IEquatable<NaturalStringComparer>
 {
+    public static NaturalStringComparer Instance { get; } = new();
+
     private readonly StringComparer _comparer = StringComparer.Ordinal;
 
     private static readonly SearchValues<char> s_digitSearchValues = SearchValues.Create("0123456789");

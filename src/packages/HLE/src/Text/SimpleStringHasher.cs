@@ -15,10 +15,10 @@ internal static class SimpleStringHasher
     private static readonly uint s_seed = Random.Shared.NextUInt32();
 
     [Pure]
-    public static uint Hash(ref PooledInterpolatedStringHandler chars)
+    public static uint Hash(ref DefaultInterpolatedStringHandler chars)
     {
         uint hash = Hash(chars.Text);
-        chars.Dispose();
+        chars.Clear();
         return hash;
     }
 

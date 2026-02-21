@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.CompilerServices;
 using HLE.Text;
 
@@ -13,7 +12,7 @@ public sealed class DefaultInterpolatedStringHandlerExtensionsTests
         handler.AppendLiteral("hello");
         handler.AppendFormatted(" world");
 
-        Assert.True(handler.Text.SequenceEqual("hello world"));
+        Assert.True(handler.Text is "hello world");
 
         handler.Clear();
     }

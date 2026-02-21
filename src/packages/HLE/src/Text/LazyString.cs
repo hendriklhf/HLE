@@ -63,11 +63,7 @@ public sealed partial class LazyString :
         Justification = "analyzer is wrong. a mutable ref has been taken of the field.")]
     private string? _string;
 
-    public static LazyString Empty { get; } = new();
-
-    private LazyString() : this(string.Empty)
-    {
-    }
+    public static LazyString Empty { get; } = new(string.Empty);
 
     private LazyString(string str)
     {
@@ -75,40 +71,40 @@ public sealed partial class LazyString :
         Length = str.Length;
     }
 
-    public LazyString(ref PooledInterpolatedStringHandler chars) : this(chars.Text)
-        => chars.Dispose();
-
-    public LazyString(ReadOnlySpan<char> chars)
-    {
-        if (chars.Length == 0)
-        {
-            _chars = [];
-            _string = string.Empty;
-            return;
-        }
-
-        char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length);
-        SpanHelpers.Copy(chars, buffer);
-        _chars = buffer;
-        Length = chars.Length;
-    }
-
     internal LazyString(char[] chars, int length)
     {
+        Debug.Assert(length > 0);
         Debug.Assert(chars.Length >= 16);
         Debug.Assert(chars.Length >= length);
         Debug.Assert(BitOperations.IsPow2((uint)chars.Length));
 
-        if (length == 0)
-        {
-            _string = string.Empty;
-            ArrayPool<char>.Shared.Return(chars);
-            return;
-        }
-
         _chars = chars;
         Length = length;
     }
+
+    [Pure]
+    public static LazyString Create(ref DefaultInterpolatedStringHandler chars)
+    {
+        LazyString str = Create(chars.Text);
+        chars.Clear();
+        return str;
+    }
+
+    public static LazyString Create(ReadOnlySpan<char> chars)
+    {
+        if (chars.Length == 0)
+        {
+            return Empty;
+        }
+
+        char[] buffer = ArrayPool<char>.Shared.Rent(chars.Length);
+        SpanHelpers.Copy(chars, buffer);
+        return new(buffer, chars.Length);
+    }
+
+    [Pure]
+    public static LazyString FromString(ref DefaultInterpolatedStringHandler chars)
+        => Create(ref chars);
 
     [Pure]
     public static LazyString FromString(string str) => str.Length == 0 ? Empty : new(str);
@@ -276,7 +272,7 @@ public sealed partial class LazyString :
             // that the LazyString has been disposed.
 
             ThrowHelper.ThrowObjectDisposedException<LazyString>();
-            return null!;
+            return null;
         }
     }
 

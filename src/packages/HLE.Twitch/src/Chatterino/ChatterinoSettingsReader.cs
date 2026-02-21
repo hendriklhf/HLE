@@ -116,6 +116,6 @@ public static class ChatterinoSettingsReader
         }
 
         ThrowHelper.ThrowOperatingSystemNotSupported();
-        return null!;
+        return null;
     }
 }

@@ -68,10 +68,10 @@ public sealed partial class StringPool : IEquatable<StringPool>
     }
 
     [Pure]
-    public string GetOrAdd(ref PooledInterpolatedStringHandler span)
+    public string GetOrAdd(ref DefaultInterpolatedStringHandler span)
     {
         string str = GetOrAdd(span.Text);
-        span.Dispose();
+        span.Clear();
         return str;
     }
 
@@ -132,10 +132,10 @@ public sealed partial class StringPool : IEquatable<StringPool>
         }
     }
 
-    public bool TryGet(ref PooledInterpolatedStringHandler span, [MaybeNullWhen(false)] out string value)
+    public bool TryGet(ref DefaultInterpolatedStringHandler span, [MaybeNullWhen(false)] out string value)
     {
         bool success = TryGet(span.Text, out value);
-        span.Dispose();
+        span.Clear();
         return success;
     }
 
@@ -182,10 +182,10 @@ public sealed partial class StringPool : IEquatable<StringPool>
     public bool Contains(string str) => Contains(str.AsSpan());
 
     [Pure]
-    public bool Contains(ref PooledInterpolatedStringHandler span)
+    public bool Contains(ref DefaultInterpolatedStringHandler span)
     {
         bool contains = Contains(span.Text);
-        span.Dispose();
+        span.Clear();
         return contains;
     }
 

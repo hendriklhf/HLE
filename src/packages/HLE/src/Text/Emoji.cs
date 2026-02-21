@@ -3,6 +3,7 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 #if !NET9_0_OR_GREATER
 using HLE.Memory;
 #endif
@@ -32,10 +33,10 @@ public static partial class Emoji
     public static bool IsEmoji(string text) => AllEmojis.Contains(text);
 
     [Pure]
-    public static bool IsEmoji(ref PooledInterpolatedStringHandler text)
+    public static bool IsEmoji(ref DefaultInterpolatedStringHandler text)
     {
         bool result = IsEmoji(text.Text);
-        text.Dispose();
+        text.Clear();
         return result;
     }
 

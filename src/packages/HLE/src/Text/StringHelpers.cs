@@ -39,10 +39,10 @@ public static class StringHelpers
     public static string TrimAll(string str) => TrimAll(str.AsSpan(), true);
 
     [Pure]
-    public static string TrimAll(ref PooledInterpolatedStringHandler str)
+    public static string TrimAll(ref DefaultInterpolatedStringHandler str)
     {
         string result = TrimAll(str.Text, false);
-        str.Dispose();
+        str.Clear();
         return result;
     }
 
@@ -74,10 +74,10 @@ public static class StringHelpers
 
     public static int TrimAll(string str, Span<char> result) => TrimAll(str.AsSpan(), result);
 
-    public static int TrimAll(ref PooledInterpolatedStringHandler str, Span<char> result)
+    public static int TrimAll(ref DefaultInterpolatedStringHandler str, Span<char> result)
     {
         int charCount = TrimAll(str.Text, result);
-        str.Dispose();
+        str.Clear();
         return charCount;
     }
 
@@ -194,10 +194,10 @@ public static class StringHelpers
     public static string RegexEscape(string input) => RegexEscape(input, true);
 
     [Pure]
-    public static string RegexEscape(ref PooledInterpolatedStringHandler input)
+    public static string RegexEscape(ref DefaultInterpolatedStringHandler input)
     {
         string result = RegexEscape(input.Text, false);
-        input.Dispose();
+        input.Clear();
         return result;
     }
 
@@ -327,10 +327,10 @@ public static class StringHelpers
         return resultLength + lastString.Length;
     }
 
-    public static int Join(ref PooledInterpolatedStringHandler separator, ReadOnlySpan<string> strings, Span<char> destination)
+    public static int Join(ref DefaultInterpolatedStringHandler separator, ReadOnlySpan<string> strings, Span<char> destination)
     {
         int charCount = Join(separator.Text, strings, destination);
-        separator.Dispose();
+        separator.Clear();
         return charCount;
     }
 
@@ -358,10 +358,10 @@ public static class StringHelpers
         return resultLength + lastString.Length;
     }
 
-    public static int Join(ref PooledInterpolatedStringHandler separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
+    public static int Join(ref DefaultInterpolatedStringHandler separator, ReadOnlySpan<ReadOnlyMemory<char>> strings, Span<char> destination)
     {
         int charCount = Join(separator.Text, strings, destination);
-        separator.Dispose();
+        separator.Clear();
         return charCount;
     }
 
@@ -409,10 +409,10 @@ public static class StringHelpers
         return resultLength;
     }
 
-    public static int Join(ref PooledInterpolatedStringHandler separator, ReadOnlySpan<char> chars, Span<char> destination)
+    public static int Join(ref DefaultInterpolatedStringHandler separator, ReadOnlySpan<char> chars, Span<char> destination)
     {
         int charCount = Join(separator.Text, chars, destination);
-        separator.Dispose();
+        separator.Clear();
         return charCount;
     }
 

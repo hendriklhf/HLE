@@ -126,10 +126,10 @@ public unsafe ref partial struct ValueStringBuilder :
 
     public void Advance(int length) => Length += length;
 
-    void IStringBuilder.Append(ref PooledInterpolatedStringHandler chars)
+    void IStringBuilder.Append(ref DefaultInterpolatedStringHandler chars)
     {
         Append(chars.Text);
-        chars.Dispose();
+        chars.Clear();
     }
 
     public void Append([InterpolatedStringHandlerArgument("")] ref InterpolatedStringHandler chars)

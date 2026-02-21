@@ -20,22 +20,29 @@ internal static class DelegateExtensions
             }
 
             Delegate[] targets = d.GetInvocationList();
-            Debug.Assert(targets is TDelegate[]);
-            return new(Unsafe.As<TDelegate[]>(targets));
+            return new(Unsafe.As<Delegate[]>(targets));
         }
     }
 
     [SuppressMessage("Major Code Smell", "S3898:Value types should implement \"IEquatable<T>\"")]
-    public struct InvocationListEnumerator<TDelegate>(TDelegate[] targets) :
+    public struct InvocationListEnumerator<TDelegate>(Delegate[] targets) :
         IEnumerable<TDelegate>,
         IEnumerator<TDelegate>
         where TDelegate : Delegate?
     {
-        public readonly TDelegate Current => _enumerator.Current;
+        public readonly TDelegate Current
+        {
+            get
+            {
+                Delegate current = _enumerator.Current;
+                Debug.Assert(current is TDelegate);
+                return Unsafe.As<TDelegate>(current);
+            }
+        }
 
         readonly object? IEnumerator.Current => Current;
 
-        private ArrayEnumerator<TDelegate> _enumerator = new(targets);
+        private ArrayEnumerator<Delegate> _enumerator = new(targets);
 
         public static InvocationListEnumerator<TDelegate> Empty => new([]);
 

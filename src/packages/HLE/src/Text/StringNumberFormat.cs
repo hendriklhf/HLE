@@ -40,10 +40,10 @@ public readonly struct StringNumberFormat : IEquatable<StringNumberFormat>
     }
 
     [Pure]
-    public static StringNumberFormat Create(ref PooledInterpolatedStringHandler chars)
+    public static StringNumberFormat Create(ref DefaultInterpolatedStringHandler chars)
     {
         StringNumberFormat format = Create(chars.Text);
-        chars.Dispose();
+        chars.Clear();
         return format;
     }
 

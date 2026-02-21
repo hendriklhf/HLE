@@ -1,19 +1,19 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using HLE.TestUtilities;
 using HLE.Threading;
 
 namespace HLE.UnitTests.Threading;
 
 public sealed class TaskExtensionsTests
 {
+    public static TheoryData<int> TaskCounts { get; } = TheoryDataHelpers.CreateRange(0, 10);
+
     private int _counter;
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(3)]
-    [InlineData(10)]
+    [MemberData(nameof(TaskCounts))]
     public async Task WhenAll(int taskCount)
     {
         Task[] tasks = new Task[taskCount];

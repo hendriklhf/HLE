@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using HLE.Collections;
 
 namespace HLE.Text;
@@ -21,7 +22,7 @@ public interface IStringBuilder :
 
     void Advance(int length);
 
-    void Append(ref PooledInterpolatedStringHandler chars);
+    void Append(ref DefaultInterpolatedStringHandler chars);
 
     void Append(IEnumerable<char> chars);
 

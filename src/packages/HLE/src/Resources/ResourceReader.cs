@@ -52,10 +52,10 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
     }
 
     [Pure]
-    public Resource Read(ref PooledInterpolatedStringHandler resourcePath)
+    public Resource Read(ref DefaultInterpolatedStringHandler resourcePath)
     {
         Resource resource = Read(resourcePath.Text);
-        resourcePath.Dispose();
+        resourcePath.Clear();
         return resource;
     }
 
@@ -78,10 +78,10 @@ public sealed unsafe partial class ResourceReader(Assembly assembly) :
     }
 
     /// <inheritdoc cref="TryRead(ReadOnlySpan{char},out Resource)"/>
-    public bool TryRead(ref PooledInterpolatedStringHandler resourcePath, out Resource resource)
+    public bool TryRead(ref DefaultInterpolatedStringHandler resourcePath, out Resource resource)
     {
         bool success = TryRead(resourcePath.Text, out resource);
-        resourcePath.Dispose();
+        resourcePath.Clear();
         return success;
     }
 

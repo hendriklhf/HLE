@@ -61,10 +61,10 @@ public readonly struct StringNumberFormatter(StringNumberFormat format) : IEquat
     }
 
     [Pure]
-    public int Parse(ref PooledInterpolatedStringHandler stringNumber)
+    public int Parse(ref DefaultInterpolatedStringHandler stringNumber)
     {
         int number = Parse(stringNumber.Text);
-        stringNumber.Dispose();
+        stringNumber.Clear();
         return number;
     }
 
