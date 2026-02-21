@@ -7,10 +7,12 @@ namespace HLE.Memory;
 
 internal static class Vector128Extensions
 {
+#pragma warning disable IDE0051
     private static ReadOnlySpan<byte> Int8Indices => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
     private static ReadOnlySpan<ushort> Int16Indices => [0, 1, 2, 3, 4, 5, 6, 7];
     private static ReadOnlySpan<uint> Int32Indices => [0, 1, 2, 3];
     private static ReadOnlySpan<ulong> Int64Indices => [0, 1];
+#pragma warning restore IDE0051
 
     extension<T>(Vector128<T>) where T : unmanaged
     {
